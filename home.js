@@ -44,7 +44,18 @@ document.addEventListener("DOMContentLoaded", async () => {
     : `images/avatars/default.png`;
 
   // Badge & Level
-  const badge = document.getElementById('homeBadge');
+const badgeImg = document.getElementById("homeBadge");
+const role = localStorage.getItem("activeRole");
+
+if (role === "student") {
+  const levelNumber = user.level || 1;
+  badgeImg.src = `images/levelBadges/level${levelNumber}.png`;
+} else if (role === "admin") {
+  badgeImg.src = "images/levelBadges/admin.png";
+} else if (role === "teacher") {
+  badgeImg.src = "images/levelBadges/teacher.png";
+}
+badgeImg.alt = `${role} badge`;
   const progressBar = document.getElementById('homeProgressBar');
   const progressText = document.getElementById('homeProgressText');
 
