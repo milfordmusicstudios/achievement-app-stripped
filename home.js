@@ -40,8 +40,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Avatar
   const avatarImg = document.getElementById('homeavatar');
   avatarImg.src = user.avatar
-    ? `Images/Avatars/${user.avatar}`
-    : `Images/Avatars/default.png`;
+    ? `images/avatars/${user.avatar}`
+    : `images/avatars/default.png`;
 
   // Badge & Level
   const badge = document.getElementById('homeBadge');
@@ -49,15 +49,15 @@ document.addEventListener("DOMContentLoaded", async () => {
   const progressText = document.getElementById('homeProgressText');
 
   if (activeRole === "admin") {
-    badge.src = "Images/LevelBadges/admin.png";
+    badge.src = "images/levelBadges/admin.png";
     progressBar.style.display = "none";
     progressText.style.display = "none";
   } else if (activeRole === "teacher") {
-    badge.src = "Images/LevelBadges/teacher.png";
+    badge.src = "images/levelBadges/teacher.png";
     progressBar.style.display = "none";
     progressText.style.display = "none";
   } else {
-    badge.src = `Images/LevelBadges/level${user.level || 1}.png`;
+    badge.src = `images/levelBadges/level${user.level || 1}.png`;
     progressBar.style.width = "75%"; // Placeholder until logs are wired up
     progressBar.style.backgroundColor = "#007bff";
     progressText.textContent = `75% to next level`; // Placeholder

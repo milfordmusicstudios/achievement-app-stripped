@@ -9,7 +9,7 @@ body, html {
 
 
 body {
-  background-image: url('Images/Background/TallBackground.png');
+  background-image: url('images/background/tallBackground.png');
   background-repeat: no-repeat;
   background-size: cover;
   background-color: #f9f9f9; /* fallback in case image fails */
