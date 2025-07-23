@@ -46,7 +46,7 @@ document.addEventListener("DOMContentLoaded", () => {
       localStorage.setItem('activeRole', defaultRole);
 
       // Redirect
-      window.location.href = 'home.html';
+      window.location.href = 'index.html';
     }
   });
 });
