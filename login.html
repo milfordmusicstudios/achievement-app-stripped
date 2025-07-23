@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Login | Achievement App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <main class="app">
+    <img src="Images/Logos/logo.png" alt="App Logo" class="logo" />
+    <h2>Achievement Awards</h2>
+
+    <form id="loginForm">
+      <input type="email" id="loginEmail" placeholder="Email" required />
+      <input type="password" id="loginPassword" placeholder="Password" required />
+      <div style="display: flex; justify-content: center; gap: 10px; margin-top: 10px;">
+        <button type="submit" class="blue-button">Login</button>
+        <button type="button" class="blue-button" onclick="window.location.href='signup.html'">Sign Up</button>
+      </div>
+    </form>
+
+    <p id="loginError" style="color: red; display: none;">Invalid email or password.</p>
+  </main>
+
+  <footer>
+    &copy; 2025 Milford Music Studios Achievement App
+  </footer>
+
+  <!-- ✅ Scripts -->
+  <script type="module" src="login.js"></script>
+</body>
+</html>

@@ -1,0 +1,65 @@
+import { supabase } from './supabase.js';
+
+document.addEventListener("DOMContentLoaded", async () => {
+  const { data: sessionData } = await supabase.auth.getSession();
+  const userId = sessionData?.session?.user?.id;
+
+  if (!userId) {
+    window.location.href = "login.html";
+    return;
+  }
+
+  // Load user profile
+  const { data: user, error: userError } = await supabase
+    .from("users")
+    .select("*")
+    .eq("id", userId)
+    .single();
+
+  if (userError || !user) {
+    console.error("Error loading user:", userError);
+    window.location.href = "login.html";
+    return;
+  }
+
+  // Save locally
+  localStorage.setItem("loggedInUser", JSON.stringify(user));
+
+  // Role fallback logic
+  let activeRole = localStorage.getItem("activeRole");
+  if (!activeRole) {
+    const roles = user.roles || ['student'];
+    activeRole = roles.includes("admin") ? "admin"
+                : roles.includes("teacher") ? "teacher"
+                : "student";
+    localStorage.setItem("activeRole", activeRole);
+  }
+
+  document.getElementById('welcomeTitle').textContent = `Welcome ${user.firstName}!`;
+
+  // Avatar
+  const avatarImg = document.getElementById('homeavatar');
+  avatarImg.src = user.avatar
+    ? `Images/Avatars/${user.avatar}`
+    : `Images/Avatars/default.png`;
+
+  // Badge & Level
+  const badge = document.getElementById('homeBadge');
+  const progressBar = document.getElementById('homeProgressBar');
+  const progressText = document.getElementById('homeProgressText');
+
+  if (activeRole === "admin") {
+    badge.src = "Images/LevelBadges/admin.png";
+    progressBar.style.display = "none";
+    progressText.style.display = "none";
+  } else if (activeRole === "teacher") {
+    badge.src = "Images/LevelBadges/teacher.png";
+    progressBar.style.display = "none";
+    progressText.style.display = "none";
+  } else {
+    badge.src = `Images/LevelBadges/level${user.level || 1}.png`;
+    progressBar.style.width = "75%"; // Placeholder until logs are wired up
+    progressBar.style.backgroundColor = "#007bff";
+    progressText.textContent = `75% to next level`; // Placeholder
+  }
+});

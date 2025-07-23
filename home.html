@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Home | Achievement App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="tall-background">
+
+  <main>
+    <div class="app">
+      <h2 id="welcomeTitle" class="header"></h2>
+
+      <div class="avatar-badge">
+        <img id="homeavatar" class="avatar" src="" alt="Your Avatar" />
+        <img id="homeBadge" class="badge" src="" alt="Level Badge" />
+      </div>
+
+      <div class="progress-card">
+        <div class="progress-label">Level Progress</div>
+        <div class="progress-container">
+          <div class="progress-bar" id="homeProgressBar" style="width: 0%;"></div>
+        </div>
+      </div>
+
+      <div class="percent-text" id="homeProgressText">75% to next level</div>
+
+      <div class="button-wrapper">
+        <div class="button-area">
+
+          <!-- 🔹 Log / My Points / Review Logs -->
+          <div class="button-row">
+            <button class="nav-button log" onclick="location.href='log-points.html'">
+              <img class="icon" src="Images/Icons/Log.png" alt="Log Icon" /> Log Points
+            </button>
+
+            <!-- Student only (hidden by default) -->
+<button id="myPointsBtn" class="nav-button points" onclick="location.href='my-points.html'">
+  <div class="btn-content">
+    <div class="btn-icon">
+      <img src="Images/Icons/MyAchievements.png" alt="My Points Icon" />
+    </div>
+    <div class="btn-text">
+      My Points
+    </div>
+  </div>
+</button>
+
+            <!-- Admin/Teacher only (hidden by default) -->
+            <button class="nav-button review" id="reviewLogsBtn" style="display: none;" onclick="location.href='review-logs.html'">
+              <img class="icon" src="Images/Icons/Review.png" alt="Review Icon" />
+              <div class="button-text">
+                <div>Review</div>
+                <div>Logs</div>
+              </div>
+            </button>
+          </div>
+
+          <!-- Hidden by default, shown only for admins -->
+          <button id="manageUsersBtn" class="blue-button" style="display: none;" onclick="goToManageUsers()">Manage Users</button>
+
+          <!-- 🔹 Leaderboard -->
+          <div class="button-row center">
+            <button class="highlight-button leaderboard" onclick="location.href='leaderboard.html'">
+              <img class="icon" src="Images/Icons/LeaderBoard.png" alt="Leaderboard Icon" /> Leaderboard
+            </button>
+          </div>
+
+          <!-- 🔹 Settings and FAQ -->
+          <div class="button-row">
+            <button class="nav-button settings" onclick="location.href='settings.html'">
+              <img class="icon" src="Images/Icons/Settings.png" alt="Settings Icon" /> Settings
+            </button>
+            <button class="nav-button faq" onclick="location.href='faq.html'">
+              <img class="icon" src="Images/Icons/FAQ.png" alt="FAQ Icon" /> Points Info
+            </button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    &copy; 2025 Milford Music Studios Achievement App
+  </footer>
+
+  <!-- ✅ Scripts -->
+<script type="module" src="home.js"></script>
+  <script src="data/categories.js"></script>
+  <script src="data/levels.js"></script>
+  <script src="utils.js"></script>
+  <script src="auth.js"></script>
+  <script src="home.js"></script>
+
+  <!-- 🔹 Role-based button visibility -->
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const user = JSON.parse(localStorage.getItem("loggedInUser"));
+      const role = localStorage.getItem("activeRole") || (Array.isArray(user?.role) ? user.role[0] : user?.role);
+
+      const myPointsBtn = document.getElementById("myPointsBtn");
+      const reviewLogsBtn = document.getElementById("reviewLogsBtn");
+      const manageUsersBtn = document.getElementById("manageUsersBtn");
+
+      if (!user || !role) return;
+
+      if (role === "admin") {
+        reviewLogsBtn.style.display = "inline-block";
+        manageUsersBtn.style.display = "inline-block";
+      } else if (role === "teacher") {
+        reviewLogsBtn.style.display = "inline-block";
+      } else {
+        myPointsBtn.style.display = "inline-block";
+      }
+    });
+
+    function goToManageUsers() {
+      window.location.href = "manage-users.html";
+    }
+  </script>
+</body>
+</html>
