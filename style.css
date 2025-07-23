@@ -17,6 +17,10 @@ body {
   padding: 0 !important;
 }
 
+* {
+  background: transparent;
+  box-shadow: none;
+}
 
 /* App container */
 .app {
@@ -30,8 +34,11 @@ body {
 
 /* Logo */
 .logo {
-  max-width: 150px;
-  margin-bottom: 20px;
+  width: 50%; /* increase this as needed */
+  max-width: 200px;
+  height: auto;
+  display: block;
+  margin: 0 auto 20px auto;
 }
 
 /* Form inputs */
@@ -295,4 +302,36 @@ body.admin-mode #manageUsersBtn {
   width: 28px;
   margin-right: 6px;
   vertical-align: middle;
+}
+/* Login Page Styling */
+body.login-page {
+  background-color: white !important; 
+  background-image: none;
+  min-height: 100%;
+  color:#3eb7f8; /* Button Blue */
+}
+
+/* Logo specific on login */
+body.login-page .logo {
+  width: 200px;
+  height: auto;
+  display: block;
+  margin: 20px auto;
+}
+
+/* Buttons */
+body.login-page button {
+  background-color: #3eb7f8;
+  color: white;
+  font-weight: bold;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 1rem;
+  border: none;
+  cursor: pointer;
+  margin: 10px;
+}
+
+body.login-page button:hover {
+  background-color: #00345c;
 }
