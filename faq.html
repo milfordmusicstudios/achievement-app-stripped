@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Points Info | Achievement App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      background-color: white !important;
+    }
+
+    main.app {
+      flex: 1;
+      background-color: white !important;
+      padding-bottom: 40px;
+    }
+
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 20px;
+    }
+
+    .faq-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 40px;
+      padding: 20px;
+      max-width: 800px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    .faq-section {
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+      border-radius: 20px;
+      padding: 40px 16px 16px;
+      border: 6px solid;
+      background-color: white;
+      color: inherit;
+    }
+
+    .pill {
+      font-weight: bold;
+      padding: 6px 14px;
+      border-radius: 30px;
+      display: inline-block;
+      position: absolute;
+      top: -16px;
+      left: 20px;
+      border: 4px solid;
+      color: white;
+    }
+
+    .faq-title {
+      font-weight: bold;
+      font-size: 16px;
+      margin-top: 10px;
+    }
+
+    .faq-section.practice { color: #407f34; border-color: #c8f983; }
+    .faq-section.practice .pill { background-color: #c8f983; border-color: #407f34; }
+
+    .faq-section.participation { color: #188dba; border-color: #5ce1e6; }
+    .faq-section.participation .pill { background-color: #5ce1e6; border-color: #188dba; }
+
+    .faq-section.performance { color: #6d3895; border-color: #cb6ce6; }
+    .faq-section.performance .pill { background-color: #cb6ce6; border-color: #6d3895; }
+
+    .faq-section.proficiency { color: #ae3076; border-color: #ff94cf; }
+    .faq-section.proficiency .pill { background-color: #ff94cf; border-color: #ae3076; }
+
+    .faq-section.personal { color: #f64820; border-color: #ffbd59; }
+    .faq-section.personal .pill { background-color: #ffbd59; border-color: #f64820; }
+
+    .faq-section.levelboost { color: #004bc6; border-color: #3399e8; }
+    .faq-section.levelboost .pill { background-color: #3399e8; border-color: #004bc6; }
+
+    .top-title {
+      font-size: 24px;
+      font-weight: bold;
+      color: #3399e8;
+    }
+
+    footer {
+      text-align: center;
+      padding: 10px 0;
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+
+    <!-- 🔹 Top Bar -->
+    <div class="top-bar">
+      <button class="blue-button" onclick="location.href='home.html'">Home</button>
+      <div class="top-title">How Do I Earn Points?</div>
+    </div>
+
+    <!-- 🔹 FAQ Sections -->
+    <div class="faq-container">
+
+      <div class="faq-section practice">
+        <div class="pill">Practice</div>
+        <div class="faq-title">Practice</div>
+        <p>5 points per day</p>
+        <div class="faq-title">Book Completion</div>
+        <p>50 points per lesson book</p>
+      </div>
+
+      <div class="faq-section participation">
+        <div class="pill">Participation</div>
+        <div class="faq-title">Group Class</div>
+        <p>50 points</p>
+        <div class="faq-title">Competitions</div>
+        <p>100 points</p>
+      </div>
+
+      <div class="faq-section performance">
+        <div class="pill">Performance</div>
+        <p>100 points<br>for Milford Music Studios Performances</p>
+      </div>
+
+      <div class="faq-section proficiency">
+        <div class="pill">Proficiency</div>
+        <div class="faq-title">Music Festival</div>
+        <p>Superior - 200<br>Excellent - 150<br>Other Score - 100</p>
+        <div class="faq-title">Memorization</div>
+        <p>2 points per bar<br>(Voice - 1 point per bar)</p>
+        <div class="faq-title">Technic or Theory Test</div>
+        <p>50 points</p>
+      </div>
+
+      <div class="faq-section personal">
+        <div class="pill">Personal</div>
+        <div class="faq-title">Personal Goal</div>
+        <div class="faq-title">Teacher Goal</div>
+        <p>5–100 points<br>(2 entries per quarter)</p>
+      </div>
+
+      <div class="faq-section levelboost">
+        <div class="pill">Level Boost</div>
+        <p>Accelerated Testing may be achieved by passing the required level Theory Test, Technic Test, and Repertoire Memorization.</p>
+      </div>
+
+    </div>
+  </main>
+
+  <footer>
+    &copy; 2025 Milford Music Studios Achievement App
+  </footer>
+</body>
+</html>
