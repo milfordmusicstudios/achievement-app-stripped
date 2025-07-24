@@ -1,4 +1,6 @@
-/* Reset some default styles */
+/* style.css */
+
+/* Reset */
 body, html {
   margin: 0;
   padding: 0;
@@ -7,145 +9,77 @@ body, html {
   color: #333;
 }
 
-
-body {
-  background-image: url('images/background/tallBackground.png');
-  background-repeat: no-repeat;
+.tall-background {
+  background: url('images/background/TallBackground.png') no-repeat center center fixed;
   background-size: cover;
-  background-color: #f9f9f9; /* fallback in case image fails */
-  margin-top: 0 !important;
-  padding: 0 !important;
+  min-height: 100vh;
 }
 
-* {
-  background: transparent;
-  box-shadow: none;
-}
-
-/* App container */
 .app {
-  max-width: 400px;
-  margin: 60px auto;
-  padding: 30px;
-  border-radius: 12px;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 2rem;
+  background-color: rgba(255, 255, 255, 0.95);
+  border-radius: 16px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
   text-align: center;
 }
 
-
-/* Logo */
-.logo {
-  width: 50%; /* increase this as needed */
-  max-width: 200px;
-  height: auto;
-  display: block;
-  margin: 0 auto 20px auto;
+.header {
+  font-size: 1.8rem;
+  margin-bottom: 1rem;
+  color: #00477d;
 }
 
-/* Form inputs */
-form input {
-  display: block;
-  width: 100%;
-  padding: 12px;
-  margin: 10px 0;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  font-size: 1rem;
-}
-
-/* Buttons */
-button {
-  padding: 12px 20px;
-  border: none;
-  border-radius: 8px;
-  background-color: #00477d;
-  color: white;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-button:hover {
-  background-color: #00345c;
-}
-
-/* Footer */
-footer {
-  margin-top: 30px;
-  text-align: center;
-  font-size: 0.9rem;
-  color: #777;
-}
-
-/* Error message */
-#loginError, #signupError {
-  margin-top: 15px;
-  font-size: 0.9rem;
-  color: red;
-}
-
-/* Home Page Layout*/
-
+/* Avatar and Badge */
 .avatar-badge {
   display: flex;
   justify-content: space-around;
   align-items: center;
-  gap: 1rem;
   margin-bottom: 1.5rem;
+  gap: 1rem;
 }
 
 .avatar {
-  width: 120px;
-  height: auto;
-  border-radius: 1rem;
+  width: 100px;
+  height: 100px;
   object-fit: cover;
-  display: block;
-  background: transparent;
+  border-radius: 1rem;
+  background: white;
 }
 
 .badge {
-  width: 150px;
-  height: 150px;
+  width: 100px;
+  height: 100px;
   object-fit: cover;
   border-radius: 50%;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  display: block;
 }
 
-.welcome-title {
-  font-size: 1.8rem;
-  font-weight: bold;
-  margin-bottom: 1rem;
-}
-
-
-/*Progress Bar Styles*/
-
+/* Progress */
 .progress-card {
   width: 90%;
   background-color: #3bb4c7;
   border: 5px solid #238cb8;
   border-radius: 30px;
-  padding: 0rem 0.5rem;
-  position: relative;
+  padding: 0.5rem;
+  margin: 0 auto 10px auto;
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.25);
-  margin-bottom: 10px;
 }
 
 .progress-label {
-  font-size: 25px;
+  font-size: 20px;
   font-weight: bold;
-  margin-bottom: 10px;
-  text-align: center;
+  margin-bottom: 5px;
+  color: white;
 }
 
 .progress-container {
   background-color: white;
   border: 2px solid #00477d;
   border-radius: 10px;
-  max-width: 80%;
-  overflow: hidden;
   height: 20px;
-  margin: 0 auto -5px auto;
+  overflow: hidden;
 }
 
 .progress-bar {
@@ -156,155 +90,75 @@ footer {
 
 .percent-text {
   text-align: center;
-  font-size: 20px;
-  margin-top: 3px;
-  color: white;
+  font-size: 16px;
+  margin-top: 6px;
+  color: #00477d;
   font-weight: bold;
 }
 
-/* Role-based buttons */
-
-#myPointsBtn,
-#reviewLogsBtn,
-#manageUsersBtn {
-  display: none;
-}
-
-body.student-mode #myPointsBtn {
-  display: flex;
-}
-body.admin-mode #reviewLogsBtn,
-body.teacher-mode #reviewLogsBtn {
-  display: flex;
-}
-body.admin-mode #manageUsersBtn {
-  display: flex;
-}
-
-.btn-content {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-}
-
-/* wrapper and rows*/
-
+/* Button Wrapper */
 .button-wrapper {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
   width: 100%;
   padding-top: 1rem;
 }
 
 .button-area {
   width: 100%;
-  max-width: 360px;
-  margin-bottom: 2rem;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  align-items: center;
+  gap: 2rem;
 }
 
 .button-row {
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
   gap: 1rem;
-  flex-wrap: wrap;
   margin-bottom: 1rem;
 }
 
-/*colored button variants*/
-
-.nav-button.log { 
-  background-color: #157dab;
-  height: 75px;}
-
-.nav-button.points,
-.nav-button.review { 
-  background-color: #2bb8d6 !important;
-  height: 60px;
-color: white; }
-
-.nav-button.review .btn-text,
-.nav-button.points .btn-text {
-  color: white;
-}
-
-.nav-button,
-.highlight-button {
-  min-width: 160px;
-}
-
-.highlight-button.leaderboard { 
-  background-color: #fcb738; }
-
-  .nav-button.settings { 
-  background-color: #38b9f0;
-  height: 70px; }
-
-  .nav-button.faq { 
-  background-color: #21a4ff;
-  height: 60px; }
-
-.nav-button {
+/* Buttons */
+.nav-button, .highlight-button, .blue-button {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  font-size: 1rem;
-  font-weight: 700;
-  padding: 14px 18px;
-  border: none;
-  border-radius: 16px;
-  color: white;
-  cursor: pointer;
-  width: auto;
-  min-width: 140px;
-  max-width: 180px;
-  height: 70px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-  transition: transform 0.1s ease;
-  text-align: center;
-  text-wrap: nowrap;
-}
-
-.nav-button:hover {
-  transform: scale(1.03);
-}
-
-.button-row {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 1rem;
-  margin-top: 1rem;
-}
-
-.highlight-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  font-size: 1rem;
-  font-weight: 700;
   padding: 10px 16px;
   border: none;
   border-radius: 12px;
-  color: white;
   cursor: pointer;
-  height: 80px;
-  width: 100%;
-  max-width: 280px;
+  font-size: 1rem;
+  font-weight: 600;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
   transition: transform 0.1s ease;
+  min-width: 160px;
+  max-width: 220px;
 }
 
-.highlight-button:hover {
+.nav-button:hover, .highlight-button:hover, .blue-button:hover {
   transform: scale(1.03);
 }
+
+.nav-button {
+  background-color: #00477d;
+  color: white;
+}
+
+.nav-button.points,
+.nav-button.review {
+  background-color: #2bb8d6;
+}
+
+.highlight-button.leaderboard {
+  background-color: #fcb738;
+  color: white;
+}
+
+.blue-button {
+  background-color: #157dab;
+  color: white;
+}
+
+/* Icon and Text inside Buttons */
 .btn-content {
   display: flex;
   align-items: center;
@@ -312,44 +166,23 @@ color: white; }
   gap: 0.5rem;
 }
 
+.btn-icon img {
+  height: 28px;
+  width: 28px;
+  object-fit: contain;
+}
+
 .btn-text {
   font-size: 1rem;
   font-weight: 600;
   color: white;
-}
-.btn-icon img,
-.nav-button img {
-  height: 40px;
-  width: auto;
-  margin-right: 6px;
+  text-align: left;
 }
 
-/* Login Page Styling */
-body.white-page {
-  background-color: white !important; 
-  background-image: none;
-  min-height: 100%;
-  color:#3eb7f8; /* Button Blue */
+/* Footer */
+footer {
+  margin-top: 30px;
+  text-align: center;
+  font-size: 0.9rem;
+  color: #777;
 }
-
-/* Logo specific on login */
-body.white-page .logo {
-  width: 200px;
-  height: auto;
-  display: block;
-  margin: 20px auto;
-}
-
-/* Buttons */
-body.white-page button {
-  background-color: #3eb7f8;
-  color: white;
-  font-weight: bold;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-size: 1rem;
-  border: none;
-  cursor: pointer;
-  margin: 10px;
-}
-
