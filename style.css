@@ -319,7 +319,6 @@ body.admin-mode #manageUsersBtn {
 
 .button-row {
   display: flex;
-  flex-wrap: wrap;
   justify-content: space-between;
   margin-top: 1rem;
 }
