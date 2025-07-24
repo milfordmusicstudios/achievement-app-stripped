@@ -1,13 +1,13 @@
-<!-- index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <title>Home | Achievement App</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body class="tall-background">
+
   <main>
     <div class="app">
       <h2 id="welcomeTitle" class="header"></h2>
@@ -17,6 +17,7 @@
         <img id="homeBadge" class="badge" src="" alt="Level Badge" />
       </div>
 
+      <!-- ✅ Level Progress section only for students -->
       <section id="levelSection">
         <div class="progress-card">
           <div class="progress-label">Level Progress</div>
@@ -27,99 +28,101 @@
         <div class="percent-text" id="homeProgressText">75% to next level</div>
       </section>
 
-      <div class="button-wrapper">
-        <div class="button-area">
+<div class="button-wrapper">
+  <div class="button-area">
 
-          <!-- Row 1 -->
-          <div class="button-row">
-            <button class="nav-button log" onclick="location.href='log-points.html'">
-              <div class="btn-content">
-                <div class="btn-icon">
-                  <img src="images/icons/log.png" alt="Log Icon" />
-                </div>
-                <div class="btn-text">Log Points</div>
-              </div>
-            </button>
-
-            <button id="myPointsBtn" class="nav-button points" style="display:none;" onclick="location.href='my-points.html'">
-              <div class="btn-content">
-                <div class="btn-icon">
-                  <img src="images/icons/myAchievements.png" alt="My Points Icon" />
-                </div>
-                <div class="btn-text">My Points</div>
-              </div>
-            </button>
-          </div>
-
-          <!-- Row 2 -->
-          <div class="button-row">
-            <button id="reviewLogsBtn" class="nav-button review" style="display: none;" onclick="location.href='review-logs.html'">
-              <div class="btn-content">
-                <div class="btn-icon">
-                  <img src="images/icons/review.png" alt="Review Icon" />
-                </div>
-                <div class="btn-text">Review Logs</div>
-              </div>
-            </button>
-
-            <button id="manageUsersBtn" class="nav-button admin" style="display: none;" onclick="goToManageUsers()">
-              <div class="btn-content">
-                <div class="btn-icon">
-                  <img src="images/icons/manage.png" alt="Manage Icon" />
-                </div>
-                <div class="btn-text">Manage Users</div>
-              </div>
-            </button>
-          </div>
-
-          <!-- Row 3 -->
-          <div class="button-row center">
-            <button class="highlight-button leaderboard" onclick="location.href='leaderboard.html'">
-              <div class="btn-content">
-                <div class="btn-icon">
-                  <img src="images/icons/leaderboard.png" alt="Leaderboard Icon" />
-                </div>
-                <div class="btn-text">Leaderboard</div>
-              </div>
-            </button>
-          </div>
-
-          <!-- Row 4 -->
-          <div class="button-row">
-            <button class="nav-button settings" onclick="location.href='settings.html'">
-              <div class="btn-content">
-                <div class="btn-icon">
-                  <img src="images/icons/settings.png" alt="Settings Icon" />
-                </div>
-                <div class="btn-text">Settings</div>
-              </div>
-            </button>
-
-            <button class="nav-button faq" onclick="location.href='faq.html'">
-              <div class="btn-content">
-                <div class="btn-icon">
-                  <img src="images/icons/faq.png" alt="FAQ Icon" />
-                </div>
-                <div class="btn-text">Points Info</div>
-              </div>
-            </button>
-          </div>
-
-        </div>
+<div class="button-row">
+  <!-- Log Points -->
+  <button class="nav-button log" onclick="location.href='log-points.html'">
+    <div class="btn-content">
+      <div class="btn-icon">
+        <img src="images/icons/log.png" alt="Log Icon" />
       </div>
+      <div class="btn-text">Log Points</div>
     </div>
+  </button>
+
+  <!-- My Points -->
+  <button id="myPointsBtn" class="nav-button points" style="display: none;" onclick="location.href='my-points.html'">
+    <div class="btn-content">
+      <div class="btn-icon">
+        <img src="images/icons/myAchievements.png" alt="My Points Icon" />
+      </div>
+      <div class="btn-text">My Points</div>
+    </div>
+  </button>
+</div>
+
+    <!-- 🔹 Row 2: Review Logs + Manage Users -->
+    <div class="button-row">
+      <button id="reviewLogsBtn" class="nav-button review" style="display: none;" onclick="location.href='review-logs.html'">
+        <div class="btn-content">
+          <div class="btn-icon">
+            <img src="images/icons/review.png" alt="Review Icon" />
+          </div>
+          <div class="btn-text">Review Logs</div>
+        </div>
+      </button>
+
+      <button id="manageUsersBtn" class="nav-button admin" style="display: none;" onclick="goToManageUsers()">
+        <div class="btn-content">
+          <div class="btn-icon">
+            <img src="images/icons/manage.png" alt="Manage Icon" />
+          </div>
+          <div class="btn-text">Manage Users</div>
+        </div>
+      </button>
+    </div>
+
+    <!-- 🔹 Row 3: Leaderboard -->
+    <div class="button-row center">
+      <button class="highlight-button leaderboard" onclick="location.href='leaderboard.html'">
+        <div class="btn-content">
+          <div class="btn-icon">
+            <img src="images/icons/leaderboard.png" alt="Leaderboard Icon" />
+          </div>
+          <div class="btn-text">Leaderboard</div>
+        </div>
+      </button>
+    </div>
+
+    <!-- 🔹 Row 4: Settings + FAQ -->
+    <div class="button-row">
+      <button class="nav-button settings" onclick="location.href='settings.html'">
+        <div class="btn-content">
+          <div class="btn-icon">
+            <img src="images/icons/settings.png" alt="Settings Icon" />
+          </div>
+          <div class="btn-text">Settings</div>
+        </div>
+      </button>
+
+      <button class="nav-button faq" onclick="location.href='faq.html'">
+        <div class="btn-content">
+          <div class="btn-icon">
+            <img src="images/icons/faq.png" alt="FAQ Icon" />
+          </div>
+          <div class="btn-text">Points Info</div>
+        </div>
+      </button>
+    </div>
+
+  </div>
+</div>
   </main>
 
   <footer>
     &copy; 2025 Milford Music Studios Achievement App
   </footer>
 
+  <!-- ✅ Scripts -->
   <script type="module" src="home.js"></script>
   <script src="data/categories.js"></script>
   <script src="data/levels.js"></script>
   <script src="utils.js"></script>
   <script src="auth.js"></script>
 
+  <!-- ✅ Role-based visibility + avatar fallback -->
   <script>
     document.addEventListener("DOMContentLoaded", () => {
       const user = JSON.parse(localStorage.getItem("loggedInUser"));
@@ -130,6 +133,8 @@
       const manageUsersBtn = document.getElementById("manageUsersBtn");
       const levelSection = document.getElementById("levelSection");
       const homeAvatar = document.getElementById("homeAvatar");
+
+      if (!user || !role) return;
 
       if (role === "admin") {
         reviewLogsBtn.style.display = "inline-block";
@@ -143,8 +148,11 @@
         levelSection.style.display = "block";
       }
 
-      if (homeAvatar && user) {
-        const avatarPath = user.avatar ? user.avatar : "images/logos/default.png";
+      // Avatar fallback
+      if (homeAvatar) {
+        const avatarPath = user.avatar && user.avatar.trim() !== ""
+          ? user.avatar
+          : "images/logos/default.png";
         homeAvatar.src = avatarPath;
       }
     });
