@@ -210,6 +210,7 @@ body.admin-mode #manageUsersBtn {
 
 .invisible {
   visibility: hidden !important;
+  position: absolute !important; /* Prevents pushing layout */
 }
 
 .button-row {
