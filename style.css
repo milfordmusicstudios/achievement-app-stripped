@@ -229,7 +229,6 @@ body.admin-mode #manageUsersBtn {
   margin-bottom: 2rem;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
   align-items: center;
 }
 
@@ -242,7 +241,6 @@ body.admin-mode #manageUsersBtn {
   display: flex;
   justify-content: center;
   align-items: stretch;
-  gap: 1rem;
   margin-bottom: 1rem;
 }
 
@@ -320,7 +318,6 @@ body.admin-mode #manageUsersBtn {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
-  gap: 1rem;
   margin-top: 1rem;
 }
 
