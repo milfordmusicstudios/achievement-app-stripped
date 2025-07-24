@@ -30,13 +30,13 @@
 
       <div class="button-wrapper">
         <div class="button-area">
+          <!-- 🔹 Row 1: Log, My Points, Review Logs -->
           <div class="button-row">
             <button class="nav-button log" onclick="location.href='log-points.html'">
               <img class="icon" src="images/icons/log.png" alt="Log Icon" /> Log Points
             </button>
 
-            <!-- Student only -->
-            <button id="myPointsBtn" class="nav-button points" style="display:none;" onclick="location.href='my-points.html'">
+            <button id="myPointsBtn" class="nav-button points" style="display: none;" onclick="location.href='my-points.html'">
               <div class="btn-content">
                 <div class="btn-icon">
                   <img src="images/icons/myAchievements.png" alt="My Points Icon" />
@@ -45,28 +45,34 @@
               </div>
             </button>
 
-            <!-- Teacher/Admin only -->
-<button id="reviewLogsBtn" class="nav-button review" style="display: none;" onclick="location.href='review-logs.html'">
-  <div class="btn-content">
-    <div class="btn-icon">
-      <img src="images/icons/review.png" alt="Review Icon" />
-    </div>
-    <div class="btn-text">
-      Review Logs
-    </div>
-  </div>
-</button>
-          </div>
-
-          <!-- Admin only -->
-          <button id="manageUsersBtn" class="blue-button" style="display: none;" onclick="goToManageUsers()">Manage Users</button>
-
-          <div class="button-row center">
-            <button class="highlight-button leaderboard" onclick="location.href='leaderboard.html'">
-              <img class="icon" src="images/icons/leaderboard.png" alt="Leaderboard Icon" /> Leaderboard
+            <button id="reviewLogsBtn" class="nav-button review" style="display: none;" onclick="location.href='review-logs.html'">
+              <div class="btn-content">
+                <div class="btn-icon">
+                  <img src="images/icons/review.png" alt="Review Icon" />
+                </div>
+                <div class="btn-text">Review Logs</div>
+              </div>
             </button>
           </div>
 
+          <!-- 🔹 Row 2: Manage Users (admin only) -->
+          <div class="button-row">
+            <button id="manageUsersBtn" class="blue-button" style="display: none;" onclick="goToManageUsers()">Manage Users</button>
+          </div>
+
+          <!-- 🔹 Row 3: Leaderboard -->
+          <div class="button-row center">
+            <button class="highlight-button leaderboard" onclick="location.href='leaderboard.html'">
+              <div class="btn-content">
+                <div class="btn-icon">
+                  <img src="images/icons/leaderboard.png" alt="Leaderboard Icon" />
+                </div>
+                <div class="btn-text">Leaderboard</div>
+              </div>
+            </button>
+          </div>
+
+          <!-- 🔹 Row 4: Settings / FAQ -->
           <div class="button-row">
             <button class="nav-button settings" onclick="location.href='settings.html'">
               <img class="icon" src="images/icons/settings.png" alt="Settings Icon" /> Settings
@@ -103,7 +109,8 @@
       const levelSection = document.getElementById("levelSection");
       const homeAvatar = document.getElementById("homeAvatar");
 
-      // Show/hide buttons and sections based on role
+      if (!user || !role) return;
+
       if (role === "admin") {
         reviewLogsBtn.style.display = "inline-block";
         manageUsersBtn.style.display = "inline-block";
@@ -117,8 +124,10 @@
       }
 
       // Avatar fallback
-      if (homeAvatar && user) {
-        const avatarPath = user.avatar ? user.avatar : "images/logos/default.png";
+      if (homeAvatar) {
+        const avatarPath = user.avatar && user.avatar.trim() !== ""
+          ? user.avatar
+          : "images/logos/default.png";
         homeAvatar.src = avatarPath;
       }
     });
