@@ -224,7 +224,13 @@ body.admin-mode #manageUsersBtn {
 .nav-button.points,
 .nav-button.review { 
   background-color: #2bb8d6 !important;
-  height: 60px; }
+  height: 60px;
+color: white; }
+
+.nav-button.review .btn-text,
+.nav-button.points .btn-text {
+  color: white;
+}
 
 .highlight-button.leaderboard { 
   background-color: #fcb738; }
@@ -265,9 +271,9 @@ body.admin-mode #manageUsersBtn {
 
 .button-row {
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
   gap: 1rem;
-  flex-wrap: wrap;
   margin-top: 1rem;
 }
 
