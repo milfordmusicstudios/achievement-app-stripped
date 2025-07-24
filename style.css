@@ -393,3 +393,25 @@ body.white-page button {
   margin: 10px;
 }
 
+.faq-section {
+  position: relative;
+  width: 100%;
+  max-width: 600px;  /* Or any consistent size matching your title */
+  margin: 0 auto;    /* ✅ Center the box */
+  box-sizing: border-box;
+  border-radius: 20px;
+  padding: 40px 16px 16px;
+  border: 6px solid;
+  background-color: white;
+  color: inherit;
+}
+.faq-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 40px;
+  padding: 20px;
+  max-width: 800px;
+  width: 100%;
+  margin: 0 auto;
+}
