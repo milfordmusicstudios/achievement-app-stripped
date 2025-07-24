@@ -367,7 +367,7 @@ body.admin-mode #manageUsersBtn {
 /* Login Page Styling */
 body.white-page {
   background-color: white !important; 
-  background-image: none;
+  background-image: none !important;
   min-height: 100%;
   color:#3eb7f8; /* Button Blue */
 }
