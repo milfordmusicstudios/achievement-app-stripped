@@ -17,37 +17,35 @@
         <img id="homeBadge" class="badge" src="" alt="Level Badge" />
       </div>
 
-      <div class="progress-card">
-        <div class="progress-label">Level Progress</div>
-        <div class="progress-container">
-          <div class="progress-bar" id="homeProgressBar" style="width: 0%;"></div>
+      <!-- ✅ Level Progress section only for students -->
+      <section id="levelSection">
+        <div class="progress-card">
+          <div class="progress-label">Level Progress</div>
+          <div class="progress-container">
+            <div class="progress-bar" id="homeProgressBar" style="width: 0%;"></div>
+          </div>
         </div>
-      </div>
-
-      <div class="percent-text" id="homeProgressText">75% to next level</div>
+        <div class="percent-text" id="homeProgressText">75% to next level</div>
+      </section>
 
       <div class="button-wrapper">
         <div class="button-area">
-
-          <!-- 🔹 Log / My Points / Review Logs -->
           <div class="button-row">
             <button class="nav-button log" onclick="location.href='log-points.html'">
               <img class="icon" src="images/icons/log.png" alt="Log Icon" /> Log Points
             </button>
 
-            <!-- Student only (hidden by default) -->
-<button id="myPointsBtn" class="nav-button points" onclick="location.href='my-points.html'">
-  <div class="btn-content">
-    <div class="btn-icon">
-      <img src="images/icons/myAchievements.png" alt="My Points Icon" />
-    </div>
-    <div class="btn-text">
-      My Points
-    </div>
-  </div>
-</button>
+            <!-- Student only -->
+            <button id="myPointsBtn" class="nav-button points" style="display:none;" onclick="location.href='my-points.html'">
+              <div class="btn-content">
+                <div class="btn-icon">
+                  <img src="images/icons/myAchievements.png" alt="My Points Icon" />
+                </div>
+                <div class="btn-text">My Points</div>
+              </div>
+            </button>
 
-            <!-- Admin/Teacher only (hidden by default) -->
+            <!-- Teacher/Admin only -->
             <button class="nav-button review" id="reviewLogsBtn" style="display: none;" onclick="location.href='review-logs.html'">
               <img class="icon" src="images/icons/review.png" alt="Review Icon" />
               <div class="button-text">
@@ -57,17 +55,15 @@
             </button>
           </div>
 
-          <!-- Hidden by default, shown only for admins -->
+          <!-- Admin only -->
           <button id="manageUsersBtn" class="blue-button" style="display: none;" onclick="goToManageUsers()">Manage Users</button>
 
-          <!-- 🔹 Leaderboard -->
           <div class="button-row center">
             <button class="highlight-button leaderboard" onclick="location.href='leaderboard.html'">
               <img class="icon" src="images/icons/leaderboard.png" alt="Leaderboard Icon" /> Leaderboard
             </button>
           </div>
 
-          <!-- 🔹 Settings and FAQ -->
           <div class="button-row">
             <button class="nav-button settings" onclick="location.href='settings.html'">
               <img class="icon" src="images/icons/settings.png" alt="Settings Icon" /> Settings
@@ -76,7 +72,6 @@
               <img class="icon" src="images/icons/faq.png" alt="FAQ Icon" /> Points Info
             </button>
           </div>
-
         </div>
       </div>
     </div>
@@ -87,13 +82,13 @@
   </footer>
 
   <!-- ✅ Scripts -->
-<script type="module" src="home.js"></script>
+  <script type="module" src="home.js"></script>
   <script src="data/categories.js"></script>
   <script src="data/levels.js"></script>
   <script src="utils.js"></script>
   <script src="auth.js"></script>
 
-  <!-- 🔹 Role-based button visibility -->
+  <!-- ✅ Role-based visibility + avatar fallback -->
   <script>
     document.addEventListener("DOMContentLoaded", () => {
       const user = JSON.parse(localStorage.getItem("loggedInUser"));
@@ -102,16 +97,26 @@
       const myPointsBtn = document.getElementById("myPointsBtn");
       const reviewLogsBtn = document.getElementById("reviewLogsBtn");
       const manageUsersBtn = document.getElementById("manageUsersBtn");
+      const levelSection = document.getElementById("levelSection");
+      const homeAvatar = document.getElementById("homeAvatar");
 
-      if (!user || !role) return;
-
+      // Show/hide buttons and sections based on role
       if (role === "admin") {
         reviewLogsBtn.style.display = "inline-block";
         manageUsersBtn.style.display = "inline-block";
+        levelSection.style.display = "none";
       } else if (role === "teacher") {
         reviewLogsBtn.style.display = "inline-block";
+        levelSection.style.display = "none";
       } else {
         myPointsBtn.style.display = "inline-block";
+        levelSection.style.display = "block";
+      }
+
+      // Avatar fallback
+      if (homeAvatar && user) {
+        const avatarPath = user.avatar ? user.avatar : "images/avatars/default.png";
+        homeAvatar.src = avatarPath;
       }
     });
 
