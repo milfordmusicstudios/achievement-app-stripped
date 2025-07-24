@@ -304,6 +304,8 @@ body.admin-mode #manageUsersBtn {
   color: white;
   cursor: pointer;
   text-align: center;
+  margin: .5rem;
+
 }
 .nav-button .btn-content {
   display: flex;
