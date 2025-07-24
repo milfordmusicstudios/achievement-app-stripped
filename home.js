@@ -18,6 +18,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // Set avatar
   const avatar = document.getElementById("homeAvatar");
+if (avatar) {
+  const avatarURL = user.avatar && user.avatar.trim() !== ""
+    ? user.avatar
+    : "images/logos/default.png";
+  avatar.src = avatarURL;}
   avatar.src = user.avatar || "Images/Bitmojis/default.png";
 
   // Set badge
