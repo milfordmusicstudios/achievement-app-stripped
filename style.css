@@ -188,11 +188,6 @@ body.admin-mode #manageUsersBtn {
   gap: 0.5rem;
 }
 
-.btn-icon img {
-  width: 30px;
-  height: auto;
-}
-
 /* wrapper and rows*/
 
 .button-wrapper {
@@ -226,7 +221,7 @@ body.admin-mode #manageUsersBtn {
   background-color: #157dab;
   height: 75px;}
 
-.nav-button.points
+.nav-button.points,
 .nav-button.review { 
   background-color: #2bb8d6 !important;
   height: 60px; }
@@ -299,13 +294,13 @@ body.admin-mode #manageUsersBtn {
   transform: scale(1.03);
 }
 
-.nav-button img,
-.highlight-button img {
- height: 28px;
-  width: 28px;
+.btn-icon img,
+.nav-button img {
+  height: 30px;
+  width: auto;
   margin-right: 6px;
-  vertical-align: middle;
 }
+
 /* Login Page Styling */
 body.white-page {
   background-color: white !important; 
@@ -335,6 +330,3 @@ body.white-page button {
   margin: 10px;
 }
 
-body.white-page button:hover {
-  background-color: #00345c;
-}
