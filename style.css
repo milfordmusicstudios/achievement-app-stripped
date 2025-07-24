@@ -211,9 +211,9 @@ body.admin-mode #manageUsersBtn {
 .button-row {
   display: flex;
   justify-content: center;
-  gap: 1rem;
-  flex-wrap: wrap;
-  margin-bottom: 1.5rem;
+  align-items: center;
+  gap: 1rem; /* ensures spacing between buttons */
+  flex-wrap: wrap; /* allows wrapping on smaller screens */
 }
 
 /*colored button variants*/
@@ -254,23 +254,14 @@ color: white; }
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  font-size: 1rem;
-  font-weight: 700;
-  padding: 14px 18px;
+  padding: 1rem 1.5rem;
   border: none;
-  border-radius: 16px;
+  border-radius: 20px;
+  font-size: 1rem;
   color: white;
   cursor: pointer;
-  width: auto;
-  min-width: 140px;
-  max-width: 180px;
-  height: 70px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-  transition: transform 0.1s ease;
   text-align: center;
-  text-wrap: nowrap;
 }
-
 .nav-button .btn-content {
   display: flex;
   align-items: center;
@@ -319,10 +310,10 @@ color: white; }
 }
 
 .btn-text {
-  font-size: 1rem;
-  font-weight: 600;
-  color: white;
+  display: inline-block;
+  font-weight: bold;
 }
+
 .btn-icon img,
 .nav-button img {
   height: 40px;
