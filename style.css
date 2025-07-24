@@ -220,9 +220,17 @@ body.admin-mode #manageUsersBtn {
   gap: 1rem; /* ensures spacing between buttons */
 }
 .button-col {
-  flex: 1;
+  display: none; /* default hidden */
+  justify-content: center;
+  align-items: center;
+}
+.button-col.visible {
   display: flex;
   justify-content: center;
+}
+
+.button-row.flex-center {
+  justify-content: center !important;
 }
 
 /*colored button variants*/

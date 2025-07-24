@@ -51,20 +51,26 @@ const myPointsBtn = document.getElementById("myPointsBtn");
 const reviewLogsBtn = document.getElementById("reviewLogsBtn");
 const manageUsersBtn = document.getElementById("manageUsersBtn");
 const levelSelection = document.getElementById("levelSection");
+const topRow = middleCol?.parentElement; // this is the row
 
+// Reset visibility and classes
 myPointsBtn.style.display = "none";
 reviewLogsBtn.style.display = "none";
 middleCol.style.display = "none";
+topRow.classList.remove("flex-center");
 
-// Hide one with visibility
 if (activeRole === "admin" || activeRole === "teacher") {
-reviewLogsBtn.style.display = "flex";
-middleCol.style.display = "flex"; // Hide the middle column
-}  if (activeRole === "admin") {
-  document.getElementById("manageUsersBtn").style.display = "inline-block";
-  }
- else {
-myPointsBtn.style.display = "flex";
+  reviewLogsBtn.style.display = "flex";
   middleCol.style.display = "flex";
+  myPointsBtn.style.display = "none";
+  topRow.classList.add("flex-center");
+  if (activeRole === "admin") {
+    manageUsersBtn.style.display = "inline-block";
+  }
+} else {
+  myPointsBtn.style.display = "flex";
+  middleCol.style.display = "flex";
+  reviewLogsBtn.style.display = "none";
+  topRow.classList.add("flex-center");
 }
   });

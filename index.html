@@ -32,7 +32,7 @@
         <div class="button-area">
 
 <!-- 🔹 Row 1: Log Points + My Points / Review Logs -->
-<div class="button-row">
+<div class="button-row" id="topButtonRow">
   <!-- Log Points -->
   <div class="button-col">
     <button class="nav-button log" onclick="location.href='log-points.html'">
@@ -45,8 +45,9 @@
     </button>
   </div>
 
-  <!-- My Points (Student only) -->
+  <!-- My Points OR Review Logs (only one visible at a time) -->
   <div class="button-col" id="middleButtonCol">
+    <!-- My Points (Student only) -->
     <button id="myPointsBtn" class="nav-button points invisible" onclick="location.href='my-points.html'">
       <div class="btn-content">
         <div class="btn-icon">
@@ -56,8 +57,7 @@
       </div>
     </button>
 
-  <!-- Review Logs (Admin/Teacher only) -->
-  <div class="button-col">
+    <!-- Review Logs (Admin/Teacher only) -->
     <button id="reviewLogsBtn" class="nav-button review invisible" onclick="location.href='review-logs.html'">
       <div class="btn-content">
         <div class="btn-icon">
@@ -67,7 +67,11 @@
       </div>
     </button>
   </div>
+
+  <!-- Right Column (optional) -->
+  <div class="button-col"></div>
 </div>
+
           <!-- 🔹 Admin Only -->
           <div class="button-row">
             <div class="button-col"></div>
