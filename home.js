@@ -21,7 +21,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (avatar) {
     const avatarURL = user.avatar && user.avatar.trim() !== ""
       ? user.avatar
-      : "images/avatars/default.png";
+      : "images/logos/default.png";
     avatar.src = avatarURL;
   }
 
