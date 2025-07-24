@@ -208,6 +208,10 @@ body.admin-mode #manageUsersBtn {
   align-items: center;
 }
 
+.invisible {
+  visibility: hidden !important;
+}
+
 .button-row {
   display: flex;
   flex-direction: row;

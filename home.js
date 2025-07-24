@@ -46,17 +46,26 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   // ✅ Show buttons based on role
-  const myPointsBtn = document.getElementById("myPointsBtn");
-  const reviewLogsBtn = document.getElementById("reviewLogsBtn");
-  const manageUsersBtn = document.getElementById("manageUsersBtn");
+const myPointsBtn = document.getElementById("myPointsBtn");
+const reviewLogsBtn = document.getElementById("reviewLogsBtn");
+const manageUsersBtn = document.getElementById("manageUsersBtn");
+const levelSelection = document.getElementById("levelSection");
 
-  if (activeRole === "admin") {
-    reviewLogsBtn.style.display = "inline-block";
-    manageUsersBtn.style.display = "inline-block";
-  } else if (activeRole === "teacher") {
-    reviewLogsBtn.style.display = "inline-block";
-  } else {
-    myPointsBtn.style.display = "flex";
-    levelSelection.style.display = "block";
-  }
+// Always show both buttons, but only one should be visible
+myPointsBtn.style.visibility = "visible";
+reviewLogsBtn.style.visibility = "visible";
+
+myPointsBtn.classList.remove("invisible");
+reviewLogsBtn.classList.remove("invisible");
+
+// Show/hide based on role
+if (activeRole === "admin") {
+  myPointsBtn.classList.add("invisible");
+  manageUsersBtn.style.display = "inline-block";
+} else if (activeRole === "teacher") {
+  myPointsBtn.classList.add("invisible");
+} else {
+  reviewLogsBtn.classList.add("invisible");
+  levelSelection.style.display = "block";
+}
 });
