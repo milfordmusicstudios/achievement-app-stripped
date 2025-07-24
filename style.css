@@ -168,7 +168,7 @@ footer {
 #reviewLogsBtn,
 #manageUsersBtn {
   display: none;
-  max-width: 150px;
+  max-width: 100px;
 }
 
 body.student-mode #myPointsBtn {
@@ -267,13 +267,13 @@ body.admin-mode #manageUsersBtn {
   .nav-button.settings { 
   background-color: #38b9f0;
   height: 70px;
-  max-width: 150px;
+  max-width: 100px;
  }
 
   .nav-button.faq { 
   background-color: #21a4ff;
   height: 60px;
-  max-width: 150px;
+  max-width: 100px;
  }
 
 .nav-button {
