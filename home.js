@@ -27,50 +27,48 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // ✅ Set badge
   const badgeImg = document.getElementById("homeBadge");
-
   if (activeRole === "student") {
     const levelNumber = user.level || 1;
     badgeImg.src = `images/levelBadges/level${levelNumber}.png`;
 
-    // ✅ Set progress bar for students
     document.getElementById("homeProgressBar").style.width = "75%"; // Placeholder
     document.getElementById("homeProgressBar").style.backgroundColor = "#007bff";
     document.getElementById("homeProgressText").textContent = `75% to next level`;
-
   } else {
-    // ✅ Teacher or Admin badge
     badgeImg.src = `images/levelBadges/${activeRole}.png`;
-
-    // ✅ Hide progress bar and label
     document.getElementById("progressSection")?.classList.add("hidden");
   }
 
-  // ✅ Show buttons based on role
-const middleCol = document.getElementById("middleButtonCol"); 
-const myPointsBtn = document.getElementById("myPointsBtn");
-const reviewLogsBtn = document.getElementById("reviewLogsBtn");
-const manageUsersBtn = document.getElementById("manageUsersBtn");
-const levelSelection = document.getElementById("levelSection");
-const topRow = middleCol?.parentElement; // this is the row
+  // ✅ Manage layout and visibility
+  const myPointsBtn = document.getElementById("myPointsBtn");
+  const reviewLogsBtn = document.getElementById("reviewLogsBtn");
+  const manageUsersBtn = document.getElementById("manageUsersBtn");
+  const levelSelection = document.getElementById("levelSection");
+  const middleCol = document.getElementById("middleButtonCol");
+  const topRow = middleCol?.parentElement;
 
-// Reset visibility and classes
-myPointsBtn.style.display = "none";
-reviewLogsBtn.style.display = "none";
-middleCol.style.display = "none";
-topRow.classList.remove("flex-center");
-
-if (activeRole === "admin" || activeRole === "teacher") {
-  reviewLogsBtn.style.display = "flex";
-  middleCol.style.display = "flex";
+  // Reset all states
+  myPointsBtn.classList.add("invisible");
+  reviewLogsBtn.classList.add("invisible");
   myPointsBtn.style.display = "none";
-  topRow.classList.add("flex-center");
-  if (activeRole === "admin") {
-    manageUsersBtn.style.display = "inline-block";
-  }
-} else {
-  myPointsBtn.style.display = "flex";
-  middleCol.style.display = "flex";
   reviewLogsBtn.style.display = "none";
-  topRow.classList.add("flex-center");
-}
-  });
+  middleCol.style.display = "none";
+  topRow.classList.remove("flex-center");
+
+  if (activeRole === "admin" || activeRole === "teacher") {
+    reviewLogsBtn.classList.remove("invisible");
+    reviewLogsBtn.style.display = "flex";
+    middleCol.style.display = "flex";
+    topRow.classList.add("flex-center");
+
+    if (activeRole === "admin") {
+      manageUsersBtn.style.display = "inline-block";
+    }
+  } else {
+    myPointsBtn.classList.remove("invisible");
+    myPointsBtn.style.display = "flex";
+    middleCol.style.display = "flex";
+    levelSelection.style.display = "block";
+    topRow.classList.add("flex-center");
+  }
+});

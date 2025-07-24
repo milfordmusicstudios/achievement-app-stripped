@@ -209,20 +209,22 @@ body.admin-mode #manageUsersBtn {
 }
 
 .invisible {
-  visibility: hidden !important;
+  visibility: hidden;
+  position: absolute;
 }
 
 .button-row {
   display: flex;
-  flex-direction: row;
   justify-content: center;
-  align-items: center;
-  gap: 1rem; /* ensures spacing between buttons */
+  align-items: stretch;
+  gap: 1rem;
+  margin-bottom: 1rem;
 }
+
 .button-col {
-  display: none; /* default hidden */
+  flex: 1;
+  display: flex;
   justify-content: center;
-  align-items: center;
 }
 .button-col.visible {
   display: flex;
