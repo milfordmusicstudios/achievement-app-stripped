@@ -31,39 +31,46 @@
       <div class="button-wrapper">
         <div class="button-area">
 
-          <!-- 🔹 Row 1: Log Points + My Points -->
-<div class="button-row">
-  <button class="nav-button log" onclick="location.href='log-points.html'">
-    <div class="btn-content">
-      <div class="btn-icon">
-        <img src="images/icons/log.png" alt="Log Icon" />
-      </div>
-      <div class="btn-text">Log Points</div>
-    </div>
-  </button>
+          <!-- 🔹 Row 1: Log Points + My Points / Review Logs -->
+          <div class="button-row">
+            <button class="nav-button log" onclick="location.href='log-points.html'">
+              <div class="btn-content">
+                <div class="btn-icon">
+                  <img src="images/icons/log.png" alt="Log Icon" />
+                </div>
+                <div class="btn-text">Log Points</div>
+              </div>
+            </button>
 
-  <button id="myPointsBtn" class="nav-button points invisible">
-    <div class="btn-content">
-      <div class="btn-icon">
-        <img src="images/icons/myAchievements.png" alt="My Points Icon" />
-      </div>
-      <div class="btn-text">My Points</div>
-    </div>
-  </button>
+            <button id="myPointsBtn" class="nav-button points invisible" onclick="location.href='my-points.html'">
+              <div class="btn-content">
+                <div class="btn-icon">
+                  <img src="images/icons/myAchievements.png" alt="My Points Icon" />
+                </div>
+                <div class="btn-text">My Points</div>
+              </div>
+            </button>
 
-  <button id="reviewLogsBtn" class="nav-button review invisible">
-    <div class="btn-content">
-      <div class="btn-icon">
-        <img src="images/icons/review.png" alt="Review Icon" />
-      </div>
-      <div class="btn-text">Review Logs</div>
-    </div>
-  </button>
-</div>
+            <button id="reviewLogsBtn" class="nav-button review invisible" onclick="location.href='review-logs.html'">
+              <div class="btn-content">
+                <div class="btn-icon">
+                  <img src="images/icons/review.png" alt="Review Icon" />
+                </div>
+                <div class="btn-text">Review Logs</div>
+              </div>
+            </button>
+          </div>
 
           <!-- 🔹 Admin Only -->
           <div class="button-row">
-            <button id="manageUsersBtn" class="blue-button" style="display: none;" onclick="goToManageUsers()">Manage Users</button>
+            <button id="manageUsersBtn" class="blue-button" style="display: none;" onclick="goToManageUsers()">
+              <div class="btn-content">
+                <div class="btn-icon">
+                  <img src="images/icons/settings.png" alt="Manage Icon" />
+                </div>
+                <div class="btn-text">Manage Users</div>
+              </div>
+            </button>
           </div>
 
           <!-- 🔹 Leaderboard -->
@@ -87,7 +94,6 @@
               <img class="icon" src="images/icons/faq.png" alt="FAQ Icon" /> Points Info
             </button>
           </div>
-
         </div>
       </div>
     </div>
@@ -117,15 +123,23 @@
       const homeAvatar = document.getElementById("homeAvatar");
 
       // Show/hide buttons and sections based on role
+      myPointsBtn.classList.remove("invisible");
+      reviewLogsBtn.classList.remove("invisible");
+      myPointsBtn.style.display = "flex";
+      reviewLogsBtn.style.display = "flex";
+
       if (role === "admin") {
-        reviewLogsBtn.style.display = "inline-block";
+        myPointsBtn.classList.add("invisible");
+        reviewLogsBtn.classList.remove("invisible");
         manageUsersBtn.style.display = "inline-block";
         levelSection.style.display = "none";
       } else if (role === "teacher") {
-        reviewLogsBtn.style.display = "inline-block";
+        myPointsBtn.classList.add("invisible");
+        reviewLogsBtn.classList.remove("invisible");
         levelSection.style.display = "none";
       } else {
-        myPointsBtn.style.visibility = "visible";
+        reviewLogsBtn.classList.add("invisible");
+        myPointsBtn.classList.remove("invisible");
         levelSection.style.display = "block";
       }
 
