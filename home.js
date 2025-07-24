@@ -57,15 +57,20 @@ reviewLogsBtn.style.visibility = "visible";
 
 myPointsBtn.classList.remove("invisible");
 reviewLogsBtn.classList.remove("invisible");
+myPointsBtn.style.display = "flex";
+reviewLogsBtn.style.display = "flex";
 
-// Show/hide based on role
-if (activeRole === "admin") {
+// Hide one with visibility
+if (activeRole === "admin" || activeRole === "teacher") {
   myPointsBtn.classList.add("invisible");
-  manageUsersBtn.style.display = "inline-block";
-} else if (activeRole === "teacher") {
-  myPointsBtn.classList.add("invisible");
+  reviewLogsBtn.classList.remove("invisible");
+
+  if (activeRole === "admin") {
+    manageUsersBtn.style.display = "inline-block";
+  }
 } else {
   reviewLogsBtn.classList.add("invisible");
+  myPointsBtn.classList.remove("invisible");
   levelSelection.style.display = "block";
 }
-});
+  });

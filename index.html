@@ -32,18 +32,17 @@
         <div class="button-area">
 
           <!-- 🔹 Row 1: Log Points + My Points -->
-          <div class="button-row">
-            <button class="nav-button log" onclick="location.href='log-points.html'">
-              <div class="btn-content">
-                <div class="btn-icon">
-                  <img src="images/icons/log.png" alt="Log Icon" />
-                </div>
-                <div class="btn-text">Log Points</div>
-              </div>
-            </button>
-
 <div class="button-row">
-  <button id="myPointsBtn" class="nav-button points" style="visibility: hidden;">
+  <button class="nav-button log" onclick="location.href='log-points.html'">
+    <div class="btn-content">
+      <div class="btn-icon">
+        <img src="images/icons/log.png" alt="Log Icon" />
+      </div>
+      <div class="btn-text">Log Points</div>
+    </div>
+  </button>
+
+  <button id="myPointsBtn" class="nav-button points invisible">
     <div class="btn-content">
       <div class="btn-icon">
         <img src="images/icons/myAchievements.png" alt="My Points Icon" />
@@ -52,7 +51,7 @@
     </div>
   </button>
 
-  <button id="reviewLogsBtn" class="nav-button review" style="visibility: hidden;">
+  <button id="reviewLogsBtn" class="nav-button review invisible">
     <div class="btn-content">
       <div class="btn-icon">
         <img src="images/icons/review.png" alt="Review Icon" />
