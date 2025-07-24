@@ -159,7 +159,7 @@ if (user.avatarUrl) {
 } else if (user.avatar) {
 avatarImage.src = `${BASE_UPLOAD}/uploads/${user.avatar}.png`;
 } else {
-avatarImage.src = `images/avatars/default.png`; // lowercase "images"
+  avatarImage.src = `Images/avatars/default.png`;
 }
 
   const switchRoleBtn = document.getElementById("switchRoleBtn");
@@ -237,4 +237,33 @@ avatarImage.src = `${BASE_UPLOAD}${result.url}`;
   document.getElementById("switchUserBtn")?.addEventListener("click", promptUserSwitch);
   document.getElementById("cancelUserSwitchBtn")?.addEventListener("click", closeUserSwitchModal);
   document.getElementById("cancelRoleSwitchBtn")?.addEventListener("click", closeRoleSwitchModal);
+});
+
+
+document.addEventListener("DOMContentLoaded", async () => {
+  const user = JSON.parse(localStorage.getItem("loggedInUser"));
+  const avatarImage = document.getElementById("avatarImage");
+
+  // ✅ Avatar fallback
+  if (avatarImage) {
+    avatarImage.src = user.avatar && user.avatar.trim() !== ""
+      ? user.avatar
+      : "images/logos/default.png";
+  }
+
+  // ✅ Show switchRoleBtn only if user has >1 roles
+  const switchRoleBtn = document.getElementById("switchRoleBtn");
+  if (user && (Array.isArray(user.roles) ? user.roles.length > 1 : Array.isArray(user.role) && user.role.length > 1)) {
+    switchRoleBtn.style.display = "inline-block";
+  } else {
+    switchRoleBtn.style.display = "none";
+  }
+
+  // ✅ Show switchUserBtn only if >1 users with same email
+  const allUsersRes = await fetch(`${BASE_API}/users`);
+  allUsers = await allUsersRes.json();
+  const matchingUsers = allUsers.filter(u => u.email && user.email && u.email.toLowerCase() === user.email.toLowerCase());
+
+  const switchUserBtn = document.getElementById("switchUserBtn");
+  switchUserBtn.style.display = matchingUsers.length > 1 ? "inline-block" : "none";
 });
