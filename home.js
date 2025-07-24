@@ -56,6 +56,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   } else if (activeRole === "teacher") {
     reviewLogsBtn.style.display = "inline-block";
   } else {
-    myPointsBtn.style.display = "inline-block";
+    myPointsBtn.style.display = "flex";
+    levelSelection.style.display = "block";
   }
 });
