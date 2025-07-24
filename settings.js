@@ -110,15 +110,20 @@ async function saveSettings() {
   if (newPassword) updatedUser.password = newPassword;
 
   try {
-const res = await fetch(`${BASE_API}/users/${user.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(updatedUser)
-    });
+const { data, error } = await supabase
+  .from("users")
+  .update({
+    firstName: updatedUser.firstName,
+    lastName: updatedUser.lastName,
+    email: updatedUser.email,
+    avatarUrl: updatedUser.avatarUrl || ''
+  })
+  .eq("id", user.id);
 
-if (!res.ok) {
-  const errText = await res.text();
-  throw new Error(`Failed to save. Server responded: ${errText}`);
+if (error) {
+  console.error("Supabase error:", error);
+  alert("Could not save settings.");
+  return;
 }
 
     localStorage.setItem('loggedInUser', JSON.stringify(updatedUser));
