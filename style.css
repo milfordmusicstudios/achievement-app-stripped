@@ -213,7 +213,7 @@ body.admin-mode #manageUsersBtn {
   justify-content: center;
   gap: 1rem;
   flex-wrap: wrap;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
 }
 
 /*colored button variants*/
@@ -269,6 +269,12 @@ color: white; }
   transition: transform 0.1s ease;
   text-align: center;
   text-wrap: nowrap;
+}
+
+.nav-button .btn-content {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .nav-button:hover {
