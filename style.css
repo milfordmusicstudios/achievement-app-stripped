@@ -29,7 +29,7 @@ body {
 /* App container */
 .app {
   max-width: 400px;
-  margin: 60px auto;
+  margin: 0px auto;
   padding: 30px;
   border-radius: 12px;
   text-align: center;
