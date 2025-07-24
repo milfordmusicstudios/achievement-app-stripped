@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Settings | Achievement App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      background-color: white;
+      display: flex;
+      flex-direction: column;
+    }
+    main.app {
+      flex: 1;
+      width: 100%;
+      box-sizing: border-box;
+      padding: 20px;
+    }
+    .settings-form {
+      max-width: 500px;
+      margin: auto;
+    }
+    .settings-form img.avatar {
+      display: block;
+      width: 120px;
+      height: auto;
+      border-radius: 20px;
+      margin: 0 auto;
+      cursor: pointer;
+      position: relative;
+    }
+    .avatar-wrapper {
+      position: relative;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .avatar-overlay {
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.6);
+      color: white;
+      padding: 5px 10px;
+      font-size: 14px;
+      border-radius: 0 0 10px 10px;
+      pointer-events: none;
+    }
+    .settings-form input {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 16px;
+      font-size: 16px;
+    }
+    .button-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .blue-button {
+      flex: 1;
+    }
+  </style>
+</head>
+<body class="white-page">
+
+<main class="app">
+  <h2 style="text-align: center; color: #3399e8; margin: 10px 0;">Account Settings</h2>
+
+  <form class="settings-form">
+    <div class="avatar-wrapper">
+      <img id="avatarImage" class="avatar" src="" alt="Your avatar" />
+      <div class="avatar-overlay">Click to change avatar</div>
+    </div>
+    <input type="file" id="avatarInput" accept="image/*" style="display: none;" />
+
+    <input type="text" id="firstName" placeholder="First Name" />
+    <input type="text" id="lastName" placeholder="Last Name" />
+    <input type="email" id="newEmail" placeholder="New Email" />
+    <input type="password" id="newPassword" placeholder="New Password" />
+
+    <div class="button-row">
+      <button id="saveBtn" type="submit" class="blue-button">Save</button>
+      <button id="cancelBtn" type="button" class="blue-button">Cancel</button>
+    </div>
+
+    <div class="button-row">
+      <button id="switchRoleBtn" type="button" class="blue-button">Switch Role</button>
+      <button id="switchUserBtn" type="button" class="blue-button">Switch User</button>
+    </div>
+
+    <div class="button-row">
+      <button id="logoutBtn" type="button" class="blue-button">Logout</button>
+    </div>
+  </form>
+</main>
+
+
+  <!-- Switch User Modal -->
+  <div id="userSwitchModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 999;">
+    <div style="background: white; padding: 20px; border-radius: 10px; max-width: 300px; width: 90%;">
+      <h3>Select User</h3>
+      <ul id="userSwitchList" style="list-style: none; padding: 0;"></ul>
+      <button id="cancelUserSwitchBtn" class="blue-button" style="margin-top: 10px; width: 100%;">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Switch Role Modal -->
+  <div id="roleSwitchModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 999;">
+    <div style="background: white; padding: 20px; border-radius: 10px; max-width: 300px; width: 90%;">
+      <h3>Select Role</h3>
+      <ul id="roleSwitchList" style="list-style: none; padding: 0;"></ul>
+      <button id="cancelRoleSwitchBtn" class="blue-button" style="margin-top: 10px; width: 100%;">Cancel</button>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      document.getElementById("cancelUserSwitchBtn")?.addEventListener("click", () => {
+        document.getElementById("userSwitchModal").style.display = "none";
+      });
+      document.getElementById("cancelRoleSwitchBtn")?.addEventListener("click", () => {
+        document.getElementById("roleSwitchModal").style.display = "none";
+      });
+    });
+  </script>
+<script src="config.js"></script>
+<script src="settings.js"></script>
+</body>
+</html>
