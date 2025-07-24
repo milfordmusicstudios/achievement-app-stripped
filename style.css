@@ -213,6 +213,7 @@ body.admin-mode #manageUsersBtn {
   justify-content: center;
   gap: 1rem;
   flex-wrap: wrap;
+  margin-bottom: 1rem;
 }
 
 /*colored button variants*/
@@ -230,6 +231,11 @@ color: white; }
 .nav-button.review .btn-text,
 .nav-button.points .btn-text {
   color: white;
+}
+
+.nav-button,
+.highlight-button {
+  min-width: 160px;
 }
 
 .highlight-button.leaderboard { 
