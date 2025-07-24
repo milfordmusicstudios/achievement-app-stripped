@@ -396,22 +396,25 @@ body.white-page button {
 .faq-section {
   position: relative;
   width: 100%;
-  max-width: 600px;     /* Ensure consistent readable width */
-  margin: 0 auto;        /* ✅ This centers it */
-  box-sizing: border-box;
   border-radius: 20px;
   padding: 40px 16px 16px;
   border: 6px solid;
   background-color: white;
   color: inherit;
+  box-sizing: border-box;
 }
 .faq-container {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: center; /* ✅ Ensures all children (boxes) are centered */
   gap: 40px;
   padding: 20px;
-  max-width: 800%;
   width: 100%;
+  max-width: 700px; /* ✅ Controls max width of the column */
   margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.faq-container {
+  outline: 2px dashed red;
 }
