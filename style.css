@@ -4,9 +4,14 @@ body, html {
   padding: 0;
   font-family: 'Segoe UI', sans-serif;
   background-color: #f9f9f9;
+  box-sizing: border-box;
   color: #333;
 }
 
+main {
+  padding-top: 0;
+  margin-top: 0;
+}
 
 body {
   background-image: url('images/background/tallBackground.png');
@@ -171,6 +176,27 @@ footer {
   max-width: 100px;
 }
 
+/* Override wide default for mobile layout */
+@media (max-width: 480px) {
+  .nav-button {
+    min-width: unset;
+    width: 100%;
+    max-width: 140px;
+    font-size: 0.9rem;
+  }
+
+  .button-row {
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .button-col {
+    flex: 1 1 auto;
+    display: flex;
+    justify-content: center;
+  }
+}
 body.student-mode #myPointsBtn {
   display: flex;
 }
