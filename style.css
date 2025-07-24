@@ -173,7 +173,6 @@ footer {
 #reviewLogsBtn,
 #manageUsersBtn {
   display: none;
-  max-width: 100px;
 }
 
 /* Override wide default for mobile layout */
@@ -181,8 +180,8 @@ footer {
   .nav-button {
     min-width: unset;
     width: 100%;
-    max-width: 140px;
-    font-size: 0.9rem;
+    max-width: 130px;
+    font-size: 1rem;
   }
 
   .button-row {
@@ -282,24 +281,17 @@ body.admin-mode #manageUsersBtn {
   color: white;
 }
 
-.nav-button,
-.highlight-button {
-  min-width: 160px;
-}
-
 .highlight-button.leaderboard { 
   background-color: #fcb738; }
 
   .nav-button.settings { 
   background-color: #38b9f0;
   height: 70px;
-  max-width: 100px;
  }
 
   .nav-button.faq { 
   background-color: #21a4ff;
   height: 60px;
-  max-width: 100px;
  }
 
 .nav-button {
