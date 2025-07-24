@@ -64,11 +64,15 @@ reviewLogsBtn.style.display = "flex";
 if (activeRole === "admin" || activeRole === "teacher") {
   myPointsBtn.classList.add("invisible");
   reviewLogsBtn.classList.remove("invisible");
-
-  if (activeRole === "admin") {
+middleCol.style.display = "flex"; // Hide the middle column
+} else if (activeRole === "student") {
+  myPointsBtn.classList.remove("invisible");
+  reviewLogsBtn.classList.add("invisible");
+  middleCol.style.display = "flex"; // Show the middle column
+}  if (activeRole === "admin") {
     manageUsersBtn.style.display = "inline-block";
   }
-} else {
+ else {
   reviewLogsBtn.classList.add("invisible");
   myPointsBtn.classList.remove("invisible");
   levelSelection.style.display = "block";

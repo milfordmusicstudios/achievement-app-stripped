@@ -218,7 +218,11 @@ body.admin-mode #manageUsersBtn {
   justify-content: center;
   align-items: center;
   gap: 1rem; /* ensures spacing between buttons */
-  flex-wrap: wrap; /* allows wrapping on smaller screens */
+}
+.button-col {
+  flex: 1;
+  display: flex;
+  justify-content: center;
 }
 
 /*colored button variants*/
