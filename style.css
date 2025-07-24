@@ -189,8 +189,8 @@ body.admin-mode #manageUsersBtn {
 }
 
 .btn-icon img {
-  width: 24px;
-  height: 24px;
+  width: 30px;
+  height: auto;
 }
 
 /* wrapper and rows*/
@@ -225,16 +225,20 @@ body.admin-mode #manageUsersBtn {
 .nav-button.log { 
   background-color: #157dab;
   height: 75px;}
+
 .nav-button.points
 .nav-button.review { 
-  background-color: #2bb8d6;
+  background-color: #2bb8d6 !important;
   height: 60px; }
+
 .highlight-button.leaderboard { 
   background-color: #fcb738; }
-.nav-button.settings { 
+
+  .nav-button.settings { 
   background-color: #38b9f0;
   height: 70px; }
-.nav-button.faq { 
+
+  .nav-button.faq { 
   background-color: #21a4ff;
   height: 60px; }
 
