@@ -1,3 +1,4 @@
+import { supabase } from './supabase.js';
 // Must be included AFTER config.js is loaded
 // Example usage:
 fetch(`${BASE_API}/users`)
@@ -128,6 +129,10 @@ if (error) {
   console.error("Supabase update error:", error);
   alert("Supabase error: " + (error.message || "Unknown error"));
   return;
+}
+if (error) {
+  console.error("Supabase update error:", error);
+  alert("Supabase error: " + (error.message || JSON.stringify(error)));
 }
 
   if (error) {
