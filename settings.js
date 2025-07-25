@@ -108,37 +108,41 @@ async function saveSettings() {
 
   const newPassword = document.getElementById('newPassword').value;
   if (newPassword) updatedUser.password = newPassword;
+console.log("Updating user ID:", user.id);
+try {
+  const authUser = await supabase.auth.getUser();
+  const realUserId = authUser.data?.user?.id;
 
-  try {
-const { data, error } = await supabase
-  .from("users")
-  .update({
-    firstName: updatedUser.firstName,
-    lastName: updatedUser.lastName,
-    email: updatedUser.email,
-    avatarUrl: updatedUser.avatarUrl || ''
-  })
-  .eq("id", user.id);
+  console.log("Real Supabase Auth User ID:", realUserId);
 
-if (error) {
-  console.error("Supabase error:", error);
-  alert("Could not save settings.");
-  return;
-}
+  const { data, error } = await supabase
+    .from("users")
+    .update({
+      firstName: updatedUser.firstName,
+      lastName: updatedUser.lastName,
+      email: updatedUser.email,
+      avatarUrl: updatedUser.avatarUrl || ''
+    })
+    .eq("id", realUserId);
 
-console.log("update successful:", data);
-
-    localStorage.setItem('loggedInUser', JSON.stringify(updatedUser));
-
-    const msg = document.createElement("div");
-    msg.textContent = "Settings saved! Redirecting...";
-    msg.style.cssText = "position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#3eb7f8;color:white;padding:12px 20px;border-radius:10px;font-weight:bold;z-index:999;";
-    document.body.appendChild(msg);
-    setTimeout(() => location.assign("home.html"), 1000);
-  } catch (err) {
-    console.error("Save error:", err);
+  if (error) {
+    console.error("Supabase error:", error);
     alert("Could not save settings.");
+    return;
   }
+
+  console.log("update successful:", data);
+  localStorage.setItem('loggedInUser', JSON.stringify(updatedUser));
+
+  const msg = document.createElement("div");
+  msg.textContent = "Settings saved! Redirecting...";
+  msg.style.cssText = "position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#3eb7f8;color:white;padding:12px 20px;border-radius:10px;font-weight:bold;z-index:999;";
+  document.body.appendChild(msg);
+  setTimeout(() => location.assign("home.html"), 1000);
+} catch (err) {
+  console.error("Save error:", err);
+  alert("Could not save settings.");
+}
 }
 
 function handleLogout() {
