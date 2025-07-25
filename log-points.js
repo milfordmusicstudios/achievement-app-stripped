@@ -7,32 +7,34 @@ document.addEventListener("DOMContentLoaded", async () => {
   const pointsInput = document.getElementById("logPoints");
   const notesInput = document.getElementById("logNotes");
   const dateInput = document.getElementById("logDate");
+  const studentSelect = document.getElementById("studentSelector");
+  const studentRow = document.getElementById("studentRow");
   const submitBtn = document.querySelector("button[type='submit']");
   const cancelBtn = document.querySelector("button[type='button']");
 
   const user = JSON.parse(localStorage.getItem("loggedInUser"));
-  if (!user) {
+  const role = localStorage.getItem("activeRole");
+
+  if (!user || !role) {
     alert("You must be logged in.");
     window.location.href = "login.html";
     return;
   }
 
-  // Show default image
+  // Show default category preview
   previewImage.src = "images/categories/allCategories.png";
 
-  // Load categories from Supabase
-  const { data: categories, error } = await supabase
+  // Load categories
+  const { data: categories, error: catErr } = await supabase
     .from("categories")
     .select("*")
     .order("id", { ascending: true });
 
-  if (error || !categories) {
-    console.error("Unable to load categories:", error.message);
-    alert("Unable to load categories.");
+  if (catErr || !categories) {
+    console.error("Failed to load categories:", catErr?.message);
     return;
   }
 
-  // Populate dropdown
   categorySelect.innerHTML = "<option value=''>Choose a category...</option>";
   categories.forEach(cat => {
     const opt = document.createElement("option");
@@ -41,13 +43,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     categorySelect.appendChild(opt);
   });
 
-  // Change preview and point behavior on selection
   categorySelect.addEventListener("change", () => {
-    const selected = categorySelect.value;
-    const fileName = selected.toLowerCase() + ".png";
-    previewImage.src = `images/categories/${fileName}`;
+    const selected = categorySelect.value.toLowerCase();
+    previewImage.src = selected ? `images/categories/${selected}.png` : "images/categories/allCategories.png";
 
-    if (selected === "Practice") {
+    if (selected === "practice") {
       pointsInput.value = 5;
       pointsInput.disabled = true;
     } else {
@@ -57,22 +57,49 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   });
 
-  // Submit log
+  // Show student selector only for admin or teacher
+  if (role === "admin" || role === "teacher") {
+    studentRow.style.display = "table-row";
+
+    let studentFilter = supabase.from("users").select("id, firstName, lastName").contains("roles", ["student"]);
+
+    if (role === "teacher") {
+      studentFilter = studentFilter.contains("teachers", [user.id]);
+    }
+
+    const { data: students, error: stuErr } = await studentFilter;
+
+    if (stuErr) {
+      console.error("Failed to load students:", stuErr.message);
+    } else {
+      studentSelect.innerHTML = "<option value=''>-- Select Student --</option>";
+      students.forEach(stu => {
+        const opt = document.createElement("option");
+        opt.value = stu.id;
+        opt.textContent = stu.firstName + " " + stu.lastName;
+        studentSelect.appendChild(opt);
+      });
+    }
+  } else {
+    studentRow.style.display = "none";
+  }
+
+  // Submit
   submitBtn.addEventListener("click", async (e) => {
     e.preventDefault();
-
     const category = categorySelect.value;
     const note = notesInput.value.trim();
     const date = dateInput.value;
     const points = parseInt(pointsInput.value);
+    const targetUser = studentSelect && studentSelect.value ? studentSelect.value : user.id;
 
-    if (!category || !date || (isNaN(points) && category === "Practice")) {
+    if (!category || !date || isNaN(points)) {
       alert("Please fill out all required fields.");
       return;
     }
 
     const { error: logError } = await supabase.from("logs").insert([{
-      user: user.id,
+      user: targetUser,
       category,
       note,
       date,
@@ -80,15 +107,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     }]);
 
     if (logError) {
-      console.error("Log save failed:", logError.message);
-      alert("Failed to save log.");
+      console.error("Failed to log points:", logError.message);
+      alert("Log failed.");
     } else {
       alert("Points logged!");
       window.location.href = "index.html";
     }
   });
 
-  // Cancel button
   cancelBtn.addEventListener("click", () => {
     window.location.href = "index.html";
   });

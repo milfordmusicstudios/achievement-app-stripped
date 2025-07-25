@@ -445,3 +445,9 @@ body.white-page button {
   align-items: center;
   z-index: 1000;
 }
+#categoryPreview {
+  display: block;
+  margin: 20px auto;
+  max-width: 200px;
+  height: auto;
+}
