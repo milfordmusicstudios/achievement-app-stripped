@@ -38,12 +38,12 @@ function promptUserSwitch() {
 
 function promptRoleSwitch() {
   const user = JSON.parse(localStorage.getItem("loggedInUser"));
-  const roles = Array.isArray(user.roles) ? user.roles : [user.role];
+  const roleList = Array.isArray(user.roles) ? user.roles : [user.role];
 
   const listContainer = document.getElementById("roleSwitchList");
   listContainer.innerHTML = "";
 
-  roles.forEach(role => {
+  roleList.forEach(role => {
     const li = document.createElement("li");
     const btn = document.createElement("button");
     btn.className = "blue-button";
@@ -73,7 +73,7 @@ async function saveSettings() {
   const updatedUser = {
     firstName: document.getElementById('firstName').value.trim(),
     lastName: document.getElementById('lastName').value.trim(),
-    email: document.getElementById('newEmail').value.trim(),
+    email: document.getElementById('newEmail').value.trim()
   };
 
   try {
@@ -118,13 +118,40 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById('newEmail').value = user.email || '';
 
   const avatarImage = document.getElementById('avatarImage');
-  if (user.avatarUrl) {
-    avatarImage.src = user.avatarUrl;
-  } else {
-    avatarImage.src = "images/logos/default.png";
+  avatarImage.src = user.avatarUrl || "images/logos/default.png";
+
+  const switchRoleBtn = document.getElementById("switchRoleBtn");
+  const switchUserBtn = document.getElementById("switchUserBtn");
+
+  // Load all users for Switch User check
+  try {
+    const { data: allUsers, error } = await supabase.from("users").select("*");
+    if (!error && Array.isArray(allUsers)) {
+      localStorage.setItem("allUsers", JSON.stringify(allUsers));
+
+      const sameEmailUsers = allUsers.filter(u =>
+        u.email && user.email && u.email.toLowerCase() === user.email.toLowerCase()
+      );
+
+      if (sameEmailUsers.length > 1) {
+        switchUserBtn.style.display = "inline-block";
+      } else {
+        switchUserBtn.style.display = "none";
+      }
+    }
+  } catch {
+    console.warn("Unable to load users for switch-user check.");
+    switchUserBtn.style.display = "none";
   }
 
-  // Avatar Upload
+  if (Array.isArray(user.roles) && user.roles.length > 1) {
+    switchRoleBtn.style.display = "inline-block";
+    switchRoleBtn.textContent = `Switch Role (Currently: ${capitalize(activeRole)})`;
+  } else {
+    switchRoleBtn.style.display = "none";
+  }
+
+  // Avatar upload
   document.getElementById("avatarInput").addEventListener("change", async () => {
     const file = document.getElementById("avatarInput").files[0];
     if (!file) return;

@@ -23,9 +23,9 @@ welcome.style.fontWeight = "bold";
   // ✅ Set avatar with fallback
   const avatar = document.getElementById("homeAvatar");
   if (avatar) {
-    const avatarURL = user.avatar && user.avatar.trim() !== ""
-      ? user.avatar
-      : "images/logos/default.png";
+const avatarURL = user.avatarUrl && user.avatarUrl.trim() !== ""
+  ? user.avatarUrl
+  : "images/logos/default.png";
     avatar.src = avatarURL;
   }
 
