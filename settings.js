@@ -53,7 +53,7 @@ btn.onclick = () => {
   }
 
   localStorage.setItem("activeRole", defaultRole);
-  window.location.href = "home.html";
+  window.location.href = "index.html";
 };
 
     li.appendChild(btn);
@@ -78,7 +78,7 @@ function promptRoleSwitch() {
     btn.textContent = capitalize(role);
     btn.onclick = () => {
       localStorage.setItem("activeRole", role);
-      window.location.href = "home.html";
+      window.location.href = "index.html";
     };
     li.appendChild(btn);
     listContainer.appendChild(li);
@@ -127,24 +127,13 @@ try {
     .eq("id", realUserId);
 if (error) {
   console.error("Supabase update error:", error);
-console.error("Supabase error:", error);
-const msg = document.createElement("div");
-msg.textContent = "Save failed: " + (error.message || "Unknown error");
-msg.style.cssText = "position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#f44336;color:white;padding:12px 20px;border-radius:10px;font-weight:bold;z-index:999;";
-document.body.appendChild(msg);
-setTimeout(() => msg.remove(), 5000);
+  const msg = document.createElement("div");
+  msg.textContent = "Save failed: " + (error.message || "Unknown error");
+  msg.style.cssText = "position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#f44336;color:white;padding:12px 20px;border-radius:10px;font-weight:bold;z-index:999;";
+  document.body.appendChild(msg);
+  setTimeout(() => msg.remove(), 5000);
   return;
 }
-if (error) {
-  console.error("Supabase update error:", error);
-  alert("Supabase error: " + (error.message || JSON.stringify(error)));
-}
-
-  if (error) {
-    console.error("Supabase error:", error);
-    alert("Could not save settings.");
-    return;
-  }
 
   console.log("update successful:", data);
   localStorage.setItem('loggedInUser', JSON.stringify(updatedUser));
@@ -153,7 +142,7 @@ if (error) {
   msg.textContent = "Settings saved! Redirecting...";
   msg.style.cssText = "position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#3eb7f8;color:white;padding:12px 20px;border-radius:10px;font-weight:bold;z-index:999;";
   document.body.appendChild(msg);
-  setTimeout(() => location.assign("home.html"), 1000);
+  setTimeout(() => location.assign("index.html"), 1000);
 } catch (err) {
   console.error("Save error:", err?.message || err);
 alert("Save failed: " + (err?.message || "Unknown error"));
@@ -258,7 +247,7 @@ avatarImage.src = `${BASE_UPLOAD}${result.url}`;
   document.getElementById("saveBtn")?.addEventListener("click", saveSettings);
   document.getElementById("logoutBtn")?.addEventListener("click", handleLogout);
   document.getElementById("cancelBtn")?.addEventListener("click", () => {
-    window.location.href = "home.html";
+    window.location.href = "index.html";
   });
   document.getElementById("switchRoleBtn")?.addEventListener("click", promptRoleSwitch);
   document.getElementById("switchUserBtn")?.addEventListener("click", promptUserSwitch);
