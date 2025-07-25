@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Log Points | Achievement App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <main class="app">
+<h2 class="page-title">Log Points</h2>
+
+<form id="logForm">
+
+  <!-- 🔹 Row 1: Student Selector -->
+<div class="form-row" id="studentSelectGroup" style="display: none;">
+  <div class="form-group">
+    <label for="logStudent">Student</label>
+    <select id="logStudent">
+      <option value="">Select a student...</option>
+    </select>
+  </div>
+</div>
+
+  <!-- 🔹 Row 2: Category + Notes -->
+  <div class="form-row">
+    <div class="form-group half">
+      <label for="logCategory">Category</label>
+      <select id="logCategory">
+        <option value="">Choose a category...</option>
+      </select>
+    </div>
+    <div class="form-group half">
+      <label for="logNotes">Notes</label>
+      <textarea id="logNotes" placeholder="add a note"></textarea>
+    </div>
+  </div>
+
+<!-- 🔹 Row 3: Icon + Date + Points -->
+<div class="form-row">
+  <div class="form-group image-group">
+    <img id="categoryPreview" src="Images/Categories/AllCategories.png" alt="Category Preview" />
+  </div>
+  <div class="form-group half">
+    <label for="logDate">
+    <input type="date" id="logDate" placeholder="mm/dd/yyyy" />
+  </div>
+  <div class="form-group half">
+    <label for="logPoints">Points</label>
+    <input type="text" id="logPoints" placeholder="Enter number of points" pattern="\d*" inputmode="numeric" />
+  </div>
+</div>
+
+  <!-- 🔹 Row 5: Buttons -->
+  <div class="log-points-buttons">
+    <button type="submit" class="blue-button">Submit</button>
+    <button type="button" class="blue-button" onclick="window.location.href='home.html'">Cancel</button>
+  </div>
+
+</form>
+  </main>
+
+  <footer>
+    &copy; 2025 Milford Music Studios Achievement App
+  </footer>
+
+  <!-- ✅ Scripts -->
+<script src="config.js"></script>
+  <script src="data/categories.js"></script>
+  <script src="data/levels.js"></script>
+  <script src="auth.js"></script>
+  <script src="log-points.js"></script>
+<script type="module" src="log-points-supabase.js"></script>
+
+</body>
+</html>
