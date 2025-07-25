@@ -2,13 +2,13 @@
 import { supabase } from './supabase.js';
 
 document.addEventListener("DOMContentLoaded", async () => {
-  const categorySelect = document.getElementById("category");
-  const previewImage = document.getElementById("categoryPreview");
-  const pointsInput = document.getElementById("points");
-  const notesInput = document.getElementById("notes");
-  const dateInput = document.getElementById("date");
-  const submitBtn = document.getElementById("submitBtn");
-  const cancelBtn = document.getElementById("cancelBtn");
+const categorySelect = document.getElementById("logCategory");
+const previewImage = document.getElementById("categoryPreview");
+const pointsInput = document.getElementById("logPoints");
+const notesInput = document.getElementById("logNotes");
+const dateInput = document.getElementById("logDate");
+const submitBtn = document.querySelector("button[type='submit']");
+const cancelBtn = document.querySelector("button[type='button']");
 
   const user = JSON.parse(localStorage.getItem("loggedInUser"));
   if (!user) {
