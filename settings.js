@@ -221,21 +221,47 @@ avatarImage.src = `${BASE_UPLOAD}/uploads/${user.avatar}.png`;
     formData.append("userId", user.id);
 
     try {
-const res = await fetch(`${BASE_UPLOAD}/upload-avatar`, {
-        method: "POST",
-        body: formData
-      });
-      const result = await res.json();
-      if (!result.url) throw new Error("Upload failed");
+try {
+  const filePath = `public/${user.id}.png`;
+  const { error: uploadError } = await supabase.storage
+    .from("avatars")
+    .upload(filePath, file, {
+      cacheControl: "3600",
+      upsert: true
+    });
 
-      user.avatarUrl = result.url;
-avatarImage.src = `${BASE_UPLOAD}${result.url}`;
+  if (uploadError) throw uploadError;
 
-      await fetch(`${BASE_API}/users/${user.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ avatarUrl: result.url })
-      });
+  const { data: publicData, error: urlError } = supabase
+    .storage
+    .from("avatars")
+    .getPublicUrl(filePath);
+
+  if (urlError) throw urlError;
+
+  const avatarUrl = publicData.publicUrl;
+  user.avatarUrl = avatarUrl;
+  avatarImage.src = avatarUrl;
+
+  console.log("Avatar uploaded:", avatarUrl);
+
+  // Update avatar URL in the users table
+  const { error: patchError } = await fetch(`${BASE_API}/users/${user.id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ avatarUrl })
+  });
+
+  if (!patchError.ok) {
+    const text = await patchError.text();
+    console.error("Failed to PATCH avatarUrl:", text);
+  }
+
+  localStorage.setItem("loggedInUser", JSON.stringify(user));
+} catch (err) {
+  console.error("Avatar upload error:", err);
+  alert("Failed to upload avatar.");
+}
 
       localStorage.setItem("loggedInUser", JSON.stringify(user));
     } catch (err) {
