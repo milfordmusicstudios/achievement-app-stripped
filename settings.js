@@ -124,6 +124,11 @@ try {
       avatarUrl: updatedUser.avatarUrl || ''
     })
     .eq("id", realUserId);
+if (error) {
+  console.error("Supabase update error:", error);
+  alert("Supabase error: " + (error.message || "Unknown error"));
+  return;
+}
 
   if (error) {
     console.error("Supabase error:", error);
@@ -140,7 +145,8 @@ try {
   document.body.appendChild(msg);
   setTimeout(() => location.assign("home.html"), 1000);
 } catch (err) {
-  console.error("Save error:", err);
+  console.error("Save error:", err?.message || err);
+alert("Save failed: " + (err?.message || "Unknown error"));
   alert("Could not save settings.");
 }
 }
