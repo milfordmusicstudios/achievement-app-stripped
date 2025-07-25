@@ -127,7 +127,12 @@ try {
     .eq("id", realUserId);
 if (error) {
   console.error("Supabase update error:", error);
-  alert("Supabase error: " + (error.message || "Unknown error"));
+console.error("Supabase error:", error);
+const msg = document.createElement("div");
+msg.textContent = "Save failed: " + (error.message || "Unknown error");
+msg.style.cssText = "position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#f44336;color:white;padding:12px 20px;border-radius:10px;font-weight:bold;z-index:999;";
+document.body.appendChild(msg);
+setTimeout(() => msg.remove(), 5000);
   return;
 }
 if (error) {
@@ -158,7 +163,7 @@ alert("Save failed: " + (err?.message || "Unknown error"));
 
 function handleLogout() {
   localStorage.clear();
-  window.location.href = "index.html";
+  window.location.href = "login.html";
 }
 
 // DOM Loaded
