@@ -15,6 +15,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   console.log("Active role:", activeRole);
 
   document.body.classList.add(`${activeRole}-mode`);
+const welcome = document.getElementById("welcomeTitle");
+welcome.textContent = `Welcome, ${user.firstName}!`;
+welcome.style.color = "#00477d";
 
   // ✅ Set avatar with fallback
   const avatar = document.getElementById("homeAvatar");
