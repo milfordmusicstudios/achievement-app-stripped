@@ -18,7 +18,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 const welcome = document.getElementById("welcomeTitle");
 welcome.textContent = `Welcome, ${user.firstName}!`;
 welcome.style.color = "#00477d";
-
+welcome.style.fontSize = "2em";
+welcome.style.fontWeight = "bold";
   // ✅ Set avatar with fallback
   const avatar = document.getElementById("homeAvatar");
   if (avatar) {
