@@ -126,6 +126,8 @@ if (error) {
   return;
 }
 
+console.log("update successful:", data);
+
     localStorage.setItem('loggedInUser', JSON.stringify(updatedUser));
 
     const msg = document.createElement("div");
