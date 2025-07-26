@@ -86,12 +86,12 @@ if (!userError && userData) {
     row.className = idx % 2 === 0 ? "log-row-even" : "log-row-odd";
     const icon = categories[log.category?.toLowerCase()] || categories.total;
 
-    row.innerHTML = `
-      <td>${new Date(log.date).toLocaleDateString()}</td>
-      <td><img src="${icon}" alt="${log.category}" style="width:40px;height:40px;"></td>
-      <td>${log.points}</td>
-      <td>${log.notes || ""}</td>
-    `;
+row.innerHTML = `
+  <td><img src="${categoryIcons[log.category] || categoryIcons['all']}" alt="${log.category}" style="width:35px;height:35px;"></td>
+  <td>${new Date(log.date).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: '2-digit' })}</td>
+  <td>${log.points}</td>
+  <td>${log.notes || ''}</td>
+`;
     logsSection.appendChild(row);
   });
 });

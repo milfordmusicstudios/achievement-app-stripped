@@ -605,7 +605,7 @@ body.white-page button {
 
 /* Buttons stay consistent */
 .blue-button {
-  background: #00477d;
+  background: #3eb7f8;
   color: white;
   padding: 10px 20px;
   border: none;
@@ -616,4 +616,34 @@ body.white-page button {
 
 .blue-button:hover {
   background: #00325a;
+}
+
+/* Adjust category cards for mobile */
+.category-card {
+  width: 120px;
+}
+
+/* Responsive tweaks */
+@media (max-width: 600px) {
+  .category-card {
+    width: 100px;
+    padding: 8px;
+  }
+  #logsSection {
+    overflow-x: auto;
+  }
+  #logsTable th, #logsTable td {
+    font-size: 0.8rem;
+    padding: 6px;
+  }
+  #levelBadge {
+    width: 100px !important;
+    height: 100px !important;
+  }
+}
+
+/* Level badge style */
+#levelBadge {
+  width: 120px;
+  height: 120px;
 }
