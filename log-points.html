@@ -12,10 +12,6 @@
 <h2 class="page-title">Log Points</h2>
 
 <form id="logForm">
-<tr id="studentRow" style="display:none;">
-  <td><label for="studentSelector">Student:</label></td>
-  <td><select id="studentSelector"></select></td>
-</tr>
 
   <!-- 🔹 Row 1: Student Selector -->
 <div class="form-row" id="studentSelectGroup" style="display: none;">
@@ -44,7 +40,7 @@
 <!-- 🔹 Row 3: Icon + Date + Points -->
 <div class="form-row">
   <div class="form-group image-group">
-    <img id="categoryPreview" src="images/categories/allCategories.png" alt="Category Preview" />
+    <img id="categoryPreview" src="Images/Categories/AllCategories.png" alt="Category Preview" />
   </div>
   <div class="form-group half">
     <label for="logDate">
@@ -59,7 +55,7 @@
   <!-- 🔹 Row 5: Buttons -->
   <div class="log-points-buttons">
     <button type="submit" class="blue-button">Submit</button>
-    <button type="button" class="blue-button" onclick="window.location.href='index.html'">Cancel</button>
+    <button type="button" class="blue-button" onclick="window.location.href='home.html'">Cancel</button>
   </div>
 
 </form>
@@ -73,6 +69,7 @@
 <script src="config.js"></script>
   <script src="data/categories.js"></script>
   <script src="data/levels.js"></script>
-<script type="module" src="log-points.js"></script>
+  <script src="auth.js"></script>
+  <script src="log-points.js"></script>
 </body>
 </html>

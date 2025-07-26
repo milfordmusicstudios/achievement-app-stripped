@@ -451,3 +451,11 @@ body.white-page button {
   max-width: 100px;
   height: auto;
 }
+.white-input {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+  box-sizing: border-box;
+}
