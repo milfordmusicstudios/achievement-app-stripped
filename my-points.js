@@ -1,12 +1,20 @@
 import { supabase } from './supabase.js';
 
-// Inline level definitions (replaces missing levels.js)
+// Inline levels
 const levels = [
   { number: 1, min: 0, max: 100 },
   { number: 2, min: 101, max: 300 },
   { number: 3, min: 301, max: 600 },
   { number: 4, min: 601, max: 1000 }
 ];
+
+// Category icons mapping
+const categoryIcons = {
+  "Practice": "images/categories/practice.png",
+  "Performance": "images/categories/performance.png",
+  "Workshop": "images/categories/workshop.png",
+  "Challenge": "images/categories/challenge.png"
+};
 
 function calculateLevel(points) {
   let currentLevel = levels[0];
@@ -28,7 +36,8 @@ function renderCategorySummary(logs) {
   for (const [cat, data] of Object.entries(categories)) {
     const div = document.createElement('div');
     div.className = 'category-card';
-    div.innerHTML = `<h3>${cat}</h3><p>${data.points} pts</p><p>${data.count} logs</p>`;
+    const icon = categoryIcons[cat] || 'images/categories/default.png';
+    div.innerHTML = `<img src="${icon}" alt="${cat}"><h3>${data.points} pts</h3><p>${data.count} logs</p>`;
     container.appendChild(div);
   }
 }
@@ -38,7 +47,12 @@ function renderLogsTable(logs) {
   body.innerHTML = '';
   logs.forEach(log => {
     const row = document.createElement('tr');
-    row.innerHTML = `<td>${new Date(log.date).toLocaleDateString()}</td><td>${log.category}</td><td>${log.points}</td><td>${log.note || ''}</td>`;
+    const icon = categoryIcons[log.category] || 'images/categories/default.png';
+    row.innerHTML = `
+      <td><img src="${icon}" alt="${log.category}" style="width:30px;height:30px;"></td>
+      <td>${new Date(log.date).toLocaleDateString()}</td>
+      <td>${log.points}</td>
+      <td>${log.note || ''}</td>`;
     body.appendChild(row);
   });
 }
@@ -54,15 +68,14 @@ async function loadUserLogs(user) {
 
 async function updateUserPoints(user, totalPoints) {
   const level = calculateLevel(totalPoints);
-  const { error } = await supabase.from('users').update({ points: totalPoints, level: level.number }).eq('id', user.id);
-  if (error) console.error('Error updating user points:', error);
+  await supabase.from('users').update({ points: totalPoints, level: level.number }).eq('id', user.id);
   user.points = totalPoints;
   user.level = level.number;
   localStorage.setItem('loggedInUser', JSON.stringify(user));
 }
 
 async function initMyPoints() {
-  let user = JSON.parse(localStorage.getItem('loggedInUser'));
+  const user = JSON.parse(localStorage.getItem('loggedInUser'));
   if (!user) {
     window.location.href = 'login.html';
     return;

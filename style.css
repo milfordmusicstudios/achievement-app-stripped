@@ -473,3 +473,63 @@ body.white-page button {
   box-sizing: border-box;
   width: 100%;
 }
+/* My Points Page Styling */
+#pointsSummary {
+  text-align: center;
+  margin-bottom: 20px;
+  font-size: 1.5rem;
+  color: #00477d;
+}
+
+/* Category Summary */
+.category-summary {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 15px;
+  margin: 20px auto;
+  max-width: 800px;
+}
+.category-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  padding: 15px;
+  width: 150px;
+  text-align: center;
+  font-weight: bold;
+  color: #00477d;
+}
+.category-card img {
+  width: 40px;
+  height: 40px;
+  display: block;
+  margin: 0 auto 10px;
+}
+
+/* Logs Table */
+#logsSection {
+  margin: 20px auto;
+  max-width: 90%;
+}
+#logsTable {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  border-radius: 8px;
+  overflow: hidden;
+}
+#logsTable th {
+  background: #00477d;
+  color: white;
+  padding: 10px;
+  text-align: left;
+}
+#logsTable td {
+  padding: 10px;
+  border-bottom: 1px solid #ddd;
+}
+#logsTable tr:nth-child(even) {
+  background: #f7f7f7;
+}
