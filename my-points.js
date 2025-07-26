@@ -38,9 +38,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 // ✅ Render logs with category-specific icons
 function renderLogs(logs) {
-  const logTableBody = document.getElementById("logTableBody");
+  const logTableBody = document.getElementById("logsTableBody");
+  if (!logTableBody) {
+    console.error("[ERROR] logsTableBody not found in DOM");
+    return;
+  }
   logTableBody.innerHTML = "";
-
   logs.forEach((log, index) => {
     const row = document.createElement("tr");
     row.className = index % 2 === 0 ? "log-row even" : "log-row odd";
@@ -51,7 +54,7 @@ function renderLogs(logs) {
       <td>${new Date(log.date).toLocaleDateString()}</td>
       <td><img src="${iconPath}" alt="${log.category}" class="log-icon"></td>
       <td>${log.points}</td>
-      <td>${log.notes || ""}</td>
+      <td>${log.note || ""}</td>
     `;
     logTableBody.appendChild(row);
   });
