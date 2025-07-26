@@ -101,13 +101,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     const { data: allUsers, error } = await supabase.from("users").select("*");
     if (!error && Array.isArray(allUsers)) {
       localStorage.setItem("allUsers", JSON.stringify(allUsers));
-      const sameGroupUsers = allUsers.filter(u =>
-        u.id !== user.id && (
-          (u.email && u.email.toLowerCase() === user.email.toLowerCase()) ||
-          (u.parent_uuid && u.parent_uuid === user.id) ||
-          (user.parent_uuid && u.parent_uuid === user.parent_uuid)
-        )
-      );
+const sameGroupUsers = allUsers.filter(u =>
+  u.id !== user.id && (
+    (u.parent_uuid === user.id) ||
+    (user.parent_uuid && u.parent_uuid === user.parent_uuid) ||
+    (u.email && u.email.toLowerCase() === user.email.toLowerCase())
+  )
+);
       document.getElementById("switchUserBtn").style.display = sameGroupUsers.length > 0 ? "inline-block" : "none";
     }
   } catch {
