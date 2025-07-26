@@ -10,29 +10,42 @@ function capitalize(str) {
   return str ? str.charAt(0).toUpperCase() + str.slice(1) : "";
 }
 
+async function fetchRelatedUsers(user) {
+  const userIdStr = normalizeUUID(user.id);
+  const parentIdStr = normalizeUUID(user.parent_uuid);
+  let sameGroupUsers = [];
+
+  // Try to fetch children if this user is a parent
+  const { data: children, error: childErr } = await supabase
+    .from('users')
+    .select('*')
+    .eq('parent_uuid', userIdStr);
+  if (!childErr && children.length > 0) {
+    sameGroupUsers = children;
+  } else if (parentIdStr) {
+    // Try to fetch siblings if this user is a child
+    const { data: siblings, error: sibErr } = await supabase
+      .from('users')
+      .select('*')
+      .eq('parent_uuid', parentIdStr);
+    if (!sibErr && siblings.length > 0) {
+      sameGroupUsers = siblings.filter(u => normalizeUUID(u.id) !== userIdStr);
+    }
+  }
+
+  console.log("[DEBUG] Related users fetched:", sameGroupUsers);
+  return sameGroupUsers;
+}
+
 function promptUserSwitch() {
   const user = JSON.parse(localStorage.getItem("loggedInUser"));
   const allUsers = JSON.parse(localStorage.getItem("allUsers")) || [];
   const userIdStr = normalizeUUID(user.id);
-  const parentIdStr = normalizeUUID(user.parent_uuid);
-
-  const userList = allUsers.filter(u => {
-    const uIdStr = normalizeUUID(u.id);
-    const uParentStr = normalizeUUID(u.parent_uuid);
-    return uIdStr !== userIdStr && (
-      uParentStr === userIdStr ||
-      (parentIdStr && uParentStr === parentIdStr) ||
-      (u.email && u.email.toLowerCase() === user.email.toLowerCase())
-    );
-  });
-
-  console.log("[DEBUG] Logged in user:", user);
-  console.log("[DEBUG] All Users:", allUsers);
-  console.log("[DEBUG] sameGroupUsers detected:", userList);
 
   const listContainer = document.getElementById("userSwitchList");
   listContainer.innerHTML = "";
-  userList.forEach(u => {
+  allUsers.forEach(u => {
+    if (normalizeUUID(u.id) === userIdStr) return;
     const li = document.createElement("li");
     const btn = document.createElement("button");
     btn.className = "blue-button";
@@ -111,29 +124,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById('newEmail').value = user.email || '';
   document.getElementById('avatarImage').src = user.avatarUrl || "images/logos/default.png";
 
-  try {
-    const { data: allUsers, error } = await supabase.from("users").select("*");
-    if (!error && Array.isArray(allUsers)) {
-      localStorage.setItem("allUsers", JSON.stringify(allUsers));
-      const userIdStr = normalizeUUID(user.id);
-      const parentIdStr = normalizeUUID(user.parent_uuid);
-      const sameGroupUsers = allUsers.filter(u => {
-        const uIdStr = normalizeUUID(u.id);
-        const uParentStr = normalizeUUID(u.parent_uuid);
-        return uIdStr !== userIdStr && (
-          uParentStr === userIdStr ||
-          (parentIdStr && uParentStr === parentIdStr) ||
-          (u.email && u.email.toLowerCase() === user.email.toLowerCase())
-        );
-      });
-
-      console.log("[DEBUG] sameGroupUsers detected:", sameGroupUsers);
-      document.getElementById("switchUserBtn").style.display = sameGroupUsers.length > 0 ? "inline-block" : "none";
-    }
-  } catch (err) {
-    console.error("[DEBUG] Failed to load users:", err);
-    document.getElementById("switchUserBtn").style.display = "none";
-  }
+  // Use conditional fetching for family members
+  const relatedUsers = await fetchRelatedUsers(user);
+  localStorage.setItem("allUsers", JSON.stringify(relatedUsers));
+  document.getElementById("switchUserBtn").style.display = relatedUsers.length > 0 ? "inline-block" : "none";
 
   const switchRoleBtn = document.getElementById("switchRoleBtn");
   if (Array.isArray(user.roles) && user.roles.length > 1) {
@@ -146,16 +140,15 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("avatarInput").addEventListener("change", async () => {
     const file = document.getElementById("avatarInput").files[0];
     if (!file) return;
-    const userId = user.id;
     const fileExt = file.name.split('.').pop();
-    const filePath = `public/${userId}.${fileExt}`;
+    const filePath = `public/${user.id}.${fileExt}`;
     try {
       const { error: uploadError } = await supabase.storage.from("avatars").upload(filePath, file, { upsert: true });
       if (uploadError) throw uploadError;
       const { data: urlData, error: urlError } = supabase.storage.from("avatars").getPublicUrl(filePath);
       if (urlError) throw urlError;
       const avatarUrl = urlData.publicUrl;
-      const { error: updateError } = await supabase.from("users").update({ avatarUrl }).eq("id", userId);
+      const { error: updateError } = await supabase.from("users").update({ avatarUrl }).eq("id", user.id);
       if (updateError) throw updateError;
       user.avatarUrl = avatarUrl;
       localStorage.setItem("loggedInUser", JSON.stringify(user));
