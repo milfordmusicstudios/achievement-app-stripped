@@ -2,31 +2,49 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Login | Achievement App</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Log Points | Achievement App</title>
   <link rel="stylesheet" href="style.css" />
+  <script type="module" src="log-points.js" defer></script>
 </head>
-<body class="white-page">
+<body>
   <main class="app">
-    <img src="images/logos/logo.png" alt="App Logo" class="logo" />
-    <h2>Achievement Awards</h2>
+    <header>
+      <button id="homeBtn" class="blue-button">Home</button>
+      <h1>Log Points</h1>
+    </header>
 
-    <form id="loginForm">
-      <input type="email" id="loginEmail" placeholder="Email" required />
-      <input type="password" id="loginPassword" placeholder="Password" required />
-      <div style="display: flex; justify-content: center; gap: 10px; margin-top: 10px;">
-        <button type="submit" class="blue-button">Login</button>
-        <button type="button" class="blue-button" onclick="window.location.href='signup.html'">Sign Up</button>
+    <form id="logForm" class="log-form">
+      <table>
+        <tbody>
+          <tr id="studentRow">
+            <td><label for="logStudent">Student</label></td>
+            <td><select id="logStudent"></select></td>
+          </tr>
+          <tr>
+            <td><label for="logCategory">Category</label></td>
+            <td><select id="logCategory"></select></td>
+          </tr>
+          <tr>
+            <td><label for="logPoints">Points</label></td>
+            <td><input type="number" id="logPoints" min="0" placeholder="Enter points" required></td>
+          </tr>
+          <tr>
+            <td><label for="logDate">Date</label></td>
+            <td><input type="date" id="logDate"></td>
+          </tr>
+          <tr>
+            <td><label for="logNote">Notes</label></td>
+            <td><textarea id="logNote" placeholder="Enter note (optional)"></textarea></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="button-row">
+        <button type="submit" class="blue-button">Submit</button>
+        <button type="button" id="cancelBtn" class="blue-button">Cancel</button>
       </div>
     </form>
-
-    <p id="loginError" style="color: red; display: none;">Invalid email or password.</p>
   </main>
-
-  <footer>
-    &copy; 2025 Milford Music Studios Achievement App
-  </footer>
-
-  <script type="module" src="login.js"></script>
 </body>
 </html>

@@ -1,14 +1,17 @@
 import { supabase } from './supabase.js';
-import { levels } from './levels.js';
+
+// Inline level definitions since levels.js is no longer used
+const levels = [
+  { number: 1, min: 0, max: 100 },
+  { number: 2, min: 101, max: 300 },
+  { number: 3, min: 301, max: 600 },
+  { number: 4, min: 601, max: 1000 }
+];
 
 function calculateLevel(points) {
   let currentLevel = levels[0];
   for (const lvl of levels) {
-    if (points >= lvl.min) {
-      currentLevel = lvl;
-    } else {
-      break;
-    }
+    if (points >= lvl.min) currentLevel = lvl; else break;
   }
   return currentLevel;
 }
@@ -20,39 +23,33 @@ async function loadUserData() {
     window.location.href = 'index.html';
     return null;
   }
-
-  const { data, error } = await supabase
-    .from('users')
-    .select('*')
-    .eq('id', user.id)
-    .single();
-
-  if (!error && data) {
-    user = data;
-    localStorage.setItem('loggedInUser', JSON.stringify(user));
+  try {
+    const { data, error } = await supabase.from('users').select('*').eq('id', user.id).single();
+    console.log('[DEBUG] Supabase fetch result:', data, error);
+    if (!error && data) {
+      user = data;
+      localStorage.setItem('loggedInUser', JSON.stringify(user));
+    }
+    return user;
+  } catch (err) {
+    console.error('[DEBUG] Supabase fetch failed:', err);
+    return user; // fallback to localStorage
   }
-  return user;
 }
 
 function updateHomeUI(user) {
-  const welcomeTitle = document.getElementById('welcomeTitle');
-  if (welcomeTitle) {
-    welcomeTitle.textContent = `Welcome ${user.firstName}`;
-  }
+  const welcome = document.getElementById('welcomeTitle');
+  if (welcome) welcome.textContent = `Welcome ${user.firstName}`;
 
   const bitmoji = document.getElementById('homeBitmoji');
-  if (bitmoji) {
-    bitmoji.src = user.avatarUrl || 'images/logos/default.png';
-  }
+  if (bitmoji) bitmoji.src = user.avatarUrl || 'images/logos/default.png';
 
   const badge = document.getElementById('homeBadge');
   if (badge) {
     if (Array.isArray(user.roles)) {
-      if (user.roles.includes('admin')) {
-        badge.src = 'images/levelBadges/admin.png';
-      } else if (user.roles.includes('teacher')) {
-        badge.src = 'images/levelBadges/teacher.png';
-      } else {
+      if (user.roles.includes('admin')) badge.src = 'images/levelBadges/admin.png';
+      else if (user.roles.includes('teacher')) badge.src = 'images/levelBadges/teacher.png';
+      else {
         const level = calculateLevel(user.points || 0);
         badge.src = `images/levelBadges/level${level.number}.png`;
       }
