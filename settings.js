@@ -26,8 +26,8 @@ function promptUserSwitch() {
     );
   });
 
-  console.log("[DEBUG] Logged in user ID:", userIdStr);
-  console.log("[DEBUG] allUsers:", allUsers);
+  console.log("[DEBUG] Logged in user:", user);
+  console.log("[DEBUG] All Users:", allUsers);
   console.log("[DEBUG] sameGroupUsers detected:", userList);
 
   const listContainer = document.getElementById("userSwitchList");
@@ -117,7 +117,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       localStorage.setItem("allUsers", JSON.stringify(allUsers));
       const userIdStr = normalizeUUID(user.id);
       const parentIdStr = normalizeUUID(user.parent_uuid);
-
       const sameGroupUsers = allUsers.filter(u => {
         const uIdStr = normalizeUUID(u.id);
         const uParentStr = normalizeUUID(u.parent_uuid);
