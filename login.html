@@ -3,48 +3,44 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Log Points | Achievement App</title>
+  <title>Home | Achievement App</title>
   <link rel="stylesheet" href="style.css" />
-  <script type="module" src="log-points.js" defer></script>
+  <script type="module">
+    import { supabase } from './supabase.js';
+
+    // Check authentication and prevent redirect loops
+    const user = JSON.parse(localStorage.getItem('loggedInUser'));
+    const currentPage = window.location.pathname.split('/').pop();
+    if (!user && currentPage !== 'login.html') {
+      window.location.href = 'login.html';
+    }
+  </script>
+  <script type="module" src="home.js" defer></script>
 </head>
 <body>
   <main class="app">
     <header>
-      <button id="homeBtn" class="blue-button">Home</button>
-      <h1>Log Points</h1>
+      <h2 id="welcomeTitle"></h2>
     </header>
 
-    <form id="logForm" class="log-form">
-      <table>
-        <tbody>
-          <tr id="studentRow">
-            <td><label for="logStudent">Student</label></td>
-            <td><select id="logStudent"></select></td>
-          </tr>
-          <tr>
-            <td><label for="logCategory">Category</label></td>
-            <td><select id="logCategory"></select></td>
-          </tr>
-          <tr>
-            <td><label for="logPoints">Points</label></td>
-            <td><input type="number" id="logPoints" min="0" placeholder="Enter points" required></td>
-          </tr>
-          <tr>
-            <td><label for="logDate">Date</label></td>
-            <td><input type="date" id="logDate"></td>
-          </tr>
-          <tr>
-            <td><label for="logNote">Notes</label></td>
-            <td><textarea id="logNote" placeholder="Enter note (optional)"></textarea></td>
-          </tr>
-        </tbody>
-      </table>
+    <section class="profile-section">
+      <img id="homeBitmoji" class="bitmoji" src="images/logos/default.png" alt="User Avatar" />
+      <img id="homeBadge" class="badge" src="images/levelBadges/default.png" alt="Level Badge" />
+    </section>
 
-      <div class="button-row">
-        <button type="submit" class="blue-button">Submit</button>
-        <button type="button" id="cancelBtn" class="blue-button">Cancel</button>
+    <section class="progress-section">
+      <h3>Level Progress</h3>
+      <div class="progress-container">
+        <div id="homeProgressBar" class="progress-bar"></div>
       </div>
-    </form>
+      <span id="homeProgressText">0% to next level</span>
+    </section>
+
+    <section class="navigation">
+      <button class="blue-button" onclick="window.location.href='my-points.html'">My Points</button>
+      <button class="blue-button" onclick="window.location.href='log-points.html'">Log Points</button>
+      <button class="blue-button" onclick="window.location.href='settings.html'">Settings</button>
+    </section>
   </main>
 </body>
 </html>
