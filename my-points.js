@@ -29,24 +29,22 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  // Render logs table
   renderLogs(logs);
-
-  // Render category summary
   renderCategorySummary(logs);
 });
 
-// ✅ Render logs with category-specific icons
+// ✅ Render logs with properly sized category icons
 function renderLogs(logs) {
   const logTableBody = document.getElementById("logsTableBody");
   if (!logTableBody) {
     console.error("[ERROR] logsTableBody not found in DOM");
     return;
   }
+
   logTableBody.innerHTML = "";
   logs.forEach((log, index) => {
     const row = document.createElement("tr");
-    row.className = index % 2 === 0 ? "log-row even" : "log-row odd";
+    row.className = index % 2 === 0 ? "log-row-even" : "log-row-odd";
 
     const iconPath = categoryIcons[log.category?.toLowerCase()] || categoryIcons.all;
 
@@ -66,11 +64,9 @@ function renderCategorySummary(logs) {
   const summaryContainer = document.getElementById("categorySummary");
   summaryContainer.innerHTML = "";
 
-  // Total points
   const totalPoints = logs.reduce((sum, l) => sum + (l.points || 0), 0);
   const totalLogs = logs.length;
 
-  // Create summary for each category
   categories.forEach(cat => {
     const catLogs = logs.filter(l => l.category?.toLowerCase() === cat);
     const catPoints = catLogs.reduce((sum, l) => sum + (l.points || 0), 0);
@@ -84,7 +80,6 @@ function renderCategorySummary(logs) {
     `;
   });
 
-  // Add total card
   summaryContainer.innerHTML += `
     <div class="summary-card total">
       <img src="${categoryIcons.all}" alt="Total" class="summary-icon">

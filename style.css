@@ -549,6 +549,13 @@ body.white-page button {
   margin: 20px auto;
   max-width: 90%;
 }
+
+.log-icon {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+}
+
 /* Total card stands out slightly */
 .total-card {
   border: 2px solid #00477d;
