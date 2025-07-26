@@ -35,7 +35,6 @@ const previewImage = document.getElementById("previewImage");
     return;
   }
 
-categorySelect.innerHTML = "<option value=";
   categories.forEach(cat => {
     const opt = document.createElement("option");
     opt.value = cat.name;
