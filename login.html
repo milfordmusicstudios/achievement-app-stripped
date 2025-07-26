@@ -8,21 +8,54 @@
 </head>
 <body>
 <body class="white-page">
-  <main class="app">
-    <img src="images/logos/logo.png" alt="App Logo" class="logo" />
-    <h2>Achievement Awards</h2>
+<main class="white-page" style="padding: 20px; max-width: 600px; margin: auto;">
+  <h2 style="text-align: center; color: #3eb7f8;">Log Points</h2>
 
-    <form id="loginForm">
-      <input type="email" id="loginEmail" placeholder="Email" required />
-      <input type="password" id="loginPassword" placeholder="Password" required />
-      <div style="display: flex; justify-content: center; gap: 10px; margin-top: 10px;">
-        <button type="submit" class="blue-button">Login</button>
-        <button type="button" class="blue-button" onclick="window.location.href='signup.html'">Sign Up</button>
+  <form class="log-form" style="display: flex; flex-direction: column; gap: 20px;">
+    
+    <!-- Student Selector (if visible) -->
+    <div class="form-group">
+      <label for="logStudent">Student:</label>
+      <select id="logStudent" name="logStudent">
+        <option value="">Select a student</option>
+      </select>
+    </div>
+
+    <!-- Category & Notes Row -->
+    <div class="form-row" style="display: flex; flex-wrap: wrap; gap: 20px;">
+      <div style="flex: 1; min-width: 200px;">
+        <label for="logCategory">Category:</label>
+        <select id="logCategory" name="logCategory" required>
+          <option value="">Choose</option>
+        </select>
+        <img id="categoryPreview" src="images/categories/allCategories.png" alt="Category Preview" style="margin-top: 10px; max-width: 100%; height: auto;">
       </div>
-    </form>
+      <div style="flex: 1; min-width: 200px;">
+        <label for="logNote">Notes:</label>
+        <textarea id="logNote" name="logNote" placeholder="Add a note" style="width: 100%; height: 120px;"></textarea>
+      </div>
+    </div>
 
-    <p id="loginError" style="color: red; display: none;">Invalid email or password.</p>
-  </main>
+    <!-- Date -->
+    <div class="form-group">
+      <input type="date" id="logDate" name="logDate" placeholder="dd/mm/yyyy" required>
+    </div>
+
+    <!-- Points -->
+    <div class="form-group">
+      <label for="logPoints">Points</label>
+      <input type="number" id="logPoints" name="logPoints" placeholder="Enter number of points">
+    </div>
+
+    <!-- Buttons -->
+    <div style="display: flex; justify-content: center; gap: 20px;">
+      <button type="submit">Submit</button>
+      <button type="button" onclick="window.location.href='index.html'">Cancel</button>
+    </div>
+  </form>
+
+  <footer style="text-align: center; margin-top: 40px;">© 2025 Milford Music Studios Achievement App</footer>
+</main>
 
   <footer>
     &copy; 2025 Milford Music Studios Achievement App

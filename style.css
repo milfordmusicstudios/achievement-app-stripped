@@ -460,3 +460,14 @@ body.white-page button {
   border-radius: 8px;
   box-sizing: border-box;
 }
+.white-page select,
+.white-page textarea,
+.white-page input[type="date"],
+.white-page input[type="number"] {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+  box-sizing: border-box;
+}
