@@ -7,14 +7,18 @@ function capitalize(str) {
 function promptUserSwitch() {
   const user = JSON.parse(localStorage.getItem("loggedInUser"));
   const allUsers = JSON.parse(localStorage.getItem("allUsers")) || [];
+  const userIdStr = String(user.id);
+  const parentIdStr = user.parent_uuid ? String(user.parent_uuid) : null;
 
-  const userList = allUsers.filter(u =>
-    u.id !== user.id && (
-      (u.email && u.email.toLowerCase() === user.email.toLowerCase()) ||
-      (u.parent_uuid && u.parent_uuid === user.id) ||
-      (user.parent_uuid && u.parent_uuid === user.parent_uuid)
-    )
-  );
+  const userList = allUsers.filter(u => {
+    const uIdStr = String(u.id);
+    const uParentStr = u.parent_uuid ? String(u.parent_uuid) : null;
+    return uIdStr !== userIdStr && (
+      (uParentStr === userIdStr) ||
+      (parentIdStr && uParentStr === parentIdStr) ||
+      (u.email && u.email.toLowerCase() === user.email.toLowerCase())
+    );
+  });
 
   const listContainer = document.getElementById("userSwitchList");
   listContainer.innerHTML = "";
@@ -91,6 +95,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     window.location.href = "index.html";
     return;
   }
+
   document.getElementById('firstName').value = user.firstName || '';
   document.getElementById('lastName').value = user.lastName || '';
   document.getElementById('newEmail').value = user.email || '';
@@ -101,13 +106,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     const { data: allUsers, error } = await supabase.from("users").select("*");
     if (!error && Array.isArray(allUsers)) {
       localStorage.setItem("allUsers", JSON.stringify(allUsers));
-const sameGroupUsers = allUsers.filter(u =>
-  u.id !== user.id && (
-    (u.parent_uuid === user.id) ||
-    (user.parent_uuid && u.parent_uuid === user.parent_uuid) ||
-    (u.email && u.email.toLowerCase() === user.email.toLowerCase())
-  )
-);
+      const userIdStr = String(user.id);
+      const parentIdStr = user.parent_uuid ? String(user.parent_uuid) : null;
+
+      const sameGroupUsers = allUsers.filter(u => {
+        const uIdStr = String(u.id);
+        const uParentStr = u.parent_uuid ? String(u.parent_uuid) : null;
+        return uIdStr !== userIdStr && (
+          (uParentStr === userIdStr) ||
+          (parentIdStr && uParentStr === parentIdStr) ||
+          (u.email && u.email.toLowerCase() === user.email.toLowerCase())
+        );
+      });
+
       document.getElementById("switchUserBtn").style.display = sameGroupUsers.length > 0 ? "inline-block" : "none";
     }
   } catch {
