@@ -1,4 +1,4 @@
-import { supabase } from "./config.js";
+import { supabase } from "./supabase.js";
 
 const categoryIcons = {
   performance: "images/categories/performance.png",
