@@ -7,7 +7,10 @@ function capitalize(str) {
 function promptUserSwitch() {
   const user = JSON.parse(localStorage.getItem("loggedInUser"));
   const allUsers = JSON.parse(localStorage.getItem("allUsers")) || [];
-  const userList = allUsers.filter(u => u.email && user.email && u.email.toLowerCase() === user.email.toLowerCase());
+  const userList = allUsers.filter(u =>
+    (u.email && u.email.toLowerCase() === user.email.toLowerCase()) ||
+    (u.parent_uuid && user.parent_uuid && u.parent_uuid === user.parent_uuid)
+  );
   const listContainer = document.getElementById("userSwitchList");
   listContainer.innerHTML = "";
   userList.forEach(u => {
@@ -31,10 +34,10 @@ function promptUserSwitch() {
 
 function promptRoleSwitch() {
   const user = JSON.parse(localStorage.getItem("loggedInUser"));
-  const roleList = Array.isArray(user.roles) ? user.roles : [user.role];
+  const roles = Array.isArray(user.roles) ? user.roles : [user.role];
   const listContainer = document.getElementById("roleSwitchList");
   listContainer.innerHTML = "";
-  roleList.forEach(role => {
+  roles.forEach(role => {
     const li = document.createElement("li");
     const btn = document.createElement("button");
     btn.className = "blue-button";
@@ -58,7 +61,7 @@ async function saveSettings() {
     email: document.getElementById('newEmail').value.trim()
   };
   try {
-    const { error } = await supabase.from("users").update(updatedUser).eq("uuid", user.uuid);
+    const { error } = await supabase.from("users").update(updatedUser).eq("id", user.id);
     if (error) throw error;
     Object.assign(user, updatedUser);
     localStorage.setItem("loggedInUser", JSON.stringify(user));
@@ -88,20 +91,43 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById('newEmail').value = user.email || '';
   document.getElementById('avatarImage').src = user.avatarUrl || "images/logos/default.png";
 
-  // Avatar upload logic
+  // Load all users for Switch User logic
+  try {
+    const { data: allUsers, error } = await supabase.from("users").select("*");
+    if (!error && Array.isArray(allUsers)) {
+      localStorage.setItem("allUsers", JSON.stringify(allUsers));
+      const sameGroupUsers = allUsers.filter(u =>
+        (u.email && u.email.toLowerCase() === user.email.toLowerCase()) ||
+        (u.parent_uuid && user.parent_uuid && u.parent_uuid === user.parent_uuid)
+      );
+      document.getElementById("switchUserBtn").style.display = sameGroupUsers.length > 1 ? "inline-block" : "none";
+    }
+  } catch {
+    document.getElementById("switchUserBtn").style.display = "none";
+  }
+
+  const switchRoleBtn = document.getElementById("switchRoleBtn");
+  if (Array.isArray(user.roles) && user.roles.length > 1) {
+    switchRoleBtn.style.display = "inline-block";
+    switchRoleBtn.textContent = `Switch Role (Currently: ${capitalize(activeRole)})`;
+  } else {
+    switchRoleBtn.style.display = "none";
+  }
+
+  // Avatar upload using user.id column
   document.getElementById("avatarInput").addEventListener("change", async () => {
     const file = document.getElementById("avatarInput").files[0];
     if (!file) return;
-    const userUUID = user.uuid || user.id;
+    const userId = user.id;
     const fileExt = file.name.split('.').pop();
-    const filePath = `public/${userUUID}.${fileExt}`;
+    const filePath = `public/${userId}.${fileExt}`;
     try {
       const { error: uploadError } = await supabase.storage.from("avatars").upload(filePath, file, { upsert: true });
       if (uploadError) throw uploadError;
       const { data: urlData, error: urlError } = supabase.storage.from("avatars").getPublicUrl(filePath);
       if (urlError) throw urlError;
       const avatarUrl = urlData.publicUrl;
-      const { error: updateError } = await supabase.from("users").update({ avatarUrl }).eq("uuid", userUUID);
+      const { error: updateError } = await supabase.from("users").update({ avatarUrl }).eq("id", userId);
       if (updateError) throw updateError;
       user.avatarUrl = avatarUrl;
       localStorage.setItem("loggedInUser", JSON.stringify(user));
