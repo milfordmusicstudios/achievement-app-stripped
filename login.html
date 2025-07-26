@@ -7,24 +7,25 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body class="white-page">
-  <main class="white-page" style="padding: 20px; max-width: 400px; margin: auto;">
-    <img src="images/logos/logo.png" alt="App Logo" class="logo">
-    <h2 style="text-align: center; color: #3eb7f8;">Login</h2>
+  <main class="app">
+    <img src="images/logos/logo.png" alt="App Logo" class="logo" />
+    <h2>Achievement Awards</h2>
 
-    <form id="loginForm" class="log-form" style="display: flex; flex-direction: column; gap: 20px;">
+    <form id="loginForm">
       <input type="email" id="loginEmail" placeholder="Email" required />
       <input type="password" id="loginPassword" placeholder="Password" required />
-      <button type="submit">Log In</button>
+      <div style="display: flex; justify-content: center; gap: 10px; margin-top: 10px;">
+        <button type="submit" class="blue-button">Login</button>
+        <button type="button" class="blue-button" onclick="window.location.href='signup.html'">Sign Up</button>
+      </div>
     </form>
 
-    <p style="text-align: center;">
-      <a href="reset-password.html">Forgot your password?</a>
-    </p>
-
-    <footer style="text-align: center; margin-top: 40px;">
-      © 2025 Milford Music Studios Achievement App
-    </footer>
+    <p id="loginError" style="color: red; display: none;">Invalid email or password.</p>
   </main>
+
+  <footer>
+    &copy; 2025 Milford Music Studios Achievement App
+  </footer>
 
   <script type="module" src="login.js"></script>
 </body>
