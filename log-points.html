@@ -23,21 +23,21 @@
     </tr>
 
     <!-- Row 2: Category + Notes -->
-    <tr>
-      <td style="width: 30%; padding: 5px; vertical-align: top;">
-        <select id="logCategory" class="white-input" style="width: 100%;">
-<option value="">Category</option>
-        </select>
-        <div style="text-align: center; margin-top: 10px;">
-          <img id="previewImage" src="images/categories/allCategories.png" alt="Category Preview"
-            style="max-width: 80px; display: block; margin: auto;" />
-        </div>
-      </td>
-      <td style="padding: 5px;">
-        <textarea id="logNote" class="white-input" placeholder="Add a note"
-          style="height: 100%; width: 100%; min-height: 120px;"></textarea>
-      </td>
-    </tr>
+<tr>
+  <td style="width: 40%; padding: 5px; vertical-align: top;">
+    <select id="logCategory" class="white-input" style="width: 100%;">
+      <option value="">Category</option>
+    </select>
+    <div style="text-align: center; margin-top: 10px;">
+      <img id="previewImage" src="images/categories/allCategories.png" alt="Category Preview"
+        style="max-width: 100px; display: block; margin: auto;" />
+    </div>
+  </td>
+  <td style="padding: 5px;">
+    <textarea id="logNote" class="white-input" placeholder="Add a note"
+      style="height: 100%; width: 100%; min-height: 120px;"></textarea>
+  </td>
+</tr>
 
     <!-- Row 3: Date -->
     <tr>
@@ -53,13 +53,15 @@
       </td>
     </tr>
 
-    <!-- Row 5: Submit + Cancel -->
-    <tr>
-      <td colspan="2" style="text-align: center; padding: 20px;">
-        <button type="submit">Submit</button>
-        <button type="button" onclick="window.location.href='index.html'">Cancel</button>
-      </td>
-    </tr>
+<!-- Row 5: Submit + Cancel -->
+<tr>
+  <td colspan="2" style="padding: 20px; text-align: center;">
+    <div style="display: flex; justify-content: center; gap: 20px;">
+      <button type="submit">Submit</button>
+      <button type="button" onclick="window.location.href='index.html'">Cancel</button>
+    </div>
+  </td>
+</tr>
   </table>
 </form>
 </main>
