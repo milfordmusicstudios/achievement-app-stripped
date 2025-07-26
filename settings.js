@@ -1,5 +1,11 @@
 import { supabase } from './supabase.js';
 
+function normalizeUUID(value) {
+  if (!value) return null;
+  if (typeof value === 'object' && value.id) return String(value.id);
+  return String(value);
+}
+
 function capitalize(str) {
   return str ? str.charAt(0).toUpperCase() + str.slice(1) : "";
 }
@@ -7,23 +13,22 @@ function capitalize(str) {
 function promptUserSwitch() {
   const user = JSON.parse(localStorage.getItem("loggedInUser"));
   const allUsers = JSON.parse(localStorage.getItem("allUsers")) || [];
-  const userIdStr = String(user.id);
-  const parentIdStr = user.parent_uuid ? String(user.parent_uuid) : null;
+  const userIdStr = normalizeUUID(user.id);
+  const parentIdStr = normalizeUUID(user.parent_uuid);
 
   const userList = allUsers.filter(u => {
-    const uIdStr = String(u.id);
-    const uParentStr = u.parent_uuid ? String(u.parent_uuid) : null;
+    const uIdStr = normalizeUUID(u.id);
+    const uParentStr = normalizeUUID(u.parent_uuid);
     return uIdStr !== userIdStr && (
-      (uParentStr === userIdStr) ||
+      uParentStr === userIdStr ||
       (parentIdStr && uParentStr === parentIdStr) ||
       (u.email && u.email.toLowerCase() === user.email.toLowerCase())
     );
   });
 
-  console.log("[DEBUG] Users available for switch:", userList);
-console.log("[DEBUG] Logged in user id:", user.id);
-console.log("[DEBUG] Logged in user parent_uuid:", user.parent_uuid);
-console.log("[DEBUG] All users:", allUsers);
+  console.log("[DEBUG] Logged in user ID:", userIdStr);
+  console.log("[DEBUG] allUsers:", allUsers);
+  console.log("[DEBUG] sameGroupUsers detected:", userList);
 
   const listContainer = document.getElementById("userSwitchList");
   listContainer.innerHTML = "";
@@ -110,14 +115,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     const { data: allUsers, error } = await supabase.from("users").select("*");
     if (!error && Array.isArray(allUsers)) {
       localStorage.setItem("allUsers", JSON.stringify(allUsers));
-      const userIdStr = String(user.id);
-      const parentIdStr = user.parent_uuid ? String(user.parent_uuid) : null;
+      const userIdStr = normalizeUUID(user.id);
+      const parentIdStr = normalizeUUID(user.parent_uuid);
 
       const sameGroupUsers = allUsers.filter(u => {
-        const uIdStr = String(u.id);
-        const uParentStr = u.parent_uuid ? String(u.parent_uuid) : null;
+        const uIdStr = normalizeUUID(u.id);
+        const uParentStr = normalizeUUID(u.parent_uuid);
         return uIdStr !== userIdStr && (
-          (uParentStr === userIdStr) ||
+          uParentStr === userIdStr ||
           (parentIdStr && uParentStr === parentIdStr) ||
           (u.email && u.email.toLowerCase() === user.email.toLowerCase())
         );
