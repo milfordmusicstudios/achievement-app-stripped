@@ -448,6 +448,6 @@ body.white-page button {
 #categoryPreview {
   display: block;
   margin: 20px auto;
-  max-width: 200px;
+  max-width: 100px;
   height: auto;
 }
