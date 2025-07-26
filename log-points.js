@@ -3,7 +3,7 @@ import { supabase } from './supabase.js';
 
 document.addEventListener("DOMContentLoaded", async () => {
   const categorySelect = document.getElementById("logCategory");
-  const previewImage = document.getElementById("categoryPreview");
+const previewImage = document.getElementById("previewImage");
   const pointsInput = document.getElementById("logPoints");
   const notesInput = document.getElementById("logNotes");
   const dateInput = document.getElementById("logDate");
