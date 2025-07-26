@@ -452,12 +452,11 @@ body.white-page button {
   height: auto;
 }
 .white-input {
-  padding: 10px;
-  margin-bottom: 16px;
-  font-size: 1rem;
-  width: 100%;
   border: 1px solid #ccc;
   border-radius: 8px;
+  padding: 10px;
+  font-size: 1rem;
+  width: 100%;
   box-sizing: border-box;
 }
 .white-page select,
@@ -465,7 +464,7 @@ body.white-page button {
 .white-page input[type="date"],
 .white-page input[type="number"] {
   width: 100%;
-  padding: 10px;
+  padding: 0px;
   border-radius: 8px;
   border: 1px solid #ccc;
   font-size: 1rem;

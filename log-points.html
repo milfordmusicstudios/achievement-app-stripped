@@ -11,65 +11,58 @@
 <main class="app white-page">
   <h2 style="text-align: center; color: #3eb7f8; margin: 10px 0;">Log Points</h2>
 
-  <form class="settings-form" id="logForm">
-    <table style="width: 100%; border-collapse: collapse;">
-      <!-- Row 1: Student -->
-      <tr>
-        <td style="width: 25%; padding: 10px; text-align: right;"><label for="logStudent">Student:</label></td>
-        <td colspan="2" style="padding: 10px;">
-          <select id="logStudent" class="white-input" style="width: 100%;">
-            <option value="">Select a student</option>
-            <!-- Options will be populated by JS -->
-          </select>
-        </td>
-      </tr>
+<form class="settings-form" id="logForm">
+  <table style="width: 100%; border-collapse: collapse;">
+    <!-- Row 1: Student -->
+    <tr>
+      <td colspan="2" style="padding: 10px;">
+        <select id="logStudent" class="white-input" style="width: 100%;">
+          <option value="">Select a student</option>
+        </select>
+      </td>
+    </tr>
 
-      <!-- Row 2: Category + Notes -->
-      <tr>
-        <td style="padding: 10px; text-align: right;"><label for="logCategory">Category:</label></td>
-        <td style="width: 30%; padding: 10px;">
-          <select id="logCategory" class="white-input" style="width: 100%;">
-            <option value="">Choose a category...</option>
-            <!-- Populated by JS -->
-          </select>
-        </td>
-        <td rowspan="2" style="padding: 10px;">
-          <textarea id="logNote" class="white-input" placeholder="Add a note" style="height: 100px; width: 100%;"></textarea>
-        </td>
-      </tr>
+    <!-- Row 2: Category (left) + Notes (right) -->
+    <tr>
+      <td style="width: 30%; padding: 5px; vertical-align: top;">
+        <select id="logCategory" class="white-input" style="width: 100%;">
+          <option value="">Choose a category...</option>
+        </select>
+        <div style="text-align: center; margin-top: 10px;">
+          <img id="previewImage" src="images/categories/allCategories.png" alt="Category Preview"
+            style="max-width: 80px; display: block; margin: auto;" />
+        </div>
+      </td>
+      <td style="padding: 5px;">
+        <textarea id="logNote" class="white-input" placeholder="Add a note"
+          style="height: 100%; width: 100%; min-height: 120px;"></textarea>
+      </td>
+    </tr>
 
-      <!-- Row 3: Category Preview -->
-      <tr>
-        <td></td>
-        <td style="padding: 10px;">
-          <img id="previewImage" src="images/categories/allCategories.png" alt="Category Preview" style="max-width: 100px; display: block; margin: auto;">
-        </td>
-      </tr>
+    <!-- Row 3: Date -->
+    <tr>
+      <td colspan="2" style="padding: 10px;">
+        <input type="date" id="logDate" class="white-input" placeholder="dd/mm/yyyy" style="width: 100%;" />
+      </td>
+    </tr>
 
-      <!-- Row 4: Date -->
-      <tr>
-        <td colspan="3" style="padding: 10px;">
-          <input type="date" id="logDate" class="white-input" placeholder="dd/mm/yyyy" style="width: 100%;" />
-        </td>
-      </tr>
+    <!-- Row 4: Points -->
+    <tr>
+      <td colspan="2" style="padding: 10px;">
+        <input type="number" id="logPoints" class="white-input" placeholder="Enter number of points"
+          style="width: 100%;" />
+      </td>
+    </tr>
 
-      <!-- Row 5: Points -->
-      <tr>
-        <td colspan="3" style="text-align: center; padding: 10px;">
-          <label for="logPoints">Points</label>
-          <input type="number" id="logPoints" class="white-input" placeholder="Enter number of points" style="width: 100%;" />
-        </td>
-      </tr>
-
-      <!-- Row 6: Submit + Cancel -->
-      <tr>
-        <td colspan="3" style="text-align: center; padding: 20px;">
-          <button type="submit">Submit</button>
-          <button type="button" onclick="window.location.href='index.html'">Cancel</button>
-        </td>
-      </tr>
-    </table>
-  </form>
+    <!-- Row 5: Submit + Cancel -->
+    <tr>
+      <td colspan="2" style="text-align: center; padding: 20px;">
+        <button type="submit">Submit</button>
+        <button type="button" onclick="window.location.href='index.html'">Cancel</button>
+      </td>
+    </tr>
+  </table>
+</form>
 </main>
 
   <footer>
