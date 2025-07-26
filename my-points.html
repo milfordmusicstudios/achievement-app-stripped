@@ -12,7 +12,7 @@
     <!-- Top Bar -->
     <div style="display:flex;justify-content:space-between;align-items:center;margin:10px 20px;">
       <button class="blue-button" onclick="window.location.href='index.html'">Home</button>
-      <img id="levelBadge" src="images/levelBadges/default.png" alt="Level Badge" style="width:90px;height:90px;">
+<img id="levelBadge" src="images/levelBadges/default.png" alt="Level Badge">
     </div>
 
     <!-- Page Title -->
@@ -22,14 +22,14 @@
     <div id="categorySummary" class="category-summary"></div>
 
     <!-- Logs Table Section -->
-    <div id="logsSection" class="logs-container">
+    <div id="logsSection" class="logs-container"style="overflow-x:auto;"></div>
       <table id="logsTable">
         <thead>
           <tr>
-            <th>Date</th>
-            <th>Category</th>
-            <th>Points</th>
-            <th>Note</th>
+<th>Category</th>
+<th>Date</th>
+<th>Points</th>
+<th>Note</th>
           </tr>
         </thead>
         <tbody id="logsTableBody"></tbody>
