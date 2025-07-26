@@ -473,7 +473,35 @@ body.white-page button {
   box-sizing: border-box;
   width: 100%;
 }
-/* My Points Page Styling */
+/* ===== MY POINTS PAGE STYLING ===== */
+
+/* Page title (dark blue like home page) */
+#myPointsTitle {
+  color: #00477d;
+  text-align: center;
+  font-size: 2rem;
+  margin-top: 10px;
+  font-weight: bold;
+}
+
+/* My Log Entries title */
+#logEntriesTitle {
+  color: #00477d;
+  text-align: center;
+  font-size: 1.5rem;
+  margin: 20px 0 10px 0;
+}
+
+/* Container for category summary */
+#categorySummary {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 15px;
+  margin: 20px auto;
+  max-width: 900px;
+}
+
 #pointsSummary {
   text-align: center;
   margin-bottom: 20px;
@@ -492,19 +520,28 @@ body.white-page button {
 }
 .category-card {
   background: white;
-  border-radius: 12px;
+  border-radius: 10px;
   box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-  padding: 15px;
-  width: 150px;
+  padding: 10px;
+  width: 140px;
   text-align: center;
-  font-weight: bold;
-  color: #00477d;
 }
 .category-card img {
-  width: 40px;
-  height: 40px;
-  display: block;
-  margin: 0 auto 10px;
+  width: 50px;
+  height: 50px;
+  margin-bottom: 8px;
+}
+
+.category-card h3 {
+  margin: 5px 0;
+  color: #00477d;
+  font-size: 1.2rem;
+}
+
+.category-card p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #333;
 }
 
 /* Logs Table */
@@ -512,6 +549,22 @@ body.white-page button {
   margin: 20px auto;
   max-width: 90%;
 }
+/* Total card stands out slightly */
+.total-card {
+  border: 2px solid #00477d;
+}
+
+/* Log table styling */
+.logs-container {
+  background: white;
+  padding: 15px;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  width: 95%;
+  max-width: 1000px;
+  margin: 0 auto 30px;
+}
+
 #logsTable {
   width: 100%;
   border-collapse: collapse;
@@ -532,4 +585,28 @@ body.white-page button {
 }
 #logsTable tr:nth-child(even) {
   background: #f7f7f7;
+}
+
+/* Alternating row colors */
+.log-row-even {
+  background: #f9f9f9;
+}
+
+.log-row-odd {
+  background: #eeeeee;
+}
+
+/* Buttons stay consistent */
+.blue-button {
+  background: #00477d;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.blue-button:hover {
+  background: #00325a;
 }
