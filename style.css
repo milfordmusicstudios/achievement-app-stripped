@@ -451,22 +451,25 @@ body.white-page button {
   max-width: 100px;
   height: auto;
 }
-.white-input {
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  padding: 12px 16px;
-  font-size: 1rem;
-  width: 100%;
-  box-sizing: border-box;
-}
 .white-page select,
 .white-page textarea,
 .white-page input[type="date"],
 .white-page input[type="number"] {
   width: 100%;
-  padding: 0px;
+  padding: px;
   border-radius: 8px;
   border: 1px solid #ccc;
   font-size: 1rem;
   box-sizing: border-box;
+}
+.white-input,
+.white-input select,
+.white-input input,
+.white-input textarea {
+  padding: 14px 16px !important;   /* Makes all fields taller */
+  font-size: 1rem;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  box-sizing: border-box;
+  width: 100%;
 }

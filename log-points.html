@@ -17,16 +17,16 @@
     <tr>
       <td colspan="2" style="padding: 10px;">
         <select id="logStudent" class="white-input" style="width: 100%;">
-          <option value="">Student</option>
+          <option value="">Select a student</option>
         </select>
       </td>
     </tr>
 
-    <!-- Row 2: Category (left) + Notes (right) -->
+    <!-- Row 2: Category + Notes -->
     <tr>
       <td style="width: 30%; padding: 5px; vertical-align: top;">
         <select id="logCategory" class="white-input" style="width: 100%;">
-          <option value="">Category</option>
+<option value="">Category</option>
         </select>
         <div style="text-align: center; margin-top: 10px;">
           <img id="previewImage" src="images/categories/allCategories.png" alt="Category Preview"
@@ -39,18 +39,17 @@
       </td>
     </tr>
 
-<!-- Row 3: Date -->
-<tr>
-  <td colspan="2" style="padding: 10px;">
-    <label for="logDate" style="font-size: 0.9em; color: #888;">Date</label>
-    <input type="date" id="logDate" class="white-input" required style="width: 100%;" />
-  </td>
-</tr>
+    <!-- Row 3: Date -->
+    <tr>
+      <td colspan="2" style="padding: 10px;">
+        <input type="date" id="logDate" class="white-input" required style="width: 100%;" />
+      </td>
+    </tr>
+
     <!-- Row 4: Points -->
     <tr>
       <td colspan="2" style="padding: 10px;">
-        <input type="number" id="logPoints" class="white-input" placeholder="Enter number of points"
-          style="width: 100%;" />
+        <input type="number" id="logPoints" class="white-input" placeholder="Enter number of points" style="width: 100%;" />
       </td>
     </tr>
 
@@ -65,13 +64,11 @@
 </form>
 </main>
 
-  <footer>
-    &copy; 2025 Milford Music Studios Achievement App
-  </footer>
+<footer>
+  &copy; 2025 Milford Music Studios Achievement App
+</footer>
 
-  <!-- ✅ Scripts -->
 <script src="config.js"></script>
-  <script src="auth.js"></script>
 <script type="module" src="log-points.js"></script>
 </body>
 </html>
