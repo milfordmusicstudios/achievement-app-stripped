@@ -35,15 +35,36 @@ async function loadUserData() {
 }
 
 function updateHomeUI(user) {
-  document.getElementById('welcomeTitle').textContent = `Welcome ${user.firstName}`;
-  document.getElementById('homeBitmoji').src = user.avatarUrl || 'images/logos/default.png';
+  const welcomeTitle = document.getElementById('welcomeTitle');
+  if (welcomeTitle) {
+    welcomeTitle.textContent = `Welcome ${user.firstName}`;
+  }
 
-  const level = calculateLevel(user.points);
+  const bitmoji = document.getElementById('homeBitmoji');
+  if (bitmoji) {
+    bitmoji.src = user.avatarUrl || 'images/logos/default.png';
+  }
+
+  const badge = document.getElementById('homeBadge');
+  if (badge) {
+    if (Array.isArray(user.roles)) {
+      if (user.roles.includes('admin')) {
+        badge.src = 'images/levelBadges/admin.png';
+      } else if (user.roles.includes('teacher')) {
+        badge.src = 'images/levelBadges/teacher.png';
+      } else {
+        const level = calculateLevel(user.points || 0);
+        badge.src = `images/levelBadges/level${level.number}.png`;
+      }
+    }
+  }
+
+  const level = calculateLevel(user.points || 0);
   const percent = Math.min(100, Math.round(((user.points - level.min) / (level.max - level.min)) * 100));
-
-  document.getElementById('homeProgressBar').style.width = `${percent}%`;
-  document.getElementById('homeProgressText').textContent = `${percent}% to next level`;
-  document.getElementById('homeBadge').src = `images/levelBadges/level${level.number}.png`;
+  const progressBar = document.getElementById('homeProgressBar');
+  if (progressBar) progressBar.style.width = `${percent}%`;
+  const progressText = document.getElementById('homeProgressText');
+  if (progressText) progressText.textContent = `${percent}% to next level`;
 }
 
 async function initHome() {
