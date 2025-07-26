@@ -9,63 +9,69 @@
     body {
       background: white;
       font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
       display: flex;
       justify-content: center;
       align-items: center;
       height: 100vh;
+      margin: 0;
     }
     .login-container {
-      max-width: 400px;
-      width: 100%;
-      padding: 20px;
-      border: 1px solid #ddd;
-      border-radius: 8px;
+      width: 350px;
+      padding: 30px;
       background: #fff;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    .login-logo {
+      width: 120px;
+      margin-bottom: 15px;
     }
     h1 {
-      text-align: center;
+      font-size: 24px;
       color: #00477d;
+      margin-bottom: 15px;
     }
-    .login-form label {
+    label {
       display: block;
+      text-align: left;
       margin-top: 10px;
       font-weight: bold;
+      color: #00477d;
     }
-    .login-form input {
+    input[type="email"], input[type="password"] {
       width: 100%;
-      padding: 8px;
+      padding: 10px;
       margin-top: 5px;
       border: 1px solid #ccc;
-      border-radius: 4px;
+      border-radius: 5px;
     }
     .blue-button {
       width: 100%;
-      margin-top: 15px;
+      margin-top: 20px;
       padding: 10px;
+      font-size: 16px;
       background: #00477d;
       color: white;
       border: none;
-      border-radius: 4px;
-      font-size: 16px;
+      border-radius: 5px;
       cursor: pointer;
     }
     .blue-button:hover { background: #0060b8; }
-    .error-message { color: red; margin-top: 10px; text-align: center; }
+    .error-message { color: red; margin-top: 10px; font-size: 14px; }
   </style>
   <script type="module" src="login.js" defer></script>
 </head>
 <body>
   <div class="login-container">
+    <img src="images/logos/logo.png" alt="App Logo" class="login-logo" />
     <h1>Login</h1>
-    <form id="loginForm" class="login-form">
+    <form id="loginForm">
       <label for="email">Email</label>
-      <input type="email" id="email" required placeholder="Enter your email">
+      <input type="email" id="email" placeholder="Enter your email" required>
 
       <label for="password">Password</label>
-      <input type="password" id="password" required placeholder="Enter your password">
+      <input type="password" id="password" placeholder="Enter your password" required>
 
       <button type="submit" class="blue-button">Login</button>
     </form>
