@@ -1,6 +1,6 @@
 import { supabase } from './supabase.js';
 
-// Inline level definitions since levels.js is no longer used
+// Inline level definitions
 const levels = [
   { number: 1, min: 0, max: 100 },
   { number: 2, min: 101, max: 300 },
@@ -9,31 +9,30 @@ const levels = [
 ];
 
 function calculateLevel(points) {
-  let currentLevel = levels[0];
+  let current = levels[0];
   for (const lvl of levels) {
-    if (points >= lvl.min) currentLevel = lvl; else break;
+    if (points >= lvl.min) current = lvl; else break;
   }
-  return currentLevel;
+  return current;
 }
 
 async function loadUserData() {
   let user = JSON.parse(localStorage.getItem('loggedInUser'));
   if (!user) {
-    alert('You must be logged in.');
-    window.location.href = 'index.html';
+    window.location.href = 'login.html';
     return null;
   }
   try {
     const { data, error } = await supabase.from('users').select('*').eq('id', user.id).single();
-    console.log('[DEBUG] Supabase fetch result:', data, error);
+    console.log('[DEBUG] Home Supabase user fetch:', data, error);
     if (!error && data) {
       user = data;
       localStorage.setItem('loggedInUser', JSON.stringify(user));
     }
     return user;
   } catch (err) {
-    console.error('[DEBUG] Supabase fetch failed:', err);
-    return user; // fallback to localStorage
+    console.error('[DEBUG] Home Supabase fetch failed:', err);
+    return user;
   }
 }
 
@@ -49,17 +48,14 @@ function updateHomeUI(user) {
     if (Array.isArray(user.roles)) {
       if (user.roles.includes('admin')) badge.src = 'images/levelBadges/admin.png';
       else if (user.roles.includes('teacher')) badge.src = 'images/levelBadges/teacher.png';
-      else {
-        const level = calculateLevel(user.points || 0);
-        badge.src = `images/levelBadges/level${level.number}.png`;
-      }
+      else badge.src = `images/levelBadges/level${calculateLevel(user.points || 0).number}.png`;
     }
   }
 
   const level = calculateLevel(user.points || 0);
   const percent = Math.min(100, Math.round(((user.points - level.min) / (level.max - level.min)) * 100));
-  const progressBar = document.getElementById('homeProgressBar');
-  if (progressBar) progressBar.style.width = `${percent}%`;
+  const bar = document.getElementById('homeProgressBar');
+  if (bar) bar.style.width = `${percent}%`;
   const progressText = document.getElementById('homeProgressText');
   if (progressText) progressText.textContent = `${percent}% to next level`;
 }

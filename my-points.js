@@ -1,28 +1,33 @@
 import { supabase } from './supabase.js';
-import { levels } from './levels.js';
+
+// Inline level definitions (replaces missing levels.js)
+const levels = [
+  { number: 1, min: 0, max: 100 },
+  { number: 2, min: 101, max: 300 },
+  { number: 3, min: 301, max: 600 },
+  { number: 4, min: 601, max: 1000 }
+];
 
 function calculateLevel(points) {
   let currentLevel = levels[0];
   for (const lvl of levels) {
-    if (points >= lvl.min) {
-      currentLevel = lvl;
-    } else break;
+    if (points >= lvl.min) currentLevel = lvl; else break;
   }
   return currentLevel;
 }
 
 function renderCategorySummary(logs) {
+  const container = document.getElementById('categorySummary');
+  container.innerHTML = '';
   const categories = {};
   logs.forEach(log => {
     if (!categories[log.category]) categories[log.category] = { points: 0, count: 0 };
     categories[log.category].points += log.points;
     categories[log.category].count++;
   });
-  const container = document.getElementById('categorySummary');
-  container.innerHTML = '';
   for (const [cat, data] of Object.entries(categories)) {
     const div = document.createElement('div');
-    div.classList.add('category-card');
+    div.className = 'category-card';
     div.innerHTML = `<h3>${cat}</h3><p>${data.points} pts</p><p>${data.count} logs</p>`;
     container.appendChild(div);
   }
@@ -39,17 +44,9 @@ function renderLogsTable(logs) {
 }
 
 async function loadUserLogs(user) {
-  const { data: logs, error } = await supabase
-    .from('logs')
-    .select('*')
-    .eq('userId', user.id)
-    .order('date', { ascending: false });
-
-  if (error) {
-    console.error('Error fetching logs:', error);
-    return [];
-  }
-  console.log('Fetched logs:', logs);
+  const { data: logs, error } = await supabase.from('logs').select('*').eq('userId', user.id).order('date', { ascending: false });
+  console.log('[DEBUG] Fetched logs:', logs, error);
+  if (error) return [];
   renderLogsTable(logs);
   renderCategorySummary(logs);
   return logs;
@@ -65,17 +62,16 @@ async function updateUserPoints(user, totalPoints) {
 }
 
 async function initMyPoints() {
-  const user = JSON.parse(localStorage.getItem('loggedInUser'));
+  let user = JSON.parse(localStorage.getItem('loggedInUser'));
   if (!user) {
-    alert('You must be logged in.');
-    window.location.href = 'index.html';
+    window.location.href = 'login.html';
     return;
   }
 
   document.getElementById('homeBtn').addEventListener('click', () => window.location.href = 'index.html');
 
   const logs = await loadUserLogs(user);
-  if (!logs || logs.length === 0) {
+  if (!logs.length) {
     document.getElementById('totalPoints').textContent = '0 Points';
     return;
   }

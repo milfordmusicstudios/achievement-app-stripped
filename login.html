@@ -3,44 +3,27 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Home | Achievement App</title>
+  <title>Login | Achievement App</title>
   <link rel="stylesheet" href="style.css" />
-  <script type="module">
-    import { supabase } from './supabase.js';
-
-    // Check authentication and prevent redirect loops
-    const user = JSON.parse(localStorage.getItem('loggedInUser'));
-    const currentPage = window.location.pathname.split('/').pop();
-    if (!user && currentPage !== 'login.html') {
-      window.location.href = 'login.html';
-    }
-  </script>
-  <script type="module" src="home.js" defer></script>
+  <script type="module" src="login.js" defer></script>
 </head>
 <body>
-  <main class="app">
+  <main class="login-app">
     <header>
-      <h2 id="welcomeTitle"></h2>
+      <h1>Login</h1>
     </header>
 
-    <section class="profile-section">
-      <img id="homeBitmoji" class="bitmoji" src="images/logos/default.png" alt="User Avatar" />
-      <img id="homeBadge" class="badge" src="images/levelBadges/default.png" alt="Level Badge" />
-    </section>
+    <form id="loginForm" class="login-form">
+      <label for="email">Email</label>
+      <input type="email" id="email" placeholder="Enter your email" required>
 
-    <section class="progress-section">
-      <h3>Level Progress</h3>
-      <div class="progress-container">
-        <div id="homeProgressBar" class="progress-bar"></div>
-      </div>
-      <span id="homeProgressText">0% to next level</span>
-    </section>
+      <label for="password">Password</label>
+      <input type="password" id="password" placeholder="Enter your password" required>
 
-    <section class="navigation">
-      <button class="blue-button" onclick="window.location.href='my-points.html'">My Points</button>
-      <button class="blue-button" onclick="window.location.href='log-points.html'">Log Points</button>
-      <button class="blue-button" onclick="window.location.href='settings.html'">Settings</button>
-    </section>
+      <button type="submit" class="blue-button">Login</button>
+    </form>
+
+    <p id="loginError" class="error-message"></p>
   </main>
 </body>
 </html>
