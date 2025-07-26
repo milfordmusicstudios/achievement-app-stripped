@@ -1,52 +1,56 @@
-// login.js
 import { supabase } from './supabase.js';
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('loginForm');
-  const errorDisplay = document.getElementById('loginError');
+  const emailInput = document.getElementById('email');
+  const passwordInput = document.getElementById('password');
+  const errorMsg = document.getElementById('loginError');
+
+  if (!form || !emailInput || !passwordInput) {
+    console.error('[DEBUG] Login elements not found');
+    return;
+  }
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const email = document.getElementById('loginEmail').value.trim().toLowerCase();
-    const password = document.getElementById('loginPassword').value;
+    const email = emailInput.value.trim();
+    const password = passwordInput.value.trim();
+    errorMsg.textContent = '';
 
     if (!email || !password) {
-      errorDisplay.style.display = 'block';
-      errorDisplay.textContent = 'Please enter both email and password.';
+      errorMsg.textContent = 'Please enter both email and password';
       return;
     }
 
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      console.log('[DEBUG] Supabase login response:', data, error);
 
-    if (error) {
-      errorDisplay.style.display = 'block';
-      errorDisplay.textContent = 'Invalid email or password.';
-    } else {
-      // Fetch user profile from 'users' table
-      const { data: userData } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', data.user.id)
-        .single();
-
-      if (!userData) {
-        errorDisplay.style.display = 'block';
-        errorDisplay.textContent = 'User profile not found.';
+      if (error) {
+        errorMsg.textContent = 'Invalid login credentials';
         return;
       }
 
-      // Save to localStorage
-      localStorage.setItem('loggedInUser', JSON.stringify(userData));
+      // fetch user profile from users table
+      const { data: profile, error: profileError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', email)
+        .single();
 
-      // Set default role
-      const roles = userData.roles || ['student'];
-      const defaultRole = roles.includes('admin') ? 'admin' :
-                          roles.includes('teacher') ? 'teacher' : 'student';
+      if (profileError) {
+        console.error('[DEBUG] Profile fetch error:', profileError);
+      }
 
-      localStorage.setItem('activeRole', defaultRole);
-
-      // Redirect
-      window.location.href = 'index.html';
+      if (profile) {
+        localStorage.setItem('loggedInUser', JSON.stringify(profile));
+        window.location.href = 'index.html';
+      } else {
+        errorMsg.textContent = 'User profile not found.';
+      }
+    } catch (err) {
+      console.error('[DEBUG] Login failed:', err);
+      errorMsg.textContent = 'An unexpected error occurred';
     }
   });
 });
