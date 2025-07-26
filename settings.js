@@ -7,10 +7,15 @@ function capitalize(str) {
 function promptUserSwitch() {
   const user = JSON.parse(localStorage.getItem("loggedInUser"));
   const allUsers = JSON.parse(localStorage.getItem("allUsers")) || [];
+
   const userList = allUsers.filter(u =>
-    (u.email && u.email.toLowerCase() === user.email.toLowerCase()) ||
-    (u.parent_uuid && user.parent_uuid && u.parent_uuid === user.parent_uuid)
+    u.id !== user.id && (
+      (u.email && u.email.toLowerCase() === user.email.toLowerCase()) ||
+      (u.parent_uuid && u.parent_uuid === user.id) ||
+      (user.parent_uuid && u.parent_uuid === user.parent_uuid)
+    )
   );
+
   const listContainer = document.getElementById("userSwitchList");
   listContainer.innerHTML = "";
   userList.forEach(u => {
@@ -97,10 +102,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (!error && Array.isArray(allUsers)) {
       localStorage.setItem("allUsers", JSON.stringify(allUsers));
       const sameGroupUsers = allUsers.filter(u =>
-        (u.email && u.email.toLowerCase() === user.email.toLowerCase()) ||
-        (u.parent_uuid && user.parent_uuid && u.parent_uuid === user.parent_uuid)
+        u.id !== user.id && (
+          (u.email && u.email.toLowerCase() === user.email.toLowerCase()) ||
+          (u.parent_uuid && u.parent_uuid === user.id) ||
+          (user.parent_uuid && u.parent_uuid === user.parent_uuid)
+        )
       );
-      document.getElementById("switchUserBtn").style.display = sameGroupUsers.length > 1 ? "inline-block" : "none";
+      document.getElementById("switchUserBtn").style.display = sameGroupUsers.length > 0 ? "inline-block" : "none";
     }
   } catch {
     document.getElementById("switchUserBtn").style.display = "none";
@@ -114,7 +122,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     switchRoleBtn.style.display = "none";
   }
 
-  // Avatar upload using user.id column
+  // Avatar upload using user.id
   document.getElementById("avatarInput").addEventListener("change", async () => {
     const file = document.getElementById("avatarInput").files[0];
     if (!file) return;
