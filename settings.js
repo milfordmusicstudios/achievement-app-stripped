@@ -21,6 +21,9 @@ function promptUserSwitch() {
   });
 
   console.log("[DEBUG] Users available for switch:", userList);
+console.log("[DEBUG] Logged in user id:", user.id);
+console.log("[DEBUG] Logged in user parent_uuid:", user.parent_uuid);
+console.log("[DEBUG] All users:", allUsers);
 
   const listContainer = document.getElementById("userSwitchList");
   listContainer.innerHTML = "";
