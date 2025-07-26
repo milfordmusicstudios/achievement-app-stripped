@@ -20,6 +20,8 @@ function promptUserSwitch() {
     );
   });
 
+  console.log("[DEBUG] Users available for switch:", userList);
+
   const listContainer = document.getElementById("userSwitchList");
   listContainer.innerHTML = "";
   userList.forEach(u => {
@@ -101,7 +103,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById('newEmail').value = user.email || '';
   document.getElementById('avatarImage').src = user.avatarUrl || "images/logos/default.png";
 
-  // Load all users for Switch User logic
   try {
     const { data: allUsers, error } = await supabase.from("users").select("*");
     if (!error && Array.isArray(allUsers)) {
@@ -119,9 +120,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         );
       });
 
+      console.log("[DEBUG] sameGroupUsers detected:", sameGroupUsers);
       document.getElementById("switchUserBtn").style.display = sameGroupUsers.length > 0 ? "inline-block" : "none";
     }
-  } catch {
+  } catch (err) {
+    console.error("[DEBUG] Failed to load users:", err);
     document.getElementById("switchUserBtn").style.display = "none";
   }
 
@@ -133,7 +136,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     switchRoleBtn.style.display = "none";
   }
 
-  // Avatar upload using user.id
   document.getElementById("avatarInput").addEventListener("change", async () => {
     const file = document.getElementById("avatarInput").files[0];
     if (!file) return;
