@@ -1,13 +1,4 @@
-import { supabase } from "./supabase.js";
-
-const categoryIcons = {
-  performance: "images/categories/performance.png",
-  participation: "images/categories/participation.png",
-  practice: "images/categories/practice.png",
-  personal: "images/categories/personal.png",
-  proficiency: "images/categories/proficiency.png",
-  all: "images/categories/allCategories.png"
-};
+import { supabase } from './supabase.js';
 
 document.addEventListener("DOMContentLoaded", async () => {
   const user = JSON.parse(localStorage.getItem("loggedInUser"));
@@ -17,6 +8,32 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
+  const logsSection = document.getElementById("logsTableBody");
+  const categorySummary = document.getElementById("categorySummary");
+
+  // Define categories and icons
+  const categories = {
+    performance: "images/categories/performance.png",
+    participation: "images/categories/participation.png",
+    practice: "images/categories/practice.png",
+    personal: "images/categories/personal.png",
+    proficiency: "images/categories/proficiency.png",
+    total: "images/categories/allCategories.png"
+  };
+// Fetch user level badge (similar to home.js)
+const badgeEl = document.getElementById("levelBadge");
+
+// Fetch user data to get badge
+const { data: userData, error: userError } = await supabase
+  .from("users")
+  .select("level")
+  .eq("id", user.id)
+  .single();
+
+if (!userError && userData) {
+  badgeEl.src = `images/levelBadges/level${userData.level || 1}.png`;
+}
+
   // Fetch logs for this user
   const { data: logs, error } = await supabase
     .from("logs")
@@ -25,66 +42,56 @@ document.addEventListener("DOMContentLoaded", async () => {
     .order("date", { ascending: false });
 
   if (error) {
-    console.error("[ERROR] Fetching logs:", error);
+    console.error("Error fetching logs:", error);
     return;
   }
 
-  renderLogs(logs);
-  renderCategorySummary(logs);
-});
+  // Build category totals
+  const categoryData = {
+    performance: { points: 0, count: 0 },
+    participation: { points: 0, count: 0 },
+    practice: { points: 0, count: 0 },
+    personal: { points: 0, count: 0 },
+    proficiency: { points: 0, count: 0 },
+    total: { points: 0, count: 0 }
+  };
 
-// ✅ Render logs with properly sized category icons
-function renderLogs(logs) {
-  const logTableBody = document.getElementById("logsTableBody");
-  if (!logTableBody) {
-    console.error("[ERROR] logsTableBody not found in DOM");
-    return;
-  }
+  logs.forEach(log => {
+    const cat = log.category?.toLowerCase();
+    if (categoryData[cat]) {
+      categoryData[cat].points += log.points;
+      categoryData[cat].count++;
+    }
+    categoryData.total.points += log.points;
+    categoryData.total.count++;
+  });
 
-  logTableBody.innerHTML = "";
-  logs.forEach((log, index) => {
+  // Render category summary cards
+  categorySummary.innerHTML = "";
+  Object.keys(categories).forEach(cat => {
+    const card = document.createElement("div");
+    card.className = `category-card ${cat === "total" ? "total-card" : ""}`;
+    card.innerHTML = `
+      <img src="${categories[cat]}" alt="${cat}" style="width:50px;height:50px;">
+      <h3>${categoryData[cat].points} pts</h3>
+      <p>${categoryData[cat].count} logs</p>
+    `;
+    categorySummary.appendChild(card);
+  });
+
+  // Render logs table
+  logsSection.innerHTML = "";
+  logs.forEach((log, idx) => {
     const row = document.createElement("tr");
-    row.className = index % 2 === 0 ? "log-row-even" : "log-row-odd";
-
-    const iconPath = categoryIcons[log.category?.toLowerCase()] || categoryIcons.all;
+    row.className = idx % 2 === 0 ? "log-row-even" : "log-row-odd";
+    const icon = categories[log.category?.toLowerCase()] || categories.total;
 
     row.innerHTML = `
       <td>${new Date(log.date).toLocaleDateString()}</td>
-      <td><img src="${iconPath}" alt="${log.category}" class="log-icon"></td>
+      <td><img src="${icon}" alt="${log.category}" style="width:40px;height:40px;"></td>
       <td>${log.points}</td>
-      <td>${log.note || ""}</td>
+      <td>${log.notes || ""}</td>
     `;
-    logTableBody.appendChild(row);
+    logsSection.appendChild(row);
   });
-}
-
-// ✅ Render category summary cards
-function renderCategorySummary(logs) {
-  const categories = ["performance", "participation", "practice", "personal", "proficiency"];
-  const summaryContainer = document.getElementById("categorySummary");
-  summaryContainer.innerHTML = "";
-
-  const totalPoints = logs.reduce((sum, l) => sum + (l.points || 0), 0);
-  const totalLogs = logs.length;
-
-  categories.forEach(cat => {
-    const catLogs = logs.filter(l => l.category?.toLowerCase() === cat);
-    const catPoints = catLogs.reduce((sum, l) => sum + (l.points || 0), 0);
-
-    summaryContainer.innerHTML += `
-      <div class="summary-card">
-        <img src="${categoryIcons[cat]}" alt="${cat}" class="summary-icon">
-        <h3>${catPoints} pts</h3>
-        <p>${catLogs.length} logs</p>
-      </div>
-    `;
-  });
-
-  summaryContainer.innerHTML += `
-    <div class="summary-card total">
-      <img src="${categoryIcons.all}" alt="Total" class="summary-icon">
-      <h3>${totalPoints} pts</h3>
-      <p>${totalLogs} logs</p>
-    </div>
-  `;
-}
+});
