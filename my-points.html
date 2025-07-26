@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Points | Achievement App</title>
+  <link rel="stylesheet" href="style.css" />
+  <script type="module" src="my-points.js" defer></script>
+</head>
+<body>
+  <main class="app">
+    <header>
+      <button id="homeBtn" class="blue-button">Home</button>
+      <h1>My Points</h1>
+    </header>
+
+    <section id="pointsSummary">
+      <h2 id="totalPoints">0 Points</h2>
+    </section>
+
+    <section id="categorySummarySection">
+      <h2>Points by Category</h2>
+      <div id="categorySummary" class="category-summary"></div>
+    </section>
+
+    <section id="logsSection">
+      <h2>My Log Entries</h2>
+      <table id="logsTable">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Category</th>
+            <th>Points</th>
+            <th>Note</th>
+          </tr>
+        </thead>
+        <tbody id="logsTableBody"></tbody>
+      </table>
+    </section>
+  </main>
+</body>
+</html>
