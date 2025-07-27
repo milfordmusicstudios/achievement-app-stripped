@@ -10,40 +10,54 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  console.log("User loaded:", user);
-  console.log("User roles:", user.roles);
-  console.log("Active role:", activeRole);
+  console.log("[DEBUG] Loading home page for user:", user.id);
 
-  document.body.classList.add(`${activeRole}-mode`);
-const welcome = document.getElementById("welcomeTitle");
-welcome.textContent = `Welcome, ${user.firstName}!`;
-welcome.style.color = "#00477d";
-welcome.style.fontSize = "2em";
-welcome.style.fontWeight = "bold";
-  // ✅ Set avatar with fallback
-  const avatar = document.getElementById("homeAvatar");
-  if (avatar) {
-const avatarURL = user.avatarUrl && user.avatarUrl.trim() !== ""
-  ? user.avatarUrl
-  : "images/logos/default.png";
-    avatar.src = avatarURL;
+  try {
+    // ✅ Fetch latest user data from Supabase
+    const { data: freshUser, error } = await supabase
+      .from("users")
+      .select("id, firstName, level, points, avatarUrl, badge")
+      .eq("id", user.id)
+      .single();
+
+    if (error) throw error;
+
+    // ✅ Update localStorage with fresh user data
+    localStorage.setItem("loggedInUser", JSON.stringify(freshUser));
+
+    // ✅ Apply refreshed data
+    updateHomeUI(freshUser, activeRole);
+
+  } catch (err) {
+    console.error("[ERROR] Could not refresh user info:", err);
+    // fallback to localStorage data if fetch fails
+    updateHomeUI(user, activeRole);
   }
+});
 
-  // ✅ Set badge
+function updateHomeUI(userData, activeRole) {
+  // ✅ Welcome message
+  const welcome = document.getElementById("welcomeTitle");
+  welcome.textContent = `Welcome, ${userData.firstName}!`;
+  welcome.style.color = "#00477d";
+  welcome.style.fontSize = "2em";
+  welcome.style.fontWeight = "bold";
+
+  // ✅ Avatar
+  const avatar = document.getElementById("homeAvatar");
+  avatar.src = userData.avatarUrl?.trim() || "images/logos/default.png";
+
+  // ✅ Badge
   const badgeImg = document.getElementById("homeBadge");
   if (activeRole === "student") {
-    const levelNumber = user.level || 1;
-    badgeImg.src = `images/levelBadges/level${levelNumber}.png`;
-
-    document.getElementById("homeProgressBar").style.width = "75%"; // Placeholder
-    document.getElementById("homeProgressBar").style.backgroundColor = "#007bff";
-    document.getElementById("homeProgressText").textContent = `75% to next level`;
+    const levelNumber = userData.level || 1;
+    badgeImg.src = userData.badge || `images/levelBadges/level${levelNumber}.png`;
   } else {
     badgeImg.src = `images/levelBadges/${activeRole}.png`;
     document.getElementById("progressSection")?.classList.add("hidden");
   }
 
-  // ✅ Manage layout and visibility
+  // ✅ Manage layout & role-based UI
   const myPointsBtn = document.getElementById("myPointsBtn");
   const reviewLogsBtn = document.getElementById("reviewLogsBtn");
   const manageUsersBtn = document.getElementById("manageUsersBtn");
@@ -51,7 +65,6 @@ const avatarURL = user.avatarUrl && user.avatarUrl.trim() !== ""
   const middleCol = document.getElementById("middleButtonCol");
   const topRow = middleCol?.parentElement;
 
-  // Reset all states
   myPointsBtn.classList.add("invisible");
   reviewLogsBtn.classList.add("invisible");
   myPointsBtn.style.display = "none";
@@ -64,10 +77,7 @@ const avatarURL = user.avatarUrl && user.avatarUrl.trim() !== ""
     reviewLogsBtn.style.display = "flex";
     middleCol.style.display = "flex";
     topRow.classList.add("flex-center");
-
-    if (activeRole === "admin") {
-      manageUsersBtn.style.display = "inline-block";
-    }
+    if (activeRole === "admin") manageUsersBtn.style.display = "inline-block";
   } else {
     myPointsBtn.classList.remove("invisible");
     myPointsBtn.style.display = "flex";
@@ -75,4 +85,4 @@ const avatarURL = user.avatarUrl && user.avatarUrl.trim() !== ""
     levelSelection.style.display = "block";
     topRow.classList.add("flex-center");
   }
-});
+}
