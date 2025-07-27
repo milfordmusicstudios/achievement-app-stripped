@@ -127,6 +127,12 @@ window.closeMultiSelectModal = function() { document.getElementById("multiSelect
 
 // ✅ Open Add User Modal
 function openAddUserModal() {
+  // ✅ Build teacher options from current users
+  const teacherOptions = allUsers
+    .filter(u => Array.isArray(u.roles) && (u.roles.includes("teacher") || u.roles.includes("admin")))
+    .map(t => `<label><input type="checkbox" class="teacher-check" value="${t.id}"> ${t.firstName} ${t.lastName}</label>`)
+    .join("");
+
   const modal = document.createElement("div");
   modal.className = "modal-overlay";
   modal.style.display = "flex";
@@ -138,7 +144,10 @@ function openAddUserModal() {
       <label>Email</label><input id="newEmail" type="email">
       <label>Instrument</label><input id="newInstrument" type="text">
       <label>Roles (comma separated)</label><input id="newRoles" type="text" value="student">
-      <label>Teacher IDs (comma separated)</label><input id="newTeachers" type="text">
+      <label>Assign Teacher(s)</label>
+      <div id="teacherSelectBox" style="border:1px solid #ccc; padding:6px; border-radius:4px; max-height:120px; overflow:auto; background:#f9f9f9;">
+        ${teacherOptions}
+      </div>
       <div class="modal-actions">
         <button class="blue-button" id="createUserBtn">Create</button>
         <button class="blue-button" id="cancelUserBtn">Cancel</button>
@@ -147,6 +156,7 @@ function openAddUserModal() {
   `;
   document.body.appendChild(modal);
 
+  // ✅ Event Listeners
   document.getElementById("cancelUserBtn").addEventListener("click", () => modal.remove());
   document.getElementById("createUserBtn").addEventListener("click", async () => {
     await createNewUser();
@@ -154,15 +164,18 @@ function openAddUserModal() {
   });
 }
 
-// ✅ Create New User in Supabase
+// ✅ Updated user creation to handle teacher IDs
 async function createNewUser() {
+  const teacherChecks = document.querySelectorAll(".teacher-check:checked");
+  const teacherIDs = Array.from(teacherChecks).map(cb => cb.value);
+
   const newUser = {
     firstName: document.getElementById("newFirstName").value.trim(),
     lastName: document.getElementById("newLastName").value.trim(),
     email: document.getElementById("newEmail").value.trim(),
     instrument: document.getElementById("newInstrument").value.trim(),
     roles: document.getElementById("newRoles").value.split(",").map(r => r.trim()),
-    teacher: document.getElementById("newTeachers").value.split(",").map(t => t.trim()).filter(t => t)
+    teacher: teacherIDs
   };
 
   const { data, error } = await supabase.from("users").insert([newUser]).select();
