@@ -621,6 +621,7 @@ body.white-page button {
 /* Adjust category cards for mobile */
 .category-card {
   width: 120px;
+  
 }
 
 /* Responsive tweaks */
@@ -638,12 +639,12 @@ body.white-page button {
   }
   #levelBadge {
     width: 100px !important;
-    height: 100px !important;
+    height: auto !important;
   }
 }
 
 /* Level badge style */
 #levelBadge {
-  width: 120px;
-  height: 120px;
+  width: 120px;    /* larger on desktop */
+  height: auto;
 }

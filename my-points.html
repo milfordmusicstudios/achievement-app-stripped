@@ -10,23 +10,20 @@
 <body>
   <main class="app">
 
-    <!-- Top Bar -->
-    <header style="display:flex; justify-content:space-between; align-items:center; padding:10px;">
+    <!-- ✅ Top Bar with Home Button & Level Badge -->
+    <header style="display:flex; justify-content:space-between; align-items:center; padding:10px 20px;">
       <button class="blue-button" onclick="window.location.href='index.html'">Home</button>
-      <img id="levelBadge" src="images/levelBadges/level1.png" alt="Level Badge" 
-           style="width:80px; height:auto; margin-right:10px;">
+      <img id="levelBadge" src="images/levelBadges/level1.png" alt="Level Badge">
     </header>
 
-    <!-- Page Title -->
+    <!-- ✅ Page Title -->
     <h2 style="text-align:center; color:#00477d; margin:10px 0;">My Points</h2>
 
-    <!-- Category Summary -->
-    <section id="categorySummary" class="category-summary">
-      <!-- Cards dynamically inserted by JS -->
-    </section>
+    <!-- ✅ Category Summary Cards -->
+    <section id="categorySummary" class="category-summary"></section>
 
-    <!-- Logs Table -->
-    <section id="logsSection" class="logs-container">
+    <!-- ✅ Logs Table (Wrapped for Mobile Scroll) -->
+    <section id="logsSection" class="logs-container" style="overflow-x:auto;">
       <table id="logsTable">
         <thead>
           <tr>
@@ -36,9 +33,7 @@
             <th>Note</th>
           </tr>
         </thead>
-        <tbody>
-          <!-- Logs dynamically inserted by JS -->
-        </tbody>
+        <tbody id="logsTableBody"></tbody>
       </table>
     </section>
 
