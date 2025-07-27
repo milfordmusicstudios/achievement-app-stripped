@@ -948,3 +948,49 @@ main.app > header h2 {
   border: 1px solid #ddd;
   border-top: none;
 }
+/* ---- My Points Table Layout ---- */
+
+/* ✅ Fixed Header Table */
+#pointsHeaderTable {
+  width: 95%;
+  margin: 0 auto;
+  border-collapse: collapse;
+}
+#pointsHeaderTable th {
+  background: #3eb7f8;
+  color: white;
+  border-bottom: 2px solid #00477d;
+  padding: 6px;
+  text-align: left;
+}
+#pointsHeaderTable thead tr th:first-child {
+  border-top-left-radius: 8px;
+  width: 60px; /* ✅ narrow category column */
+}
+#pointsHeaderTable thead tr th:last-child {
+  border-top-right-radius: 8px;
+}
+
+/* ✅ Scrollable Table Body */
+#logsSection {
+  width: 95%;
+  height: calc(100vh - 350px);
+  margin: 0 auto 10px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-top: none;
+}
+#logsTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+#logsTable td {
+  padding: 6px 8px;
+  border-bottom: 1px solid #ddd;
+}
+
+/* ✅ Column Widths */
+#logsTable td:nth-child(1) { width: 60px; text-align: center; }  /* category icon */
+#logsTable td:nth-child(2) { width: 130px; }                     /* date */
+#logsTable td:nth-child(3) { width: 80px; }                      /* points */
+#logsTable td:nth-child(4) { width: auto; }                      /* note expands */
