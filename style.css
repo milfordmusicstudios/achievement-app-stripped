@@ -1333,13 +1333,14 @@ body.manage-users h2.page-title {
   font-size: 0.95rem;
   box-sizing: border-box;    /* ✅ ensures padding doesn’t break layout */
 }
-.plus-icon {
-  width: 20px;       /* ✅ make it bigger */
-  height: 20px;
-  vertical-align: middle;
-  margin-right: 6px;
-}
 /* Add more breathing room inside table cells */
 #userTable td {
   padding: 10px 12px;        /* ✅ more space between inputs and cell edges */
+}
+
+.plus-icon {
+  width: 28px !important;
+  height: 28px !important;
+  vertical-align: middle;
+  margin-right: 6px;
 }
