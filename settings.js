@@ -122,23 +122,33 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById('newEmail').value = user.email || '';
   document.getElementById('avatarImage').src = user.avatarUrl || "images/logos/default.png";
 
-  // Ensure roles is always an array
-  if (!Array.isArray(user.roles)) {
+  // ✅ Ensure roles is always an array and parse JSON if needed
+  if (!user.roles && user.role) {
+    user.roles = [user.role];
+  } else if (typeof user.roles === "string") {
+    try {
+      user.roles = JSON.parse(user.roles);
+    } catch {
+      user.roles = user.roles.split(",").map(r => r.trim());
+    }
+  } else if (!Array.isArray(user.roles)) {
     user.roles = user.roles ? [user.roles] : [];
   }
+  console.log("DEBUG (fixed) user.roles:", user.roles);
 
-  // Use conditional fetching for family members
+  // Fetch related users
   const relatedUsers = await fetchRelatedUsers(user);
 
-  // Combine current user with related users
+  // ✅ Combine current user with related users
   const allUsers = [user, ...relatedUsers];
   localStorage.setItem("allUsers", JSON.stringify(allUsers));
+  console.log("DEBUG allUsers:", allUsers);
 
-  // Show switch user if multiple users share the same email
-  const sameEmailUsers = allUsers.filter(u => u.email?.toLowerCase() === user.email?.toLowerCase());
-  document.getElementById("switchUserBtn").style.display = sameEmailUsers.length > 1 ? "inline-block" : "none";
+  // ✅ Show Switch User Button if there are related users or more than one user
+  const switchUserBtn = document.getElementById("switchUserBtn");
+  switchUserBtn.style.display = (relatedUsers.length > 0 || allUsers.length > 1) ? "inline-block" : "none";
 
-  // Adjust switch role button visibility
+  // ✅ Show Switch Role Button if user has multiple roles
   const switchRoleBtn = document.getElementById("switchRoleBtn");
   if (user.roles.length > 1) {
     switchRoleBtn.style.display = "inline-block";
