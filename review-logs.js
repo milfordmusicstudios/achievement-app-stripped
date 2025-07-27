@@ -56,30 +56,67 @@ document.addEventListener("DOMContentLoaded", async () => {
     alert("Failed to load logs.");
   }
 
-  // ✅ Bulk Approve Button
-// ✅ Bulk Approve Button Handler (using status column)
-document.getElementById("bulkApproveBtn").addEventListener("click", async () => {
-  if (!confirm("Approve all logs? This will set every log's status to 'approved'.")) return;
+  // ✅ Bulk Approve UI logic
+  const bulkPanel = document.getElementById("bulkApprovePanel");
+  const bulkPointsInput = document.getElementById("bulkPoints");
 
-  try {
-    // ✅ Update logs in Supabase
-    const { error } = await supabase.from("logs").update({ status: "approved" });
-    if (error) throw error;
+  document.getElementById("bulkApproveBtn").addEventListener("click", () => {
+    bulkPanel.style.display = "block";
+  });
 
-    // ✅ Update local arrays
-    logs.forEach(log => log.status = "approved");
-    filteredLogs.forEach(log => log.status = "approved");
+  document.getElementById("cancelBulkApprove").addEventListener("click", () => {
+    bulkPanel.style.display = "none";
+    bulkPointsInput.value = "";
+  });
 
-    // ✅ Re-render
-    renderLogsTable(filteredLogs);
-    alert("✅ All logs approved successfully.");
-  } catch (err) {
-    console.error("Bulk approve failed:", err);
-    alert("❌ Failed to approve logs. Check console.");
-  }
-});
+  // ✅ Confirm Bulk Approve Selected Logs
+  document.getElementById("confirmBulkApprove").addEventListener("click", async () => {
+    const pointsInput = bulkPointsInput.value.trim();
+    const assignPoints = pointsInput !== "";
+    const points = assignPoints ? parseInt(pointsInput) : null;
 
-  // ✅ Live Search
+    const selectedIds = Array.from(document.querySelectorAll(".select-log:checked"))
+      .map(cb => cb.dataset.id);
+
+    if (selectedIds.length === 0) {
+      alert("No logs selected.");
+      return;
+    }
+
+    if (!confirm(`Approve ${selectedIds.length} logs${assignPoints ? ` with ${points} points` : ""}?`)) return;
+
+    try {
+      // ✅ Update only selected logs
+      for (let id of selectedIds) {
+        const updateData = { status: "approved" };
+        if (assignPoints) updateData.points = points;
+
+        const { error } = await supabase.from("logs").update(updateData).eq("id", id);
+        if (error) throw error;
+
+        const log = logs.find(l => l.id.toString() === id);
+        if (log) {
+          log.status = "approved";
+          if (assignPoints) log.points = points;
+        }
+        const flog = filteredLogs.find(l => l.id.toString() === id);
+        if (flog) {
+          flog.status = "approved";
+          if (assignPoints) flog.points = points;
+        }
+      }
+
+      renderLogsTable(filteredLogs);
+      bulkPanel.style.display = "none";
+      bulkPointsInput.value = "";
+      alert("✅ Selected logs approved successfully.");
+    } catch (err) {
+      console.error("Bulk approve failed:", err);
+      alert("❌ Failed to approve selected logs.");
+    }
+  });
+
+  // ✅ Search Filter
   searchInput.addEventListener("input", () => {
     const searchVal = searchInput.value.toLowerCase();
     filteredLogs = logs.filter(l =>
@@ -93,8 +130,9 @@ document.getElementById("bulkApproveBtn").addEventListener("click", async () => 
     renderLogsTable(filteredLogs);
   });
 
-  // ✅ Sort Handler
-  document.querySelectorAll("#logsTable th").forEach(th => {
+  // ✅ Sorting
+  document.querySelectorAll("#logsHeaderTable th").forEach(th => {
+    if (!th.dataset.field) return;
     th.addEventListener("click", () => {
       const field = th.dataset.field;
       currentSort.order = (currentSort.field === field && currentSort.order === "asc") ? "desc" : "asc";
@@ -142,6 +180,13 @@ document.getElementById("bulkApproveBtn").addEventListener("click", async () => 
     renderLogsTable(filteredLogs);
   });
 
+  // ✅ Select All Checkbox
+  document.getElementById("selectAll").addEventListener("change", (e) => {
+    document.querySelectorAll(".select-log").forEach(cb => {
+      cb.checked = e.target.checked;
+    });
+  });
+
   // ✅ Render Category Summary
   function renderCategorySummary(logs) {
     categorySummary.innerHTML = "";
@@ -187,7 +232,7 @@ document.getElementById("bulkApproveBtn").addEventListener("click", async () => 
     textarea.style.height = textarea.scrollHeight + "px";
   }
 
-  // ✅ Render Logs Table with Pagination
+  // ✅ Render Logs Table with Pagination & Checkboxes
   function renderLogsTable(logs) {
     logsTableBody.innerHTML = "";
 
@@ -199,6 +244,7 @@ document.getElementById("bulkApproveBtn").addEventListener("click", async () => 
       const row = document.createElement("tr");
       row.className = index % 2 === 0 ? "log-row-even" : "log-row-odd";
       row.innerHTML = `
+        <td><input type="checkbox" class="select-log" data-id="${log.id}"></td>
         <td>${log.fullName}</td>
         <td><input class="edit-input" data-id="${log.id}" data-field="category" value="${log.category}"></td>
         <td><input type="date" class="edit-input" data-id="${log.id}" data-field="date" value="${log.date.split('T')[0]}"></td>
@@ -215,7 +261,6 @@ document.getElementById("bulkApproveBtn").addEventListener("click", async () => 
       logsTableBody.appendChild(row);
     });
 
-    // ✅ Update pagination info
     const totalPages = Math.ceil(logs.length / logsPerPage);
     document.getElementById("pageInfo").textContent = `Page ${currentPage} of ${totalPages}`;
     document.getElementById("prevPageBtn").disabled = currentPage === 1;
@@ -224,7 +269,7 @@ document.getElementById("bulkApproveBtn").addEventListener("click", async () => 
     applyEditListeners();
   }
 
-  // ✅ Input listeners for each page
+  // ✅ Apply inline edit listeners
   function applyEditListeners() {
     document.querySelectorAll(".edit-input").forEach(el => {
       if (el.tagName.toLowerCase() === "textarea") {

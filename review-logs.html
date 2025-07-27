@@ -10,25 +10,35 @@
 <body>
   <main class="app">
 
-    <!-- ✅ Top Bar with Home button -->
+    <!-- ✅ Top Bar -->
     <header id="pageHeader">
       <button class="blue-button" onclick="window.location.href='index.html'">Home</button>
       <h2>Review Logs</h2>
     </header>
 
-    <!-- ✅ Action Bar: Search (left) + Bulk Approve (right) -->
-    <div id="actionBar">
-      <input id="searchInput" type="text" placeholder="Search logs...">
-      <button id="bulkApproveBtn" class="blue-button">Bulk Approve All</button>
-    </div>
-
-    <!-- ✅ Category Summary -->
+    <!-- ✅ Category Summary (Centered) -->
     <section id="categorySummary"></section>
 
-    <!-- ✅ Table Header (Separate from Scroll) -->
+    <!-- ✅ Action Bar (Moved Under Cards) -->
+    <div id="actionBar">
+      <input id="searchInput" type="text" placeholder="Search logs...">
+      <button id="bulkApproveBtn" class="blue-button">Bulk Approve Selected</button>
+    </div>
+
+    <!-- ✅ Bulk Approve Panel -->
+    <div id="bulkApprovePanel" style="display:none; text-align:center; margin-bottom:10px;">
+      <label>Points to assign: 
+        <input type="number" id="bulkPoints" style="width:80px;">
+      </label>
+      <button id="confirmBulkApprove" class="blue-button">Confirm</button>
+      <button id="cancelBulkApprove" class="blue-button" style="background:#999;">Cancel</button>
+    </div>
+
+    <!-- ✅ Table Header -->
     <table id="logsHeaderTable">
       <thead>
         <tr>
+          <th><input type="checkbox" id="selectAll"></th>
           <th>Student</th>
           <th>Category</th>
           <th>Date</th>
@@ -39,14 +49,14 @@
       </thead>
     </table>
 
-    <!-- ✅ Scrollable Table Body -->
+    <!-- ✅ Scrollable Table -->
     <section id="logsSection">
       <table id="logsTable">
         <tbody id="logsTableBody"></tbody>
       </table>
     </section>
 
-    <!-- ✅ Pagination Controls -->
+    <!-- ✅ Pagination -->
     <div id="paginationControls">
       <button id="prevPageBtn" class="blue-button">Prev</button>
       <span id="pageInfo"></span>

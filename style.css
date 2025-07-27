@@ -885,3 +885,66 @@ main.app > header h2 {
   gap: 10px;
   margin: 10px 0;
 }
+/* ✅ Summary Cards Centered */
+#categorySummary {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;  /* ✅ center horizontally */
+  gap: 10px;
+  width: 100%;
+  margin: 15px auto;
+}
+.category-card {
+  width: 140px;
+  background: #f4f4f4;
+  padding: 8px;
+  border-radius: 8px;
+  text-align: center;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+/* ✅ Action Bar Under Cards */
+#actionBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 95%;
+  margin: 10px auto 15px;
+}
+#actionBar #searchInput {
+  width: 300px;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 1rem;
+}
+
+/* ✅ Rounded Table Header */
+#logsHeaderTable {
+  width: 95%;
+  margin: 0 auto;
+  border-collapse: collapse;
+}
+#logsHeaderTable th {
+  background: #3eb7f8;
+  color: white;
+  border-bottom: 2px solid #00477d;
+  padding: 6px;
+  text-align: left;
+}
+#logsHeaderTable thead tr th:first-child {
+  border-top-left-radius: 8px;
+}
+#logsHeaderTable thead tr th:last-child {
+  border-top-right-radius: 8px;
+}
+
+/* ✅ Scrollable Table Body */
+#logsSection {
+  width: 95%;
+  height: calc(100vh - 350px);
+  margin: 0 auto 10px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-top: none;
+}
