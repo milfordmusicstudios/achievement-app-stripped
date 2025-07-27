@@ -26,7 +26,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (logsError) throw logsError;
     console.log("[DEBUG] Logs fetched:", logs);
 
-    // ✅ Filter only approved logs
+    // ✅ Filter only approved logs for points/levels
     const approvedLogs = logs.filter(l => l.status === "approved");
 
     // ✅ Fetch levels
@@ -36,11 +36,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       .order("minPoints", { ascending: true });
 
     if (levelsError) throw levelsError;
-    console.log("[DEBUG] Levels fetched:", levelsData);
 
     // ✅ Calculate total points from approved logs only
     const totalPoints = approvedLogs.reduce((sum, log) => sum + (log.points || 0), 0);
-    console.log("[DEBUG] Total approved points calculated:", totalPoints);
+    console.log("[DEBUG] Total approved points:", totalPoints);
 
     // ✅ Determine user level based on approved points
     let userLevel = levelsData.find(l =>
@@ -50,31 +49,30 @@ document.addEventListener("DOMContentLoaded", async () => {
       userLevel = levelsData[levelsData.length - 1];
     }
 
-    console.log("[DEBUG] User Level determined:", userLevel);
-
     // ✅ Update user record in Supabase with approved points & level
     if (userLevel) {
       const { error: updateError } = await supabase
         .from("users")
         .update({ points: totalPoints, level: userLevel.id })
         .eq("id", userId);
-
       if (updateError) console.error("[ERROR] Failed to update user level:", updateError);
-      else console.log("[DEBUG] User points & level updated in Supabase");
     }
 
     // ✅ Set level badge
     levelBadge.src = userLevel?.badge || "images/levelBadges/level1.png";
 
-    // ✅ Render category summary & logs table only with approved logs
+    // ✅ Render category summary (only approved logs count)
     renderCategorySummary(approvedLogs, totalPoints);
-    renderLogs(approvedLogs);
+
+    // ✅ Sort all logs by date (newest first) & render them all
+    logs.sort((a, b) => new Date(b.date) - new Date(a.date));
+    renderLogs(logs);
 
   } catch (err) {
     console.error("[ERROR] My Points:", err);
   }
 
-  // ---- RENDER FUNCTIONS ----
+  // ---- FUNCTIONS ----
 
   function renderCategorySummary(logs, totalPoints) {
     categorySummary.innerHTML = "";
@@ -114,18 +112,19 @@ document.addEventListener("DOMContentLoaded", async () => {
       </div>`;
   }
 
-function renderLogs(logs) {
-  logsTableBody.innerHTML = "";
-  logs.forEach((log, index) => {
-    const icon = `images/categories/${log.category || "allCategories"}.png`;
-    logsTableBody.innerHTML += `
-      <tr class="${index % 2 === 0 ? 'log-row-even' : 'log-row-odd'}">
-        <td><img src="${icon}" style="width:30px;height:30px"></td>
-        <td>${new Date(log.date).toLocaleDateString()}</td>
-        <td>${log.points ?? ""}</td>
-        <td>${log.notes || ""}</td>
-        <td>${log.status || "pending"}</td>
-      </tr>`;
-  });
-}
+  // ✅ Render logs with Status column
+  function renderLogs(logs) {
+    logsTableBody.innerHTML = "";
+    logs.forEach((log, index) => {
+      const icon = `images/categories/${log.category || "allCategories"}.png`;
+      logsTableBody.innerHTML += `
+        <tr class="${index % 2 === 0 ? 'log-row-even' : 'log-row-odd'}">
+          <td><img src="${icon}" style="width:30px;height:30px"></td>
+          <td>${log.date ? new Date(log.date).toLocaleDateString() : ""}</td>
+          <td>${log.points ?? ""}</td>
+          <td>${log.notes || ""}</td>
+          <td>${log.status || "pending"}</td>
+        </tr>`;
+    });
+  }
 });
