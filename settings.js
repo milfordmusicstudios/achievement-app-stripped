@@ -146,7 +146,16 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // ✅ Show Switch User Button if there are related users or more than one user
   const switchUserBtn = document.getElementById("switchUserBtn");
-  switchUserBtn.style.display = (relatedUsers.length > 0 || allUsers.length > 1) ? "inline-block" : "none";
+// ✅ More reliable logic
+const existingAllUsers = JSON.parse(localStorage.getItem("allUsers")) || [];
+const sameEmailUsers = existingAllUsers.filter(u => u.email?.toLowerCase() === user.email?.toLowerCase());
+
+// ✅ Show button if: related users exist, or allUsers has multiple entries, or same email users exist
+if (relatedUsers.length > 0 || existingAllUsers.length > 1 || sameEmailUsers.length > 1) {
+  switchUserBtn.style.display = "inline-block";
+} else {
+  switchUserBtn.style.display = "none";
+}
 
   // ✅ Show Switch Role Button if user has multiple roles
   const switchRoleBtn = document.getElementById("switchRoleBtn");
