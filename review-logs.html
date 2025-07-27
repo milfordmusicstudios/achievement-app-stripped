@@ -10,7 +10,7 @@
 <body>
   <main class="app">
 
-    <!-- ✅ Sticky Top Bar -->
+    <!-- ✅ Header -->
     <header>
       <button class="blue-button" onclick="window.location.href='index.html'">Home</button>
       <h2>Review Logs</h2>
@@ -21,9 +21,11 @@
 
     <!-- ✅ Live Search -->
     <input id="searchInput" type="text" placeholder="Search logs...">
-<button id="bulkApproveBtn" class="blue-button" style="margin:10px auto; display:block;">
-  Bulk Approve All
-</button>
+
+    <!-- ✅ Bulk Approve Button -->
+    <button id="bulkApproveBtn" class="blue-button" style="margin:10px auto; display:block;">
+      Bulk Approve All
+    </button>
 
     <!-- ✅ Logs Table -->
     <section id="logsSection">
@@ -41,6 +43,19 @@
         <tbody id="logsTableBody"></tbody>
       </table>
     </section>
+
+    <!-- ✅ Pagination Controls -->
+    <div id="paginationControls" style="display:flex; justify-content:center; gap:10px; margin:10px 0;">
+      <button id="prevPageBtn" class="blue-button">Prev</button>
+      <span id="pageInfo" style="align-self:center;"></span>
+      <button id="nextPageBtn" class="blue-button">Next</button>
+
+      <select id="logsPerPage" class="blue-button" style="width:80px; padding:5px;">
+        <option value="25">25</option>
+        <option value="50" selected>50</option>
+        <option value="100">100</option>
+      </select>
+    </div>
 
   </main>
 </body>

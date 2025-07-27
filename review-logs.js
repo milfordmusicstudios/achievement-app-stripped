@@ -21,6 +21,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   let filteredLogs = [];
   let currentSort = { field: "date", order: "desc" };
 
+  // ✅ Pagination variables
+  let currentPage = 1;
+  let logsPerPage = 50;
+
   try {
     // ✅ Fetch logs & users
     const { data: logsData, error: logsError } = await supabase
@@ -44,7 +48,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     filteredLogs = [...logs];
 
-    // ✅ Initial render
     renderCategorySummary(filteredLogs);
     renderLogsTable(filteredLogs);
 
@@ -52,29 +55,27 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.error("[ERROR] Review Logs:", err);
     alert("Failed to load logs.");
   }
-// ✅ Bulk Approve Button Handler
-document.getElementById("bulkApproveBtn").addEventListener("click", async () => {
-  if (!confirm("Approve all logs? This action will set every log's status to 'approved'.")) return;
 
-  try {
-    // ✅ Update all logs in Supabase
-    const { error } = await supabase.from("logs").update({ status: "approved" });
-    if (error) throw error;
+  // ✅ Bulk Approve Button
+  document.getElementById("bulkApproveBtn").addEventListener("click", async () => {
+    if (!confirm("Approve all logs? This action will set every log's status to 'approved'.")) return;
 
-    // ✅ Update locally
-    filteredLogs.forEach(log => log.status = "approved");
-    logs.forEach(log => log.status = "approved");
+    try {
+      const { error } = await supabase.from("logs").update({ status: "approved" });
+      if (error) throw error;
 
-    // ✅ Re-render the table
-    renderLogsTable(filteredLogs);
-    alert("✅ All logs approved successfully.");
-  } catch (err) {
-    console.error("Bulk approve failed:", err);
-    alert("❌ Failed to approve logs. Check console.");
-  }
-});
+      filteredLogs.forEach(log => log.status = "approved");
+      logs.forEach(log => log.status = "approved");
 
-  // ---------------- LIVE SEARCH ONLY ----------------
+      renderLogsTable(filteredLogs);
+      alert("✅ All logs approved successfully.");
+    } catch (err) {
+      console.error("Bulk approve failed:", err);
+      alert("❌ Failed to approve logs. Check console.");
+    }
+  });
+
+  // ✅ Live Search
   searchInput.addEventListener("input", () => {
     const searchVal = searchInput.value.toLowerCase();
     filteredLogs = logs.filter(l =>
@@ -82,12 +83,13 @@ document.getElementById("bulkApproveBtn").addEventListener("click", async () => 
       (l.notes || "").toLowerCase().includes(searchVal) ||
       (l.category || "").toLowerCase().includes(searchVal)
     );
+    currentPage = 1;
     sortLogs();
     renderCategorySummary(filteredLogs);
     renderLogsTable(filteredLogs);
   });
 
-  // ---------------- SORT HANDLER ----------------
+  // ✅ Sort Handler
   document.querySelectorAll("#logsTable th").forEach(th => {
     th.addEventListener("click", () => {
       const field = th.dataset.field;
@@ -114,7 +116,29 @@ document.getElementById("bulkApproveBtn").addEventListener("click", async () => 
     });
   }
 
-  // ---------------- CATEGORY SUMMARY ----------------
+  // ✅ Pagination Controls
+  document.getElementById("prevPageBtn").addEventListener("click", () => {
+    if (currentPage > 1) {
+      currentPage--;
+      renderLogsTable(filteredLogs);
+    }
+  });
+
+  document.getElementById("nextPageBtn").addEventListener("click", () => {
+    const totalPages = Math.ceil(filteredLogs.length / logsPerPage);
+    if (currentPage < totalPages) {
+      currentPage++;
+      renderLogsTable(filteredLogs);
+    }
+  });
+
+  document.getElementById("logsPerPage").addEventListener("change", (e) => {
+    logsPerPage = parseInt(e.target.value);
+    currentPage = 1;
+    renderLogsTable(filteredLogs);
+  });
+
+  // ✅ Render Category Summary
   function renderCategorySummary(logs) {
     categorySummary.innerHTML = "";
     const icons = {
@@ -153,16 +177,21 @@ document.getElementById("bulkApproveBtn").addEventListener("click", async () => 
       </div>`;
   }
 
-  // ---------------- AUTO-RESIZE TEXTAREA ----------------
+  // ✅ Auto-resize textarea
   function autoResizeTextarea(textarea) {
     textarea.style.height = "auto";
     textarea.style.height = textarea.scrollHeight + "px";
   }
 
-  // ---------------- RENDER LOGS TABLE ----------------
+  // ✅ Render Logs Table with Pagination
   function renderLogsTable(logs) {
     logsTableBody.innerHTML = "";
-    logs.forEach((log, index) => {
+
+    const start = (currentPage - 1) * logsPerPage;
+    const end = start + logsPerPage;
+    const pageLogs = logs.slice(start, end);
+
+    pageLogs.forEach((log, index) => {
       const row = document.createElement("tr");
       row.className = index % 2 === 0 ? "log-row-even" : "log-row-odd";
       row.innerHTML = `
@@ -182,13 +211,22 @@ document.getElementById("bulkApproveBtn").addEventListener("click", async () => 
       logsTableBody.appendChild(row);
     });
 
-    // ✅ Auto-resize + inline editing
+    // ✅ Update pagination info
+    const totalPages = Math.ceil(logs.length / logsPerPage);
+    document.getElementById("pageInfo").textContent = `Page ${currentPage} of ${totalPages}`;
+    document.getElementById("prevPageBtn").disabled = currentPage === 1;
+    document.getElementById("nextPageBtn").disabled = currentPage === totalPages;
+
+    applyEditListeners();
+  }
+
+  // ✅ Input listeners for each page
+  function applyEditListeners() {
     document.querySelectorAll(".edit-input").forEach(el => {
       if (el.tagName.toLowerCase() === "textarea") {
         autoResizeTextarea(el);
         el.addEventListener("input", () => autoResizeTextarea(el));
       }
-
       el.addEventListener("change", async e => {
         const logId = e.target.dataset.id;
         const field = e.target.dataset.field;
