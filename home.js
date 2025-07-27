@@ -11,7 +11,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   try {
-    // Fetch logs for current user
+    // ✅ Fetch logs for current user
     const { data: logs, error: logsError } = await supabase
       .from("logs")
       .select("*")
@@ -19,11 +19,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     if (logsError) throw logsError;
 
-    // Filter approved logs for progress/level calculation
+    // ✅ Filter approved logs for level/points calculation
     const approvedLogs = logs.filter(l => l.status === "approved");
     const totalPoints = approvedLogs.reduce((sum, log) => sum + (log.points || 0), 0);
 
-    // Fetch levels
+    // ✅ Fetch levels and calculate current level dynamically
     const { data: levels, error: levelsError } = await supabase
       .from("levels")
       .select("*")
@@ -31,13 +31,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     if (levelsError) throw levelsError;
 
-    // Determine current and next level dynamically
     let currentLevel = levels.find(l => totalPoints >= l.minPoints && totalPoints <= l.maxPoints);
     if (!currentLevel && levels.length > 0) currentLevel = levels[levels.length - 1];
-    const currentIndex = levels.findIndex(l => l.id === currentLevel.id);
-    const nextLevel = levels[currentIndex + 1];
 
-    // Fetch latest user info
+    // ✅ Fetch latest user info (avatar, name)
     const { data: freshUser, error: userError } = await supabase
       .from("users")
       .select("id, firstName, avatarUrl")
@@ -46,74 +43,54 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     if (userError) throw userError;
 
-    // Build user object with recalculated progress
+    // ✅ Construct refreshed user data
     const userData = {
       ...freshUser,
       points: totalPoints,
       level: currentLevel?.id || 1,
-      badge: currentLevel?.badge || `images/levelBadges/level${currentLevel?.id || 1}.png`,
-      levelColor: currentLevel?.color || "#3eb7f8"
+      badge: currentLevel?.badge || `images/levelBadges/level${currentLevel?.id || 1}.png`
     };
 
-    // Update local storage
+    // ✅ Update local storage with recalculated values
     localStorage.setItem("loggedInUser", JSON.stringify(userData));
 
-    // Update UI
-    updateHomeUI(userData, activeRole, currentLevel, nextLevel);
+    // ✅ Update UI
+    updateHomeUI(userData, activeRole);
 
   } catch (err) {
-    console.error("[ERROR] Could not refresh home page info:", err);
-    updateHomeUI(storedUser, activeRole, null, null);
+    console.error("[ERROR] Could not refresh user info:", err);
+    // Fallback to stored user if fetch fails
+    updateHomeUI(storedUser, activeRole);
   }
 });
 
-function updateHomeUI(userData, activeRole, currentLevel, nextLevel) {
-  // Welcome Title
+function updateHomeUI(userData, activeRole) {
+  // ✅ Welcome text
   const welcome = document.getElementById("welcomeTitle");
   if (welcome) {
     welcome.textContent = `Welcome, ${userData.firstName}!`;
     welcome.style.color = "#00477d";
-    welcome.style.fontSize = "2.5em";
-    welcome.style.fontWeight = "bold";
   }
 
-  // Avatar
+  // ✅ Avatar
   const avatar = document.getElementById("homeAvatar");
   if (avatar) avatar.src = userData.avatarUrl || "images/logos/default.png";
 
-  // Badge
+  // ✅ Badge
   const badgeImg = document.getElementById("homeBadge");
   if (badgeImg) {
-    badgeImg.src = (activeRole === "student")
-      ? userData.badge
-      : `images/levelBadges/${activeRole}.png`;
-  }
-
-  // Progress Bar
-  const progressBar = document.getElementById("progressBar");
-  const progressText = document.getElementById("progressPercent");
-  const levelTitle = document.querySelector("#progressCard h3");
-
-  if (levelTitle) levelTitle.style.color = "white";
-
-  if (progressBar && progressText && currentLevel) {
-    let percent = 100;
-    if (nextLevel) {
-      percent = ((userData.points - currentLevel.minPoints) /
-        (nextLevel.minPoints - currentLevel.minPoints)) * 100;
+    if (activeRole === "student") {
+      badgeImg.src = userData.badge;
+    } else {
+      badgeImg.src = `images/levelBadges/${activeRole}.png`;
     }
-    percent = Math.min(100, Math.max(0, percent));
-
-    progressBar.style.width = percent + "%";
-    progressBar.style.backgroundColor = userData.levelColor;
-    progressText.textContent = `${Math.round(percent)}%`;
   }
 
-  // Role-based UI visibility
+  // ✅ Role-based UI
   const myPointsBtn = document.getElementById("myPointsBtn");
   const reviewLogsBtn = document.getElementById("reviewLogsBtn");
   const manageUsersBtn = document.getElementById("manageUsersBtn");
-  const levelSection = document.getElementById("levelSection");
+  const levelSelection = document.getElementById("levelSection");
   const middleCol = document.getElementById("middleButtonCol");
   const topRow = middleCol?.parentElement;
 
@@ -134,7 +111,7 @@ function updateHomeUI(userData, activeRole, currentLevel, nextLevel) {
     myPointsBtn.classList.remove("invisible");
     myPointsBtn.style.display = "flex";
     middleCol.style.display = "flex";
-    levelSection.style.display = "block";
+    levelSelection.style.display = "block";
     topRow.classList.add("flex-center");
   }
 }

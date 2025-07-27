@@ -1,45 +1,172 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Home | Achievement App</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="style.css">
-  <script type="module" src="home.js" defer></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="style.css" />
 </head>
-<body>
-  <main class="app">
+<body class="tall-background">
 
-    <!-- ✅ Welcome Title -->
-    <h1 id="welcomeTitle" class="welcome-title"></h1>
+  <main>
+    <div class="app">
+      <h2 id="welcomeTitle" class="header"></h2>
 
-    <!-- ✅ Avatar & Badge -->
-    <div class="user-info">
-      <img id="homeAvatar" src="images/logos/default.png" alt="User Avatar">
-      <img id="homeBadge" src="images/levelBadges/level1.png" alt="User Badge">
-    </div>
-
-    <!-- ✅ Level Progress Card -->
-    <div id="progressCard" class="progress-card">
-      <h3>Level Progress</h3>
-      <div class="progress-container">
-        <div id="progressBar" class="progress-bar"></div>
+      <div class="avatar-badge">
+        <img id="homeAvatar" class="avatar" src="" alt="Your Avatar" />
+        <img id="homeBadge" class="badge" src="" alt="Level Badge" />
       </div>
-      <span id="progressPercent">0%</span>
-    </div>
 
-    <!-- ✅ Button Row -->
-    <div id="topButtonRow" class="flex-center">
-      <div id="middleButtonCol" class="button-col">
-        <button id="myPointsBtn" class="blue-button invisible">My Points</button>
-        <button id="reviewLogsBtn" class="blue-button invisible">Review Logs</button>
-        <button id="manageUsersBtn" class="blue-button">Manage Users</button>
+      <!-- ✅ Level Progress section only for students -->
+      <section id="levelSection">
+        <div class="progress-card">
+          <div class="progress-label">Level Progress</div>
+          <div class="progress-container">
+            <div class="progress-bar" id="homeProgressBar" style="width: 0%;"></div>
+          </div>
+        </div>
+        <div class="percent-text" id="homeProgressText">75% to next level</div>
+      </section>
+
+      <div class="button-wrapper">
+        <div class="button-area">
+
+<!-- 🔹 Row 1: Log Points + My Points / Review Logs -->
+<div class="button-row" id="topButtonRow">
+  <!-- Log Points -->
+  <div class="button-col">
+    <button class="nav-button log" onclick="location.href='log-points.html'">
+      <div class="btn-content">
+        <div class="btn-icon">
+          <img src="images/icons/log.png" alt="Log Icon" />
+        </div>
+        <div class="btn-text">Log Points</div>
+      </div>
+    </button>
+  </div>
+
+  <!-- My Points (Student only, shows in center) -->
+  <div class="button-col" id="middleButtonCol">
+    <button id="myPointsBtn" class="nav-button points invisible" onclick="location.href='my-points.html'">
+      <div class="btn-content">
+        <div class="btn-icon">
+          <img src="images/icons/myAchievements.png" alt="My Points Icon" />
+        </div>
+        <div class="btn-text">My Points</div>
+      </div>
+    </button>
+
+    <!-- Review Logs (Teacher/Admin only, replaces My Points in same space) -->
+    <button id="reviewLogsBtn" class="nav-button review invisible" onclick="location.href='review-logs.html'">
+      <div class="btn-content">
+        <div class="btn-icon">
+          <img src="images/icons/review.png" alt="Review Logs Icon" />
+        </div>
+        <div class="btn-text">Review Logs</div>
+      </div>
+    </button>
+  </div>
+</div>
+
+          <!-- 🔹 Admin Only -->
+          <div class="button-row">
+            <div class="button-col"></div>
+             <div class="button-col">
+                <button id="manageUsersBtn" class="blue-button" style="display: none;" onclick="goToManageUsers()">
+              <div class="btn-content">
+                <div class="btn-icon">
+                  <img src="images/icons/manage.png" alt="Manage Icon" />
+                </div>
+                <div class="btn-text">Manage Users</div>
+              </div>
+            </button>
+          </div>
+          <div class="button-col"></div>
+         </div>
+          <!-- 🔹 Leaderboard -->
+          <div class="button-row center">
+                        <div class="button-col"></div>
+             <div class="button-col">
+
+            <button class="highlight-button leaderboard" onclick="location.href='leaderboard.html'">
+              <div class="btn-content">
+                <div class="btn-icon">
+                  <img src="images/icons/leaderboard.png" alt="Leaderboard Icon" />
+                </div>
+                <div class="btn-text">Leaderboard</div>
+              </div>
+            </button>
+          </div>
+          <div class="button-col"></div>
+         </div>
+
+          <!-- 🔹 Settings and FAQ -->
+          <div class="button-row">
+            <button class="nav-button settings" onclick="location.href='settings.html'">
+              <img class="icon" src="images/icons/settings.png" alt="Settings Icon" /> Settings
+            </button>
+            <button class="nav-button faq" onclick="location.href='faq.html'">
+              <img class="icon" src="images/icons/faq.png" alt="FAQ Icon" /> Points Info
+            </button>
+          </div>
+        </div>
       </div>
     </div>
-
-    <!-- ✅ Student Level Section -->
-    <section id="levelSection"></section>
-
   </main>
+
+  <footer>
+    &copy; 2025 Milford Music Studios Achievement App
+  </footer>
+
+  <!-- ✅ Scripts -->
+  <script type="module" src="home.js"></script>
+  <script src="data/categories.js"></script>
+  <script src="data/levels.js"></script>
+  <script src="utils.js"></script>
+
+  <!-- ✅ Role-based visibility + avatar fallback -->
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const user = JSON.parse(localStorage.getItem("loggedInUser"));
+      const role = localStorage.getItem("activeRole") || (Array.isArray(user?.role) ? user.role[0] : user?.role);
+
+      const myPointsBtn = document.getElementById("myPointsBtn");
+      const reviewLogsBtn = document.getElementById("reviewLogsBtn");
+      const manageUsersBtn = document.getElementById("manageUsersBtn");
+      const levelSection = document.getElementById("levelSection");
+      const homeAvatar = document.getElementById("homeAvatar");
+
+      // Show/hide buttons and sections based on role
+      myPointsBtn.classList.remove("invisible");
+      reviewLogsBtn.classList.remove("invisible");
+      myPointsBtn.style.display = "flex";
+      reviewLogsBtn.style.display = "flex";
+
+      if (role === "admin") {
+        myPointsBtn.classList.add("invisible");
+        reviewLogsBtn.classList.remove("invisible");
+        manageUsersBtn.style.display = "inline-block";
+        levelSection.style.display = "none";
+      } else if (role === "teacher") {
+        myPointsBtn.classList.add("invisible");
+        reviewLogsBtn.classList.remove("invisible");
+        levelSection.style.display = "none";
+      } else {
+        reviewLogsBtn.classList.add("invisible");
+        myPointsBtn.classList.remove("invisible");
+        levelSection.style.display = "block";
+      }
+
+      // Avatar fallback
+      if (homeAvatar && user) {
+        const avatarPath = user.avatar ? user.avatar : "images/logos/default.png";
+        homeAvatar.src = avatarPath;
+      }
+    });
+
+    function goToManageUsers() {
+      window.location.href = "manage-users.html";
+    }
+  </script>
 </body>
 </html>
