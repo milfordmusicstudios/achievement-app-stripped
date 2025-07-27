@@ -10,36 +10,62 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  // ✅ Clear badge temporarily to avoid showing outdated level
-  const badgeImg = document.getElementById("homeBadge");
-  if (badgeImg) badgeImg.src = "images/levelBadges/loading.png";
-
   try {
-    // ✅ Always fetch latest user data
-    const { data: freshUser, error } = await supabase
+    // ✅ Fetch logs for current user
+    const { data: logs, error: logsError } = await supabase
+      .from("logs")
+      .select("*")
+      .eq("userId", storedUser.id);
+
+    if (logsError) throw logsError;
+
+    // ✅ Filter approved logs for level/points calculation
+    const approvedLogs = logs.filter(l => l.status === "approved");
+    const totalPoints = approvedLogs.reduce((sum, log) => sum + (log.points || 0), 0);
+
+    // ✅ Fetch levels and calculate current level dynamically
+    const { data: levels, error: levelsError } = await supabase
+      .from("levels")
+      .select("*")
+      .order("minPoints", { ascending: true });
+
+    if (levelsError) throw levelsError;
+
+    let currentLevel = levels.find(l => totalPoints >= l.minPoints && totalPoints <= l.maxPoints);
+    if (!currentLevel && levels.length > 0) currentLevel = levels[levels.length - 1];
+
+    // ✅ Fetch latest user info (avatar, name)
+    const { data: freshUser, error: userError } = await supabase
       .from("users")
-      .select("id, firstName, level, points, avatarUrl, badge")
+      .select("id, firstName, avatarUrl")
       .eq("id", storedUser.id)
       .single();
 
-    if (error) throw error;
+    if (userError) throw userError;
 
-    // ✅ Update local storage with latest data
-    localStorage.setItem("loggedInUser", JSON.stringify(freshUser));
+    // ✅ Construct refreshed user data
+    const userData = {
+      ...freshUser,
+      points: totalPoints,
+      level: currentLevel?.id || 1,
+      badge: currentLevel?.badge || `images/levelBadges/level${currentLevel?.id || 1}.png`
+    };
 
-    // ✅ Render UI with fresh data
-    updateHomeUI(freshUser, activeRole);
-    console.log("[DEBUG] User level refreshed:", freshUser.level);
+    // ✅ Update local storage with recalculated values
+    localStorage.setItem("loggedInUser", JSON.stringify(userData));
+
+    // ✅ Update UI
+    updateHomeUI(userData, activeRole);
 
   } catch (err) {
-    console.error("[ERROR] Could not fetch updated user:", err);
-    // fallback to existing data
+    console.error("[ERROR] Could not refresh user info:", err);
+    // Fallback to stored user if fetch fails
     updateHomeUI(storedUser, activeRole);
   }
 });
 
 function updateHomeUI(userData, activeRole) {
-  // ✅ Welcome message
+  // ✅ Welcome text
   const welcome = document.getElementById("welcomeTitle");
   if (welcome) {
     welcome.textContent = `Welcome, ${userData.firstName}!`;
@@ -50,16 +76,17 @@ function updateHomeUI(userData, activeRole) {
   const avatar = document.getElementById("homeAvatar");
   if (avatar) avatar.src = userData.avatarUrl || "images/logos/default.png";
 
-  // ✅ Badge (always use latest userData)
+  // ✅ Badge
   const badgeImg = document.getElementById("homeBadge");
   if (badgeImg) {
     if (activeRole === "student") {
-      badgeImg.src = userData.badge || `images/levelBadges/level${userData.level || 1}.png`;
+      badgeImg.src = userData.badge;
     } else {
       badgeImg.src = `images/levelBadges/${activeRole}.png`;
     }
   }
-  // ✅ Manage layout & role-based UI
+
+  // ✅ Role-based UI
   const myPointsBtn = document.getElementById("myPointsBtn");
   const reviewLogsBtn = document.getElementById("reviewLogsBtn");
   const manageUsersBtn = document.getElementById("manageUsersBtn");
