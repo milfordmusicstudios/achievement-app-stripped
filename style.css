@@ -1369,3 +1369,11 @@ body.manage-users h2.page-title {
 #teacherSelectBox input[type="checkbox"] {
   margin-right: 6px;
 }
+#newTeachers {
+  font-size: 0.9rem;
+  background: #fff;
+  overflow-y: auto;
+}
+#newTeachers option {
+  padding: 4px 6px;
+}

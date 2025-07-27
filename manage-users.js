@@ -1,9 +1,6 @@
 import { supabase } from './supabase.js';
 
 let allUsers = [];
-let currentEditUser = null;
-let currentMultiTarget = null;
-let currentMultiType = null;
 let currentPage = 1;
 const usersPerPage = 25;
 
@@ -27,24 +24,7 @@ async function fetchUsers() {
   renderUsers();
 }
 
-// ✅ Format array for roles/teachers
-function formatArray(val) {
-  if (Array.isArray(val)) return val.join(", ");
-  return val || "";
-}
-
-// ✅ Teacher name lookup
-function getTeacherNames(teacherField) {
-  if (!teacherField) return "No Teacher";
-  const ids = Array.isArray(teacherField) ? teacherField : [teacherField];
-  const names = ids.map(id => {
-    const teacher = allUsers.find(u => u.id === id);
-    return teacher ? `${teacher.firstName} ${teacher.lastName}` : "Unknown";
-  });
-  return names.join(", ");
-}
-
-// ✅ Render users table
+// ✅ Render Users Table
 function renderUsers() {
   const tbody = document.getElementById("userTableBody");
   tbody.innerHTML = "";
@@ -54,6 +34,7 @@ function renderUsers() {
 
   pageUsers.forEach(user => {
     const tr = document.createElement("tr");
+
     tr.innerHTML = `
       <td><input type="text" value="${user.firstName || ""}" onchange="updateField('${user.id}','firstName',this.value)"></td>
       <td><input type="text" value="${user.lastName || ""}" onchange="updateField('${user.id}','lastName',this.value)"></td>
@@ -64,28 +45,65 @@ function renderUsers() {
           <input type="file" data-id="${user.id}" class="avatar-upload">
         </label>
       </td>
-      <td><button class="blue-button" onclick="openMultiSelect(this,'${user.id}','roles')">${formatArray(user.roles)}</button></td>
-      <td><button class="blue-button" onclick="openMultiSelect(this,'${user.id}','teacher')">${getTeacherNames(user.teacher)}</button></td>
+      <td>${renderRoleDropdown(user)}</td>
+      <td>${renderTeacherDropdown(user)}</td>
       <td><input type="text" value="${user.instrument || ""}" onchange="updateField('${user.id}','instrument',this.value)"></td>
       <td><button id="save-${user.id}" class="blue-button" style="display:none;" onclick="saveUser('${user.id}')">Save</button></td>
     `;
+
     tbody.appendChild(tr);
   });
 
+  setupRoleTeacherListeners();
   setupAvatarUploads();
   renderPagination();
   syncHeaderWidths();
 }
 
-// ✅ Sync header widths
-function syncHeaderWidths() {
-  const headerCells = document.querySelectorAll("#userHeaderTable th");
-  const rowCells = document.querySelectorAll("#userTable tr:first-child td");
-  if (!rowCells.length) return;
-  headerCells.forEach((th, i) => { if (rowCells[i]) th.style.width = rowCells[i].offsetWidth + "px"; });
+// ✅ Generate Roles Multi-Select
+function renderRoleDropdown(user) {
+  const roles = ["student", "teacher", "admin"];
+  const selected = Array.isArray(user.roles) ? user.roles : [user.roles];
+  return `
+    <select multiple class="role-select" data-id="${user.id}" style="width:100%; height:50px;">
+      ${roles.map(r => `<option value="${r}" ${selected.includes(r) ? "selected" : ""}>${r}</option>`).join("")}
+    </select>
+  `;
 }
 
-// ✅ Inline editing
+// ✅ Generate Teachers Multi-Select
+function renderTeacherDropdown(user) {
+  const teacherList = allUsers.filter(u => u.roles?.includes("teacher") || u.roles?.includes("admin"));
+  const selected = Array.isArray(user.teacher) ? user.teacher : [user.teacher];
+  return `
+    <select multiple class="teacher-select" data-id="${user.id}" style="width:100%; height:60px;">
+      ${teacherList.map(t => `<option value="${t.id}" ${selected.includes(t.id) ? "selected" : ""}>${t.firstName} ${t.lastName}</option>`).join("")}
+    </select>
+  `;
+}
+
+// ✅ Event Listeners for Role & Teacher Dropdowns
+function setupRoleTeacherListeners() {
+  document.querySelectorAll(".role-select").forEach(sel => {
+    sel.addEventListener("change", e => {
+      const id = e.target.dataset.id;
+      const user = allUsers.find(u => u.id === id);
+      user.roles = Array.from(e.target.selectedOptions).map(opt => opt.value);
+      document.getElementById(`save-${id}`).style.display = "inline-block";
+    });
+  });
+
+  document.querySelectorAll(".teacher-select").forEach(sel => {
+    sel.addEventListener("change", e => {
+      const id = e.target.dataset.id;
+      const user = allUsers.find(u => u.id === id);
+      user.teacher = Array.from(e.target.selectedOptions).map(opt => opt.value);
+      document.getElementById(`save-${id}`).style.display = "inline-block";
+    });
+  });
+}
+
+// ✅ Inline Editing
 window.updateField = function(id, field, value) {
   const user = allUsers.find(u => u.id === id);
   if (!user) return;
@@ -93,6 +111,7 @@ window.updateField = function(id, field, value) {
   document.getElementById(`save-${id}`).style.display = "inline-block";
 };
 
+// ✅ Save User
 window.saveUser = async function(id) {
   const user = allUsers.find(u => u.id === id);
   const { error } = await supabase.from("users").update(user).eq("id", id);
@@ -103,7 +122,7 @@ window.saveUser = async function(id) {
   }
 };
 
-// ✅ Avatar upload
+// ✅ Avatar Upload
 function setupAvatarUploads() {
   document.querySelectorAll(".avatar-upload").forEach(input => {
     input.addEventListener("change", async e => {
@@ -120,19 +139,10 @@ function setupAvatarUploads() {
   });
 }
 
-// ✅ Multi-select for roles/teachers (unchanged)
-window.openMultiSelect = function(button, userId, type) { /* same as before */ };
-window.confirmMultiSelect = function() { /* same as before */ };
-window.closeMultiSelectModal = function() { document.getElementById("multiSelectModal").style.display = "none"; };
-
-// ✅ Open Add User Modal
+// ✅ Add User Modal (still uses multi-selects for roles & teachers)
 function openAddUserModal() {
-  // ✅ Build teacher options from current users
-  const teacherOptions = allUsers
-    .filter(u => Array.isArray(u.roles) && (u.roles.includes("teacher") || u.roles.includes("admin")))
-    .map(t => `<label><input type="checkbox" class="teacher-check" value="${t.id}"> ${t.firstName} ${t.lastName}</label>`)
-    .join("");
-
+  const teacherOptions = allUsers.filter(u => u.roles?.includes("teacher") || u.roles?.includes("admin"))
+    .map(t => `<option value="${t.id}">${t.firstName} ${t.lastName}</option>`).join("");
   const modal = document.createElement("div");
   modal.className = "modal-overlay";
   modal.style.display = "flex";
@@ -143,11 +153,16 @@ function openAddUserModal() {
       <label>Last Name</label><input id="newLastName" type="text">
       <label>Email</label><input id="newEmail" type="email">
       <label>Instrument</label><input id="newInstrument" type="text">
-      <label>Roles (comma separated)</label><input id="newRoles" type="text" value="student">
+      <label>Roles</label>
+      <select id="newRoles" multiple style="width:100%; height:60px;">
+        <option value="student" selected>student</option>
+        <option value="teacher">teacher</option>
+        <option value="admin">admin</option>
+      </select>
       <label>Assign Teacher(s)</label>
-      <div id="teacherSelectBox" style="border:1px solid #ccc; padding:6px; border-radius:4px; max-height:120px; overflow:auto; background:#f9f9f9;">
+      <select id="newTeachers" multiple style="width:100%; height:100px;">
         ${teacherOptions}
-      </div>
+      </select>
       <div class="modal-actions">
         <button class="blue-button" id="createUserBtn">Create</button>
         <button class="blue-button" id="cancelUserBtn">Cancel</button>
@@ -156,7 +171,6 @@ function openAddUserModal() {
   `;
   document.body.appendChild(modal);
 
-  // ✅ Event Listeners
   document.getElementById("cancelUserBtn").addEventListener("click", () => modal.remove());
   document.getElementById("createUserBtn").addEventListener("click", async () => {
     await createNewUser();
@@ -164,18 +178,18 @@ function openAddUserModal() {
   });
 }
 
-// ✅ Updated user creation to handle teacher IDs
+// ✅ Create New User with Multi-Selects
 async function createNewUser() {
-  const teacherChecks = document.querySelectorAll(".teacher-check:checked");
-  const teacherIDs = Array.from(teacherChecks).map(cb => cb.value);
+  const selectedRoles = Array.from(document.getElementById("newRoles").selectedOptions).map(opt => opt.value);
+  const selectedTeachers = Array.from(document.getElementById("newTeachers").selectedOptions).map(opt => opt.value);
 
   const newUser = {
     firstName: document.getElementById("newFirstName").value.trim(),
     lastName: document.getElementById("newLastName").value.trim(),
     email: document.getElementById("newEmail").value.trim(),
     instrument: document.getElementById("newInstrument").value.trim(),
-    roles: document.getElementById("newRoles").value.split(",").map(r => r.trim()),
-    teacher: teacherIDs
+    roles: selectedRoles,
+    teacher: selectedTeachers
   };
 
   const { data, error } = await supabase.from("users").insert([newUser]).select();
@@ -200,4 +214,12 @@ function renderPagination() {
     btn.addEventListener("click", () => { currentPage = i; renderUsers(); });
     controls.appendChild(btn);
   }
+}
+
+// ✅ Header Column Sync
+function syncHeaderWidths() {
+  const headerCells = document.querySelectorAll("#userHeaderTable th");
+  const rowCells = document.querySelectorAll("#userTable tr:first-child td");
+  if (!rowCells.length) return;
+  headerCells.forEach((th, i) => { if (rowCells[i]) th.style.width = rowCells[i].offsetWidth + "px"; });
 }
