@@ -7,10 +7,15 @@
   <link rel="stylesheet" href="style.css">
   <script type="module" src="review-logs.js" defer></script>
   <style>
-    /* ✅ Table styling */
+    body {
+      background: white;
+      margin: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    /* ✅ Full-width responsive table */
     #logsTable {
       width: 100%;
-      min-width: 1100px;
       border-collapse: collapse;
     }
     #logsTable th, #logsTable td {
@@ -19,6 +24,17 @@
       border-bottom: 1px solid #ddd;
       vertical-align: top;
     }
+
+    /* ✅ Sticky header */
+    #logsTable thead th {
+      position: sticky;
+      top: 0;
+      background: #3eb7f8;    /* matches blue-button color */
+      color: white;
+      z-index: 2;
+      border-bottom: 2px solid #00477d;
+    }
+
     #logsTable input, #logsTable select, #logsTable textarea {
       width: 100%;
       padding: 6px;
@@ -34,13 +50,44 @@
     #logsTable tr:nth-child(even) { background: #f9f9f9; }
     #logsTable tr:hover { background: #eef7ff; }
 
-    /* ✅ Search & filter styling */
+    /* ✅ Responsive category cards */
+    #categorySummary {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin: 15px 10px;
+    }
+    .category-card {
+      flex: 1 1 150px;
+      max-width: 180px;
+      background: #f4f4f4;
+      padding: 10px;
+      border-radius: 10px;
+      text-align: center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    /* ✅ Search bar styling */
     #searchInput {
       background: white;
       padding: 8px;
-      width: 250px;
+      width: 300px;
       border: 1px solid #ccc;
       border-radius: 5px;
+      font-size: 1rem;
+      margin: 10px auto;
+      display: block;
+    }
+
+    /* ✅ Scroll container to allow header to stick */
+    #logsSection {
+      overflow-x: auto;
+      overflow-y: auto;
+      max-height: calc(100vh - 300px);
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      margin: 10px;
     }
   </style>
 </head>
@@ -54,21 +101,13 @@
     </header>
 
     <!-- ✅ Category Summary -->
-    <section id="categorySummary" class="category-summary"></section>
+    <section id="categorySummary"></section>
 
-    <!-- ✅ Filters BELOW category cards -->
-    <section style="display:flex; justify-content:center; gap:10px; margin:15px 0; flex-wrap:wrap;">
-      <input id="searchInput" type="text" placeholder="Search logs...">
-      <select id="filterStudent" class="blue-button" style="width:200px;">
-        <option value="">All Students</option>
-      </select>
-      <select id="filterCategory" class="blue-button" style="width:200px;">
-        <option value="">All Categories</option>
-      </select>
-    </section>
+    <!-- ✅ Live Search -->
+    <input id="searchInput" type="text" placeholder="Search logs...">
 
-    <!-- ✅ Logs Table -->
-    <section id="logsSection" class="logs-container" style="overflow-x:auto;">
+    <!-- ✅ Logs Table with sticky header -->
+    <section id="logsSection">
       <table id="logsTable">
         <thead>
           <tr>

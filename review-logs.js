@@ -14,8 +14,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const logsTableBody = document.getElementById("logsTableBody");
   const categorySummary = document.getElementById("categorySummary");
-  const filterStudent = document.getElementById("filterStudent");
-  const filterCategory = document.getElementById("filterCategory");
   const searchInput = document.getElementById("searchInput");
 
   let logs = [];
@@ -46,9 +44,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     filteredLogs = [...logs];
 
-    // ✅ Populate filters
-    populateFilters(users, logs);
-
     // ✅ Initial render
     renderCategorySummary(filteredLogs);
     renderLogsTable(filteredLogs);
@@ -58,47 +53,18 @@ document.addEventListener("DOMContentLoaded", async () => {
     alert("Failed to load logs.");
   }
 
-  // ---------------- FILTER HANDLERS ----------------
-  filterStudent.addEventListener("change", applyFilters);
-  filterCategory.addEventListener("change", applyFilters);
-  searchInput.addEventListener("input", applyFilters);
-
-  function applyFilters() {
-    const studentVal = filterStudent.value.toLowerCase();
-    const categoryVal = filterCategory.value.toLowerCase();
+  // ---------------- LIVE SEARCH ONLY ----------------
+  searchInput.addEventListener("input", () => {
     const searchVal = searchInput.value.toLowerCase();
-
-    filteredLogs = logs.filter(l => {
-      const studentMatch = !studentVal || l.userId.toString() === studentVal;
-      const categoryMatch = !categoryVal || l.category.toLowerCase() === categoryVal;
-      const searchMatch =
-        l.fullName.toLowerCase().includes(searchVal) ||
-        (l.notes || "").toLowerCase().includes(searchVal) ||
-        (l.category || "").toLowerCase().includes(searchVal);
-      return studentMatch && categoryMatch && searchMatch;
-    });
-
+    filteredLogs = logs.filter(l =>
+      l.fullName.toLowerCase().includes(searchVal) ||
+      (l.notes || "").toLowerCase().includes(searchVal) ||
+      (l.category || "").toLowerCase().includes(searchVal)
+    );
     sortLogs();
     renderCategorySummary(filteredLogs);
     renderLogsTable(filteredLogs);
-  }
-
-  function populateFilters(users, logs) {
-    users.forEach(u => {
-      const opt = document.createElement("option");
-      opt.value = u.id;
-      opt.textContent = `${u.firstName} ${u.lastName}`;
-      filterStudent.appendChild(opt);
-    });
-
-    const uniqueCats = [...new Set(logs.map(l => l.category))];
-    uniqueCats.forEach(c => {
-      const opt = document.createElement("option");
-      opt.value = c;
-      opt.textContent = c;
-      filterCategory.appendChild(opt);
-    });
-  }
+  });
 
   // ---------------- SORT HANDLER ----------------
   document.querySelectorAll("#logsTable th").forEach(th => {
@@ -168,7 +134,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // ---------------- AUTO-RESIZE TEXTAREA ----------------
   function autoResizeTextarea(textarea) {
-    textarea.style.height = "auto"; 
+    textarea.style.height = "auto";
     textarea.style.height = textarea.scrollHeight + "px";
   }
 
@@ -195,7 +161,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       logsTableBody.appendChild(row);
     });
 
-    // ✅ Auto-resize & inline editing
+    // ✅ Auto-resize + inline editing
     document.querySelectorAll(".edit-input").forEach(el => {
       if (el.tagName.toLowerCase() === "textarea") {
         autoResizeTextarea(el);
