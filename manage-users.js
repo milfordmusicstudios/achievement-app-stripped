@@ -33,12 +33,13 @@ function getFilteredAndSortedUsers() {
   const query = searchQuery.trim().toLowerCase();
 
   let filtered = allUsers.filter(u => {
-    const teacherNames = (Array.isArray(u.teacherIds) ? u.teacherIds : [u.teacherIds])
-      .filter(Boolean)
+    const teacherNames = ((u.teacherIds && Array.isArray(u.teacherIds)) ? u.teacherIds : [])
       .map(id => {
-        const t = allUsers.find(x => x.id === id);
-        return t ? `${t.firstName} ${t.lastName}`.toLowerCase() : "";
+        const teacher = allUsers.find(t => String(t.id) === String(id));
+        return teacher ? `${teacher.firstName} ${teacher.lastName}`.toLowerCase() : "";
       }).join(" ");
+
+    const rolesText = Array.isArray(u.roles) ? u.roles.join(" ").toLowerCase() : (u.roles || "").toLowerCase();
 
     return (
       (u.firstName || "").toLowerCase().includes(query) ||
@@ -46,7 +47,7 @@ function getFilteredAndSortedUsers() {
       (u.email || "").toLowerCase().includes(query) ||
       (u.instrument || "").toLowerCase().includes(query) ||
       teacherNames.includes(query) ||
-      (Array.isArray(u.roles) ? u.roles.join(" ") : "").toLowerCase().includes(query)
+      rolesText.includes(query)
     );
   });
 
