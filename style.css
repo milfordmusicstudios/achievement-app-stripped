@@ -649,45 +649,20 @@ body.white-page button {
   height: auto;
 }
 /* ---- Review Logs Page Styles ---- */
-body {
-  background: white;
-  margin: 0;
-  font-family: Arial, sans-serif;
-}
 
-/* ✅ Sticky top bar */
-main.app > header {
-  position: sticky;
-  top: 0;
-  background: white;
-  z-index: 20;
-  border-bottom: 1px solid #ddd;
-  padding: 10px 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-main.app > header h2 {
-  flex: 1;
-  text-align: center;
-  color: #00477d;
-  margin: 0;
-}
+/* ✅ Do not override global site background anymore */
 
-/* ✅ Category summary cards */
+/* ✅ Category summary should act like a grid across the window */
 #categorySummary {
   display: flex;
   flex-wrap: wrap;
-  justify-content: space-evenly;
-  align-items: stretch;
+  justify-content: space-between; /* ✅ fill available width */
   gap: 15px;
   margin: 15px auto;
-  max-width: 1200px;
+  width: 95%;
 }
 .category-card {
-  flex: 1 1 150px;
-  min-width: 150px;
-  max-width: 220px;
+  width: 180px; /* ✅ fixed card size */
   background: #f4f4f4;
   padding: 10px;
   border-radius: 10px;
@@ -707,22 +682,25 @@ main.app > header h2 {
   display: block;
 }
 
-/* ✅ Logs Section */
+/* ✅ Logs Section should span the screen width */
 #logsSection {
   overflow-y: auto;
   overflow-x: auto;
   max-height: calc(100vh - 300px);
-  width: 95%;
-  margin: 10px auto;
+  width: 100%;          /* ✅ take full width */
+  margin: 0 auto;
   border: 1px solid #ddd;
   border-radius: 5px;
 }
 
-/* ✅ Logs Table */
+/* ✅ Full-width table */
 #logsTable {
-  width: 100%;
+  width: 100%;          /* ✅ expand with the window */
   border-collapse: collapse;
+  table-layout: auto;
 }
+
+/* ✅ Sticky table header (only header, not page header) */
 #logsTable thead th {
   position: sticky;
   top: 0;
@@ -731,6 +709,8 @@ main.app > header h2 {
   z-index: 5;
   border-bottom: 2px solid #00477d;
 }
+
+/* ✅ Table cells */
 #logsTable th, #logsTable td {
   padding: 10px;
   text-align: left;
@@ -738,7 +718,7 @@ main.app > header h2 {
   vertical-align: top;
 }
 
-/* ✅ Inputs */
+/* ✅ Inputs inside table */
 #logsTable input,
 #logsTable select,
 #logsTable textarea {
