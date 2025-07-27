@@ -11,7 +11,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const user = JSON.parse(localStorage.getItem("loggedInUser"));
   if (!user || !user.roles?.includes("admin")) {
     alert("Access denied. Admins only.");
-    window.location.href = "index.html";
+    window.location.href = "home.html";
     return;
   }
 
@@ -20,7 +20,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   setupSearchAndSort();
 });
 
-// ✅ Fetch users from Supabase
+// ✅ Fetch Users
 async function fetchUsers() {
   const { data, error } = await supabase.from("users").select("*").order("lastName");
   if (error) return console.error("Error fetching users:", error);
@@ -33,29 +33,21 @@ function getFilteredAndSortedUsers() {
   const query = searchQuery.trim().toLowerCase();
 
   let filtered = allUsers.filter(u => {
-    // ✅ Safely build teacher name string
     const teacherNames = ((Array.isArray(u.teacherIds) ? u.teacherIds : [])).map(id => {
       const teacher = allUsers.find(t => String(t.id) === String(id));
       return teacher ? `${teacher.firstName} ${teacher.lastName}`.toLowerCase() : "";
     }).join(" ");
 
-    // ✅ Normalize roles
     const rolesText = Array.isArray(u.roles) ? u.roles.join(" ").toLowerCase() : String(u.roles || "").toLowerCase();
 
-    // ✅ Normalize instrument (handles string, array, null, or objects)
     const instrumentText = Array.isArray(u.instrument)
       ? u.instrument.join(" ").toLowerCase()
       : (typeof u.instrument === "string" ? u.instrument.toLowerCase() : "");
 
-    // ✅ Fields to search
-    const first = String(u.firstName || "").toLowerCase();
-    const last = String(u.lastName || "").toLowerCase();
-    const email = String(u.email || "").toLowerCase();
-
     return (
-      first.includes(query) ||
-      last.includes(query) ||
-      email.includes(query) ||
+      String(u.firstName || "").toLowerCase().includes(query) ||
+      String(u.lastName || "").toLowerCase().includes(query) ||
+      String(u.email || "").toLowerCase().includes(query) ||
       instrumentText.includes(query) ||
       teacherNames.includes(query) ||
       rolesText.includes(query)
@@ -73,7 +65,7 @@ function getFilteredAndSortedUsers() {
   return filtered;
 }
 
-// ✅ Render Users Table
+// ✅ Render Table
 function renderUsers() {
   const tbody = document.getElementById("userTableBody");
   tbody.innerHTML = "";
@@ -120,12 +112,14 @@ function renderTeacherTags(user) {
   return buildTagContainer(user.id, "teacherIds", selected, teacherList);
 }
 
-// ✅ Build Tag Container (shared)
+// ✅ Build Tag Container
 function buildTagContainer(userId, type, selected, options) {
-  const tags = (type === "roles" ? selected : selected.map(id => {
-    const t = allUsers.find(u => u.id === id);
-    return t ? { id, name: `${t.firstName} ${t.lastName}` } : null;
-  }).filter(Boolean));
+  const tags = (type === "roles"
+    ? selected
+    : selected.map(id => {
+        const t = allUsers.find(u => u.id === id);
+        return t ? { id, name: `${t.firstName} ${t.lastName}` } : null;
+      }).filter(Boolean));
 
   const optionsHTML = (type === "roles"
     ? options.filter(r => !selected.includes(r)).map(r => `<div class="tag-option" data-value="${r}">${r}</div>`)
@@ -218,7 +212,7 @@ function setupAvatarUploads() {
   });
 }
 
-// ✅ Add User Modal (uses tag UI)
+// ✅ Invitation Modal for Add User
 function openAddUserModal() {
   const modal = document.createElement("div");
   modal.className = "modal-overlay";
@@ -226,121 +220,40 @@ function openAddUserModal() {
 
   modal.innerHTML = `
     <div class="modal-box">
-      <h3>Create New User</h3>
+      <h3>Invite New User</h3>
       <label>First Name</label><input id="newFirstName" type="text">
       <label>Last Name</label><input id="newLastName" type="text">
       <label>Email</label><input id="newEmail" type="email">
-      <label>Instrument</label><input id="newInstrument" type="text">
-      <label>Roles</label>
-      <div id="modalRoleTags" class="tag-container" data-type="roles"></div>
-      <label>Teachers</label>
-      <div id="modalTeacherTags" class="tag-container" data-type="teacherIds"></div>
       <div class="modal-actions">
-        <button class="blue-button" id="createUserBtn">Create</button>
+        <button class="blue-button" id="sendInviteBtn">Send Invite Link</button>
         <button class="blue-button" id="cancelUserBtn">Cancel</button>
       </div>
     </div>`;
   document.body.appendChild(modal);
 
-  buildModalTagSelectors();
   document.getElementById("cancelUserBtn").addEventListener("click", () => modal.remove());
-  document.getElementById("createUserBtn").addEventListener("click", async () => {
-    await createNewUserFromModal();
-    modal.remove();
+  document.getElementById("sendInviteBtn").addEventListener("click", () => {
+    sendInviteLink(modal);
   });
 }
 
-// ✅ Build Tag Selectors for Modal
-function buildModalTagSelectors() {
-  const modalRole = document.getElementById("modalRoleTags");
-  const modalTeacher = document.getElementById("modalTeacherTags");
-  modalRole.innerHTML = `<img src="images/icons/plus.png" class="tag-add-icon"><div class="tag-options">${["student","teacher","admin"].map(r=>`<div class="tag-option" data-value="${r}">${r}</div>`).join("")}</div>`;
-  const teacherList = allUsers.filter(u => u.roles?.includes("teacher") || u.roles?.includes("admin"));
-  modalTeacher.innerHTML = `<img src="images/icons/plus.png" class="tag-add-icon"><div class="tag-options">${teacherList.map(t=>`<div class="tag-option" data-value="${t.id}">${t.firstName} ${t.lastName}</div>`).join("")}</div>`;
-  setupModalTagListeners(modalRole);
-  setupModalTagListeners(modalTeacher);
-}
-
-function setupModalTagListeners(container) {
-  container.querySelector(".tag-add-icon").addEventListener("click", () => {
-    container.querySelector(".tag-options").classList.toggle("show");
-  });
-  container.querySelectorAll(".tag-option").forEach(opt => {
-    opt.addEventListener("click", e => {
-      const type = container.dataset.type;
-      const value = e.target.dataset.value;
-      const tag = document.createElement("span");
-      const label = (type === "roles") ? value : allUsers.find(t => t.id === value)?.firstName + " " + allUsers.find(t => t.id === value)?.lastName;
-      tag.className = "tag";
-      tag.innerHTML = `${label}<span class="remove-tag" data-value="${value}">×</span>`;
-      container.insertBefore(tag, container.querySelector(".tag-add-icon"));
-      e.target.remove();
-      tag.querySelector(".remove-tag").addEventListener("click", () => tag.remove());
-    });
-  });
-}
-
-// ✅ Create New User from Modal (Patched to avoid duplicate key + correct array types)
-async function createNewUserFromModal() {
-  const modalRoles = Array.from(document.querySelectorAll("#modalRoleTags .tag .remove-tag"))
-    .map(t => t.dataset.value);
-  const modalTeachers = Array.from(document.querySelectorAll("#modalTeacherTags .tag .remove-tag"))
-    .map(t => t.dataset.value);
-
+// ✅ Generate Invite Link
+function sendInviteLink(modal) {
+  const email = document.getElementById("newEmail").value.trim();
   const firstName = document.getElementById("newFirstName").value.trim();
   const lastName = document.getElementById("newLastName").value.trim();
-  const email = document.getElementById("newEmail").value.trim();
-  const instrumentArray = document.getElementById("newInstrument").value
-    .split(",")
-    .map(i => i.trim())
-    .filter(Boolean);
 
-  // ✅ 1. Create Supabase Auth User
-  const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
-    email: email,
-    password: crypto.randomUUID(), // generates a temporary password
-    email_confirm: true,
-    user_metadata: { firstName, lastName, roles: modalRoles }
-  });
-
-  if (authError) {
-    alert("Failed to create auth user: " + authError.message);
-    console.error("Auth creation error:", authError);
+  if (!email) {
+    alert("Please provide an email.");
     return;
   }
 
-  const authId = authUser.user?.id;
-  if (!authId) {
-    alert("Auth user creation failed: No ID returned.");
-    return;
-  }
-
-  // ✅ 2. Insert into your custom users table
-  const newUser = {
-    id: authId, // link to auth.users
-    firstName,
-    lastName,
-    email,
-    instrument: instrumentArray,
-    roles: modalRoles,
-    teacherIds: modalTeachers
-  };
-
-  const { data, error } = await supabase.from("users").insert([newUser]).select();
-
-  if (error) {
-    alert("Failed to insert into users table: " + error.message);
-    console.error("Insert error:", error);
-    return;
-  }
-
-  // ✅ 3. Update local data + refresh
-  allUsers.push(data[0]);
-  renderUsers();
-  alert("User created successfully! They can now log in with the email you provided.");
+  const inviteLink = `https://achievement-app-stripped.vercel.app/signup.html?email=${encodeURIComponent(email)}`;
+  alert(`Invite link for ${firstName} ${lastName}: ${inviteLink}`);
+  modal.remove();
 }
 
-// ✅ Search & Sorting
+// ✅ Search & Sort Setup
 function setupSearchAndSort() {
   document.getElementById("userSearch").addEventListener("input", e => {
     searchQuery = e.target.value.toLowerCase();
@@ -357,6 +270,7 @@ function setupSearchAndSort() {
     });
   });
 }
+
 function updateSortIndicators(active) {
   document.querySelectorAll("#userHeaderTable th[data-sort]").forEach(th => {
     th.textContent = th.textContent.replace(/ ▲| ▼/, "");
