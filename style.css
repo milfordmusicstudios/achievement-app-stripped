@@ -1214,3 +1214,69 @@ body.manage-users h2.page-title {
   display: block;
   margin: 5px 0;
 }
+/* ===== Manage Users Table Scroll & Layout ===== */
+
+#userHeaderTable {
+  width: 95%;
+  margin: 0 auto;
+  border-collapse: collapse;
+}
+
+#userHeaderTable th {
+  background: #3eb7f8;
+  color: white;
+  padding: 8px;
+  text-align: left;
+  border-bottom: 2px solid #00477d;
+}
+
+#usersScrollSection {
+  width: 95%;
+  margin: 0 auto 10px auto;
+  max-height: 400px; /* Scrollable height */
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+}
+
+#userTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+#userTable td {
+  padding: 6px;
+  border-bottom: 1px solid #ddd;
+}
+
+#userTable tr:nth-child(even) {
+  background: #f9f9f9;
+}
+
+/* Add User Button */
+#addUserBtn {
+  background: #3eb7f8;
+  font-size: 1rem;
+  padding: 8px 14px;
+  border-radius: 6px;
+}
+
+#addUserBtn::before {
+  content: "➕ ";
+  color: #00477d;
+  font-weight: bold;
+}
+
+/* Pagination */
+#paginationControls button {
+  background: #00477d;
+  color: white;
+  border: none;
+  margin: 0 3px;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+#paginationControls button.active {
+  background: #3eb7f8;
+}
