@@ -1,169 +1,122 @@
 import { supabase } from './supabase.js';
 
-function normalizeUUID(value) {
-  if (!value) return null;
-  if (typeof value === 'object' && value.id) return String(value.id);
-  return String(value);
-}
-
-function capitalize(str) {
-  return str ? str.charAt(0).toUpperCase() + str.slice(1) : "";
-}
-
-async function fetchRelatedUsers(user) {
-  const userIdStr = normalizeUUID(user.id);
-  const parentIdStr = normalizeUUID(user.parent_uuid);
-  let sameGroupUsers = [];
-
-  // Try to fetch children if this user is a parent
-  const { data: children, error: childErr } = await supabase
-    .from('users')
-    .select('*')
-    .eq('parent_uuid', userIdStr);
-  if (!childErr && children.length > 0) {
-    sameGroupUsers = children;
-  } else if (parentIdStr) {
-    // Try to fetch siblings if this user is a child
-    const { data: siblings, error: sibErr } = await supabase
-      .from('users')
-      .select('*')
-      .eq('parent_uuid', parentIdStr);
-    if (!sibErr && siblings.length > 0) {
-      sameGroupUsers = siblings.filter(u => normalizeUUID(u.id) !== userIdStr);
-    }
-  }
-
-  console.log("[DEBUG] Related users fetched:", sameGroupUsers);
-  return sameGroupUsers;
-}
-
-function promptUserSwitch() {
-  const user = JSON.parse(localStorage.getItem("loggedInUser"));
-  const allUsers = JSON.parse(localStorage.getItem("allUsers")) || [];
-  const userIdStr = normalizeUUID(user.id);
-
-  const listContainer = document.getElementById("userSwitchList");
-  listContainer.innerHTML = "";
-  allUsers.forEach(u => {
-    if (normalizeUUID(u.id) === userIdStr) return;
-    const li = document.createElement("li");
-    const btn = document.createElement("button");
-    btn.className = "blue-button";
-    btn.style = "margin: 5px 0; width: 100%;";
-    let roleText = Array.isArray(u.roles) ? ` (${u.roles.join(", ")})` : "";
-    btn.textContent = `${u.firstName} ${u.lastName}${roleText}`;
-    btn.onclick = () => {
-      localStorage.setItem("loggedInUser", JSON.stringify(u));
-      const defaultRole = Array.isArray(u.roles) ? u.roles[0] : "student";
-      localStorage.setItem("activeRole", defaultRole);
-      window.location.href = "index.html";
-    };
-    li.appendChild(btn);
-    listContainer.appendChild(li);
-  });
-  document.getElementById("userSwitchModal").style.display = "flex";
-}
-
-function promptRoleSwitch() {
-  const user = JSON.parse(localStorage.getItem("loggedInUser"));
-  const roles = Array.isArray(user.roles) ? user.roles : [user.role];
-  const listContainer = document.getElementById("roleSwitchList");
-  listContainer.innerHTML = "";
-  roles.forEach(role => {
-    const li = document.createElement("li");
-    const btn = document.createElement("button");
-    btn.className = "blue-button";
-    btn.style = "margin: 5px 0; width: 100%;";
-    btn.textContent = capitalize(role);
-    btn.onclick = () => {
-      localStorage.setItem("activeRole", role);
-      window.location.href = "index.html";
-    };
-    li.appendChild(btn);
-    listContainer.appendChild(li);
-  });
-  document.getElementById("roleSwitchModal").style.display = "flex";
-}
-
-async function saveSettings() {
-  const user = JSON.parse(localStorage.getItem("loggedInUser"));
-  const updatedUser = {
-    firstName: document.getElementById('firstName').value.trim(),
-    lastName: document.getElementById('lastName').value.trim(),
-    email: document.getElementById('newEmail').value.trim()
-  };
-  try {
-    const { error } = await supabase.from("users").update(updatedUser).eq("id", user.id);
-    if (error) throw error;
-    Object.assign(user, updatedUser);
-    localStorage.setItem("loggedInUser", JSON.stringify(user));
-    alert("Settings saved!");
-    window.location.href = "index.html";
-  } catch (err) {
-    console.error("Save error:", err);
-    alert("Could not save settings: " + err.message);
-  }
-}
-
-function handleLogout() {
-  localStorage.clear();
-  window.location.href = "login.html";
-}
-
 document.addEventListener("DOMContentLoaded", async () => {
   const user = JSON.parse(localStorage.getItem("loggedInUser"));
   const activeRole = localStorage.getItem("activeRole");
-  if (!user || !activeRole) {
+
+  if (!user) {
     alert("You must be logged in.");
-    window.location.href = "index.html";
+    window.location.href = "login.html";
     return;
   }
 
-  document.getElementById('firstName').value = user.firstName || '';
-  document.getElementById('lastName').value = user.lastName || '';
-  document.getElementById('newEmail').value = user.email || '';
-  document.getElementById('avatarImage').src = user.avatarUrl || "images/logos/default.png";
-
-  // Use conditional fetching for family members
-  const relatedUsers = await fetchRelatedUsers(user);
-  localStorage.setItem("allUsers", JSON.stringify(relatedUsers));
-  document.getElementById("switchUserBtn").style.display = relatedUsers.length > 0 ? "inline-block" : "none";
+  // ✅ Normalize roles (fix for string vs. array issue)
+  const roles = Array.isArray(user.roles)
+    ? user.roles
+    : (user.roles ? user.roles.toString().split(",").map(r => r.trim()) : []);
 
   const switchRoleBtn = document.getElementById("switchRoleBtn");
-  if (Array.isArray(user.roles) && user.roles.length > 1) {
+  const switchUserBtn = document.getElementById("switchUserBtn");
+
+  // ✅ Show Switch Role only if multiple roles exist
+  if (roles.length > 1) {
     switchRoleBtn.style.display = "inline-block";
-    switchRoleBtn.textContent = `Switch Role (Currently: ${capitalize(activeRole)})`;
+    switchRoleBtn.textContent = `Switch Role (Current: ${capitalize(activeRole)})`;
   } else {
     switchRoleBtn.style.display = "none";
   }
 
-  document.getElementById("avatarInput").addEventListener("change", async () => {
-    const file = document.getElementById("avatarInput").files[0];
+  // ✅ Show Switch User only if multiple users share this email
+  const allUsers = JSON.parse(localStorage.getItem("allUsers")) || [];
+  const matchingUsers = allUsers.filter(u => u.email?.toLowerCase() === user.email?.toLowerCase());
+  switchUserBtn.style.display = matchingUsers.length > 1 ? "inline-block" : "none";
+
+  // ✅ Populate existing fields
+  document.getElementById("firstName").value = user.firstName || "";
+  document.getElementById("lastName").value = user.lastName || "";
+  document.getElementById("newEmail").value = user.email || "";
+
+  // ✅ Avatar
+  const avatarImage = document.getElementById("avatarImage");
+  avatarImage.src = user.avatarUrl || "images/logos/default.png";
+
+  // ✅ Avatar change logic
+  const avatarInput = document.getElementById("avatarInput");
+  avatarImage.addEventListener("click", () => avatarInput.click());
+  avatarInput.addEventListener("change", async () => {
+    const file = avatarInput.files[0];
     if (!file) return;
-    const fileExt = file.name.split('.').pop();
-    const filePath = `public/${user.id}.${fileExt}`;
-    try {
-      const { error: uploadError } = await supabase.storage.from("avatars").upload(filePath, file, { upsert: true });
-      if (uploadError) throw uploadError;
-      const { data: urlData, error: urlError } = supabase.storage.from("avatars").getPublicUrl(filePath);
-      if (urlError) throw urlError;
-      const avatarUrl = urlData.publicUrl;
-      const { error: updateError } = await supabase.from("users").update({ avatarUrl }).eq("id", user.id);
-      if (updateError) throw updateError;
-      user.avatarUrl = avatarUrl;
-      localStorage.setItem("loggedInUser", JSON.stringify(user));
-      document.getElementById("avatarImage").src = avatarUrl;
-      alert("Avatar updated successfully!");
-    } catch (err) {
-      console.error("Avatar upload error:", err);
-      alert("Failed to upload avatar: " + err.message);
+
+    const fileName = `${user.id}-${file.name}`;
+    const { error: uploadError } = await supabase.storage
+      .from("avatars")
+      .upload(fileName, file, { upsert: true });
+
+    if (uploadError) {
+      alert("Avatar upload failed.");
+      console.error(uploadError);
+    } else {
+      const { data: publicURL } = supabase.storage.from("avatars").getPublicUrl(fileName);
+      avatarImage.src = publicURL.publicUrl;
+      localStorage.setItem("loggedInUser", JSON.stringify({ ...user, avatarUrl: publicURL.publicUrl }));
+
+      await supabase.from("users").update({ avatarUrl: publicURL.publicUrl }).eq("id", user.id);
     }
   });
 
-  document.getElementById("avatarImage").addEventListener("click", () => document.getElementById("avatarInput").click());
-  document.getElementById("saveBtn").addEventListener("click", e => { e.preventDefault(); saveSettings(); });
-  document.getElementById("logoutBtn").addEventListener("click", handleLogout);
-  document.getElementById("cancelBtn").addEventListener("click", () => window.location.href = "index.html");
-  document.getElementById("switchRoleBtn").addEventListener("click", promptRoleSwitch);
-  document.getElementById("switchUserBtn").addEventListener("click", promptUserSwitch);
+  // ✅ Save name updates
+  document.getElementById("saveBtn").addEventListener("click", async () => {
+    const firstName = document.getElementById("firstName").value.trim();
+    const lastName = document.getElementById("lastName").value.trim();
+
+    const { error } = await supabase.from("users").update({ firstName, lastName }).eq("id", user.id);
+    if (error) {
+      alert("Failed to update name.");
+    } else {
+      alert("Name updated successfully.");
+      localStorage.setItem("loggedInUser", JSON.stringify({ ...user, firstName, lastName }));
+    }
+  });
+
+  // ✅ Update credentials
+  document.getElementById("updateCredentialsBtn").addEventListener("click", async () => {
+    const newEmail = document.getElementById("newEmail").value.trim();
+    const newPassword = document.getElementById("newPassword").value.trim();
+
+    const updates = {};
+    if (newEmail && newEmail !== user.email) updates.email = newEmail;
+    if (newPassword) updates.password = newPassword;
+
+    if (Object.keys(updates).length === 0) {
+      alert("No changes detected.");
+      return;
+    }
+
+    const { error } = await supabase.from("users").update(updates).eq("id", user.id);
+    if (error) {
+      alert("Failed to update credentials.");
+      console.error(error);
+    } else {
+      alert("Credentials updated successfully.");
+      localStorage.setItem("loggedInUser", JSON.stringify({ ...user, ...updates }));
+    }
+  });
+
+  // ✅ Switch Role
+  switchRoleBtn.addEventListener("click", () => {
+    const nextRole = roles.find(r => r !== activeRole) || roles[0];
+    localStorage.setItem("activeRole", nextRole);
+    alert(`Switched to ${capitalize(nextRole)} role.`);
+    window.location.reload();
+  });
+
+  // ✅ Switch User
+  switchUserBtn.addEventListener("click", () => {
+    window.location.href = "switch-user.html";
+  });
 });
+
+// ✅ Capitalize helper
+function capitalize(str) {
+  return str ? str.charAt(0).toUpperCase() + str.slice(1) : "";
+}
