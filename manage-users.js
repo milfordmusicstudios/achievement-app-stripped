@@ -224,7 +224,7 @@ async function createNewUser() {
     email: document.getElementById("newEmail").value.trim(),
     instrument: document.getElementById("newInstrument").value.trim(),
     roles: selectedRoles,
-    teacher: selectedTeachers
+    teacherIds: selectedTeachers
   };
 
   const { data, error } = await supabase.from("users").insert([newUser]).select();

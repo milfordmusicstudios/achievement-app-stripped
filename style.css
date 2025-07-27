@@ -1214,6 +1214,7 @@ body.manage-users h2.page-title {
   width: 95%;
   margin: 0 auto;
   border-collapse: collapse;
+  border-radius: 0;
 }
 
 #userHeaderTable th {
@@ -1222,6 +1223,15 @@ body.manage-users h2.page-title {
   padding: 8px;
   text-align: left;
   border-bottom: 2px solid #00477d;
+  border-radius: 6px 6px 0 0;
+}
+
+#userHeaderTable thead tr th:first-child {
+  border-top-left-radius: 6px;   /* only left edge rounded */
+}
+
+#userHeaderTable thead tr th:last-child {
+  border-top-right-radius: 6px;  /* only right edge rounded */
 }
 
 #usersScrollSection {
