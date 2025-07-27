@@ -35,8 +35,19 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      // Save to localStorage
-      localStorage.setItem('loggedInUser', JSON.stringify(userData));
+// ✅ Ensure roles is always an array before saving
+if (typeof userData.roles === "string") {
+  try {
+    userData.roles = JSON.parse(userData.roles);
+  } catch {
+    userData.roles = userData.roles.split(",").map(r => r.trim());
+  }
+} else if (!Array.isArray(userData.roles)) {
+  userData.roles = userData.roles ? [userData.roles] : [];
+}
+
+// ✅ Save to localStorage with normalized roles
+localStorage.setItem('loggedInUser', JSON.stringify(userData));
 
       // Set default role
       const roles = userData.roles || ['student'];
