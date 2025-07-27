@@ -112,14 +112,20 @@ submitBtn.addEventListener("click", async (e) => {
     return;
   }
 
-  const { error: logErr } = await supabase.from("logs").insert([{
-    userId: targetUser,
-    category,
-    notes: note,
-    date,
-    points,           // ✅ Can be null for non-practice logs
-    status: "pending" // ✅ Always pending initially
-  }]);
+// ✅ Status: auto-approve practice logs from students
+let status = "pending";
+if (!(activeRole === "admin" || activeRole === "teacher") && category === "Practice") {
+  status = "approved";
+}
+
+const { error: logErr } = await supabase.from("logs").insert([{
+  userId: targetUser,
+  category,
+  notes: note,
+  date,
+  points,
+  status
+}]);
 
   if (logErr) {
     console.error("Failed to save log:", logErr.message);
