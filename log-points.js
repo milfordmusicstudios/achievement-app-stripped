@@ -18,6 +18,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   const submitBtn = document.querySelector("button[type='submit']");
   const cancelBtn = document.querySelector("button[type='button']");
 
+  // ✅ Hide student dropdown & points input for students
+  if (!(activeRole === "admin" || activeRole === "teacher")) {
+    if (studentSelect) studentSelect.closest("tr").style.display = "none";
+    if (pointsInput) pointsInput.closest("tr").style.display = "none";
+  }
+
   // ✅ Show default category preview
   if (previewImage) previewImage.src = "images/categories/allCategories.png";
 
@@ -37,23 +43,22 @@ document.addEventListener("DOMContentLoaded", async () => {
       categorySelect.appendChild(opt);
     });
 
-    // ✅ Category change → update preview + points
+    // ✅ Category change → update preview and points
     categorySelect.addEventListener("change", () => {
       const selected = categorySelect.value;
       if (previewImage) {
         previewImage.src = selected ? `images/categories/${selected.toLowerCase()}.png` : "images/categories/allCategories.png";
       }
+      // ✅ Auto-assign 5 points for Practice
       if (selected === "Practice") {
-        pointsInput.value = 5;
-        pointsInput.disabled = true;
-      } else {
+        if (pointsInput) pointsInput.value = 5;
+      } else if (pointsInput && (activeRole === "admin" || activeRole === "teacher")) {
         pointsInput.value = "";
-        pointsInput.disabled = false;
       }
     });
   }
 
-  // ✅ Show student dropdown only for admin/teacher
+  // ✅ Populate student list only for teachers/admins
   if ((activeRole === "admin" || activeRole === "teacher") && studentSelect) {
     const { data: students, error: stuErr } = await supabase
       .from("users")
@@ -77,7 +82,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  // ✅ Form submit → insert log into Supabase
+  // ✅ Submit form → save log
   if (submitBtn) {
     submitBtn.addEventListener("click", async (e) => {
       e.preventDefault();
@@ -85,11 +90,18 @@ document.addEventListener("DOMContentLoaded", async () => {
       const category = categorySelect?.value;
       const note = notesInput?.value.trim();
       const date = dateInput?.value;
-      const points = parseInt(pointsInput?.value);
-      const targetUser = studentSelect && studentSelect.value ? studentSelect.value : user.id;
+      const targetUser = (activeRole === "admin" || activeRole === "teacher") && studentSelect.value ? studentSelect.value : user.id;
 
-      if (!category || !date || isNaN(points)) {
-        alert("Please fill out all required fields.");
+      // ✅ Points logic
+      let points = null;
+      if (category === "Practice") {
+        points = 5; // ✅ Auto-assign for Practice
+      } else if (activeRole === "admin" || activeRole === "teacher") {
+        points = parseInt(pointsInput?.value);
+      }
+
+      if (!category || !date || points === null || isNaN(points)) {
+        alert("Please complete required fields.");
         return;
       }
 
@@ -98,7 +110,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         category,
         note,
         date,
-        points
+        points,
+        status: "pending" // ✅ Default pending status for approval
       }]);
 
       if (logErr) {
