@@ -37,23 +37,24 @@ document.addEventListener("DOMContentLoaded", async () => {
     const currentIndex = levels.findIndex(l => l.id === currentLevel.id);
     const nextLevel = levels[currentIndex + 1];
 
-    // ✅ Fetch latest user info
-    const { data: freshUser, error: userError } = await supabase
-      .from("users")
-      .select("id, firstName, avatarUrl")
-      .eq("id", storedUser.id)
-      .single();
+// ✅ Fetch latest user info, including roles
+const { data: freshUser, error: userError } = await supabase
+  .from("users")
+  .select("id, firstName, avatarUrl, roles")
+  .eq("id", storedUser.id)
+  .single();
 
     if (userError) throw userError;
 
-    // ✅ Build user object with recalculated data
-    const userData = {
-      ...freshUser,
-      points: totalPoints,
-      level: currentLevel?.id || 1,
-      badge: currentLevel?.badge || `images/levelBadges/level${currentLevel?.id || 1}.png`,
-      levelColor: currentLevel?.color || "#3eb7f8"
-    };
+// ✅ Build user object while preserving roles if missing
+const userData = {
+  ...freshUser,
+  roles: freshUser?.roles || storedUser.roles || [],
+  points: totalPoints,
+  level: currentLevel?.id || 1,
+  badge: currentLevel?.badge || `images/levelBadges/level${currentLevel?.id || 1}.png`,
+  levelColor: currentLevel?.color || "#3eb7f8"
+};
 
     // ✅ Update local storage
     localStorage.setItem("loggedInUser", JSON.stringify(userData));
