@@ -15,7 +15,6 @@ async function fetchRelatedUsers(user) {
   const parentIdStr = normalizeUUID(user.parent_uuid);
   let sameGroupUsers = [];
 
-  // Try to fetch children if this user is a parent
   const { data: children, error: childErr } = await supabase
     .from('users')
     .select('*')
@@ -23,7 +22,6 @@ async function fetchRelatedUsers(user) {
   if (!childErr && children.length > 0) {
     sameGroupUsers = children;
   } else if (parentIdStr) {
-    // Try to fetch siblings if this user is a child
     const { data: siblings, error: sibErr } = await supabase
       .from('users')
       .select('*')
@@ -124,13 +122,25 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById('newEmail').value = user.email || '';
   document.getElementById('avatarImage').src = user.avatarUrl || "images/logos/default.png";
 
+  // Ensure roles is always an array
+  if (!Array.isArray(user.roles)) {
+    user.roles = user.roles ? [user.roles] : [];
+  }
+
   // Use conditional fetching for family members
   const relatedUsers = await fetchRelatedUsers(user);
-  localStorage.setItem("allUsers", JSON.stringify(relatedUsers));
-  document.getElementById("switchUserBtn").style.display = relatedUsers.length > 0 ? "inline-block" : "none";
 
+  // Combine current user with related users
+  const allUsers = [user, ...relatedUsers];
+  localStorage.setItem("allUsers", JSON.stringify(allUsers));
+
+  // Show switch user if multiple users share the same email
+  const sameEmailUsers = allUsers.filter(u => u.email?.toLowerCase() === user.email?.toLowerCase());
+  document.getElementById("switchUserBtn").style.display = sameEmailUsers.length > 1 ? "inline-block" : "none";
+
+  // Adjust switch role button visibility
   const switchRoleBtn = document.getElementById("switchRoleBtn");
-  if (Array.isArray(user.roles) && user.roles.length > 1) {
+  if (user.roles.length > 1) {
     switchRoleBtn.style.display = "inline-block";
     switchRoleBtn.textContent = `Switch Role (Currently: ${capitalize(activeRole)})`;
   } else {
