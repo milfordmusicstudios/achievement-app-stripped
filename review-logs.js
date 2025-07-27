@@ -24,7 +24,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   let currentSort = { field: "date", order: "desc" };
 
   try {
-    // ✅ Fetch logs and users
+    // ✅ Fetch logs & users
     const { data: logsData, error: logsError } = await supabase
       .from("logs")
       .select("*")
@@ -46,7 +46,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     filteredLogs = [...logs];
 
-    // ✅ Populate dropdown filters
+    // ✅ Populate filters
     populateFilters(users, logs);
 
     // ✅ Initial render
@@ -166,6 +166,12 @@ document.addEventListener("DOMContentLoaded", async () => {
       </div>`;
   }
 
+  // ---------------- AUTO-RESIZE TEXTAREA ----------------
+  function autoResizeTextarea(textarea) {
+    textarea.style.height = "auto"; 
+    textarea.style.height = textarea.scrollHeight + "px";
+  }
+
   // ---------------- RENDER LOGS TABLE ----------------
   function renderLogsTable(logs) {
     logsTableBody.innerHTML = "";
@@ -177,7 +183,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         <td><input class="edit-input" data-id="${log.id}" data-field="category" value="${log.category}"></td>
         <td><input type="date" class="edit-input" data-id="${log.id}" data-field="date" value="${log.date.split('T')[0]}"></td>
         <td><input type="number" class="edit-input" data-id="${log.id}" data-field="points" value="${log.points}"></td>
-        <td><input class="edit-input" data-id="${log.id}" data-field="notes" value="${log.notes || ""}"></td>
+        <td><textarea class="edit-input" data-id="${log.id}" data-field="notes">${log.notes || ""}</textarea></td>
         <td>
           <select class="edit-input" data-id="${log.id}" data-field="status">
             <option value="pending" ${log.status === "pending" ? "selected" : ""}>Pending</option>
@@ -189,9 +195,14 @@ document.addEventListener("DOMContentLoaded", async () => {
       logsTableBody.appendChild(row);
     });
 
-    // ✅ Inline editing updates Supabase
-    document.querySelectorAll(".edit-input").forEach(input => {
-      input.addEventListener("change", async e => {
+    // ✅ Auto-resize & inline editing
+    document.querySelectorAll(".edit-input").forEach(el => {
+      if (el.tagName.toLowerCase() === "textarea") {
+        autoResizeTextarea(el);
+        el.addEventListener("input", () => autoResizeTextarea(el));
+      }
+
+      el.addEventListener("change", async e => {
         const logId = e.target.dataset.id;
         const field = e.target.dataset.field;
         let value = e.target.value;
