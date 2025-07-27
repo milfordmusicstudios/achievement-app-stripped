@@ -494,14 +494,12 @@ body.white-page button {
 
 /* Container for category summary */
 #categorySummary {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 15px;
-  margin: 20px auto;
-  max-width: 900px;
+  margin: 15px auto;
+  width: 95%;
 }
-
 #pointsSummary {
   text-align: center;
   margin-bottom: 20px;
@@ -618,11 +616,6 @@ body.white-page button {
   background: #00325a;
 }
 
-/* Adjust category cards for mobile */
-.category-card {
-  width: 120px;
-  
-}
 
 /* Responsive tweaks */
 @media (max-width: 600px) {
@@ -662,14 +655,15 @@ body.white-page button {
   width: 95%;
 }
 .category-card {
-  width: 180px; /* ✅ fixed card size */
+  width: 100%;     /* ✅ Let grid handle sizing */
+  max-width: 200px;
+  margin: 0 auto;
   background: #f4f4f4;
   padding: 10px;
   border-radius: 10px;
   text-align: center;
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
-
 /* ✅ Search bar */
 #searchInput {
   background: white;
@@ -687,26 +681,24 @@ body.white-page button {
   overflow-y: auto;
   overflow-x: auto;
   max-height: calc(100vh - 300px);
-  width: 100%;          /* ✅ take full width */
-  margin: 0 auto;
+  width: 100%;           /* ✅ full screen */
+  margin: 0;             /* ✅ no auto-centering */
   border: 1px solid #ddd;
-  border-radius: 5px;
+  border-radius: 0;      /* ✅ flush edges if desired */
 }
-
 /* ✅ Full-width table */
 #logsTable {
-  width: 100%;          /* ✅ expand with the window */
+  width: 100%;           /* ✅ expand to fill */
+  min-width: 1000px;     /* ✅ ensure no squish on small screens */
   border-collapse: collapse;
-  table-layout: auto;
 }
-
 /* ✅ Sticky table header (only header, not page header) */
 #logsTable thead th {
   position: sticky;
   top: 0;
   background: #3eb7f8;
   color: white;
-  z-index: 5;
+  z-index: 10;
   border-bottom: 2px solid #00477d;
 }
 
