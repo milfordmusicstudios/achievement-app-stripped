@@ -33,19 +33,19 @@ function getFilteredAndSortedUsers() {
   const query = searchQuery.trim().toLowerCase();
 
   let filtered = allUsers.filter(u => {
-    const teacherNames = ((u.teacherIds && Array.isArray(u.teacherIds)) ? u.teacherIds : [])
-      .map(id => {
-        const teacher = allUsers.find(t => String(t.id) === String(id));
-        return teacher ? `${teacher.firstName} ${teacher.lastName}`.toLowerCase() : "";
-      }).join(" ");
+    const teacherNames = ((Array.isArray(u.teacherIds) ? u.teacherIds : [])).map(id => {
+      const teacher = allUsers.find(t => String(t.id) === String(id));
+      return teacher ? `${teacher.firstName} ${teacher.lastName}`.toLowerCase() : "";
+    }).join(" ");
 
-    const rolesText = Array.isArray(u.roles) ? u.roles.join(" ").toLowerCase() : (u.roles || "").toLowerCase();
+    const rolesText = Array.isArray(u.roles) ? u.roles.join(" ").toLowerCase() : String(u.roles || "").toLowerCase();
+    const instrumentText = Array.isArray(u.instrument) ? u.instrument.join(" ").toLowerCase() : String(u.instrument || "").toLowerCase();
 
     return (
-      (u.firstName || "").toLowerCase().includes(query) ||
-      (u.lastName || "").toLowerCase().includes(query) ||
-      (u.email || "").toLowerCase().includes(query) ||
-      (u.instrument || "").toLowerCase().includes(query) ||
+      String(u.firstName || "").toLowerCase().includes(query) ||
+      String(u.lastName || "").toLowerCase().includes(query) ||
+      String(u.email || "").toLowerCase().includes(query) ||
+      instrumentText.includes(query) ||
       teacherNames.includes(query) ||
       rolesText.includes(query)
     );
@@ -53,8 +53,8 @@ function getFilteredAndSortedUsers() {
 
   if (sortColumn) {
     filtered.sort((a, b) => {
-      const valA = (a[sortColumn] || "").toLowerCase();
-      const valB = (b[sortColumn] || "").toLowerCase();
+      const valA = String(a[sortColumn] || "").toLowerCase();
+      const valB = String(b[sortColumn] || "").toLowerCase();
       return valA > valB ? sortDirection : valA < valB ? -sortDirection : 0;
     });
   }
