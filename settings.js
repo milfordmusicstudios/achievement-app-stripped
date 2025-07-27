@@ -10,7 +10,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  // ✅ Normalize roles so Switch Role button works
+  // ✅ Normalize roles (fixes Switch Role button)
   const roles = Array.isArray(user.roles)
     ? user.roles
     : (user.roles ? user.roles.toString().split(",").map(r => r.trim()) : []);
@@ -18,7 +18,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const switchRoleBtn = document.getElementById("switchRoleBtn");
   const switchUserBtn = document.getElementById("switchUserBtn");
 
-  // ✅ Show or hide Switch Role button
+  // ✅ Show Switch Role if multiple roles exist
   if (roles.length > 1) {
     switchRoleBtn.style.display = "inline-block";
     switchRoleBtn.textContent = `Switch Role (Current: ${capitalize(activeRole)})`;
@@ -26,12 +26,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     switchRoleBtn.style.display = "none";
   }
 
-  // ✅ Show Switch User only if multiple users share email
+  // ✅ Show Switch User if multiple users share this email
   const allUsers = JSON.parse(localStorage.getItem("allUsers")) || [];
   const matchingUsers = allUsers.filter(u => u.email?.toLowerCase() === user.email?.toLowerCase());
   switchUserBtn.style.display = matchingUsers.length > 1 ? "inline-block" : "none";
 
-  // ✅ Fill in fields
+  // ✅ Populate existing fields
   document.getElementById("firstName").value = user.firstName || "";
   document.getElementById("lastName").value = user.lastName || "";
   document.getElementById("newEmail").value = user.email || "";
@@ -61,13 +61,17 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   });
 
-  // ✅ Save button
+  // ✅ Save button logic
   document.getElementById("saveBtn").addEventListener("click", async () => {
     const firstName = document.getElementById("firstName").value.trim();
     const lastName = document.getElementById("lastName").value.trim();
 
-    const { error } = await supabase.from("users").update({ firstName, lastName }).eq("id", user.id);
+    const { data, error } = await supabase.from("users")
+      .update({ firstName, lastName })
+      .eq("id", user.id);
+
     if (error) {
+      console.error("Supabase Error:", error);
       alert("Failed to update name.");
     } else {
       alert("Name updated successfully.");
@@ -92,18 +96,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     const { error } = await supabase.from("users").update(updates).eq("id", user.id);
     if (error) {
       alert("Failed to update credentials.");
+      console.error(error);
     } else {
       alert("Credentials updated successfully.");
       localStorage.setItem("loggedInUser", JSON.stringify({ ...user, ...updates }));
     }
   });
 
-  // ✅ Cancel button
+  // ✅ Cancel button → home
   document.getElementById("cancelBtn").addEventListener("click", () => {
     window.location.href = "index.html";
   });
 
-  // ✅ Logout button
+  // ✅ Logout button → login and clear session
   document.getElementById("logoutBtn").addEventListener("click", () => {
     localStorage.clear();
     window.location.href = "login.html";
