@@ -6,98 +6,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="style.css">
   <script type="module" src="review-logs.js" defer></script>
-  <style>
-    body {
-      background: white;
-      margin: 0;
-      font-family: Arial, sans-serif;
-    }
-
-    /* ✅ Full-width responsive table */
-    #logsTable {
-      width: 100%;
-      border-collapse: collapse;
-    }
-    #logsTable th, #logsTable td {
-      padding: 10px;
-      text-align: left;
-      border-bottom: 1px solid #ddd;
-      vertical-align: top;
-    }
-
-    /* ✅ Sticky header */
-    #logsTable thead th {
-      position: sticky;
-      top: 0;
-      background: #3eb7f8;    /* matches blue-button color */
-      color: white;
-      z-index: 2;
-      border-bottom: 2px solid #00477d;
-    }
-
-    #logsTable input, #logsTable select, #logsTable textarea {
-      width: 100%;
-      padding: 6px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      font-size: 0.9rem;
-    }
-    #logsTable textarea {
-      min-height: 50px;
-      resize: vertical;
-      line-height: 1.3;
-    }
-    #logsTable tr:nth-child(even) { background: #f9f9f9; }
-    #logsTable tr:hover { background: #eef7ff; }
-
-    /* ✅ Responsive category cards */
-    #categorySummary {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      justify-content: center;
-      margin: 15px 10px;
-    }
-    .category-card {
-      flex: 1 1 150px;
-      max-width: 180px;
-      background: #f4f4f4;
-      padding: 10px;
-      border-radius: 10px;
-      text-align: center;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-
-    /* ✅ Search bar styling */
-    #searchInput {
-      background: white;
-      padding: 8px;
-      width: 300px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-      font-size: 1rem;
-      margin: 10px auto;
-      display: block;
-    }
-
-    /* ✅ Scroll container to allow header to stick */
-    #logsSection {
-      overflow-x: auto;
-      overflow-y: auto;
-      max-height: calc(100vh - 300px);
-      border: 1px solid #ddd;
-      border-radius: 5px;
-      margin: 10px;
-    }
-  </style>
 </head>
 <body>
   <main class="app">
 
-    <!-- ✅ Top Bar -->
-    <header style="display:flex; justify-content:space-between; align-items:center; padding:10px 20px;">
+    <!-- ✅ Sticky Top Bar -->
+    <header>
       <button class="blue-button" onclick="window.location.href='index.html'">Home</button>
-      <h2 style="flex:1; text-align:center; color:#00477d; margin:0;">Review Logs</h2>
+      <h2>Review Logs</h2>
     </header>
 
     <!-- ✅ Category Summary -->
@@ -106,7 +22,7 @@
     <!-- ✅ Live Search -->
     <input id="searchInput" type="text" placeholder="Search logs...">
 
-    <!-- ✅ Logs Table with sticky header -->
+    <!-- ✅ Logs Table -->
     <section id="logsSection">
       <table id="logsTable">
         <thead>
