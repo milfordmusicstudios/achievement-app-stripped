@@ -21,12 +21,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   let filteredLogs = [];
   let currentSort = { field: "date", order: "desc" };
 
-  // ✅ Pagination variables
   let currentPage = 1;
   let logsPerPage = 50;
 
   try {
-    // ✅ Fetch logs & users
     const { data: logsData, error: logsError } = await supabase
       .from("logs")
       .select("*")
@@ -47,16 +45,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     }));
 
     filteredLogs = [...logs];
-
     renderCategorySummary(filteredLogs);
     renderLogsTable(filteredLogs);
-
   } catch (err) {
     console.error("[ERROR] Review Logs:", err);
     alert("Failed to load logs.");
   }
 
-  // ✅ Bulk Approve UI logic
   const bulkPanel = document.getElementById("bulkApprovePanel");
   const bulkPointsInput = document.getElementById("bulkPoints");
 
@@ -86,7 +81,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (!confirm(`Approve ${selectedIds.length} logs${assignPoints ? ` with ${points} points` : ""}?`)) return;
 
     try {
-      // ✅ Update only selected logs
       for (let id of selectedIds) {
         const updateData = { status: "approved" };
         if (assignPoints) updateData.points = points;
@@ -105,36 +99,6 @@ document.addEventListener("DOMContentLoaded", async () => {
           if (assignPoints) flog.points = points;
         }
       }
-// ✅ Delete Selected Logs
-document.getElementById("deleteSelectedBtn").addEventListener("click", async () => {
-  const selectedIds = Array.from(document.querySelectorAll(".select-log:checked"))
-    .map(cb => cb.dataset.id);
-
-  if (selectedIds.length === 0) {
-    alert("No logs selected.");
-    return;
-  }
-
-  if (!confirm(`Are you sure you want to permanently delete ${selectedIds.length} logs? This action cannot be undone.`)) {
-    return;
-  }
-
-  try {
-    const { error } = await supabase.from("logs").delete().in("id", selectedIds);
-    if (error) throw error;
-
-    // ✅ Remove from local arrays and refresh table
-    logs = logs.filter(l => !selectedIds.includes(l.id.toString()));
-    filteredLogs = filteredLogs.filter(l => !selectedIds.includes(l.id.toString()));
-    renderLogsTable(filteredLogs);
-
-    alert("✅ Selected logs deleted successfully.");
-  } catch (err) {
-    console.error("Delete logs failed:", err);
-    alert("❌ Failed to delete selected logs.");
-  }
-});
-
       renderLogsTable(filteredLogs);
       bulkPanel.style.display = "none";
       bulkPointsInput.value = "";
@@ -142,6 +106,35 @@ document.getElementById("deleteSelectedBtn").addEventListener("click", async () 
     } catch (err) {
       console.error("Bulk approve failed:", err);
       alert("❌ Failed to approve selected logs.");
+    }
+  });
+
+  // ✅ NEW: Delete Selected Logs
+  document.getElementById("deleteSelectedBtn").addEventListener("click", async () => {
+    const selectedIds = Array.from(document.querySelectorAll(".select-log:checked"))
+      .map(cb => cb.dataset.id);
+
+    if (selectedIds.length === 0) {
+      alert("No logs selected.");
+      return;
+    }
+
+    if (!confirm(`Are you sure you want to permanently delete ${selectedIds.length} logs? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase.from("logs").delete().in("id", selectedIds);
+      if (error) throw error;
+
+      logs = logs.filter(l => !selectedIds.includes(l.id.toString()));
+      filteredLogs = filteredLogs.filter(l => !selectedIds.includes(l.id.toString()));
+      renderLogsTable(filteredLogs);
+
+      alert("✅ Selected logs deleted successfully.");
+    } catch (err) {
+      console.error("Delete logs failed:", err);
+      alert("❌ Failed to delete selected logs.");
     }
   });
 
@@ -159,15 +152,9 @@ document.getElementById("deleteSelectedBtn").addEventListener("click", async () 
     renderLogsTable(filteredLogs);
   });
 
-  // ✅ Sorting
-  document.querySelectorAll("#logsHeaderTable th").forEach(th => {
-    if (!th.dataset.field) return;
-    th.addEventListener("click", () => {
-      const field = th.dataset.field;
-      currentSort.order = (currentSort.field === field && currentSort.order === "asc") ? "desc" : "asc";
-      currentSort.field = field;
-      sortLogs();
-      renderLogsTable(filteredLogs);
+  document.getElementById("selectAll").addEventListener("change", (e) => {
+    document.querySelectorAll(".select-log").forEach(cb => {
+      cb.checked = e.target.checked;
     });
   });
 
@@ -187,7 +174,6 @@ document.getElementById("deleteSelectedBtn").addEventListener("click", async () 
     });
   }
 
-  // ✅ Pagination Controls
   document.getElementById("prevPageBtn").addEventListener("click", () => {
     if (currentPage > 1) {
       currentPage--;
@@ -209,14 +195,6 @@ document.getElementById("deleteSelectedBtn").addEventListener("click", async () 
     renderLogsTable(filteredLogs);
   });
 
-  // ✅ Select All Checkbox
-  document.getElementById("selectAll").addEventListener("change", (e) => {
-    document.querySelectorAll(".select-log").forEach(cb => {
-      cb.checked = e.target.checked;
-    });
-  });
-
-  // ✅ Render Category Summary
   function renderCategorySummary(logs) {
     categorySummary.innerHTML = "";
     const icons = {
@@ -255,13 +233,11 @@ document.getElementById("deleteSelectedBtn").addEventListener("click", async () 
       </div>`;
   }
 
-  // ✅ Auto-resize textarea
   function autoResizeTextarea(textarea) {
     textarea.style.height = "auto";
     textarea.style.height = textarea.scrollHeight + "px";
   }
 
-  // ✅ Render Logs Table with Pagination & Checkboxes
   function renderLogsTable(logs) {
     logsTableBody.innerHTML = "";
 
@@ -298,7 +274,6 @@ document.getElementById("deleteSelectedBtn").addEventListener("click", async () 
     applyEditListeners();
   }
 
-  // ✅ Apply inline edit listeners
   function applyEditListeners() {
     document.querySelectorAll(".edit-input").forEach(el => {
       if (el.tagName.toLowerCase() === "textarea") {
