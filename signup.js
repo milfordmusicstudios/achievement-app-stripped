@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const emailInput = document.getElementById('signupEmail');
   const cancelBtn = document.getElementById('cancelBtn');
 
-  // ✅ Pre-fill email from ?email=
+  // ✅ Pre-fill email if provided in query
   const params = new URLSearchParams(window.location.search);
   const inviteEmail = params.get("email");
   if (inviteEmail) {
@@ -14,21 +14,43 @@ document.addEventListener("DOMContentLoaded", () => {
     emailInput.readOnly = true;
   }
 
-  // ✅ Cancel button
+  // ✅ Load Teachers into Multi-Select
+  async function loadTeachers() {
+    const { data: teachers, error } = await supabase.from("users").select("id, firstName, lastName, roles");
+    if (error) {
+      console.error("Error loading teachers:", error);
+      return;
+    }
+    const teacherSelect = document.getElementById("teacherIds");
+    teachers
+      .filter(t => Array.isArray(t.roles) && (t.roles.includes("teacher") || t.roles.includes("admin")))
+      .forEach(t => {
+        const opt = document.createElement("option");
+        opt.value = t.id;
+        opt.textContent = `${t.firstName} ${t.lastName}`;
+        teacherSelect.appendChild(opt);
+      });
+  }
+  loadTeachers();
+
+  // ✅ Cancel Button → back to login
   cancelBtn.addEventListener("click", () => {
     window.location.href = "login.html";
   });
 
-  // ✅ Sign Up flow
+  // ✅ Form Submit
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
+    errorDisplay.style.display = 'none';
 
     const firstName = document.getElementById('firstName').value.trim();
     const lastName = document.getElementById('lastName').value.trim();
     const email = emailInput.value.trim().toLowerCase();
     const password = document.getElementById('signupPassword').value;
+    const instrument = document.getElementById('instrument').value.split(",").map(i => i.trim()).filter(Boolean);
+    const teacherIds = Array.from(document.getElementById('teacherIds').selectedOptions).map(o => o.value);
 
-    // Step 1: Create Auth user
+    // ✅ Step 1: Sign Up Auth User
     const { data: signUpData, error: signUpError } = await supabase.auth.signUp({ email, password });
     if (signUpError) {
       errorDisplay.textContent = signUpError.message;
@@ -36,31 +58,46 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // Step 2: Wait for session
-    const { data: sessionData } = await supabase.auth.getSession();
-    const userId = sessionData?.session?.user?.id;
+    const userId = signUpData.user?.id;
     if (!userId) {
-      errorDisplay.textContent = "User session not established. Try logging in.";
+      errorDisplay.textContent = "Signup failed. Try again.";
       errorDisplay.style.display = 'block';
       return;
     }
 
-    // Step 3: Insert user profile
-    const { error: insertError } = await supabase.from('users').insert({
+    // ✅ Step 2: Upload Avatar (if provided)
+    let avatarUrl = null;
+    const avatarFile = document.getElementById('avatarInput').files[0];
+    if (avatarFile) {
+      const fileName = `${userId}-${Date.now()}.png`;
+      const { error: uploadError } = await supabase.storage.from("avatars").upload(fileName, avatarFile, { upsert: true });
+      if (!uploadError) {
+        const { data: publicUrl } = supabase.storage.from("avatars").getPublicUrl(fileName);
+        avatarUrl = publicUrl.publicUrl;
+      }
+    }
+
+    // ✅ Step 3: Insert into Custom Users Table
+    const { error: insertError } = await supabase.from('users').insert([{
       id: userId,
-      email,
       firstName,
       lastName,
+      email,
+      instrument,
+      teacherIds,
+      avatarUrl,
       roles: ['student'],
-      level: 1,
       points: 0
-    });
+    }]);
+
     if (insertError) {
       errorDisplay.textContent = insertError.message;
       errorDisplay.style.display = 'block';
       return;
     }
 
-    window.location.href = 'index.html';
+    // ✅ Success → redirect to login
+    alert("Signup successful! You may now log in.");
+    window.location.href = 'login.html';
   });
 });

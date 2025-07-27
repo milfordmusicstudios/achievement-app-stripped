@@ -11,15 +11,31 @@
   <img src="images/logos/logo.png" alt="App Logo" class="logo" />
   <h2>Achievement Awards</h2>
   <h3>Create Your Account</h3>
-  <form id="signupForm">
+
+  <form id="signupForm" enctype="multipart/form-data">
     <input type="text" id="firstName" placeholder="First Name" required />
     <input type="text" id="lastName" placeholder="Last Name" required />
+
+    <!-- ✅ Teacher selection (multi-select) -->
+    <label>Assigned Teacher(s)</label>
+    <select id="teacherIds" multiple style="width:100%; height:80px;"></select>
+
+    <!-- ✅ Instrument -->
+    <input type="text" id="instrument" placeholder="Instrument(s) (comma separated)" />
+
+    <!-- ✅ Avatar Upload -->
+    <label>Upload Avatar</label>
+    <input type="file" id="avatarInput" accept="image/*" />
+
+    <!-- ✅ Email & Password -->
     <input type="email" id="signupEmail" placeholder="Email" required />
     <input type="password" id="signupPassword" placeholder="Password" required />
+
     <button type="submit" class="blue-button">Sign Up</button>
     <button type="button" id="cancelBtn" class="blue-button" style="background:#aaa; margin-top:5px;">Cancel</button>
   </form>
-  <p id="signupError" style="color: red; display: none;"></p>
+
+  <p id="signupError" style="color:red; display:none;"></p>
 </main>
 
   <footer>
