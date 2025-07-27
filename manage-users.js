@@ -97,26 +97,52 @@ function setupTagListeners() {
     });
   });
 
-  document.querySelectorAll(".tag-option").forEach(opt => {
-    opt.addEventListener("click", e => {
-      const container = e.target.closest(".tag-container");
-      const id = container.dataset.id;
-      const type = container.dataset.type;
-      const user = allUsers.find(u => u.id === id);
-      const value = e.target.dataset.value;
+document.querySelectorAll(".tag-option").forEach(opt => {
+  opt.addEventListener("click", e => {
+    const container = e.target.closest(".tag-container");
+    const id = container.dataset.id;
+    const type = container.dataset.type;
+    const user = allUsers.find(u => u.id === id);
+    const value = e.target.dataset.value;
 
-      if (type === "roles") {
-        if (!Array.isArray(user.roles)) user.roles = [];
-        user.roles.push(value);
-      } else {
-if (!Array.isArray(user.teacherIds)) user.teacherIds = [];
-user.teacherIds.push(value);
-      }
+    if (type === "roles") {
+      if (!Array.isArray(user.roles)) user.roles = [];
+      if (!user.roles.includes(value)) user.roles.push(value);
+    } else {
+      if (!Array.isArray(user.teacherIds)) user.teacherIds = [];
+      if (!user.teacherIds.includes(value)) user.teacherIds.push(value);
+    }
 
-      document.getElementById(`save-${id}`).style.display = "inline-block";
-      renderUsers();
-    });
+    document.getElementById(`save-${id}`).style.display = "inline-block";
+
+    // ✅ Instead of re-rendering the whole table, rebuild only this tag container
+    refreshTagContainer(container, user, type);
   });
+});
+
+function refreshTagContainer(container, user, type) {
+  const isRole = type === "roles";
+  const options = isRole ? ["student", "teacher", "admin"] :
+    allUsers.filter(u => u.roles?.includes("teacher") || u.roles?.includes("admin"));
+
+  // Build updated tags
+  const tagsHTML = (isRole ? user.roles : user.teacherIds.map(id => {
+    const teacher = allUsers.find(t => t.id === id);
+    return teacher ? teacher.id : "";
+  })).map(v => `<span class="tag">${isRole ? v : allUsers.find(t => t.id === v).firstName + " " + allUsers.find(t => t.id === v).lastName}<span class="remove-tag" data-value="${v}">×</span></span>`).join("");
+
+  // Build updated dropdown options
+  const dropdownHTML = options.filter(opt => isRole ? !user.roles.includes(opt) : !user.teacherIds.includes(opt.id))
+    .map(opt => `<div class="tag-option" data-value="${isRole ? opt : opt.id}">${isRole ? opt : opt.firstName + " " + opt.lastName}</div>`).join("");
+
+  container.innerHTML = `
+    ${tagsHTML}
+    <img src="images/icons/plus.png" class="tag-add-icon">
+    <div class="tag-options">${dropdownHTML}</div>
+  `;
+
+  setupTagListeners(); // ✅ reattach listeners
+}
 
   document.querySelectorAll(".remove-tag").forEach(x => {
     x.addEventListener("click", e => {
@@ -133,7 +159,7 @@ user.teacherIds.push(value);
       }
 
       document.getElementById(`save-${id}`).style.display = "inline-block";
-      renderUsers();
+      refreshTagContainer();
     });
   });
 }
