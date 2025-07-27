@@ -1000,3 +1000,25 @@ main.app > header h2 {
 #logsTable td:nth-child(3) { width: 80px; }                      /* points */
 #logsTable td:nth-child(4) { width: auto; }                      /* note expands */
 #logsTable td:nth-child(5) { width: 100px; text-transform: capitalize; }
+
+/* ✅ Progress Label White */
+.progress-label {
+  color: white;
+}
+
+/* ✅ Welcome Title Styling */
+#welcomeTitle {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #00477d;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+/* ✅ Tighten Button Spacing */
+#topButtonRow {
+  margin-bottom: 0.3rem;
+}
+.button-row.center {
+  margin-top: 0.3rem;
+}
