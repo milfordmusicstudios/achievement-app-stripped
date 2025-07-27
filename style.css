@@ -1344,3 +1344,20 @@ body.manage-users h2.page-title {
   vertical-align: middle;
   margin-right: 6px;
 }
+/* Add spacing to Add User modal fields */
+.modal-box label {
+  display: block;
+  margin-top: 8px;
+  font-weight: bold;
+  color: #00477d;
+}
+
+.modal-box input {
+  width: 100%;
+  padding: 6px 8px;
+  margin-top: 4px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  box-sizing: border-box;
+}
