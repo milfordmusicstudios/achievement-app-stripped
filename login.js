@@ -22,10 +22,10 @@ document.addEventListener("DOMContentLoaded", () => {
       errorDisplay.style.display = 'block';
       errorDisplay.textContent = 'Invalid email or password.';
     } else {
-      // ✅ Explicitly select required columns, including roles
+      // ✅ Explicitly select required columns including roles
       const { data: userData, error: fetchError } = await supabase
         .from('users')
-        .select('id, firstName, lastName, email, roles, parent_uuid, avatarUrl')
+        .select('id, firstName, lastName, email, roles, parent_uuid, avatarUrl, teacherIds, instrument')
         .eq('id', data.user.id)
         .single();
 
@@ -42,10 +42,10 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      // ✅ Debug log to confirm roles
+      // ✅ Debug logs
       console.log("DEBUG Supabase returned userData:", userData);
 
-      // ✅ Normalize roles into an array
+      // ✅ Normalize roles
       if (typeof userData.roles === "string") {
         try {
           userData.roles = JSON.parse(userData.roles);
@@ -56,12 +56,18 @@ document.addEventListener("DOMContentLoaded", () => {
         userData.roles = userData.roles ? [userData.roles] : [];
       }
 
+      // ✅ Hard fallback for your admin account
+      if ((!userData.roles || userData.roles.length === 0) && userData.email === "lisarachelle85@gmail.com") {
+        console.warn("Roles missing from Supabase, applying fallback roles for admin account.");
+        userData.roles = ["teacher", "admin"];
+      }
+
       console.log("DEBUG Normalized roles:", userData.roles);
 
-      // ✅ Save normalized user to localStorage
+      // ✅ Save to localStorage
       localStorage.setItem('loggedInUser', JSON.stringify(userData));
 
-      // ✅ Set default role for activeRole
+      // ✅ Set default activeRole
       const roles = userData.roles || ['student'];
       const defaultRole = roles.includes('admin') ? 'admin' :
                           roles.includes('teacher') ? 'teacher' : 'student';
