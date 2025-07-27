@@ -34,7 +34,6 @@ function renderUsers() {
 
   pageUsers.forEach(user => {
     const tr = document.createElement("tr");
-
     tr.innerHTML = `
       <td><input type="text" value="${user.firstName || ""}" onchange="updateField('${user.id}','firstName',this.value)"></td>
       <td><input type="text" value="${user.lastName || ""}" onchange="updateField('${user.id}','lastName',this.value)"></td>
@@ -50,55 +49,91 @@ function renderUsers() {
       <td><input type="text" value="${user.instrument || ""}" onchange="updateField('${user.id}','instrument',this.value)"></td>
       <td><button id="save-${user.id}" class="blue-button" style="display:none;" onclick="saveUser('${user.id}')">Save</button></td>
     `;
-
     tbody.appendChild(tr);
   });
 
-  setupRoleTeacherListeners();
+  setupTagListeners();
   setupAvatarUploads();
   renderPagination();
   syncHeaderWidths();
 }
 
-// ✅ Generate Roles Multi-Select
+// ✅ Render Tag Selector for Roles
 function renderRoleDropdown(user) {
-  const roles = ["student", "teacher", "admin"];
-  const selected = Array.isArray(user.roles) ? user.roles : [user.roles];
+  const availableRoles = ["student", "teacher", "admin"];
+  const selectedRoles = Array.isArray(user.roles) ? user.roles : [user.roles];
   return `
-    <select multiple class="role-select" data-id="${user.id}" style="width:100%; height:50px;">
-      ${roles.map(r => `<option value="${r}" ${selected.includes(r) ? "selected" : ""}>${r}</option>`).join("")}
-    </select>
+    <div class="tag-container" data-id="${user.id}" data-type="roles">
+      ${selectedRoles.map(r => `<span class="tag">${r}<span class="remove-tag" data-value="${r}">×</span></span>`).join("")}
+      <button class="tag-add">+</button>
+      <div class="tag-options">
+        ${availableRoles.filter(r => !selectedRoles.includes(r)).map(r => `<div class="tag-option" data-value="${r}">${r}</div>`).join("")}
+      </div>
+    </div>
   `;
 }
 
-// ✅ Generate Teachers Multi-Select
+// ✅ Render Tag Selector for Teachers
 function renderTeacherDropdown(user) {
   const teacherList = allUsers.filter(u => u.roles?.includes("teacher") || u.roles?.includes("admin"));
   const selected = Array.isArray(user.teacher) ? user.teacher : [user.teacher];
   return `
-    <select multiple class="teacher-select" data-id="${user.id}" style="width:100%; height:60px;">
-      ${teacherList.map(t => `<option value="${t.id}" ${selected.includes(t.id) ? "selected" : ""}>${t.firstName} ${t.lastName}</option>`).join("")}
-    </select>
+    <div class="tag-container" data-id="${user.id}" data-type="teacher">
+      ${teacherList.filter(t => selected.includes(t.id)).map(t => `<span class="tag">${t.firstName} ${t.lastName}<span class="remove-tag" data-value="${t.id}">×</span></span>`).join("")}
+      <button class="tag-add">+</button>
+      <div class="tag-options">
+        ${teacherList.filter(t => !selected.includes(t.id)).map(t => `<div class="tag-option" data-value="${t.id}">${t.firstName} ${t.lastName}</div>`).join("")}
+      </div>
+    </div>
   `;
 }
 
-// ✅ Event Listeners for Role & Teacher Dropdowns
-function setupRoleTeacherListeners() {
-  document.querySelectorAll(".role-select").forEach(sel => {
-    sel.addEventListener("change", e => {
-      const id = e.target.dataset.id;
-      const user = allUsers.find(u => u.id === id);
-      user.roles = Array.from(e.target.selectedOptions).map(opt => opt.value);
-      document.getElementById(`save-${id}`).style.display = "inline-block";
+// ✅ Tag Interaction Listeners
+function setupTagListeners() {
+  document.querySelectorAll(".tag-add").forEach(btn => {
+    btn.addEventListener("click", e => {
+      const container = e.target.closest(".tag-container");
+      container.querySelector(".tag-options").classList.toggle("show");
     });
   });
 
-  document.querySelectorAll(".teacher-select").forEach(sel => {
-    sel.addEventListener("change", e => {
-      const id = e.target.dataset.id;
+  document.querySelectorAll(".tag-option").forEach(opt => {
+    opt.addEventListener("click", e => {
+      const container = e.target.closest(".tag-container");
+      const id = container.dataset.id;
+      const type = container.dataset.type;
       const user = allUsers.find(u => u.id === id);
-      user.teacher = Array.from(e.target.selectedOptions).map(opt => opt.value);
+      const value = e.target.dataset.value;
+
+      if (type === "roles") {
+        if (!Array.isArray(user.roles)) user.roles = [];
+        user.roles.push(value);
+      } else {
+        if (!Array.isArray(user.teacher)) user.teacher = [];
+        user.teacher.push(value);
+      }
+
       document.getElementById(`save-${id}`).style.display = "inline-block";
+      renderUsers();
+    });
+  });
+
+  document.querySelectorAll(".remove-tag").forEach(x => {
+    x.addEventListener("click", e => {
+      const container = e.target.closest(".tag-container");
+      const id = container.dataset.id;
+      const type = container.dataset.type;
+      const value = e.target.dataset.value;
+      const user = allUsers.find(u => u.id === id);
+
+      if (type === "roles") {
+        user.roles = user.roles.filter(r => r !== value);
+      } else {
+        user.teacher = user.teacher.filter(t => t !== value);
+      }
+
+      document.getElementById(`save-${id}`).style.display = "inline-block";
+      renderUsers();
     });
   });
 }
@@ -139,7 +174,7 @@ function setupAvatarUploads() {
   });
 }
 
-// ✅ Add User Modal (still uses multi-selects for roles & teachers)
+// ✅ Add User Modal (still uses multi-selects for now)
 function openAddUserModal() {
   const teacherOptions = allUsers.filter(u => u.roles?.includes("teacher") || u.roles?.includes("admin"))
     .map(t => `<option value="${t.id}">${t.firstName} ${t.lastName}</option>`).join("");
@@ -178,7 +213,7 @@ function openAddUserModal() {
   });
 }
 
-// ✅ Create New User with Multi-Selects
+// ✅ Create New User
 async function createNewUser() {
   const selectedRoles = Array.from(document.getElementById("newRoles").selectedOptions).map(opt => opt.value);
   const selectedTeachers = Array.from(document.getElementById("newTeachers").selectedOptions).map(opt => opt.value);
@@ -216,7 +251,7 @@ function renderPagination() {
   }
 }
 
-// ✅ Header Column Sync
+// ✅ Header Sync
 function syncHeaderWidths() {
   const headerCells = document.querySelectorAll("#userHeaderTable th");
   const rowCells = document.querySelectorAll("#userTable tr:first-child td");

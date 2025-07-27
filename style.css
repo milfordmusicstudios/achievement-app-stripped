@@ -1377,3 +1377,66 @@ body.manage-users h2.page-title {
 #newTeachers option {
   padding: 4px 6px;
 }
+/* Tag Container */
+.tag-container {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 3px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 3px;
+  background: #fff;
+  position: relative;
+  min-height: 30px;
+}
+
+/* Individual Tags */
+.tag {
+  background: #3eb7f8;
+  color: white;
+  font-size: 0.8rem;
+  padding: 2px 6px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+}
+.remove-tag {
+  margin-left: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+/* Add Button */
+.tag-add {
+  background: #00477d;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  font-size: 14px;
+  line-height: 16px;
+  cursor: pointer;
+}
+
+/* Dropdown Options */
+.tag-options {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  min-width: 120px;
+  max-height: 120px;
+  overflow-y: auto;
+  z-index: 1000;
+}
+.tag-options.show { display: block; }
+.tag-option {
+  padding: 4px 6px;
+  cursor: pointer;
+}
+.tag-option:hover { background: #eef; }
