@@ -30,11 +30,25 @@ async function fetchUsers() {
 
 // ✅ Filter & Sort
 function getFilteredAndSortedUsers() {
-  let filtered = allUsers.filter(u =>
-    (u.firstName || "").toLowerCase().includes(searchQuery) ||
-    (u.lastName || "").toLowerCase().includes(searchQuery) ||
-    (u.email || "").toLowerCase().includes(searchQuery)
-  );
+  const query = searchQuery.trim().toLowerCase();
+
+  let filtered = allUsers.filter(u => {
+    const teacherNames = (Array.isArray(u.teacherIds) ? u.teacherIds : [u.teacherIds])
+      .filter(Boolean)
+      .map(id => {
+        const t = allUsers.find(x => x.id === id);
+        return t ? `${t.firstName} ${t.lastName}`.toLowerCase() : "";
+      }).join(" ");
+
+    return (
+      (u.firstName || "").toLowerCase().includes(query) ||
+      (u.lastName || "").toLowerCase().includes(query) ||
+      (u.email || "").toLowerCase().includes(query) ||
+      (u.instrument || "").toLowerCase().includes(query) ||
+      teacherNames.includes(query) ||
+      (Array.isArray(u.roles) ? u.roles.join(" ") : "").toLowerCase().includes(query)
+    );
+  });
 
   if (sortColumn) {
     filtered.sort((a, b) => {
