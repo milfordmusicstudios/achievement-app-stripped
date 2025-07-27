@@ -1324,20 +1324,22 @@ body.manage-users h2.page-title {
 #userHeaderTable th:nth-child(8),
 #userTable td:nth-child(8) { width: 5%; }    /* Save button */
 #userTable td input[type="text"],
-/* Improve spacing for text and email columns */
-#userTable td input[type="text"],
 #userTable td input[type="email"] {
-  padding: 6px 10px;   /* ✅ more inner padding */
-  margin: 4px;         /* ✅ more space around inputs */
+  width: calc(100% - 10px);  /* ✅ leaves space on both sides */
+  padding: 6px 10px;         /* ✅ comfortable inner padding */
+  margin: 2px 5px;           /* ✅ space between input and cell border */
   border: 1px solid #ccc;
   border-radius: 4px;
   font-size: 0.95rem;
+  box-sizing: border-box;    /* ✅ ensures padding doesn’t break layout */
 }
-
 .plus-icon {
   width: 20px;       /* ✅ make it bigger */
   height: 20px;
   vertical-align: middle;
   margin-right: 6px;
 }
-#userTable td { padding: 10px 8px; }
+/* Add more breathing room inside table cells */
+#userTable td {
+  padding: 10px 12px;        /* ✅ more space between inputs and cell edges */
+}
