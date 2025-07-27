@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Leaderboard | Achievement App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="tall-background">
+
+  <main class="app">
+
+    <!-- 🔹 Header row with home button and title -->
+    <div class="leaderboard-header" style="display:flex; justify-content:space-between; align-items:center; padding:10px 20px;">
+      <button type="button" class="blue-button" onclick="window.location.href='home.html'">Home</button>
+      <h2 class="leaderboard-title" style="color:#00477d;">Leaderboard</h2>
+    </div>
+
+    <!-- 🔹 Scrollable leaderboard -->
+    <div class="scroll-wrapper">
+      <div class="level-bars" id="leaderboardContainer">
+        <!-- JavaScript will inject level rows and avatars here -->
+      </div>
+    </div>
+
+  </main>
+
+  <footer>
+    &copy; 2025 Milford Music Studios Achievement App
+  </footer>
+
+  <!-- ✅ Scripts -->
+  <script type="module" src="leaderboard.js"></script>
+</body>
+</html>
