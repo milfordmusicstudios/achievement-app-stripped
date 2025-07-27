@@ -1117,11 +1117,6 @@ body.manage-users h2.page-title {
   border-bottom: 2px solid #00477d;
 }
 
-#userTable td {
-  padding: 6px;
-  border-bottom: 1px solid #ddd;
-  vertical-align: middle;
-}
 
 #userTable tr:nth-child(even) {
   background: #f9f9f9;
@@ -1172,13 +1167,12 @@ body.manage-users h2.page-title {
 
 /* Add User Button */
 #addUserBtn {
-  background: #00477d;
-  color: white;
-  padding: 8px 14px;
+  background: #3eb7f8;
   font-size: 1rem;
-  border-radius: 5px;
-  cursor: pointer;
+  padding: 8px 14px;
+  border-radius: 6px;
 }
+
 #addUserBtn:hover {
   background: #00325a;
 }
@@ -1244,21 +1238,9 @@ body.manage-users h2.page-title {
   border-collapse: collapse;
 }
 
-#userTable td {
-  padding: 6px;
-  border-bottom: 1px solid #ddd;
-}
 
 #userTable tr:nth-child(even) {
   background: #f9f9f9;
-}
-
-/* Add User Button */
-#addUserBtn {
-  background: #3eb7f8;
-  font-size: 1rem;
-  padding: 8px 14px;
-  border-radius: 6px;
 }
 
 /* Pagination */
@@ -1275,14 +1257,6 @@ body.manage-users h2.page-title {
   background: #3eb7f8;
 }
 /* Match header and body column widths */
-#userHeaderTable th,
-#userTable td {
-  width: 12%;
-}
-#userHeaderTable th:nth-child(4),
-#userTable td:nth-child(4) {
-  width: 15%; /* Avatar wider */
-}
 #userHeaderTable th:nth-child(5),
 #userTable td:nth-child(5) {
   width: 10%; /* Roles */
@@ -1296,10 +1270,6 @@ body.manage-users h2.page-title {
   width: 7%; /* Save button */
 }
 /* Hide "No file chosen" text */
-.avatar-upload {
-  width: 100px; 
-  color: transparent; 
-}
 .avatar-upload::-webkit-file-upload-button {
   color: white;
   background: #3eb7f8;
@@ -1354,14 +1324,20 @@ body.manage-users h2.page-title {
 #userHeaderTable th:nth-child(8),
 #userTable td:nth-child(8) { width: 5%; }    /* Save button */
 #userTable td input[type="text"],
+/* Improve spacing for text and email columns */
+#userTable td input[type="text"],
 #userTable td input[type="email"] {
-  padding: 4px 6px;
-  margin: 2px;   /* ✅ adds spacing */
+  padding: 6px 10px;   /* ✅ more inner padding */
+  margin: 4px;         /* ✅ more space around inputs */
   border: 1px solid #ccc;
   border-radius: 4px;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
 }
 
-#userTable td {
-  padding: 8px 6px;   /* ✅ extra padding between text and borders */
+.plus-icon {
+  width: 20px;       /* ✅ make it bigger */
+  height: 20px;
+  vertical-align: middle;
+  margin-right: 6px;
 }
+#userTable td { padding: 10px 8px; }
