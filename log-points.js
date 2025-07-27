@@ -113,7 +113,7 @@ submitBtn.addEventListener("click", async (e) => {
   }
 
   const { error: logErr } = await supabase.from("logs").insert([{
-    user: targetUser,
+    userId: targetUser,
     category,
     notes: note,
     date,
