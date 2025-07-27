@@ -1336,9 +1336,20 @@ body.manage-users h2.page-title {
   display: none;
 }
 
-/* Make Add User Plus Blue */
-#addUserBtn::before {
-content: "＋";
-color: #00477d;
-font-weight: 900;
-}
+/* Adjust Manage Users column widths */
+#userHeaderTable th:nth-child(1),
+#userTable td:nth-child(1) { width: 15%; }   /* First */
+#userHeaderTable th:nth-child(2),
+#userTable td:nth-child(2) { width: 15%; }   /* Last */
+#userHeaderTable th:nth-child(3),
+#userTable td:nth-child(3) { width: 25%; }   /* Email */
+#userHeaderTable th:nth-child(4),
+#userTable td:nth-child(4) { width: 12%; }   /* Avatar */
+#userHeaderTable th:nth-child(5),
+#userTable td:nth-child(5) { width: 10%; }   /* Roles */
+#userHeaderTable th:nth-child(6),
+#userTable td:nth-child(6) { width: 13%; }   /* Teachers */
+#userHeaderTable th:nth-child(7),
+#userTable td:nth-child(7) { width: 15%; }   /* Instrument */
+#userHeaderTable th:nth-child(8),
+#userTable td:nth-child(8) { width: 5%; }    /* Save button */
