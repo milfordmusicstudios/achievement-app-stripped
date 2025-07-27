@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manage Users | Achievement App</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="white-page manage-users">
+
+  <!-- 🔹 Header -->
+  <header style="display:flex; align-items:center; padding:10px 20px;">
+    <button class="blue-button" onclick="window.location.href='home.html'">Home</button>
+    <h2 style="flex:1; text-align:center; color:#00477d; margin:0;">Manage Users</h2>
+  </header>
+
+  <!-- 🔹 Add User Button -->
+  <div style="text-align:center; margin:10px 0;">
+    <button id="addUserBtn" class="blue-button">➕ Add User</button>
+  </div>
+
+  <!-- 🔹 Users Table -->
+  <div id="usersSection" style="width:95%; margin:0 auto;">
+    <table id="userTable">
+      <thead>
+        <tr>
+          <th>First</th>
+          <th>Last</th>
+          <th>Email</th>
+          <th>Avatar</th>
+          <th>Roles</th>
+          <th>Teacher(s)</th>
+          <th>Instrument</th>
+          <th style="width:80px;"></th> <!-- Save Button -->
+        </tr>
+      </thead>
+      <tbody id="userTableBody"></tbody>
+    </table>
+  </div>
+
+  <!-- 🔹 Multi-Select Modal -->
+  <div id="multiSelectModal" class="modal-overlay" style="display:none;">
+    <div class="modal-box">
+      <h3 id="multiSelectTitle">Select Options</h3>
+      <div id="multiSelectOptions"></div>
+      <div class="modal-actions">
+        <button class="blue-button" onclick="confirmMultiSelect()">OK</button>
+        <button class="blue-button" onclick="closeMultiSelectModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ✅ Supabase + JS -->
+  <script type="module" src="manage-users.js"></script>
+</body>
+</html>

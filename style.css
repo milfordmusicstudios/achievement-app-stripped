@@ -1077,3 +1077,140 @@ body.leaderboard-page .avatar:hover {
   transform: scale(1.1);
   z-index: 10;
 }
+/* ===== MANAGE USERS PAGE ===== */
+
+body.manage-users {
+  background: white;
+  color: #333;
+}
+
+body.manage-users h2.page-title {
+  color: #00477d;
+  text-align: center;
+  margin: 10px 0;
+  font-size: 2rem;
+}
+
+/* Table wrapper */
+#usersSection {
+  background: white;
+  padding: 10px;
+  border-radius: 10px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  margin-bottom: 30px;
+}
+
+/* Table styling */
+#userTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 auto;
+  font-size: 0.9rem;
+  background: white;
+}
+
+#userTable thead th {
+  background: #3eb7f8;
+  color: white;
+  text-align: left;
+  padding: 8px;
+  border-bottom: 2px solid #00477d;
+}
+
+#userTable td {
+  padding: 6px;
+  border-bottom: 1px solid #ddd;
+  vertical-align: middle;
+}
+
+#userTable tr:nth-child(even) {
+  background: #f9f9f9;
+}
+
+#userTable tr:hover {
+  background: #eef7ff;
+}
+
+/* Inputs in table */
+#userTable input[type="text"],
+#userTable input[type="email"] {
+  width: 100%;
+  padding: 4px 6px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+/* Avatar upload styling */
+#userTable img {
+  display: block;
+  margin-bottom: 4px;
+}
+
+#userTable .avatar-upload {
+  font-size: 0.8rem;
+}
+
+/* Blue buttons inside table */
+#userTable button.blue-button {
+  padding: 4px 8px;
+  font-size: 0.8rem;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+/* Save button */
+#userTable button[id^="save-"] {
+  background: #28a745;
+  color: white;
+  display: none;
+}
+
+#userTable button[id^="save-"]:hover {
+  background: #1e7e34;
+}
+
+/* Add User Button */
+#addUserBtn {
+  background: #00477d;
+  color: white;
+  padding: 8px 14px;
+  font-size: 1rem;
+  border-radius: 5px;
+  cursor: pointer;
+}
+#addUserBtn:hover {
+  background: #00325a;
+}
+
+/* Modal styling */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.5);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+.modal-box {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  width: 300px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+.modal-box h3 {
+  margin-top: 0;
+  color: #00477d;
+}
+.modal-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+.multi-check-option {
+  display: block;
+  margin: 5px 0;
+}
