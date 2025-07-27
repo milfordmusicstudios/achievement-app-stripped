@@ -658,27 +658,40 @@ body.white-page button {
 }
 /* ---- Review Logs Page Styles ---- */
 
-/* ✅ Do not override global site background anymore */
+/* ✅ Ensure the main container takes full width */
+main.app {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
 
-/* ✅ Category summary should act like a grid across the window */
+/* ✅ Review Logs Header */
+main.app > header h2 {
+  flex: 1;
+  text-align: center;
+  color: #00477d; /* ✅ Dark blue */
+  margin: 0;
+}
+
+/* ✅ Category Summary Layout */
 #categorySummary {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 15px;
-  width: 100%;
-  padding: 10px;
-  box-sizing: border-box;
+  width: calc(100% - 40px); /* ✅ leaves slight space on edges */
+  margin: 15px auto;
+  padding: 0 10px;
 }
 .category-card {
-  width: 100%;     /* ✅ Let grid handle sizing */
-  max-width: 200px;
-  margin: 0 auto;
+  width: 100%;
   background: #f4f4f4;
   padding: 10px;
   border-radius: 10px;
   text-align: center;
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
+
 /* ✅ Search bar */
 #searchInput {
   background: white;
@@ -691,23 +704,28 @@ body.white-page button {
   display: block;
 }
 
-/* ✅ Logs Section should span the screen width */
+/* ✅ Logs Section */
 #logsSection {
+  display: block;
+  width: calc(100% - 40px); /* ✅ add margin space */
+  max-width: 100%;
+  margin: 0 auto 10px;
   overflow-y: auto;
   overflow-x: auto;
   max-height: calc(100vh - 300px);
-  width: 100%;           /* ✅ full screen */
-  margin: 0;             /* ✅ no auto-centering */
   border: 1px solid #ddd;
-  border-radius: 0;      /* ✅ flush edges if desired */
+  border-radius: 5px;
+  background: white;
 }
-/* ✅ Full-width table */
+
+/* ✅ Full-width Table */
 #logsTable {
-  width: 100%;           /* ✅ expand to fill */
-  min-width: 1000px;     /* ✅ ensure no squish on small screens */
+  width: 100%;
   border-collapse: collapse;
+  table-layout: auto;
 }
-/* ✅ Sticky table header (only header, not page header) */
+
+/* ✅ Sticky Table Header */
 #logsTable thead th {
   position: sticky;
   top: 0;
@@ -717,30 +735,37 @@ body.white-page button {
   border-bottom: 2px solid #00477d;
 }
 
-/* ✅ Table cells */
+/* ✅ Table Cells */
 #logsTable th, #logsTable td {
-  padding: 10px;
-  text-align: left;
+  padding: 6px 8px; /* ✅ smaller padding */
   border-bottom: 1px solid #ddd;
   vertical-align: top;
 }
 
-/* ✅ Inputs inside table */
+/* ✅ Compact Column Widths */
+#logsTable th:nth-child(2),
+#logsTable td:nth-child(2) { width: 120px; } /* Category */
+#logsTable th:nth-child(3),
+#logsTable td:nth-child(3) { width: 130px; } /* Date */
+#logsTable th:nth-child(4),
+#logsTable td:nth-child(4) { width: 80px; }  /* Points */
+
+/* ✅ Inputs */
 #logsTable input,
 #logsTable select,
 #logsTable textarea {
   width: 100%;
-  padding: 6px;
-  border-radius: 8px;
+  padding: 4px;
+  border-radius: 6px;
   border: 1px solid #ccc;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
 }
 #logsTable textarea {
-  min-height: 50px;
+  min-height: 40px;
   resize: vertical;
-  line-height: 1.3;
+  line-height: 1.2;
 }
 
-/* ✅ Row styles */
+/* ✅ Row Styles */
 #logsTable tr:nth-child(even) { background: #f9f9f9; }
 #logsTable tr:hover { background: #eef7ff; }
