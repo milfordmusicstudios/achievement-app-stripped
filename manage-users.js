@@ -11,7 +11,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const user = JSON.parse(localStorage.getItem("loggedInUser"));
   if (!user || !user.roles?.includes("admin")) {
     alert("Access denied. Admins only.");
-    window.location.href = "home.html";
+    window.location.href = "index.html";
     return;
   }
 
