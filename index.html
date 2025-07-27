@@ -1,172 +1,142 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Home | Achievement App</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <link rel="stylesheet" href="style.css" />
-</head>
-<body class="tall-background">
+import { supabase } from './supabase.js';
 
-  <main>
-    <div class="app">
-      <h2 id="welcomeTitle" class="header"></h2>
+document.addEventListener("DOMContentLoaded", async () => {
+  const storedUser = JSON.parse(localStorage.getItem("loggedInUser"));
+  const activeRole = localStorage.getItem("activeRole");
 
-      <div class="avatar-badge">
-        <img id="homeAvatar" class="avatar" src="" alt="Your Avatar" />
-        <img id="homeBadge" class="badge" src="" alt="Level Badge" />
-      </div>
+  if (!storedUser || !activeRole) {
+    alert("You must be logged in.");
+    window.location.href = "login.html";
+    return;
+  }
 
-      <!-- ✅ Level Progress section only for students -->
-      <section id="levelSection">
-        <div class="progress-card">
-          <div class="progress-label">Level Progress</div>
-          <div class="progress-container">
-            <div class="progress-bar" id="homeProgressBar" style="width: 0%;"></div>
-          </div>
-        </div>
-        <div class="percent-text" id="homeProgressText">75% to next level</div>
-      </section>
+  try {
+    // ✅ Fetch logs for current user
+    const { data: logs, error: logsError } = await supabase
+      .from("logs")
+      .select("*")
+      .eq("userId", storedUser.id);
 
-      <div class="button-wrapper">
-        <div class="button-area">
+    if (logsError) throw logsError;
 
-<!-- 🔹 Row 1: Log Points + My Points / Review Logs -->
-<div class="button-row" id="topButtonRow">
-  <!-- Log Points -->
-  <div class="button-col">
-    <button class="nav-button log" onclick="location.href='log-points.html'">
-      <div class="btn-content">
-        <div class="btn-icon">
-          <img src="images/icons/log.png" alt="Log Icon" />
-        </div>
-        <div class="btn-text">Log Points</div>
-      </div>
-    </button>
-  </div>
+    // ✅ Filter approved logs for progress/level calculation
+    const approvedLogs = logs.filter(l => l.status === "approved");
+    const totalPoints = approvedLogs.reduce((sum, log) => sum + (log.points || 0), 0);
 
-  <!-- My Points (Student only, shows in center) -->
-  <div class="button-col" id="middleButtonCol">
-    <button id="myPointsBtn" class="nav-button points invisible" onclick="location.href='my-points.html'">
-      <div class="btn-content">
-        <div class="btn-icon">
-          <img src="images/icons/myAchievements.png" alt="My Points Icon" />
-        </div>
-        <div class="btn-text">My Points</div>
-      </div>
-    </button>
+    // ✅ Fetch levels
+    const { data: levels, error: levelsError } = await supabase
+      .from("levels")
+      .select("*")
+      .order("minPoints", { ascending: true });
 
-    <!-- Review Logs (Teacher/Admin only, replaces My Points in same space) -->
-    <button id="reviewLogsBtn" class="nav-button review invisible" onclick="location.href='review-logs.html'">
-      <div class="btn-content">
-        <div class="btn-icon">
-          <img src="images/icons/review.png" alt="Review Logs Icon" />
-        </div>
-        <div class="btn-text">Review Logs</div>
-      </div>
-    </button>
-  </div>
-</div>
+    if (levelsError) throw levelsError;
 
-          <!-- 🔹 Admin Only -->
-          <div class="button-row">
-            <div class="button-col"></div>
-             <div class="button-col">
-                <button id="manageUsersBtn" class="blue-button" style="display: none;" onclick="goToManageUsers()">
-              <div class="btn-content">
-                <div class="btn-icon">
-                  <img src="images/icons/manage.png" alt="Manage Icon" />
-                </div>
-                <div class="btn-text">Manage Users</div>
-              </div>
-            </button>
-          </div>
-          <div class="button-col"></div>
-         </div>
-          <!-- 🔹 Leaderboard -->
-          <div class="button-row center">
-                        <div class="button-col"></div>
-             <div class="button-col">
+    // ✅ Determine current level dynamically
+    let currentLevel = levels.find(l => totalPoints >= l.minPoints && totalPoints <= l.maxPoints);
+    if (!currentLevel && levels.length > 0) currentLevel = levels[levels.length - 1];
+    const currentIndex = levels.findIndex(l => l.id === currentLevel.id);
+    const nextLevel = levels[currentIndex + 1];
 
-            <button class="highlight-button leaderboard" onclick="location.href='leaderboard.html'">
-              <div class="btn-content">
-                <div class="btn-icon">
-                  <img src="images/icons/leaderboard.png" alt="Leaderboard Icon" />
-                </div>
-                <div class="btn-text">Leaderboard</div>
-              </div>
-            </button>
-          </div>
-          <div class="button-col"></div>
-         </div>
+    // ✅ Fetch latest user info
+    const { data: freshUser, error: userError } = await supabase
+      .from("users")
+      .select("id, firstName, avatarUrl")
+      .eq("id", storedUser.id)
+      .single();
 
-          <!-- 🔹 Settings and FAQ -->
-          <div class="button-row">
-            <button class="nav-button settings" onclick="location.href='settings.html'">
-              <img class="icon" src="images/icons/settings.png" alt="Settings Icon" /> Settings
-            </button>
-            <button class="nav-button faq" onclick="location.href='faq.html'">
-              <img class="icon" src="images/icons/faq.png" alt="FAQ Icon" /> Points Info
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </main>
+    if (userError) throw userError;
 
-  <footer>
-    &copy; 2025 Milford Music Studios Achievement App
-  </footer>
+    // ✅ Build user object with recalculated progress
+    const userData = {
+      ...freshUser,
+      points: totalPoints,
+      level: currentLevel?.id || 1,
+      badge: currentLevel?.badge || `images/levelBadges/level${currentLevel?.id || 1}.png`,
+      levelColor: currentLevel?.color || "#3eb7f8"  // ✅ Use level color for progress bar
+    };
 
-  <!-- ✅ Scripts -->
-  <script type="module" src="home.js"></script>
-  <script src="data/categories.js"></script>
-  <script src="data/levels.js"></script>
-  <script src="utils.js"></script>
+    // ✅ Update local storage
+    localStorage.setItem("loggedInUser", JSON.stringify(userData));
 
-  <!-- ✅ Role-based visibility + avatar fallback -->
-  <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      const user = JSON.parse(localStorage.getItem("loggedInUser"));
-      const role = localStorage.getItem("activeRole") || (Array.isArray(user?.role) ? user.role[0] : user?.role);
+    // ✅ Update UI
+    updateHomeUI(userData, activeRole, currentLevel, nextLevel);
 
-      const myPointsBtn = document.getElementById("myPointsBtn");
-      const reviewLogsBtn = document.getElementById("reviewLogsBtn");
-      const manageUsersBtn = document.getElementById("manageUsersBtn");
-      const levelSection = document.getElementById("levelSection");
-      const homeAvatar = document.getElementById("homeAvatar");
+  } catch (err) {
+    console.error("[ERROR] Could not refresh home page info:", err);
+    updateHomeUI(storedUser, activeRole, null, null);
+  }
+});
 
-      // Show/hide buttons and sections based on role
-      myPointsBtn.classList.remove("invisible");
-      reviewLogsBtn.classList.remove("invisible");
-      myPointsBtn.style.display = "flex";
-      reviewLogsBtn.style.display = "flex";
+function updateHomeUI(userData, activeRole, currentLevel, nextLevel) {
+  // ✅ Welcome Title
+  const welcome = document.getElementById("welcomeTitle");
+  if (welcome) {
+    welcome.textContent = `Welcome, ${userData.firstName}!`;
+    welcome.style.color = "#00477d";
+    welcome.style.fontSize = "2.5em";  // ✅ Larger font
+    welcome.style.fontWeight = "bold";
+  }
 
-      if (role === "admin") {
-        myPointsBtn.classList.add("invisible");
-        reviewLogsBtn.classList.remove("invisible");
-        manageUsersBtn.style.display = "inline-block";
-        levelSection.style.display = "none";
-      } else if (role === "teacher") {
-        myPointsBtn.classList.add("invisible");
-        reviewLogsBtn.classList.remove("invisible");
-        levelSection.style.display = "none";
-      } else {
-        reviewLogsBtn.classList.add("invisible");
-        myPointsBtn.classList.remove("invisible");
-        levelSection.style.display = "block";
-      }
+  // ✅ Avatar
+  const avatar = document.getElementById("homeAvatar");
+  if (avatar) avatar.src = userData.avatarUrl || "images/logos/default.png";
 
-      // Avatar fallback
-      if (homeAvatar && user) {
-        const avatarPath = user.avatar ? user.avatar : "images/logos/default.png";
-        homeAvatar.src = avatarPath;
-      }
-    });
-
-    function goToManageUsers() {
-      window.location.href = "manage-users.html";
+  // ✅ Badge
+  const badgeImg = document.getElementById("homeBadge");
+  if (badgeImg) {
+    if (activeRole === "student") {
+      badgeImg.src = userData.badge;
+    } else {
+      badgeImg.src = `images/levelBadges/${activeRole}.png`;
     }
-  </script>
-</body>
-</html>
+  }
+
+  // ✅ Progress Bar
+  const progressBar = document.getElementById("progressBar");
+  const progressText = document.getElementById("progressPercent");
+  const levelTitle = document.querySelector("#progressCard h3");
+
+  if (levelTitle) levelTitle.style.color = "white"; // ✅ White title
+
+  if (progressBar && progressText && currentLevel) {
+    let percent = 100;
+    if (nextLevel) {
+      percent = ((userData.points - currentLevel.minPoints) /
+        (nextLevel.minPoints - currentLevel.minPoints)) * 100;
+    }
+    percent = Math.min(100, Math.max(0, percent));
+
+    progressBar.style.width = percent + "%";
+    progressBar.style.backgroundColor = userData.levelColor; // ✅ Level color
+    progressText.textContent = `${Math.round(percent)}%`;
+  }
+
+  // ✅ Role-based UI
+  const myPointsBtn = document.getElementById("myPointsBtn");
+  const reviewLogsBtn = document.getElementById("reviewLogsBtn");
+  const manageUsersBtn = document.getElementById("manageUsersBtn");
+  const levelSelection = document.getElementById("levelSection");
+  const middleCol = document.getElementById("middleButtonCol");
+  const topRow = middleCol?.parentElement;
+
+  myPointsBtn.classList.add("invisible");
+  reviewLogsBtn.classList.add("invisible");
+  myPointsBtn.style.display = "none";
+  reviewLogsBtn.style.display = "none";
+  middleCol.style.display = "none";
+  topRow.classList.remove("flex-center");
+
+  if (activeRole === "admin" || activeRole === "teacher") {
+    reviewLogsBtn.classList.remove("invisible");
+    reviewLogsBtn.style.display = "flex";
+    middleCol.style.display = "flex";
+    topRow.classList.add("flex-center");
+    if (activeRole === "admin") manageUsersBtn.style.display = "inline-block";
+  } else {
+    myPointsBtn.classList.remove("invisible");
+    myPointsBtn.style.display = "flex";
+    middleCol.style.display = "flex";
+    levelSelection.style.display = "block";
+    topRow.classList.add("flex-center");
+  }
+}
