@@ -1233,7 +1233,7 @@ body.manage-users h2.page-title {
 #usersScrollSection {
   width: 95%;
   margin: 0 auto 10px auto;
-  max-height: 400px; /* Scrollable height */
+  max-height: 600px;  /* ✅ increased height to fit 7–8 rows */
   overflow-y: auto;
   border: 1px solid #ddd;
   border-radius: 5px;
@@ -1261,12 +1261,6 @@ body.manage-users h2.page-title {
   border-radius: 6px;
 }
 
-#addUserBtn::before {
-  content: "➕ ";
-  color: #00477d;
-  font-weight: bold;
-}
-
 /* Pagination */
 #paginationControls button {
   background: #00477d;
@@ -1279,4 +1273,72 @@ body.manage-users h2.page-title {
 }
 #paginationControls button.active {
   background: #3eb7f8;
+}
+/* Match header and body column widths */
+#userHeaderTable th,
+#userTable td {
+  width: 12%;
+}
+#userHeaderTable th:nth-child(4),
+#userTable td:nth-child(4) {
+  width: 15%; /* Avatar wider */
+}
+#userHeaderTable th:nth-child(5),
+#userTable td:nth-child(5) {
+  width: 10%; /* Roles */
+}
+#userHeaderTable th:nth-child(6),
+#userTable td:nth-child(6) {
+  width: 15%; /* Teachers */
+}
+#userHeaderTable th:nth-child(8),
+#userTable td:nth-child(8) {
+  width: 7%; /* Save button */
+}
+/* Hide "No file chosen" text */
+.avatar-upload {
+  width: 100px; 
+  color: transparent; 
+}
+.avatar-upload::-webkit-file-upload-button {
+  color: white;
+  background: #3eb7f8;
+  border: none;
+  padding: 5px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.avatar-upload::before {
+  content: "Change";
+  color: white;
+  position: absolute;
+}
+/* Fix Avatar Upload Styling */
+.avatar-cell {
+  position: relative;
+}
+.avatar-preview {
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  display: block;
+  margin-bottom: 4px;
+}
+.upload-btn {
+  background: #3eb7f8;
+  color: white;
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.upload-btn input[type="file"] {
+  display: none;
+}
+
+/* Make Add User Plus Blue */
+#addUserBtn::before {
+content: "＋";
+color: #00477d;
+font-weight: bold;
 }
