@@ -1,62 +1,64 @@
 import { supabase } from './supabase.js';
 
 document.addEventListener("DOMContentLoaded", async () => {
-  const user = JSON.parse(localStorage.getItem("loggedInUser"));
+  const storedUser = JSON.parse(localStorage.getItem("loggedInUser"));
   const activeRole = localStorage.getItem("activeRole");
 
-  if (!user || !activeRole) {
+  if (!storedUser || !activeRole) {
     alert("You must be logged in.");
     window.location.href = "login.html";
     return;
   }
 
-  console.log("[DEBUG] Loading home page for user:", user.id);
+  // ✅ Clear badge temporarily to avoid showing outdated level
+  const badgeImg = document.getElementById("homeBadge");
+  if (badgeImg) badgeImg.src = "images/levelBadges/loading.png";
 
   try {
-    // ✅ Fetch latest user data from Supabase
+    // ✅ Always fetch latest user data
     const { data: freshUser, error } = await supabase
       .from("users")
       .select("id, firstName, level, points, avatarUrl, badge")
-      .eq("id", user.id)
+      .eq("id", storedUser.id)
       .single();
 
     if (error) throw error;
 
-    // ✅ Update localStorage with fresh user data
+    // ✅ Update local storage with latest data
     localStorage.setItem("loggedInUser", JSON.stringify(freshUser));
 
-    // ✅ Apply refreshed data
+    // ✅ Render UI with fresh data
     updateHomeUI(freshUser, activeRole);
+    console.log("[DEBUG] User level refreshed:", freshUser.level);
 
   } catch (err) {
-    console.error("[ERROR] Could not refresh user info:", err);
-    // fallback to localStorage data if fetch fails
-    updateHomeUI(user, activeRole);
+    console.error("[ERROR] Could not fetch updated user:", err);
+    // fallback to existing data
+    updateHomeUI(storedUser, activeRole);
   }
 });
 
 function updateHomeUI(userData, activeRole) {
   // ✅ Welcome message
   const welcome = document.getElementById("welcomeTitle");
-  welcome.textContent = `Welcome, ${userData.firstName}!`;
-  welcome.style.color = "#00477d";
-  welcome.style.fontSize = "2em";
-  welcome.style.fontWeight = "bold";
+  if (welcome) {
+    welcome.textContent = `Welcome, ${userData.firstName}!`;
+    welcome.style.color = "#00477d";
+  }
 
   // ✅ Avatar
   const avatar = document.getElementById("homeAvatar");
-  avatar.src = userData.avatarUrl?.trim() || "images/logos/default.png";
+  if (avatar) avatar.src = userData.avatarUrl || "images/logos/default.png";
 
-  // ✅ Badge
+  // ✅ Badge (always use latest userData)
   const badgeImg = document.getElementById("homeBadge");
-  if (activeRole === "student") {
-    const levelNumber = userData.level || 1;
-    badgeImg.src = userData.badge || `images/levelBadges/level${levelNumber}.png`;
-  } else {
-    badgeImg.src = `images/levelBadges/${activeRole}.png`;
-    document.getElementById("progressSection")?.classList.add("hidden");
+  if (badgeImg) {
+    if (activeRole === "student") {
+      badgeImg.src = userData.badge || `images/levelBadges/level${userData.level || 1}.png`;
+    } else {
+      badgeImg.src = `images/levelBadges/${activeRole}.png`;
+    }
   }
-
   // ✅ Manage layout & role-based UI
   const myPointsBtn = document.getElementById("myPointsBtn");
   const reviewLogsBtn = document.getElementById("reviewLogsBtn");
