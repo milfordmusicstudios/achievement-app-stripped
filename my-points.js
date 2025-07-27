@@ -114,17 +114,18 @@ document.addEventListener("DOMContentLoaded", async () => {
       </div>`;
   }
 
-  function renderLogs(logs) {
-    logsTableBody.innerHTML = "";
-    logs.forEach((log, index) => {
-      const icon = `images/categories/${log.category || "allCategories"}.png`;
-      logsTableBody.innerHTML += `
-        <tr class="${index % 2 === 0 ? 'log-row-even' : 'log-row-odd'}">
-          <td><img src="${icon}" style="width:30px;height:30px"></td>
-          <td>${new Date(log.date).toLocaleDateString()}</td>
-          <td>${log.points}</td>
-          <td>${log.notes || ""}</td>
-        </tr>`;
-    });
-  }
+function renderLogs(logs) {
+  logsTableBody.innerHTML = "";
+  logs.forEach((log, index) => {
+    const icon = `images/categories/${log.category || "allCategories"}.png`;
+    logsTableBody.innerHTML += `
+      <tr class="${index % 2 === 0 ? 'log-row-even' : 'log-row-odd'}">
+        <td><img src="${icon}" style="width:30px;height:30px"></td>
+        <td>${new Date(log.date).toLocaleDateString()}</td>
+        <td>${log.points ?? ""}</td>
+        <td>${log.notes || ""}</td>
+        <td>${log.status || "pending"}</td>
+      </tr>`;
+  });
+}
 });
