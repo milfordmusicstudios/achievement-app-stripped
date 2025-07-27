@@ -8,6 +8,14 @@ body, html {
   color: #333;
 }
 
+main.app {
+  width: 100%;          /* ✅ takes full screen width */
+  max-width: none;      /* ✅ prevent it from being capped */
+  margin: 0;            /* ✅ no auto-centering */
+  padding: 0;
+}
+
+
 main {
   padding-top: 0;
   margin-top: 0;
@@ -544,8 +552,15 @@ body.white-page button {
 
 /* Logs Table */
 #logsSection {
-  margin: 20px auto;
-  max-width: 90%;
+  display: block;
+  width: 100vw;         /* ✅ span the entire window */
+  max-width: 100%;
+  margin: 0;
+  overflow-y: auto;
+  overflow-x: auto;
+  max-height: calc(100vh - 300px);
+  border: 1px solid #ddd;
+  border-radius: 0;
 }
 
 .log-icon {
@@ -647,12 +662,12 @@ body.white-page button {
 
 /* ✅ Category summary should act like a grid across the window */
 #categorySummary {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between; /* ✅ fill available width */
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 15px;
-  margin: 15px auto;
-  width: 95%;
+  width: 100%;
+  padding: 10px;
+  box-sizing: border-box;
 }
 .category-card {
   width: 100%;     /* ✅ Let grid handle sizing */
