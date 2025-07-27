@@ -3,16 +3,26 @@ import { supabase } from './supabase.js';
 document.addEventListener("DOMContentLoaded", async () => {
   const user = JSON.parse(localStorage.getItem("loggedInUser"));
   if (!user) {
+    alert("You must be logged in.");
     window.location.href = "login.html";
     return;
   }
 
-  const logsTableBody = document.querySelector("#logsTable tbody");
+  const logsTable = document.querySelector("#logsTable tbody");
   const categorySummary = document.getElementById("categorySummary");
   const levelBadge = document.getElementById("levelBadge");
 
+  const categoryIcons = {
+    practice: "images/categories/practice.png",
+    participation: "images/categories/participation.png",
+    performance: "images/categories/performance.png",
+    personal: "images/categories/personal.png",
+    proficiency: "images/categories/proficiency.png",
+    total: "images/categories/allCategories.png"
+  };
+
   try {
-    // ✅ Fetch logs for this user
+    // Fetch logs for this user
     const { data: logs, error: logsError } = await supabase
       .from("logs")
       .select("*")
@@ -20,98 +30,77 @@ document.addEventListener("DOMContentLoaded", async () => {
       .order("date", { ascending: false });
 
     if (logsError) throw logsError;
+    if (!logs || logs.length === 0) {
+      logsTable.innerHTML = `<tr><td colspan="4">No logs found.</td></tr>`;
+      return;
+    }
 
-    // ✅ Category icons map
-    const categoryIcons = {
-      performance: "images/categories/performance.png",
-      participation: "images/categories/participation.png",
-      practice: "images/categories/practice.png",
-      personal: "images/categories/personal.png",
-      proficiency: "images/categories/proficiency.png"
-    };
-
-    // ✅ Calculate totals per category
+    // Group points by category
+    const categories = ["practice", "participation", "performance", "personal", "proficiency"];
     const categoryTotals = {};
+    categories.forEach(cat => categoryTotals[cat] = { points: 0, count: 0 });
+
     let totalPoints = 0;
     logs.forEach(log => {
-      totalPoints += log.points;
-      if (!categoryTotals[log.category]) {
-        categoryTotals[log.category] = { points: 0, count: 0 };
+      if (categoryTotals[log.category]) {
+        categoryTotals[log.category].points += log.points;
+        categoryTotals[log.category].count++;
       }
-      categoryTotals[log.category].points += log.points;
-      categoryTotals[log.category].count++;
+      totalPoints += log.points;
     });
 
-    // ✅ Fetch levels to determine user’s current level
-    const { data: levels, error: levelsError } = await supabase.from("levels").select("*");
+    // Render category summary cards
+    categorySummary.innerHTML = "";
+    categories.forEach(cat => {
+      const card = document.createElement("div");
+      card.className = "category-card";
+      card.innerHTML = `
+        <img src="${categoryIcons[cat]}" alt="${cat}">
+        <h3>${categoryTotals[cat].points} pts</h3>
+        <p>${categoryTotals[cat].count} logs</p>`;
+      categorySummary.appendChild(card);
+    });
+
+    // Add total card
+    const totalCard = document.createElement("div");
+    totalCard.className = "category-card total-card";
+    totalCard.innerHTML = `
+      <img src="${categoryIcons.total}" alt="Total">
+      <h3>${totalPoints} pts</h3>
+      <p>${logs.length} logs</p>`;
+    categorySummary.appendChild(totalCard);
+
+    // Render log table
+    logsTable.innerHTML = "";
+    logs.forEach((log, idx) => {
+      const row = document.createElement("tr");
+      row.className = idx % 2 === 0 ? "log-row-even" : "log-row-odd";
+      row.innerHTML = `
+        <td><img src="${categoryIcons[log.category] || categoryIcons.total}" style="width:30px;height:30px;"></td>
+        <td>${new Date(log.date).toLocaleDateString()}</td>
+        <td>${log.points}</td>
+        <td>${log.notes || ""}</td>`;
+      logsTable.appendChild(row);
+    });
+
+    // Calculate level from points
+    const { data: levels, error: levelsError } = await supabase
+      .from("levels")
+      .select("*");
     if (levelsError) throw levelsError;
 
-    let userLevelId = levels.find(l => totalPoints >= l.minPoints && totalPoints <= l.maxPoints)?.id || 1;
+    let userLevel = levels.find(l => totalPoints >= l.minPoints && totalPoints <= l.maxPoints);
+    if (!userLevel) userLevel = levels[0]; // default to first level if none match
 
-    // ✅ Update user stats in Supabase
-    await updateUserStats(user.id, totalPoints, userLevelId);
+    // Update user points & level in Supabase
+    await supabase.from("users").update({
+      points: totalPoints,
+      level: userLevel.id
+    }).eq("id", user.id);
 
-    // ✅ Render level badge (fallback to Level 1 badge if missing)
-    const currentLevel = levels.find(l => l.id === userLevelId);
-    levelBadge.src = currentLevel?.badge || "images/levelBadges/level1.png";
-
-    // ✅ Render category summary
-    renderCategorySummary(categoryTotals, totalPoints, logs.length, categoryIcons);
-
-    // ✅ Render logs table
-    renderLogsTable(logs, logsTableBody, categoryIcons);
-
+    // Display level badge
+    levelBadge.src = userLevel.badge || "images/levelBadges/level1.png";
   } catch (err) {
     console.error("[ERROR] My Points:", err);
   }
 });
-
-/* ✅ Update user points and level in Supabase */
-async function updateUserStats(userId, totalPoints, userLevelId) {
-  const { error } = await supabase
-    .from("users")
-    .update({ points: totalPoints, level: userLevelId })
-    .eq("id", userId);
-
-  if (error) console.error("[ERROR] Updating user stats:", error);
-}
-
-/* ✅ Render category summary cards */
-function renderCategorySummary(totals, totalPoints, totalLogs, icons) {
-  const container = document.getElementById("categorySummary");
-  container.innerHTML = "";
-
-  const categories = ["performance", "participation", "practice", "personal", "proficiency"];
-  categories.forEach(cat => {
-    const data = totals[cat] || { points: 0, count: 0 };
-    container.innerHTML += `
-      <div class="category-card">
-        <img src="${icons[cat]}" alt="${cat}" />
-        <h3>${data.points} pts</h3>
-        <p>${data.count} logs</p>
-      </div>`;
-  });
-
-  // ✅ Add Total Points card
-  container.innerHTML += `
-    <div class="category-card total-card">
-      <img src="images/categories/allCategories.png" alt="All Categories" />
-      <h3>${totalPoints} pts</h3>
-      <p>${totalLogs} logs</p>
-    </div>`;
-}
-
-/* ✅ Render logs table with category icon first */
-function renderLogsTable(logs, tableBody, icons) {
-  if (!tableBody) return;
-  tableBody.innerHTML = "";
-  logs.forEach((log, index) => {
-    tableBody.innerHTML += `
-      <tr class="${index % 2 === 0 ? 'log-row-even' : 'log-row-odd'}">
-        <td><img src="${icons[log.category] || icons.default}" style="width:30px;height:30px"/></td>
-        <td>${new Date(log.date).toLocaleDateString()}</td>
-        <td>${log.points}</td>
-        <td>${log.notes || ""}</td>
-      </tr>`;
-  });
-}
