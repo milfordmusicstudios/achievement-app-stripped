@@ -11,7 +11,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const user = JSON.parse(localStorage.getItem("loggedInUser"));
   if (!user || !user.roles?.includes("admin")) {
     alert("Access denied. Admins only.");
-    window.location.href = "home.html";
+    window.location.href = "index.html";
     return;
   }
 
@@ -287,46 +287,57 @@ async function createNewUserFromModal() {
   const modalTeachers = Array.from(document.querySelectorAll("#modalTeacherTags .tag .remove-tag"))
     .map(t => t.dataset.value);
 
-  // ✅ Build user object safely
-  let newUser = {
-    firstName: document.getElementById("newFirstName").value.trim(),
-    lastName: document.getElementById("newLastName").value.trim(),
-    email: document.getElementById("newEmail").value.trim(),
-    instrument: document.getElementById("newInstrument").value
-      .split(",")
-      .map(i => i.trim())
-      .filter(Boolean),
+  const firstName = document.getElementById("newFirstName").value.trim();
+  const lastName = document.getElementById("newLastName").value.trim();
+  const email = document.getElementById("newEmail").value.trim();
+  const instrumentArray = document.getElementById("newInstrument").value
+    .split(",")
+    .map(i => i.trim())
+    .filter(Boolean);
+
+  // ✅ 1. Create Supabase Auth User
+  const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
+    email: email,
+    password: crypto.randomUUID(), // generates a temporary password
+    email_confirm: true,
+    user_metadata: { firstName, lastName, roles: modalRoles }
+  });
+
+  if (authError) {
+    alert("Failed to create auth user: " + authError.message);
+    console.error("Auth creation error:", authError);
+    return;
+  }
+
+  const authId = authUser.user?.id;
+  if (!authId) {
+    alert("Auth user creation failed: No ID returned.");
+    return;
+  }
+
+  // ✅ 2. Insert into your custom users table
+  const newUser = {
+    id: authId, // link to auth.users
+    firstName,
+    lastName,
+    email,
+    instrument: instrumentArray,
     roles: modalRoles,
     teacherIds: modalTeachers
   };
 
-  // ✅ Remove any ID fields so Supabase can auto-generate UUID
-  delete newUser.id;
-  delete newUser.uuid;
-
-  // ✅ Pre-check for duplicate email (optional but recommended)
-  if (newUser.email) {
-    const { data: existing, error: emailCheckError } = await supabase
-      .from("users")
-      .select("id")
-      .eq("email", newUser.email);
-
-    if (!emailCheckError && existing.length > 0) {
-      alert("A user with this email already exists.");
-      return;
-    }
-  }
-
-  // ✅ Insert safely without sending ID
   const { data, error } = await supabase.from("users").insert([newUser]).select();
 
   if (error) {
-    alert("Failed to create user: " + error.message);
-  } else {
-    allUsers.push(data[0]);
-    renderUsers();
-    alert("User created successfully!");
+    alert("Failed to insert into users table: " + error.message);
+    console.error("Insert error:", error);
+    return;
   }
+
+  // ✅ 3. Update local data + refresh
+  allUsers.push(data[0]);
+  renderUsers();
+  alert("User created successfully! They can now log in with the email you provided.");
 }
 
 // ✅ Search & Sorting
