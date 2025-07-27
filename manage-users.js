@@ -282,23 +282,31 @@ function setupModalTagListeners(container) {
 
 // ✅ Create New User from Modal
 async function createNewUserFromModal() {
-  const modalRoles = Array.from(document.querySelectorAll("#modalRoleTags .tag .remove-tag")).map(t => t.dataset.value);
-  const modalTeachers = Array.from(document.querySelectorAll("#modalTeacherTags .tag .remove-tag")).map(t => t.dataset.value);
-const newUser = {
-  firstName: document.getElementById("newFirstName").value.trim(),
-  lastName: document.getElementById("newLastName").value.trim(),
-  email: document.getElementById("newEmail").value.trim(),
-  instrument: document.getElementById("newInstrument").value
-    .split(",")
-    .map(i => i.trim())
-    .filter(Boolean),
-  roles: modalRoles,
-  teacherIds: modalTeachers
-};
-// ✅ Do NOT include id field — Supabase generates it automatically
+  const modalRoles = Array.from(document.querySelectorAll("#modalRoleTags .tag .remove-tag"))
+    .map(t => t.dataset.value);
+  const modalTeachers = Array.from(document.querySelectorAll("#modalTeacherTags .tag .remove-tag"))
+    .map(t => t.dataset.value);
+
+  const newUser = {
+    firstName: document.getElementById("newFirstName").value.trim(),
+    lastName: document.getElementById("newLastName").value.trim(),
+    email: document.getElementById("newEmail").value.trim(),
+    instrument: document.getElementById("newInstrument").value
+      .split(",")
+      .map(i => i.trim())
+      .filter(Boolean),
+    roles: modalRoles,
+    teacherIds: modalTeachers
+  };
+
+  // ✅ Ensure no ID is sent
+  delete newUser.id;
+
   const { data, error } = await supabase.from("users").insert([newUser]).select();
-  if (error) alert("Failed to create user: " + error.message);
-  else {
+
+  if (error) {
+    alert("Failed to create user: " + error.message);
+  } else {
     allUsers.push(data[0]);
     renderUsers();
     alert("User created successfully!");
