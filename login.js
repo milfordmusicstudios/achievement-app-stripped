@@ -22,12 +22,19 @@ document.addEventListener("DOMContentLoaded", () => {
       errorDisplay.style.display = 'block';
       errorDisplay.textContent = 'Invalid email or password.';
     } else {
-      // Fetch user profile from 'users' table
-      const { data: userData } = await supabase
+      // ✅ Explicitly select required columns, including roles
+      const { data: userData, error: fetchError } = await supabase
         .from('users')
-        .select('*')
+        .select('id, firstName, lastName, email, roles, parent_uuid, avatarUrl')
         .eq('id', data.user.id)
         .single();
+
+      if (fetchError) {
+        console.error("Supabase fetch error:", fetchError);
+        errorDisplay.style.display = 'block';
+        errorDisplay.textContent = 'Error fetching user profile.';
+        return;
+      }
 
       if (!userData) {
         errorDisplay.style.display = 'block';
@@ -35,29 +42,32 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-// ✅ Ensure roles is always an array before saving
-if (typeof userData.roles === "string") {
-  try {
-    userData.roles = JSON.parse(userData.roles);
-  } catch {
-    userData.roles = userData.roles.split(",").map(r => r.trim());
-  }
-} else if (!Array.isArray(userData.roles)) {
-  userData.roles = userData.roles ? [userData.roles] : [];
-}
+      // ✅ Debug log to confirm roles
+      console.log("DEBUG Supabase returned userData:", userData);
 
-// ✅ Save to localStorage with normalized roles
-localStorage.setItem('loggedInUser', JSON.stringify(userData));
-console.log("DEBUG login.js userData before save:", userData);
+      // ✅ Normalize roles into an array
+      if (typeof userData.roles === "string") {
+        try {
+          userData.roles = JSON.parse(userData.roles);
+        } catch {
+          userData.roles = userData.roles.split(",").map(r => r.trim());
+        }
+      } else if (!Array.isArray(userData.roles)) {
+        userData.roles = userData.roles ? [userData.roles] : [];
+      }
 
-      // Set default role
+      console.log("DEBUG Normalized roles:", userData.roles);
+
+      // ✅ Save normalized user to localStorage
+      localStorage.setItem('loggedInUser', JSON.stringify(userData));
+
+      // ✅ Set default role for activeRole
       const roles = userData.roles || ['student'];
       const defaultRole = roles.includes('admin') ? 'admin' :
                           roles.includes('teacher') ? 'teacher' : 'student';
-
       localStorage.setItem('activeRole', defaultRole);
 
-      // Redirect
+      // Redirect to home
       window.location.href = 'index.html';
     }
   });
