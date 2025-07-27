@@ -26,6 +26,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (logsError) throw logsError;
     console.log("[DEBUG] Logs fetched:", logs);
 
+    // ✅ Filter only approved logs
+    const approvedLogs = logs.filter(l => l.status === "approved");
+
     // ✅ Fetch levels
     const { data: levelsData, error: levelsError } = await supabase
       .from("levels")
@@ -35,19 +38,21 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (levelsError) throw levelsError;
     console.log("[DEBUG] Levels fetched:", levelsData);
 
-    // ✅ Calculate totals
-    const totalPoints = logs.reduce((sum, log) => sum + (log.points || 0), 0);
-    console.log("[DEBUG] Total points calculated:", totalPoints);
+    // ✅ Calculate total points from approved logs only
+    const totalPoints = approvedLogs.reduce((sum, log) => sum + (log.points || 0), 0);
+    console.log("[DEBUG] Total approved points calculated:", totalPoints);
 
-    // ✅ Calculate level correctly
+    // ✅ Determine user level based on approved points
     let userLevel = levelsData.find(l =>
       totalPoints >= Number(l.minPoints) && totalPoints <= Number(l.maxPoints)
     );
-    if (!userLevel && levelsData.length > 0) userLevel = levelsData[levelsData.length - 1];
+    if (!userLevel && levelsData.length > 0) {
+      userLevel = levelsData[levelsData.length - 1];
+    }
 
     console.log("[DEBUG] User Level determined:", userLevel);
 
-    // ✅ Update user record in Supabase
+    // ✅ Update user record in Supabase with approved points & level
     if (userLevel) {
       const { error: updateError } = await supabase
         .from("users")
@@ -61,11 +66,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     // ✅ Set level badge
     levelBadge.src = userLevel?.badge || "images/levelBadges/level1.png";
 
-    // ✅ Render category summary
-    renderCategorySummary(logs, totalPoints);
-
-    // ✅ Render logs table
-    renderLogs(logs);
+    // ✅ Render category summary & logs table only with approved logs
+    renderCategorySummary(approvedLogs, totalPoints);
+    renderLogs(approvedLogs);
 
   } catch (err) {
     console.error("[ERROR] My Points:", err);
