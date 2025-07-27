@@ -105,6 +105,35 @@ document.addEventListener("DOMContentLoaded", async () => {
           if (assignPoints) flog.points = points;
         }
       }
+// ✅ Delete Selected Logs
+document.getElementById("deleteSelectedBtn").addEventListener("click", async () => {
+  const selectedIds = Array.from(document.querySelectorAll(".select-log:checked"))
+    .map(cb => cb.dataset.id);
+
+  if (selectedIds.length === 0) {
+    alert("No logs selected.");
+    return;
+  }
+
+  if (!confirm(`Are you sure you want to permanently delete ${selectedIds.length} logs? This action cannot be undone.`)) {
+    return;
+  }
+
+  try {
+    const { error } = await supabase.from("logs").delete().in("id", selectedIds);
+    if (error) throw error;
+
+    // ✅ Remove from local arrays and refresh table
+    logs = logs.filter(l => !selectedIds.includes(l.id.toString()));
+    filteredLogs = filteredLogs.filter(l => !selectedIds.includes(l.id.toString()));
+    renderLogsTable(filteredLogs);
+
+    alert("✅ Selected logs deleted successfully.");
+  } catch (err) {
+    console.error("Delete logs failed:", err);
+    alert("❌ Failed to delete selected logs.");
+  }
+});
 
       renderLogsTable(filteredLogs);
       bulkPanel.style.display = "none";
