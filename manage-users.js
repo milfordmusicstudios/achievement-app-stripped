@@ -280,14 +280,15 @@ function setupModalTagListeners(container) {
   });
 }
 
-// ✅ Create New User from Modal
+// ✅ Create New User from Modal (Patched to avoid duplicate key + correct array types)
 async function createNewUserFromModal() {
   const modalRoles = Array.from(document.querySelectorAll("#modalRoleTags .tag .remove-tag"))
     .map(t => t.dataset.value);
   const modalTeachers = Array.from(document.querySelectorAll("#modalTeacherTags .tag .remove-tag"))
     .map(t => t.dataset.value);
 
-  const newUser = {
+  // ✅ Build user object safely
+  let newUser = {
     firstName: document.getElementById("newFirstName").value.trim(),
     lastName: document.getElementById("newLastName").value.trim(),
     email: document.getElementById("newEmail").value.trim(),
@@ -299,9 +300,24 @@ async function createNewUserFromModal() {
     teacherIds: modalTeachers
   };
 
-  // ✅ Ensure no ID is sent
+  // ✅ Remove any ID fields so Supabase can auto-generate UUID
   delete newUser.id;
+  delete newUser.uuid;
 
+  // ✅ Pre-check for duplicate email (optional but recommended)
+  if (newUser.email) {
+    const { data: existing, error: emailCheckError } = await supabase
+      .from("users")
+      .select("id")
+      .eq("email", newUser.email);
+
+    if (!emailCheckError && existing.length > 0) {
+      alert("A user with this email already exists.");
+      return;
+    }
+  }
+
+  // ✅ Insert safely without sending ID
   const { data, error } = await supabase.from("users").insert([newUser]).select();
 
   if (error) {
