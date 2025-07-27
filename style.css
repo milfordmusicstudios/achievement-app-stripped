@@ -1460,4 +1460,19 @@ body.manage-users h2.page-title {
 }
 #userHeaderTable th:last-child {
   border-top-right-radius: 6px;
+  
+}body.white-page .app {
+  max-width: 400px;       /* ✅ center form */
+  margin: 30px auto;
+  padding: 20px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+body.white-page form input {
+  width: 100%;            /* ✅ only fill container */
+  max-width: 350px;       /* ✅ prevent stretching */
+  margin: 10px auto;
+  display: block;
 }
