@@ -122,7 +122,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById('newEmail').value = user.email || '';
   document.getElementById('avatarImage').src = user.avatarUrl || "images/logos/default.png";
 
-  // ✅ Ensure roles is always an array and parse JSON if needed
+  // ✅ Ensure roles is always an array
   if (!user.roles && user.role) {
     user.roles = [user.role];
   } else if (typeof user.roles === "string") {
@@ -136,28 +136,35 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
   console.log("DEBUG (fixed) user.roles:", user.roles);
 
-  // Fetch related users
   const relatedUsers = await fetchRelatedUsers(user);
 
-  // ✅ Combine current user with related users
-  const allUsers = [user, ...relatedUsers];
-  localStorage.setItem("allUsers", JSON.stringify(allUsers));
-  console.log("DEBUG allUsers:", allUsers);
+  // ✅ Preserve any previously stored allUsers list
+  let existingAllUsers = JSON.parse(localStorage.getItem("allUsers")) || [];
+  const updatedAllUsers = [...existingAllUsers];
 
-  // ✅ Show Switch User Button if there are related users or more than one user
+  if (!updatedAllUsers.some(u => u.id === user.id)) {
+    updatedAllUsers.push(user);
+  }
+
+  relatedUsers.forEach(ru => {
+    if (!updatedAllUsers.some(u => u.id === ru.id)) {
+      updatedAllUsers.push(ru);
+    }
+  });
+
+  localStorage.setItem("allUsers", JSON.stringify(updatedAllUsers));
+  console.log("DEBUG allUsers:", updatedAllUsers);
+
+  // ✅ Show Switch User if multiple profiles exist
   const switchUserBtn = document.getElementById("switchUserBtn");
-// ✅ More reliable logic
-const existingAllUsers = JSON.parse(localStorage.getItem("allUsers")) || [];
-const sameEmailUsers = existingAllUsers.filter(u => u.email?.toLowerCase() === user.email?.toLowerCase());
+  const sameEmailUsers = updatedAllUsers.filter(u => u.email?.toLowerCase() === user.email?.toLowerCase());
+  if (updatedAllUsers.length > 1 || relatedUsers.length > 0 || sameEmailUsers.length > 1) {
+    switchUserBtn.style.display = "inline-block";
+  } else {
+    switchUserBtn.style.display = "none";
+  }
 
-// ✅ Show button if: related users exist, or allUsers has multiple entries, or same email users exist
-if (relatedUsers.length > 0 || existingAllUsers.length > 1 || sameEmailUsers.length > 1) {
-  switchUserBtn.style.display = "inline-block";
-} else {
-  switchUserBtn.style.display = "none";
-}
-
-  // ✅ Show Switch Role Button if user has multiple roles
+  // ✅ Show Switch Role if multiple roles
   const switchRoleBtn = document.getElementById("switchRoleBtn");
   if (user.roles.length > 1) {
     switchRoleBtn.style.display = "inline-block";
@@ -166,6 +173,7 @@ if (relatedUsers.length > 0 || existingAllUsers.length > 1 || sameEmailUsers.len
     switchRoleBtn.style.display = "none";
   }
 
+  // ✅ Avatar Upload
   document.getElementById("avatarInput").addEventListener("change", async () => {
     const file = document.getElementById("avatarInput").files[0];
     if (!file) return;
