@@ -552,17 +552,14 @@ body.white-page button {
 
 /* Logs Table */
 #logsSection {
-  display: block;
-  width: 100vw;         /* ✅ span the entire window */
-  max-width: 100%;
-  margin: 0;
-  overflow-y: auto;
-  overflow-x: auto;
+  width: 98%;             /* ✅ no overflow */
+  margin: 0 auto;
+  overflow-y: auto;       /* ✅ only vertical scroll */
+  overflow-x: hidden;     /* ✅ no horizontal scroll */
   max-height: calc(100vh - 300px);
   border: 1px solid #ddd;
-  border-radius: 0;
+  border-radius: 5px;
 }
-
 .log-icon {
   width: 30px;
   height: 30px;
@@ -591,6 +588,7 @@ body.white-page button {
   background: white;
   box-shadow: 0 2px 6px rgba(0,0,0,0.1);
   border-radius: 8px;
+  table-layout: auto;
   overflow: hidden;
 }
 #logsTable th {
@@ -677,14 +675,15 @@ main.app > header h2 {
 /* ✅ Category Summary Layout */
 #categorySummary {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 15px;
-  width: calc(100% - 40px); /* ✅ leaves slight space on edges */
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  width: 95%;
   margin: 15px auto;
   padding: 0 10px;
 }
 .category-card {
   width: 100%;
+  max-width: 170ps;
   background: #f4f4f4;
   padding: 10px;
   border-radius: 10px;
@@ -769,3 +768,12 @@ main.app > header h2 {
 /* ✅ Row Styles */
 #logsTable tr:nth-child(even) { background: #f9f9f9; }
 #logsTable tr:hover { background: #eef7ff; }
+#logsSection {
+  width: 98%;             /* ✅ no overflow */
+  margin: 0 auto;
+  overflow-y: auto;       /* ✅ only vertical scroll */
+  overflow-x: hidden;     /* ✅ no horizontal scroll */
+  max-height: calc(100vh - 300px);
+  border: 1px solid #ddd;
+  border-radius: 5px;
+}

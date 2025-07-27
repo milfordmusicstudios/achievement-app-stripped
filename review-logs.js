@@ -52,6 +52,27 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.error("[ERROR] Review Logs:", err);
     alert("Failed to load logs.");
   }
+// ✅ Bulk Approve Button Handler
+document.getElementById("bulkApproveBtn").addEventListener("click", async () => {
+  if (!confirm("Approve all logs? This action will set every log's status to 'approved'.")) return;
+
+  try {
+    // ✅ Update all logs in Supabase
+    const { error } = await supabase.from("logs").update({ status: "approved" });
+    if (error) throw error;
+
+    // ✅ Update locally
+    filteredLogs.forEach(log => log.status = "approved");
+    logs.forEach(log => log.status = "approved");
+
+    // ✅ Re-render the table
+    renderLogsTable(filteredLogs);
+    alert("✅ All logs approved successfully.");
+  } catch (err) {
+    console.error("Bulk approve failed:", err);
+    alert("❌ Failed to approve logs. Check console.");
+  }
+});
 
   // ---------------- LIVE SEARCH ONLY ----------------
   searchInput.addEventListener("input", () => {
