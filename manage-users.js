@@ -65,7 +65,7 @@ function renderRoleDropdown(user) {
   return `
     <div class="tag-container" data-id="${user.id}" data-type="roles">
       ${selectedRoles.map(r => `<span class="tag">${r}<span class="remove-tag" data-value="${r}">×</span></span>`).join("")}
-      <button class="tag-add">+</button>
+<img src="images/icons/plus.png" class="tag-add-icon">
       <div class="tag-options">
         ${availableRoles.filter(r => !selectedRoles.includes(r)).map(r => `<div class="tag-option" data-value="${r}">${r}</div>`).join("")}
       </div>
@@ -76,11 +76,11 @@ function renderRoleDropdown(user) {
 // ✅ Render Tag Selector for Teachers
 function renderTeacherDropdown(user) {
   const teacherList = allUsers.filter(u => u.roles?.includes("teacher") || u.roles?.includes("admin"));
-  const selected = Array.isArray(user.teacher) ? user.teacher : [user.teacher];
+  const selected = Array.isArray(user.teacherIds) ? user.teacherIds : [user.teacherIds];
   return `
     <div class="tag-container" data-id="${user.id}" data-type="teacher">
       ${teacherList.filter(t => selected.includes(t.id)).map(t => `<span class="tag">${t.firstName} ${t.lastName}<span class="remove-tag" data-value="${t.id}">×</span></span>`).join("")}
-      <button class="tag-add">+</button>
+<img src="images/icons/plus.png" class="tag-add-icon">
       <div class="tag-options">
         ${teacherList.filter(t => !selected.includes(t.id)).map(t => `<div class="tag-option" data-value="${t.id}">${t.firstName} ${t.lastName}</div>`).join("")}
       </div>
@@ -90,8 +90,8 @@ function renderTeacherDropdown(user) {
 
 // ✅ Tag Interaction Listeners
 function setupTagListeners() {
-  document.querySelectorAll(".tag-add").forEach(btn => {
-    btn.addEventListener("click", e => {
+  document.querySelectorAll(".tag-add-icon").forEach(icon => {
+  icon.addEventListener("click", e => {
       const container = e.target.closest(".tag-container");
       container.querySelector(".tag-options").classList.toggle("show");
     });
@@ -109,8 +109,8 @@ function setupTagListeners() {
         if (!Array.isArray(user.roles)) user.roles = [];
         user.roles.push(value);
       } else {
-        if (!Array.isArray(user.teacher)) user.teacher = [];
-        user.teacher.push(value);
+if (!Array.isArray(user.teacherIds)) user.teacherIds = [];
+user.teacherIds.push(value);
       }
 
       document.getElementById(`save-${id}`).style.display = "inline-block";
@@ -129,7 +129,7 @@ function setupTagListeners() {
       if (type === "roles") {
         user.roles = user.roles.filter(r => r !== value);
       } else {
-        user.teacher = user.teacher.filter(t => t !== value);
+        user.teacherIds = user.teacherIds.filter(t => t !== value);
       }
 
       document.getElementById(`save-${id}`).style.display = "inline-block";

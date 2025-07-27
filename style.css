@@ -1440,3 +1440,21 @@ body.manage-users h2.page-title {
   cursor: pointer;
 }
 .tag-option:hover { background: #eef; }
+
+#userHeaderTable th {
+  text-align: center;      /* ✅ center text */
+  border-radius: 6px 6px 0 0;  /* ✅ rounded top corners */
+  background: #3eb7f8;
+  color: white;
+  padding: 8px;
+}
+
+.tag-add-icon {
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  opacity: 0.7;
+}
+.tag-add-icon:hover {
+  opacity: 1;
+}
