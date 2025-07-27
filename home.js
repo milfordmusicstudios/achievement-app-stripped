@@ -37,10 +37,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     const currentIndex = levels.findIndex(l => l.id === currentLevel.id);
     const nextLevel = levels[currentIndex + 1];
 
-// ✅ Fetch latest user info, including roles
+// ✅ Fetch latest user info, including lastName and roles
 const { data: freshUser, error: userError } = await supabase
   .from("users")
-  .select("id, firstName, avatarUrl, roles")
+  .select("id, firstName, lastName, avatarUrl, roles")
   .eq("id", storedUser.id)
   .single();
 
@@ -49,6 +49,7 @@ const { data: freshUser, error: userError } = await supabase
 // ✅ Build user object while preserving roles if missing
 const userData = {
   ...freshUser,
+  lastName: freshUser?.lastName || storedUser.lastName || "",
   roles: freshUser?.roles || storedUser.roles || [],
   points: totalPoints,
   level: currentLevel?.id || 1,
