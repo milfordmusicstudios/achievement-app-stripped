@@ -19,6 +19,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("addUserBtn").addEventListener("click", addUser);
 });
 
+// ✅ Fetch users from Supabase
 async function fetchUsers() {
   const { data, error } = await supabase.from("users").select("*").order("lastName");
   if (error) return console.error("Error fetching users:", error);
@@ -26,6 +27,24 @@ async function fetchUsers() {
   renderUsers();
 }
 
+// ✅ Format array for roles/teachers
+function formatArray(val) {
+  if (Array.isArray(val)) return val.join(", ");
+  return val || "";
+}
+
+// ✅ Teacher name lookup
+function getTeacherNames(teacherField) {
+  if (!teacherField) return "No Teacher";
+  const ids = Array.isArray(teacherField) ? teacherField : [teacherField];
+  const names = ids.map(id => {
+    const teacher = allUsers.find(u => u.id === id);
+    return teacher ? `${teacher.firstName} ${teacher.lastName}` : "Unknown";
+  });
+  return names.join(", ");
+}
+
+// ✅ Render paginated users
 function renderUsers() {
   const tbody = document.getElementById("userTableBody");
   tbody.innerHTML = "";
@@ -57,21 +76,39 @@ function renderUsers() {
 
   setupAvatarUploads();
   renderPagination();
-  syncHeaderWidths(); // ✅ Fix column alignment
+  syncHeaderWidths();
 }
 
-// ✅ Sync column widths between header and body
+// ✅ Sync header widths to align with body columns
 function syncHeaderWidths() {
   const headerCells = document.querySelectorAll("#userHeaderTable th");
-  const firstRowCells = document.querySelectorAll("#userTable tr:first-child td");
-  if (!firstRowCells.length) return;
+  const rowCells = document.querySelectorAll("#userTable tr:first-child td");
+  if (!rowCells.length) return;
 
   headerCells.forEach((th, i) => {
-    th.style.width = firstRowCells[i]?.offsetWidth + "px";
+    if (rowCells[i]) th.style.width = rowCells[i].offsetWidth + "px";
   });
 }
 
-// ✅ Avatar Upload Handling
+// ✅ Inline editing
+window.updateField = function(id, field, value) {
+  const user = allUsers.find(u => u.id === id);
+  if (!user) return;
+  user[field] = value;
+  document.getElementById(`save-${id}`).style.display = "inline-block";
+};
+
+window.saveUser = async function(id) {
+  const user = allUsers.find(u => u.id === id);
+  const { error } = await supabase.from("users").update(user).eq("id", id);
+  if (error) alert("Save failed");
+  else {
+    document.getElementById(`save-${id}`).style.display = "none";
+    fetchUsers();
+  }
+};
+
+// ✅ Avatar upload with Supabase storage
 function setupAvatarUploads() {
   document.querySelectorAll(".avatar-upload").forEach(input => {
     input.addEventListener("change", async e => {
@@ -90,7 +127,6 @@ function setupAvatarUploads() {
   });
 }
 
-// ✅ Other helper functions remain unchanged (updateField, saveUser, openMultiSelect, confirmMultiSelect, etc.)
 // ✅ Multi-select modal
 window.openMultiSelect = function(button, userId, type) {
   currentEditUser = allUsers.find(u => u.id === userId);
@@ -133,7 +169,7 @@ window.confirmMultiSelect = function() {
   const checks = document.querySelectorAll("#multiSelectOptions input:checked");
   const values = Array.from(checks).map(c => c.value);
   currentEditUser[currentMultiType] = values;
-  currentMultiTarget.textContent = getTeacherNames(values);
+  currentMultiTarget.textContent = currentMultiType === "roles" ? formatArray(values) : getTeacherNames(values);
   document.getElementById(`save-${currentEditUser.id}`).style.display = "inline-block";
   closeMultiSelectModal();
 };
@@ -142,7 +178,7 @@ window.closeMultiSelectModal = function() {
   document.getElementById("multiSelectModal").style.display = "none";
 };
 
-// ✅ Add New User
+// ✅ Add user
 async function addUser() {
   const { data, error } = await supabase.from("users").insert([{ firstName: "New", lastName: "User", roles: ["student"], teacher: [] }]).select();
   if (!error) {
@@ -151,12 +187,12 @@ async function addUser() {
   }
 }
 
-// ✅ Pagination Controls
+// ✅ Pagination controls
 function renderPagination() {
   const controls = document.getElementById("paginationControls");
   controls.innerHTML = "";
-
   const totalPages = Math.ceil(allUsers.length / usersPerPage);
+
   for (let i = 1; i <= totalPages; i++) {
     const btn = document.createElement("button");
     btn.textContent = i;

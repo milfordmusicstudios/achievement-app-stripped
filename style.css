@@ -1340,5 +1340,5 @@ body.manage-users h2.page-title {
 #addUserBtn::before {
 content: "＋";
 color: #00477d;
-font-weight: bold;
+font-weight: 900;
 }
