@@ -48,6 +48,7 @@ if (typeof userData.roles === "string") {
 
 // ✅ Save to localStorage with normalized roles
 localStorage.setItem('loggedInUser', JSON.stringify(userData));
+console.log("DEBUG login.js userData before save:", userData);
 
       // Set default role
       const roles = userData.roles || ['student'];
