@@ -10,31 +10,35 @@
 
   <!-- 🔹 Header -->
   <header style="display:flex; align-items:center; padding:10px 20px;">
-    <button class="blue-button" onclick="window.location.href='index.html'">Home</button>
+    <button class="blue-button" onclick="window.location.href='home.html'">Home</button>
     <h2 style="flex:1; text-align:center; color:#00477d; margin:0;">Manage Users</h2>
-<button id="addUserBtn" class="blue-button">
-<img src="images/icons/plus.png" alt="Add" class="plus-icon">
-  Add User
-</button>
+    <button id="addUserBtn" class="blue-button">
+      <img src="images/icons/plus.png" alt="Add" class="plus-icon"> Add User
+    </button>
   </header>
 
-  <!-- 🔹 Table Header (fixed) -->
+  <!-- 🔹 Search Bar -->
+  <div id="userSearchContainer" style="width:95%; margin:10px auto; display:flex; justify-content:flex-end;">
+    <input type="text" id="userSearch" placeholder="Search users..." style="width:200px; padding:5px; border:1px solid #ccc; border-radius:4px;">
+  </div>
+
+  <!-- 🔹 Table Header -->
   <table id="userHeaderTable">
     <thead>
       <tr>
-        <th>First</th>
-        <th>Last</th>
-        <th>Email</th>
+        <th data-sort="firstName">First</th>
+        <th data-sort="lastName">Last</th>
+        <th data-sort="email">Email</th>
         <th>Avatar</th>
         <th>Roles</th>
         <th>Teacher(s)</th>
         <th>Instrument</th>
-        <th style="width:80px;"></th>
+        <th></th>
       </tr>
     </thead>
   </table>
 
-  <!-- 🔹 Scrollable Table Body -->
+  <!-- 🔹 Scrollable Table -->
   <div id="usersScrollSection">
     <table id="userTable">
       <tbody id="userTableBody"></tbody>
@@ -43,7 +47,6 @@
 
   <!-- 🔹 Pagination -->
   <div id="paginationControls" style="text-align:center; margin:10px 0;"></div>
-
 
   <script type="module" src="manage-users.js"></script>
 </body>

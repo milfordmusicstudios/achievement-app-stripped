@@ -3,6 +3,9 @@ import { supabase } from './supabase.js';
 let allUsers = [];
 let currentPage = 1;
 const usersPerPage = 25;
+let searchQuery = "";
+let sortColumn = null;
+let sortDirection = 1;
 
 document.addEventListener("DOMContentLoaded", async () => {
   const user = JSON.parse(localStorage.getItem("loggedInUser"));
@@ -14,6 +17,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   await fetchUsers();
   document.getElementById("addUserBtn").addEventListener("click", openAddUserModal);
+  setupSearchAndSort();
 });
 
 // ✅ Fetch users from Supabase
@@ -24,13 +28,32 @@ async function fetchUsers() {
   renderUsers();
 }
 
+// ✅ Filter & Sort
+function getFilteredAndSortedUsers() {
+  let filtered = allUsers.filter(u =>
+    (u.firstName || "").toLowerCase().includes(searchQuery) ||
+    (u.lastName || "").toLowerCase().includes(searchQuery) ||
+    (u.email || "").toLowerCase().includes(searchQuery)
+  );
+
+  if (sortColumn) {
+    filtered.sort((a, b) => {
+      const valA = (a[sortColumn] || "").toLowerCase();
+      const valB = (b[sortColumn] || "").toLowerCase();
+      return valA > valB ? sortDirection : valA < valB ? -sortDirection : 0;
+    });
+  }
+
+  return filtered;
+}
+
 // ✅ Render Users Table
 function renderUsers() {
   const tbody = document.getElementById("userTableBody");
   tbody.innerHTML = "";
 
   const start = (currentPage - 1) * usersPerPage;
-  const pageUsers = allUsers.slice(start, start + usersPerPage);
+  const pageUsers = getFilteredAndSortedUsers().slice(start, start + usersPerPage);
 
   pageUsers.forEach(user => {
     const tr = document.createElement("tr");
@@ -44,8 +67,8 @@ function renderUsers() {
           <input type="file" data-id="${user.id}" class="avatar-upload">
         </label>
       </td>
-      <td>${renderRoleDropdown(user)}</td>
-      <td>${renderTeacherDropdown(user)}</td>
+      <td>${renderRoleTags(user)}</td>
+      <td>${renderTeacherTags(user)}</td>
       <td><input type="text" value="${user.instrument || ""}" onchange="updateField('${user.id}','instrument',this.value)"></td>
       <td><button id="save-${user.id}" class="blue-button" style="display:none;" onclick="saveUser('${user.id}')">Save</button></td>
     `;
@@ -58,113 +81,82 @@ function renderUsers() {
   syncHeaderWidths();
 }
 
-// ✅ Render Tag Selector for Roles
-function renderRoleDropdown(user) {
-  const availableRoles = ["student", "teacher", "admin"];
-  const selectedRoles = Array.isArray(user.roles) ? user.roles : [user.roles];
-  return `
-    <div class="tag-container" data-id="${user.id}" data-type="roles">
-      ${selectedRoles.map(r => `<span class="tag">${r}<span class="remove-tag" data-value="${r}">×</span></span>`).join("")}
-<img src="images/icons/plus.png" class="tag-add-icon">
-      <div class="tag-options">
-        ${availableRoles.filter(r => !selectedRoles.includes(r)).map(r => `<div class="tag-option" data-value="${r}">${r}</div>`).join("")}
-      </div>
-    </div>
-  `;
+// ✅ Tag Renderers
+function renderRoleTags(user) {
+  const roles = ["student", "teacher", "admin"];
+  const selected = Array.isArray(user.roles) ? user.roles : [user.roles].filter(Boolean);
+  return buildTagContainer(user.id, "roles", selected, roles);
 }
 
-// ✅ Render Tag Selector for Teachers
-function renderTeacherDropdown(user) {
+function renderTeacherTags(user) {
   const teacherList = allUsers.filter(u => u.roles?.includes("teacher") || u.roles?.includes("admin"));
-  const selected = Array.isArray(user.teacherIds) ? user.teacherIds : [user.teacherIds];
+  const selected = Array.isArray(user.teacherIds) ? user.teacherIds.map(String) : [user.teacherIds].filter(Boolean).map(String);
+  return buildTagContainer(user.id, "teacherIds", selected, teacherList);
+}
+
+// ✅ Build Tag Container (shared)
+function buildTagContainer(userId, type, selected, options) {
+  const tags = (type === "roles" ? selected : selected.map(id => {
+    const t = allUsers.find(u => u.id === id);
+    return t ? { id, name: `${t.firstName} ${t.lastName}` } : null;
+  }).filter(Boolean));
+
+  const optionsHTML = (type === "roles"
+    ? options.filter(r => !selected.includes(r)).map(r => `<div class="tag-option" data-value="${r}">${r}</div>`)
+    : options.filter(t => !selected.includes(t.id)).map(t => `<div class="tag-option" data-value="${t.id}">${t.firstName} ${t.lastName}</div>`)).join("");
+
+  const tagsHTML = (type === "roles"
+    ? tags.map(r => `<span class="tag">${r}<span class="remove-tag" data-value="${r}">×</span></span>`).join("")
+    : tags.map(t => `<span class="tag">${t.name}<span class="remove-tag" data-value="${t.id}">×</span></span>`).join(""));
+
   return `
-    <div class="tag-container" data-id="${user.id}" data-type="teacher">
-      ${teacherList.filter(t => selected.includes(t.id)).map(t => `<span class="tag">${t.firstName} ${t.lastName}<span class="remove-tag" data-value="${t.id}">×</span></span>`).join("")}
-<img src="images/icons/plus.png" class="tag-add-icon">
-      <div class="tag-options">
-        ${teacherList.filter(t => !selected.includes(t.id)).map(t => `<div class="tag-option" data-value="${t.id}">${t.firstName} ${t.lastName}</div>`).join("")}
-      </div>
+    <div class="tag-container" data-id="${userId}" data-type="${type}">
+      ${tagsHTML}
+      <img src="images/icons/plus.png" class="tag-add-icon">
+      <div class="tag-options">${optionsHTML}</div>
     </div>
   `;
 }
 
-// ✅ Tag Interaction Listeners
+// ✅ Tag Listeners
 function setupTagListeners() {
   document.querySelectorAll(".tag-add-icon").forEach(icon => {
-  icon.addEventListener("click", e => {
+    icon.addEventListener("click", e => {
       const container = e.target.closest(".tag-container");
       container.querySelector(".tag-options").classList.toggle("show");
     });
   });
 
-document.querySelectorAll(".tag-option").forEach(opt => {
-  opt.addEventListener("click", e => {
-    const container = e.target.closest(".tag-container");
-    const id = container.dataset.id;
-    const type = container.dataset.type;
-    const user = allUsers.find(u => u.id === id);
-    const value = e.target.dataset.value;
-
-    if (type === "roles") {
-      if (!Array.isArray(user.roles)) user.roles = [];
-      if (!user.roles.includes(value)) user.roles.push(value);
-    } else {
-      if (!Array.isArray(user.teacherIds)) user.teacherIds = [];
-      if (!user.teacherIds.includes(value)) user.teacherIds.push(value);
-    }
-
-    document.getElementById(`save-${id}`).style.display = "inline-block";
-
-    // ✅ Instead of re-rendering the whole table, rebuild only this tag container
-    refreshTagContainer(container, user, type);
-  });
-});
-
-function refreshTagContainer(container, user, type) {
-  const isRole = type === "roles";
-  const options = isRole ? ["student", "teacher", "admin"] :
-    allUsers.filter(u => u.roles?.includes("teacher") || u.roles?.includes("admin"));
-
-  // Build updated tags
-  const tagsHTML = (isRole ? user.roles : user.teacherIds.map(id => {
-    const teacher = allUsers.find(t => t.id === id);
-    return teacher ? teacher.id : "";
-  })).map(v => `<span class="tag">${isRole ? v : allUsers.find(t => t.id === v).firstName + " " + allUsers.find(t => t.id === v).lastName}<span class="remove-tag" data-value="${v}">×</span></span>`).join("");
-
-  // Build updated dropdown options
-  const dropdownHTML = options.filter(opt => isRole ? !user.roles.includes(opt) : !user.teacherIds.includes(opt.id))
-    .map(opt => `<div class="tag-option" data-value="${isRole ? opt : opt.id}">${isRole ? opt : opt.firstName + " " + opt.lastName}</div>`).join("");
-
-  container.innerHTML = `
-    ${tagsHTML}
-    <img src="images/icons/plus.png" class="tag-add-icon">
-    <div class="tag-options">${dropdownHTML}</div>
-  `;
-
-  setupTagListeners(); // ✅ reattach listeners
-}
-
-  document.querySelectorAll(".remove-tag").forEach(x => {
-    x.addEventListener("click", e => {
+  document.querySelectorAll(".tag-option").forEach(opt => {
+    opt.addEventListener("click", e => {
       const container = e.target.closest(".tag-container");
       const id = container.dataset.id;
       const type = container.dataset.type;
-      const value = e.target.dataset.value;
       const user = allUsers.find(u => u.id === id);
+      const value = e.target.dataset.value;
 
-      if (type === "roles") {
-        user.roles = user.roles.filter(r => r !== value);
-      } else {
-        user.teacherIds = user.teacherIds.filter(t => t !== value);
-      }
+      if (!Array.isArray(user[type])) user[type] = [];
+      if (!user[type].includes(value)) user[type].push(value);
 
       document.getElementById(`save-${id}`).style.display = "inline-block";
-      refreshTagContainer();
+      e.target.remove();
+
+      const tagLabel = (type === "roles") ? value : (allUsers.find(t => t.id === value)?.firstName + " " + allUsers.find(t => t.id === value)?.lastName);
+      const newTag = document.createElement("span");
+      newTag.className = "tag";
+      newTag.innerHTML = `${tagLabel}<span class="remove-tag" data-value="${value}">×</span>`;
+      container.insertBefore(newTag, container.querySelector(".tag-add-icon"));
+
+      newTag.querySelector(".remove-tag").addEventListener("click", () => {
+        user[type] = user[type].filter(v => v !== value);
+        newTag.remove();
+        document.getElementById(`save-${id}`).style.display = "inline-block";
+      });
     });
   });
 }
 
-// ✅ Inline Editing
+// ✅ Inline Edit
 window.updateField = function(id, field, value) {
   const user = allUsers.find(u => u.id === id);
   if (!user) return;
@@ -200,13 +192,12 @@ function setupAvatarUploads() {
   });
 }
 
-// ✅ Add User Modal (still uses multi-selects for now)
+// ✅ Add User Modal (uses tag UI)
 function openAddUserModal() {
-  const teacherOptions = allUsers.filter(u => u.roles?.includes("teacher") || u.roles?.includes("admin"))
-    .map(t => `<option value="${t.id}">${t.firstName} ${t.lastName}</option>`).join("");
   const modal = document.createElement("div");
   modal.className = "modal-overlay";
   modal.style.display = "flex";
+
   modal.innerHTML = `
     <div class="modal-box">
       <h3>Create New User</h3>
@@ -215,59 +206,104 @@ function openAddUserModal() {
       <label>Email</label><input id="newEmail" type="email">
       <label>Instrument</label><input id="newInstrument" type="text">
       <label>Roles</label>
-      <select id="newRoles" multiple style="width:100%; height:60px;">
-        <option value="student" selected>student</option>
-        <option value="teacher">teacher</option>
-        <option value="admin">admin</option>
-      </select>
-      <label>Assign Teacher(s)</label>
-      <select id="newTeachers" multiple style="width:100%; height:100px;">
-        ${teacherOptions}
-      </select>
+      <div id="modalRoleTags" class="tag-container" data-type="roles"></div>
+      <label>Teachers</label>
+      <div id="modalTeacherTags" class="tag-container" data-type="teacherIds"></div>
       <div class="modal-actions">
         <button class="blue-button" id="createUserBtn">Create</button>
         <button class="blue-button" id="cancelUserBtn">Cancel</button>
       </div>
-    </div>
-  `;
+    </div>`;
   document.body.appendChild(modal);
 
+  buildModalTagSelectors();
   document.getElementById("cancelUserBtn").addEventListener("click", () => modal.remove());
   document.getElementById("createUserBtn").addEventListener("click", async () => {
-    await createNewUser();
+    await createNewUserFromModal();
     modal.remove();
   });
 }
 
-// ✅ Create New User
-async function createNewUser() {
-  const selectedRoles = Array.from(document.getElementById("newRoles").selectedOptions).map(opt => opt.value);
-  const selectedTeachers = Array.from(document.getElementById("newTeachers").selectedOptions).map(opt => opt.value);
+// ✅ Build Tag Selectors for Modal
+function buildModalTagSelectors() {
+  const modalRole = document.getElementById("modalRoleTags");
+  const modalTeacher = document.getElementById("modalTeacherTags");
+  modalRole.innerHTML = `<img src="images/icons/plus.png" class="tag-add-icon"><div class="tag-options">${["student","teacher","admin"].map(r=>`<div class="tag-option" data-value="${r}">${r}</div>`).join("")}</div>`;
+  const teacherList = allUsers.filter(u => u.roles?.includes("teacher") || u.roles?.includes("admin"));
+  modalTeacher.innerHTML = `<img src="images/icons/plus.png" class="tag-add-icon"><div class="tag-options">${teacherList.map(t=>`<div class="tag-option" data-value="${t.id}">${t.firstName} ${t.lastName}</div>`).join("")}</div>`;
+  setupModalTagListeners(modalRole);
+  setupModalTagListeners(modalTeacher);
+}
 
+function setupModalTagListeners(container) {
+  container.querySelector(".tag-add-icon").addEventListener("click", () => {
+    container.querySelector(".tag-options").classList.toggle("show");
+  });
+  container.querySelectorAll(".tag-option").forEach(opt => {
+    opt.addEventListener("click", e => {
+      const type = container.dataset.type;
+      const value = e.target.dataset.value;
+      const tag = document.createElement("span");
+      const label = (type === "roles") ? value : allUsers.find(t => t.id === value)?.firstName + " " + allUsers.find(t => t.id === value)?.lastName;
+      tag.className = "tag";
+      tag.innerHTML = `${label}<span class="remove-tag" data-value="${value}">×</span>`;
+      container.insertBefore(tag, container.querySelector(".tag-add-icon"));
+      e.target.remove();
+      tag.querySelector(".remove-tag").addEventListener("click", () => tag.remove());
+    });
+  });
+}
+
+// ✅ Create New User from Modal
+async function createNewUserFromModal() {
+  const modalRoles = Array.from(document.querySelectorAll("#modalRoleTags .tag .remove-tag")).map(t => t.dataset.value);
+  const modalTeachers = Array.from(document.querySelectorAll("#modalTeacherTags .tag .remove-tag")).map(t => t.dataset.value);
   const newUser = {
     firstName: document.getElementById("newFirstName").value.trim(),
     lastName: document.getElementById("newLastName").value.trim(),
     email: document.getElementById("newEmail").value.trim(),
     instrument: document.getElementById("newInstrument").value.trim(),
-    roles: selectedRoles,
-    teacherIds: selectedTeachers
+    roles: modalRoles,
+    teacherIds: modalTeachers
   };
-
   const { data, error } = await supabase.from("users").insert([newUser]).select();
-  if (error) {
-    alert("Failed to create user: " + error.message);
-  } else {
+  if (error) alert("Failed to create user: " + error.message);
+  else {
     allUsers.push(data[0]);
     renderUsers();
     alert("User created successfully!");
   }
 }
 
+// ✅ Search & Sorting
+function setupSearchAndSort() {
+  document.getElementById("userSearch").addEventListener("input", e => {
+    searchQuery = e.target.value.toLowerCase();
+    currentPage = 1;
+    renderUsers();
+  });
+  document.querySelectorAll("#userHeaderTable th[data-sort]").forEach(th => {
+    th.style.cursor = "pointer";
+    th.addEventListener("click", () => {
+      const col = th.dataset.sort;
+      if (sortColumn === col) sortDirection *= -1; else { sortColumn = col; sortDirection = 1; }
+      renderUsers();
+      updateSortIndicators(col);
+    });
+  });
+}
+function updateSortIndicators(active) {
+  document.querySelectorAll("#userHeaderTable th[data-sort]").forEach(th => {
+    th.textContent = th.textContent.replace(/ ▲| ▼/, "");
+    if (th.dataset.sort === active) th.textContent += sortDirection === 1 ? " ▲" : " ▼";
+  });
+}
+
 // ✅ Pagination
 function renderPagination() {
   const controls = document.getElementById("paginationControls");
   controls.innerHTML = "";
-  const totalPages = Math.ceil(allUsers.length / usersPerPage);
+  const totalPages = Math.ceil(getFilteredAndSortedUsers().length / usersPerPage);
   for (let i = 1; i <= totalPages; i++) {
     const btn = document.createElement("button");
     btn.textContent = i;
@@ -277,7 +313,7 @@ function renderPagination() {
   }
 }
 
-// ✅ Header Sync
+// ✅ Header Width Sync
 function syncHeaderWidths() {
   const headerCells = document.querySelectorAll("#userHeaderTable th");
   const rowCells = document.querySelectorAll("#userTable tr:first-child td");
