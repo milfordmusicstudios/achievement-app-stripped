@@ -57,23 +57,27 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   // ✅ Bulk Approve Button
-  document.getElementById("bulkApproveBtn").addEventListener("click", async () => {
-    if (!confirm("Approve all logs? This action will set every log's status to 'approved'.")) return;
+// ✅ Bulk Approve Button Handler (using status column)
+document.getElementById("bulkApproveBtn").addEventListener("click", async () => {
+  if (!confirm("Approve all logs? This will set every log's status to 'approved'.")) return;
 
-    try {
-      const { error } = await supabase.from("logs").update({ status: "approved" });
-      if (error) throw error;
+  try {
+    // ✅ Update logs in Supabase
+    const { error } = await supabase.from("logs").update({ status: "approved" });
+    if (error) throw error;
 
-      filteredLogs.forEach(log => log.status = "approved");
-      logs.forEach(log => log.status = "approved");
+    // ✅ Update local arrays
+    logs.forEach(log => log.status = "approved");
+    filteredLogs.forEach(log => log.status = "approved");
 
-      renderLogsTable(filteredLogs);
-      alert("✅ All logs approved successfully.");
-    } catch (err) {
-      console.error("Bulk approve failed:", err);
-      alert("❌ Failed to approve logs. Check console.");
-    }
-  });
+    // ✅ Re-render
+    renderLogsTable(filteredLogs);
+    alert("✅ All logs approved successfully.");
+  } catch (err) {
+    console.error("Bulk approve failed:", err);
+    alert("❌ Failed to approve logs. Check console.");
+  }
+});
 
   // ✅ Live Search
   searchInput.addEventListener("input", () => {

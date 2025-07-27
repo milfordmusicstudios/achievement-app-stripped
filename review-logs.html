@@ -10,47 +10,48 @@
 <body>
   <main class="app">
 
-    <!-- ✅ Header -->
-    <header>
+    <!-- ✅ Top Bar with Home button -->
+    <header id="pageHeader">
       <button class="blue-button" onclick="window.location.href='index.html'">Home</button>
       <h2>Review Logs</h2>
     </header>
 
+    <!-- ✅ Action Bar: Search (left) + Bulk Approve (right) -->
+    <div id="actionBar">
+      <input id="searchInput" type="text" placeholder="Search logs...">
+      <button id="bulkApproveBtn" class="blue-button">Bulk Approve All</button>
+    </div>
+
     <!-- ✅ Category Summary -->
     <section id="categorySummary"></section>
 
-    <!-- ✅ Live Search -->
-    <input id="searchInput" type="text" placeholder="Search logs...">
+    <!-- ✅ Table Header (Separate from Scroll) -->
+    <table id="logsHeaderTable">
+      <thead>
+        <tr>
+          <th>Student</th>
+          <th>Category</th>
+          <th>Date</th>
+          <th>Points</th>
+          <th>Note</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+    </table>
 
-    <!-- ✅ Bulk Approve Button -->
-    <button id="bulkApproveBtn" class="blue-button" style="margin:10px auto; display:block;">
-      Bulk Approve All
-    </button>
-
-    <!-- ✅ Logs Table -->
+    <!-- ✅ Scrollable Table Body -->
     <section id="logsSection">
       <table id="logsTable">
-        <thead>
-          <tr>
-            <th data-field="fullName">Student</th>
-            <th data-field="category">Category</th>
-            <th data-field="date">Date</th>
-            <th data-field="points">Points</th>
-            <th data-field="notes">Note</th>
-            <th data-field="status">Status</th>
-          </tr>
-        </thead>
         <tbody id="logsTableBody"></tbody>
       </table>
     </section>
 
     <!-- ✅ Pagination Controls -->
-    <div id="paginationControls" style="display:flex; justify-content:center; gap:10px; margin:10px 0;">
+    <div id="paginationControls">
       <button id="prevPageBtn" class="blue-button">Prev</button>
-      <span id="pageInfo" style="align-self:center;"></span>
+      <span id="pageInfo"></span>
       <button id="nextPageBtn" class="blue-button">Next</button>
-
-      <select id="logsPerPage" class="blue-button" style="width:80px; padding:5px;">
+      <select id="logsPerPage" class="blue-button">
         <option value="25">25</option>
         <option value="50" selected>50</option>
         <option value="100">100</option>

@@ -777,3 +777,111 @@ main.app > header h2 {
   border: 1px solid #ddd;
   border-radius: 5px;
 }
+/* ---- Layout Adjustments ---- */
+#pageHeader {
+  display: flex;
+  align-items: center;
+  padding: 10px 20px;
+}
+#pageHeader h2 {
+  flex: 1;
+  text-align: center;
+  color: #00477d;
+  margin: 0;
+}
+
+/* ✅ Action Bar */
+#actionBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 95%;
+  margin: 10px auto;
+}
+#actionBar #searchInput {
+  width: 300px;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 1rem;
+}
+
+/* ✅ Summary Cards Narrower */
+#categorySummary {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 10px;
+  width: 95%;
+  margin: 15px auto;
+}
+.category-card {
+  width: 140px;  /* ✅ fixed narrower width */
+  background: #f4f4f4;
+  padding: 8px;
+  border-radius: 8px;
+  text-align: center;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+/* ✅ Fixed Header Table (just column titles) */
+#logsHeaderTable {
+  width: 95%;
+  margin: 0 auto;
+  border-collapse: collapse;
+}
+#logsHeaderTable th {
+  background: #3eb7f8;
+  color: white;
+  border-bottom: 2px solid #00477d;
+  padding: 6px;
+  text-align: left;
+}
+
+/* ✅ Scrollable Table Body */
+#logsSection {
+  width: 95%;
+  height: calc(100vh - 350px);
+  margin: 0 auto 10px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-top: none;
+}
+#logsTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+#logsTable td {
+  padding: 6px 8px;
+  border-bottom: 1px solid #ddd;
+}
+
+/* ✅ Compact Column Widths */
+#logsHeaderTable th:nth-child(2),
+#logsTable td:nth-child(2) { width: 120px; }
+#logsHeaderTable th:nth-child(3),
+#logsTable td:nth-child(3) { width: 120px; }
+#logsHeaderTable th:nth-child(4),
+#logsTable td:nth-child(4) { width: 80px; }
+
+/* ✅ Inputs */
+#logsTable input, #logsTable select, #logsTable textarea {
+  width: 100%;
+  padding: 4px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 0.85rem;
+}
+#logsTable textarea {
+  min-height: 40px;
+  resize: vertical;
+  line-height: 1.2;
+}
+
+/* ✅ Pagination */
+#paginationControls {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 10px 0;
+}
