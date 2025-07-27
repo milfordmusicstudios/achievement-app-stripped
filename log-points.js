@@ -50,7 +50,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         previewImage.src = selected ? `images/categories/${selected.toLowerCase()}.png` : "images/categories/allCategories.png";
       }
       // ✅ Auto-assign 5 points for Practice
-      if (selected === "Practice") {
+      if (selected === "practice") {
         if (pointsInput) pointsInput.value = 5;
       } else if (pointsInput && (activeRole === "admin" || activeRole === "teacher")) {
         pointsInput.value = "";
@@ -98,7 +98,7 @@ submitBtn.addEventListener("click", async (e) => {
 
   // ✅ Points logic
   let points = null;
-  if (category === "Practice") {
+  if (category === "practice") {
     points = 5; // ✅ Always assign 5 for Practice
   } else if (activeRole === "admin" || activeRole === "teacher") {
     // ✅ Teachers/Admins may input points, but it's optional
@@ -114,7 +114,7 @@ submitBtn.addEventListener("click", async (e) => {
 
 // ✅ Status: auto-approve practice logs from students
 let status = "pending";
-if (!(activeRole === "admin" || activeRole === "teacher") && category === "Practice") {
+if (!(activeRole === "admin" || activeRole === "teacher") && category === "practice") {
   status = "approved";
 }
 
