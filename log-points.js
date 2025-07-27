@@ -84,44 +84,51 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // ✅ Submit form → save log
   if (submitBtn) {
-    submitBtn.addEventListener("click", async (e) => {
-      e.preventDefault();
+submitBtn.addEventListener("click", async (e) => {
+  e.preventDefault();
 
-      const category = categorySelect?.value;
-      const note = notesInput?.value.trim();
-      const date = dateInput?.value;
-      const targetUser = (activeRole === "admin" || activeRole === "teacher") && studentSelect.value ? studentSelect.value : user.id;
+  const category = categorySelect?.value;
+  const note = notesInput?.value.trim();
+  const date = dateInput?.value;
 
-      // ✅ Points logic
-      let points = null;
-      if (category === "Practice") {
-        points = 5; // ✅ Auto-assign for Practice
-      } else if (activeRole === "admin" || activeRole === "teacher") {
-        points = parseInt(pointsInput?.value);
-      }
+  // ✅ If user is student, auto-assign their ID
+  const targetUser = (activeRole === "admin" || activeRole === "teacher") && studentSelect.value
+    ? studentSelect.value
+    : user.id;
 
-      if (!category || !date || points === null || isNaN(points)) {
-        alert("Please complete required fields.");
-        return;
-      }
+  // ✅ Points logic
+  let points = null;
+  if (category === "Practice") {
+    points = 5; // ✅ Always assign 5 for Practice
+  } else if (activeRole === "admin" || activeRole === "teacher") {
+    // ✅ Teachers/Admins may input points, but it's optional
+    const enteredPoints = parseInt(pointsInput?.value);
+    if (!isNaN(enteredPoints)) points = enteredPoints;
+  }
 
-      const { error: logErr } = await supabase.from("logs").insert([{
-        user: targetUser,
-        category,
-        note,
-        date,
-        points,
-        status: "pending" // ✅ Default pending status for approval
-      }]);
+  // ✅ Validation: Category & Date must be filled, but points is not required for students
+  if (!category || !date) {
+    alert("Please complete category and date.");
+    return;
+  }
 
-      if (logErr) {
-        console.error("Failed to save log:", logErr.message);
-        alert("Error saving log.");
-      } else {
-        alert("Points logged!");
-        window.location.href = "index.html";
-      }
-    });
+  const { error: logErr } = await supabase.from("logs").insert([{
+    user: targetUser,
+    category,
+    note,
+    date,
+    points,           // ✅ Can be null for non-practice logs
+    status: "pending" // ✅ Always pending initially
+  }]);
+
+  if (logErr) {
+    console.error("Failed to save log:", logErr.message);
+    alert("Error saving log.");
+  } else {
+    alert("✅ Log submitted successfully!");
+    window.location.href = "index.html";
+  }
+});
   }
 
   // ✅ Cancel button → back to home
