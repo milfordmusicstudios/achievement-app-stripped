@@ -33,18 +33,29 @@ function getFilteredAndSortedUsers() {
   const query = searchQuery.trim().toLowerCase();
 
   let filtered = allUsers.filter(u => {
+    // ✅ Safely build teacher name string
     const teacherNames = ((Array.isArray(u.teacherIds) ? u.teacherIds : [])).map(id => {
       const teacher = allUsers.find(t => String(t.id) === String(id));
       return teacher ? `${teacher.firstName} ${teacher.lastName}`.toLowerCase() : "";
     }).join(" ");
 
+    // ✅ Normalize roles
     const rolesText = Array.isArray(u.roles) ? u.roles.join(" ").toLowerCase() : String(u.roles || "").toLowerCase();
-    const instrumentText = Array.isArray(u.instrument) ? u.instrument.join(" ").toLowerCase() : String(u.instrument || "").toLowerCase();
+
+    // ✅ Normalize instrument (handles string, array, null, or objects)
+    const instrumentText = Array.isArray(u.instrument)
+      ? u.instrument.join(" ").toLowerCase()
+      : (typeof u.instrument === "string" ? u.instrument.toLowerCase() : "");
+
+    // ✅ Fields to search
+    const first = String(u.firstName || "").toLowerCase();
+    const last = String(u.lastName || "").toLowerCase();
+    const email = String(u.email || "").toLowerCase();
 
     return (
-      String(u.firstName || "").toLowerCase().includes(query) ||
-      String(u.lastName || "").toLowerCase().includes(query) ||
-      String(u.email || "").toLowerCase().includes(query) ||
+      first.includes(query) ||
+      last.includes(query) ||
+      email.includes(query) ||
       instrumentText.includes(query) ||
       teacherNames.includes(query) ||
       rolesText.includes(query)
