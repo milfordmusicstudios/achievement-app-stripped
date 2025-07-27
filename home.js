@@ -92,24 +92,24 @@ function updateHomeUI(userData, activeRole, currentLevel, nextLevel) {
   }
 
   // ✅ Progress Bar (Dynamic % & Color)
-  const progressBar = document.getElementById("homeProgressBar");
-  const progressText = document.getElementById("homeProgressText");
+const progressBar = document.getElementById("homeProgressBar");
+const progressLabel = document.getElementById("homeProgressLabel");
   const levelTitle = document.querySelector("#progressCard h3");
 
   if (levelTitle) levelTitle.style.color = "white";
 
-  if (progressBar && progressText && currentLevel) {
-    let percent = 100;
-    if (nextLevel) {
-      percent = ((userData.points - currentLevel.minPoints) /
-        (nextLevel.minPoints - currentLevel.minPoints)) * 100;
-    }
-    percent = Math.min(100, Math.max(0, percent));
-
-    progressBar.style.width = percent + "%";
-    progressBar.style.backgroundColor = userData.levelColor;
-    progressText.textContent = `${Math.round(percent)}%`;
+if (progressBar && progressLabel && currentLevel) {
+  let percent = 100;
+  if (nextLevel) {
+    percent = ((userData.points - currentLevel.minPoints) /
+      (nextLevel.minPoints - currentLevel.minPoints)) * 100;
   }
+  percent = Math.min(100, Math.max(0, percent));
+
+  progressBar.style.width = percent + "%";
+  progressBar.style.backgroundColor = userData.levelColor;
+  progressLabel.textContent = `${Math.round(percent)}% to next level`;
+}
 
   // ✅ Role-based UI visibility
   const myPointsBtn = document.getElementById("myPointsBtn");
