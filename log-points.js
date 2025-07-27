@@ -115,7 +115,7 @@ submitBtn.addEventListener("click", async (e) => {
   const { error: logErr } = await supabase.from("logs").insert([{
     user: targetUser,
     category,
-    note,
+    notes: note,
     date,
     points,           // ✅ Can be null for non-practice logs
     status: "pending" // ✅ Always pending initially
