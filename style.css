@@ -1353,3 +1353,15 @@ body.manage-users h2.page-title {
 #userTable td:nth-child(7) { width: 15%; }   /* Instrument */
 #userHeaderTable th:nth-child(8),
 #userTable td:nth-child(8) { width: 5%; }    /* Save button */
+#userTable td input[type="text"],
+#userTable td input[type="email"] {
+  padding: 4px 6px;
+  margin: 2px;   /* ✅ adds spacing */
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+#userTable td {
+  padding: 8px 6px;   /* ✅ extra padding between text and borders */
+}
