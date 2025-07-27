@@ -1,40 +1,47 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>My Points | Achievement App</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css">
   <script type="module" src="my-points.js" defer></script>
 </head>
 <body>
   <main class="app">
+
     <!-- Top Bar -->
-    <div style="display:flex;justify-content:space-between;align-items:center;margin:10px 20px;">
+    <header style="display:flex; justify-content:space-between; align-items:center; padding:10px;">
       <button class="blue-button" onclick="window.location.href='index.html'">Home</button>
-<img id="levelBadge" src="images/levelBadges/default.png" alt="Level Badge">
-    </div>
+      <img id="levelBadge" src="images/levelBadges/level1.png" alt="Level Badge" 
+           style="width:80px; height:auto; margin-right:10px;">
+    </header>
 
     <!-- Page Title -->
-    <h2 style="text-align:center;color:#00477d;margin-top:10px;">My Points</h2>
+    <h2 style="text-align:center; color:#00477d; margin:10px 0;">My Points</h2>
 
-    <!-- Category Summary Cards -->
-    <div id="categorySummary" class="category-summary"></div>
+    <!-- Category Summary -->
+    <section id="categorySummary" class="category-summary">
+      <!-- Cards dynamically inserted by JS -->
+    </section>
 
-    <!-- Logs Table Section -->
-    <div id="logsSection" class="logs-container"style="overflow-x:auto;"></div>
+    <!-- Logs Table -->
+    <section id="logsSection" class="logs-container">
       <table id="logsTable">
         <thead>
           <tr>
-<th>Category</th>
-<th>Date</th>
-<th>Points</th>
-<th>Note</th>
+            <th>Category</th>
+            <th>Date</th>
+            <th>Points</th>
+            <th>Note</th>
           </tr>
         </thead>
-        <tbody id="logsTableBody"></tbody>
+        <tbody>
+          <!-- Logs dynamically inserted by JS -->
+        </tbody>
       </table>
-    </div>
+    </section>
+
   </main>
 </body>
 </html>
