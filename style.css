@@ -1604,12 +1604,10 @@ body.white-page form input {
     text-overflow: unset;
   }
 }
-
+/*force*/
 
 /* Extend scrollable area slightly */
 .scroll-wrapper .level-bars {
   display: block;
   min-width: calc(1200px + 80px); /* ✅ adds extra scroll room */
 }
-
-/*trigger redeploy*/
