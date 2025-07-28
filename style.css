@@ -1551,3 +1551,37 @@ body.white-page form input {
   align-items: center;
   min-width: 1200px; /* ensures scrolling */
 }
+
+.leaderboard-header {
+  position: sticky;       /* keeps it visible while scrolling */
+  top: 0;                 /* sticks to top */
+  background: white;      /* ensures text stays readable */
+  z-index: 1000;          /* keeps it above other content */
+  padding: 10px 20px;
+  text-align: center;
+  border-bottom: 1px solid #ddd; /* optional subtle divider */
+}
+
+/* Ensure the Home button stays on the left */
+.leaderboard-header .blue-button {
+  position: absolute;
+  left: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* Center title normally on larger screens */
+.leaderboard-title {
+  margin: 0 auto;
+  color: #00477d;
+}
+
+/* On very small screens, avoid overlapping */
+@media (max-width: 480px) {
+  .leaderboard-title {
+    font-size: 18px;
+    max-width: calc(100% - 100px); /* leaves room for the button */
+    text-align: center;
+    display: inline-block;
+  }
+}
