@@ -1,14 +1,12 @@
 import { supabase } from './supabase.js';
 
 document.addEventListener("DOMContentLoaded", async () => {
-  // Show popup immediately
   const popup = document.getElementById("loadingPopup");
   if (popup) popup.style.display = "flex";
 
-  await updateAllUsersLevels();   // ✅ First, sync points & levels
-  await generateLeaderboard();    // ✅ Then render leaderboard
+  await updateAllUsersLevels();
+  await generateLeaderboard();
 
-  // Hide popup when loading completes
   if (popup) popup.style.display = "none";
 });
 
@@ -45,7 +43,7 @@ async function updateAllUsersLevels() {
   }
 }
 
-// 🔹 Step 2: Render the leaderboard with scrollable level tracks
+// 🔹 Step 2: Render leaderboard (one scroll for all)
 async function generateLeaderboard() {
   const container = document.getElementById("leaderboardContainer");
   if (!container) return;
@@ -65,7 +63,7 @@ async function generateLeaderboard() {
       const levelRow = document.createElement("div");
       levelRow.classList.add("level-row");
 
-      // 🔹 Level Badge (Left)
+      // 🔹 Level Badge
       const badge = document.createElement("img");
       badge.src = level.badge || `images/levelBadges/level${level.id}.png`;
       badge.classList.add("level-badge-icon");
@@ -73,15 +71,12 @@ async function generateLeaderboard() {
       badge.style.width = "60px";
       badge.style.height = "60px";
 
-      // 🔹 Scrollable Container for Track
-      const scrollBox = document.createElement("div");
-      scrollBox.classList.add("level-scroll-box");
-
-      // 🔹 Level Track
+      // 🔹 Level Track (wider than screen)
       const levelTrack = document.createElement("div");
       levelTrack.classList.add("level-track");
       levelTrack.style.backgroundColor = level.color || "#3eb7f8";
       levelTrack.style.border = `4px solid ${darkenColor(level.color || "#3eb7f8")}`;
+      levelTrack.style.minWidth = "1200px"; // ⬅️ makes the track wider
 
       const avatarTrack = document.createElement("div");
       avatarTrack.classList.add("avatar-track");
@@ -119,10 +114,8 @@ async function generateLeaderboard() {
       });
 
       levelTrack.appendChild(avatarTrack);
-      scrollBox.appendChild(levelTrack);
-
       levelRow.appendChild(badge);
-      levelRow.appendChild(scrollBox);
+      levelRow.appendChild(levelTrack);
       container.appendChild(levelRow);
     }
   } catch (err) {
