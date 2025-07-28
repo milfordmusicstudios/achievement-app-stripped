@@ -27,9 +27,34 @@
     .settings-form img.avatar {
       display: block;
       width: 120px;
+      height: auto;
       border-radius: 20px;
       margin: 0 auto;
       cursor: pointer;
+      position: relative;
+    }
+    .avatar-wrapper {
+      position: relative;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .avatar-overlay {
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.6);
+      color: white;
+      padding: 5px 10px;
+      font-size: 14px;
+      border-radius: 0 0 10px 10px;
+      pointer-events: none;
+    }
+    .settings-form input {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 16px;
+      font-size: 16px;
     }
     .button-row {
       display: flex;
@@ -37,40 +62,22 @@
       gap: 10px;
       margin-bottom: 10px;
     }
-    .blue-button { flex: 1; }
-    .modal-overlay {
-      display: none;
-      position: fixed;
-      top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.6);
-      justify-content: center;
-      align-items: center;
-      z-index: 999;
-    }
-    .modal-box {
-      background: white;
-      padding: 20px;
-      border-radius: 10px;
-      width: 90%;
-      max-width: 400px;
-    }
-    .modal-box input {
-      width: 100%;
-      margin-bottom: 10px;
-      padding: 8px;
+    .blue-button {
+      flex: 1;
     }
   </style>
 </head>
 <body class="white-page">
+
 <main class="app">
-  <h2 style="text-align: center; color: #3399e8;">Account Settings</h2>
+  <h2 style="text-align: center; color: #3399e8; margin: 10px 0;">Account Settings</h2>
 
   <form class="settings-form">
     <div class="avatar-wrapper">
       <img id="avatarImage" class="avatar" src="" alt="Your avatar" />
       <div class="avatar-overlay">Click to change avatar</div>
     </div>
-    <input type="file" id="avatarInput" accept="image/*" style="display:none;" />
+    <input type="file" id="avatarInput" accept="image/*" style="display: none;" />
 
     <input type="text" id="firstName" placeholder="First Name" />
     <input type="text" id="lastName" placeholder="Last Name" />
@@ -90,54 +97,40 @@
     <div class="button-row">
       <button id="logoutBtn" type="button" class="blue-button">Logout</button>
     </div>
-
-    <div class="button-row">
-      <button id="addChildBtn" type="button" class="blue-button">Add Child</button>
-    </div>
   </form>
 </main>
 
-<!-- ✅ Add Child Modal -->
-<div id="addChildModal" class="modal-overlay">
-  <div class="modal-box">
-    <h3>Add Child Account</h3>
-    <input type="text" id="childFirstName" placeholder="First Name">
-    <input type="text" id="childLastName" placeholder="Last Name">
-    
-    <!-- ✅ Teacher Selection -->
-<label>Assigned Teacher(s)</label>
-<div id="childTeacherTags" class="tag-container" data-type="teacherIds"></div>
-    
-    <input type="text" id="childInstrument" placeholder="Instrument">
-    <div class="button-row">
-      <button id="createChildBtn" class="blue-button">Create</button>
-      <button id="cancelChildBtn" class="blue-button">Cancel</button>
+
+  <!-- Switch User Modal -->
+  <div id="userSwitchModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 999;">
+    <div style="background: white; padding: 20px; border-radius: 10px; max-width: 300px; width: 90%;">
+      <h3>Select User</h3>
+      <ul id="userSwitchList" style="list-style: none; padding: 0;"></ul>
+      <button id="cancelUserSwitchBtn" class="blue-button" style="margin-top: 10px; width: 100%;">Cancel</button>
     </div>
   </div>
-</div>
 
-<!-- ✅ Role Switch Modal -->
-<div id="roleSwitchModal" class="modal-overlay" style="display:none;">
-  <div class="modal-box">
-    <h3>Switch Role</h3>
-    <ul id="roleSwitchList"></ul> <!-- ✅ MUST EXIST -->
-    <button class="blue-button" onclick="document.getElementById('roleSwitchModal').style.display='none'">Close</button>
+  <!-- Switch Role Modal -->
+  <div id="roleSwitchModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 999;">
+    <div style="background: white; padding: 20px; border-radius: 10px; max-width: 300px; width: 90%;">
+      <h3>Select Role</h3>
+      <ul id="roleSwitchList" style="list-style: none; padding: 0;"></ul>
+      <button id="cancelRoleSwitchBtn" class="blue-button" style="margin-top: 10px; width: 100%;">Cancel</button>
+    </div>
   </div>
-</div>
 
-<!-- ✅ User Switch Modal -->
-<div id="userSwitchModal" class="modal-overlay" style="display:none;">
-  <div class="modal-box">
-    <h3>Switch User</h3>
-    <ul id="userSwitchList"></ul> <!-- ✅ MUST EXIST -->
-    <button class="blue-button" onclick="document.getElementById('userSwitchModal').style.display='none'">Close</button>
-  </div>
-</div>
-
-
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      document.getElementById("cancelUserSwitchBtn")?.addEventListener("click", () => {
+        document.getElementById("userSwitchModal").style.display = "none";
+      });
+      document.getElementById("cancelRoleSwitchBtn")?.addEventListener("click", () => {
+        document.getElementById("roleSwitchModal").style.display = "none";
+      });
+    });
+  </script>
 <script src="config.js"></script>
 <script type="module" src="supabase.js"></script>
 <script type="module" src="settings.js"></script>
-
 </body>
 </html>
