@@ -1698,3 +1698,23 @@ body.white-page main.app {
 #logForm td {
   padding: 5px;
 }
+/* ✅ Make the action bar responsive */
+@media (max-width: 600px) {
+  #actionBar {
+    flex-wrap: wrap;          /* allow wrapping to multiple lines */
+    justify-content: center;  /* center items when wrapped */
+    gap: 8px;                 /* add spacing */
+  }
+
+  #actionBar #searchInput {
+    width: 100%;              /* full width on mobile */
+    max-width: 260px;         /* prevent excessive size */
+    margin-bottom: 5px;
+  }
+
+  #actionBar button {
+    flex: 1 1 auto;           /* buttons scale evenly */
+    min-width: 120px;
+    text-align: center;
+  }
+}

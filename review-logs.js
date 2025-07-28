@@ -31,9 +31,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       .order("date", { ascending: false });
     if (logsError) throw logsError;
 
-    const { data: usersData, error: usersError } = await supabase
-      .from("users")
-      .select("id, firstName, lastName");
+const { data: usersData, error: usersError } = await supabase
+  .from("users")
+  .select("id, firstName, lastName, teacherIds");
     if (usersError) throw usersError;
 
     users = usersData;
@@ -43,6 +43,14 @@ document.addEventListener("DOMContentLoaded", async () => {
                 " " +
                 (users.find(u => u.id === l.userId)?.lastName || "")
     }));
+// ✅ Restrict logs for teacher role
+if (activeRole === "teacher") {
+  const myStudents = users
+    .filter(u => Array.isArray(u.teacherIds) && u.teacherIds.includes(user.id))
+    .map(s => s.id);
+
+  logs = logs.filter(l => myStudents.includes(l.userId));
+}
 
     filteredLogs = [...logs];
     renderCategorySummary(filteredLogs);

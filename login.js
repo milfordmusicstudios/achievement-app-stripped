@@ -10,6 +10,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const email = document.getElementById('loginEmail').value.trim().toLowerCase();
     const password = document.getElementById('loginPassword').value;
 
+    if (!data?.user) {
+  errorDisplay.style.display = 'block';
+  errorDisplay.textContent = 'Login failed. No user returned.';
+  console.error("Login debug:", error);
+  return;
+}
+
+
     if (!email || !password) {
       errorDisplay.style.display = 'block';
       errorDisplay.textContent = 'Please enter both email and password.';
