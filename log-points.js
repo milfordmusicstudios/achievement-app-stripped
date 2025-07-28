@@ -80,13 +80,21 @@ document.addEventListener("DOMContentLoaded", async () => {
         return false;
       });
 
-      studentSelect.innerHTML = "<option value=''>Select a student</option>";
-      filtered.forEach(s => {
-        const opt = document.createElement("option");
-        opt.value = s.id;
-        opt.textContent = `${s.firstName} ${s.lastName}`;
-        studentSelect.appendChild(opt);
-      });
+// ✅ Sort students alphabetically by First Name, then Last Name
+const sorted = filtered.sort((a, b) => {
+  const nameA = `${a.firstName} ${a.lastName}`.toLowerCase();
+  const nameB = `${b.firstName} ${b.lastName}`.toLowerCase();
+  return nameA.localeCompare(nameB);
+});
+
+// ✅ Populate dropdown
+studentSelect.innerHTML = "<option value=''>Select a student</option>";
+sorted.forEach(s => {
+  const opt = document.createElement("option");
+  opt.value = s.id;
+  opt.textContent = `${s.firstName} ${s.lastName}`;
+  studentSelect.appendChild(opt);
+});
     }
   }
 
