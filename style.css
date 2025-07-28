@@ -1231,7 +1231,7 @@ body.manage-users h2.page-title {
   width: 95%;
   margin: 0 auto 10px auto;
   max-height: 600px;  /* ✅ increased height to fit 7–8 rows */
-  overflow-y: auto;
+  overflow-y: visible;
   border: 1px solid #ddd;
   border-radius: 5px;
 }
@@ -1651,12 +1651,50 @@ body.white-page main.app {
 /* ✅ Make Review Logs scrollable as one unit */
 @media (max-width: 768px) {
   #logsWrapper {
-    overflow-x: auto;             /* allows horizontal scroll for everything */
+    overflow-x: auto;   
+    overflow-y: hidden;          /* allows horizontal scroll for everything */
     display: block;
+    -webkit-overflow-scrolling: touch;
+
   }
   #logsHeaderTable,
   #logsTable {
     min-width: 900px;             /* ensures readability */
     width: auto;
   }
+}
+/* ✅ Single scroll container for Review Logs */
+#logsWrapper {
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+}
+
+#logsWrapper table {
+  min-width: 950px;
+  width: auto;
+  border-collapse: collapse;
+}
+/* ✅ Remove inner scroll and allow the wrapper to handle it */
+#usersScrollWrapper {
+  overflow-x: auto;
+  overflow-y: hidden;
+  width: 100%;
+}
+
+#usersScrollWrapper table {
+  min-width: 950px;
+  width: auto;
+}
+
+/* ✅ Align log points table perfectly */
+#logForm table {
+  margin: 0 auto;
+  width: 96%;
+  box-sizing: border-box;
+}
+
+#logForm td {
+  padding: 5px;
 }
