@@ -44,7 +44,7 @@ body {
 }
 
 /* On small screens, make it full width */
-@media (max-width: 400px) {
+@media (max-width: 350px) {
   .app {
     width: 100%;
     max-width: 100%;

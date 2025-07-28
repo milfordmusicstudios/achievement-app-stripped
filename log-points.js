@@ -27,13 +27,15 @@ document.addEventListener("DOMContentLoaded", async () => {
   // ✅ Show default category preview
   if (previewImage) previewImage.src = "images/categories/allCategories.png";
 
-  // ✅ Load categories from Supabase
+  // ✅ Load categories
   const { data: categories, error: catErr } = await supabase
     .from("categories")
     .select("*")
     .order("id", { ascending: true });
 
-  if (!catErr && categories && categorySelect) {
+  if (catErr) console.error("Error loading categories:", catErr.message);
+
+  if (categories && categorySelect) {
     categorySelect.innerHTML = "<option value=''>Category</option>";
     categories.forEach(cat => {
       const opt = document.createElement("option");
@@ -43,33 +45,39 @@ document.addEventListener("DOMContentLoaded", async () => {
       categorySelect.appendChild(opt);
     });
 
-    // ✅ Category change → update preview and points
+    // ✅ Category preview
     categorySelect.addEventListener("change", () => {
       const selected = categorySelect.value;
-      if (previewImage) {
-        previewImage.src = selected ? `images/categories/${selected.toLowerCase()}.png` : "images/categories/allCategories.png";
-      }
-      // ✅ Auto-assign 5 points for Practice
+      previewImage.src = selected ? `images/categories/${selected.toLowerCase()}.png` : "images/categories/allCategories.png";
       if (selected === "practice") {
-        if (pointsInput) pointsInput.value = 5;
+        pointsInput.value = 5;
       } else if (pointsInput && (activeRole === "admin" || activeRole === "teacher")) {
         pointsInput.value = "";
       }
     });
   }
 
-  // ✅ Populate student list only for teachers/admins
+  // ✅ Populate students only for teachers/admins
   if ((activeRole === "admin" || activeRole === "teacher") && studentSelect) {
     const { data: students, error: stuErr } = await supabase
       .from("users")
-      .select("id, firstName, lastName, roles, teachers");
+      .select("id, firstName, lastName, roles, teacherIds");
 
-    if (!stuErr && students) {
+    if (stuErr) {
+      console.error("Supabase error loading students:", stuErr.message);
+    } else if (students) {
       const filtered = students.filter(s => {
         const roles = Array.isArray(s.roles) ? s.roles : [s.roles];
         const isStudent = roles.includes("student");
+
         if (activeRole === "admin") return isStudent;
-        if (activeRole === "teacher") return isStudent && s.teachers?.includes(user.id);
+
+        if (activeRole === "teacher") {
+          const teacherList = Array.isArray(s.teacherIds) ? s.teacherIds : [];
+          return isStudent && teacherList.includes(user.id);
+        }
+
+        return false;
       });
 
       studentSelect.innerHTML = "<option value=''>Select a student</option>";
@@ -82,62 +90,57 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  // ✅ Submit form → save log
+  // ✅ Submit log
   if (submitBtn) {
-submitBtn.addEventListener("click", async (e) => {
-  e.preventDefault();
+    submitBtn.addEventListener("click", async (e) => {
+      e.preventDefault();
 
-  const category = categorySelect?.value;
-  const note = notesInput?.value.trim();
-  const date = dateInput?.value;
+      const category = categorySelect?.value;
+      const note = notesInput?.value.trim();
+      const date = dateInput?.value;
 
-  // ✅ If user is student, auto-assign their ID
-  const targetUser = (activeRole === "admin" || activeRole === "teacher") && studentSelect.value
-    ? studentSelect.value
-    : user.id;
+      const targetUser = (activeRole === "admin" || activeRole === "teacher") && studentSelect.value
+        ? studentSelect.value
+        : user.id;
 
-  // ✅ Points logic
-  let points = null;
-  if (category === "practice") {
-    points = 5; // ✅ Always assign 5 for Practice
-  } else if (activeRole === "admin" || activeRole === "teacher") {
-    // ✅ Teachers/Admins may input points, but it's optional
-    const enteredPoints = parseInt(pointsInput?.value);
-    if (!isNaN(enteredPoints)) points = enteredPoints;
+      let points = null;
+      if (category === "practice") {
+        points = 5;
+      } else if (activeRole === "admin" || activeRole === "teacher") {
+        const enteredPoints = parseInt(pointsInput?.value);
+        if (!isNaN(enteredPoints)) points = enteredPoints;
+      }
+
+      if (!category || !date) {
+        alert("Please complete category and date.");
+        return;
+      }
+
+      let status = "pending";
+      if (!(activeRole === "admin" || activeRole === "teacher") && category === "practice") {
+        status = "approved";
+      }
+
+      const { error: logErr } = await supabase.from("logs").insert([{
+        userId: targetUser,
+        category,
+        notes: note,
+        date,
+        points,
+        status
+      }]);
+
+      if (logErr) {
+        console.error("Failed to save log:", logErr.message);
+        alert("Error saving log.");
+      } else {
+        alert("✅ Log submitted successfully!");
+        window.location.href = "index.html";
+      }
+    });
   }
 
-  // ✅ Validation: Category & Date must be filled, but points is not required for students
-  if (!category || !date) {
-    alert("Please complete category and date.");
-    return;
-  }
-
-// ✅ Status: auto-approve practice logs from students
-let status = "pending";
-if (!(activeRole === "admin" || activeRole === "teacher") && category === "practice") {
-  status = "approved";
-}
-
-const { error: logErr } = await supabase.from("logs").insert([{
-  userId: targetUser,
-  category,
-  notes: note,
-  date,
-  points,
-  status
-}]);
-
-  if (logErr) {
-    console.error("Failed to save log:", logErr.message);
-    alert("Error saving log.");
-  } else {
-    alert("✅ Log submitted successfully!");
-    window.location.href = "index.html";
-  }
-});
-  }
-
-  // ✅ Cancel button → back to home
+  // ✅ Cancel → home
   if (cancelBtn) {
     cancelBtn.addEventListener("click", () => {
       window.location.href = "index.html";
