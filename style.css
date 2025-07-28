@@ -1063,6 +1063,7 @@ body.leaderboard-page .level-track {
 
 body.leaderboard-page .avatar-track {
   position: relative;
+  overflow: visible;
   width: 100%;
   height: 100%;
 }
@@ -1534,8 +1535,10 @@ body.white-page form input {
 }
 
 .level-track {
-  min-width: 800px; /* makes it scrollable */
+  min-width: 1200px; /* makes it scrollable */
   position: relative;
+  padding-right: 40px;
+  overflow: visible;
   height: 80px;
 }
 
@@ -1553,35 +1556,40 @@ body.white-page form input {
 }
 
 .leaderboard-header {
-  position: sticky;       /* keeps it visible while scrolling */
-  top: 0;                 /* sticks to top */
-  background: white;      /* ensures text stays readable */
-  z-index: 1000;          /* keeps it above other content */
-  padding: 10px 20px;
-  text-align: center;
-  border-bottom: 1px solid #ddd; /* optional subtle divider */
+  position: sticky;
+  top: 0;
+  background: white;
+  z-index: 1000;
+  height: 50px;               /* fixed height */
+  display: flex;
+  justify-content: center;    /* centers title horizontally */
+  align-items: center;
+  padding: 0 20px;
+  border-bottom: 1px solid #ddd;
 }
-
-/* Ensure the Home button stays on the left */
+/* Home button stays outside the title's center alignment */
 .leaderboard-header .blue-button {
   position: absolute;
-  left: 20px;
+  left: 10px;
   top: 50%;
   transform: translateY(-50%);
 }
 
-/* Center title normally on larger screens */
+/* Title styling */
 .leaderboard-title {
-  margin: 0 auto;
+  margin: 0;
+  font-size: 20px;
   color: #00477d;
+  white-space: nowrap;        /* prevents wrapping */
 }
 
-/* On very small screens, avoid overlapping */
+/* Mobile tweak: allow shrinking instead of wrapping */
 @media (max-width: 480px) {
   .leaderboard-title {
-    font-size: 18px;
-    max-width: calc(100% - 100px); /* leaves room for the button */
+    font-size: 16px;           /* shrink text on small screens */
+    max-width: 70%;            /* leaves room for the button */
+    overflow: hidden;
+    text-overflow: ellipsis;   /* adds "..." if it gets too long */
     text-align: center;
-    display: inline-block;
   }
 }
