@@ -1560,48 +1560,36 @@ body.white-page form input {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: auto;
+  flex-wrap: wrap; /* ✅ allows natural stacking */
 }
 
-/* Home button stays absolute on larger screens */
+/* Home button normally stays left */
 .leaderboard-header .blue-button {
-  position: absolute;
-  left: 20px;
-  top: 50%;
-  transform: translateY(-50%);
+  order: 1;
+  margin-right: auto;
+  transform: none;
+  position: relative;
 }
 
+/* Title next to button on desktop */
 .leaderboard-title {
-  margin: 0;
+  order: 2;
+  margin: 0 auto;
   font-size: 20px;
   color: #00477d;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
-/* ✅ On mobile: stack Home button on first row and title on second */
+/* ✅ On mobile: force two rows */
 @media (max-width: 480px) {
   .leaderboard-header {
-    display: block;             /* allow stacking */
+    flex-direction: column; /* ✅ stacks button and title */
     text-align: center;
-    padding: 8px;
-    height: auto;
   }
-
   .leaderboard-header .blue-button {
-    position: relative;         /* no absolute positioning */
-    transform: none;
-    display: inline-block;
-    margin-bottom: 5px;         /* space between button and title */
+    margin-bottom: 5px;
   }
-
   .leaderboard-title {
-    display: block;
-    max-width: 100%;
     font-size: 18px;
-    white-space: normal;        /* allow wrapping if needed */
-    text-overflow: unset;
   }
 }
 /*force*/
