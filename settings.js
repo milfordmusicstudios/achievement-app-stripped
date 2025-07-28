@@ -10,21 +10,28 @@ function capitalize(str) {
   return str ? str.charAt(0).toUpperCase() + str.slice(1) : "";
 }
 
-// ✅ Add Child Logic
+// ✅ UUID generator for child accounts
+function generateUUID() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
+// ✅ Create Child User
 async function createChildUser() {
   const currentUser = JSON.parse(localStorage.getItem("loggedInUser"));
 
   const child = {
+    id: generateUUID(), // ✅ unique ID for child
     firstName: document.getElementById("childFirstName").value.trim(),
     lastName: document.getElementById("childLastName").value.trim(),
     email: document.getElementById("childEmail").value.trim(),
     instrument: [document.getElementById("childInstrument").value.trim()],
     roles: ["student"],
     teacherIds: [],
-    parent_uuid: currentUser.id
+    parent_uuid: currentUser.id // ✅ link to parent
   };
-
-  delete child.id; // ✅ ensure Supabase generates UUID
 
   const { data, error } = await supabase.from("users").insert([child]).select();
 
@@ -37,7 +44,7 @@ async function createChildUser() {
   document.getElementById("addChildModal").style.display = "none";
 }
 
-// ✅ Add Event Listeners
+// ✅ Event Listeners
 document.addEventListener("DOMContentLoaded", async () => {
   const user = JSON.parse(localStorage.getItem("loggedInUser"));
   const activeRole = localStorage.getItem("activeRole");
@@ -54,14 +61,14 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById('newEmail').value = user.email || '';
   document.getElementById('avatarImage').src = user.avatarUrl || "images/logos/default.png";
 
-  // ✅ Button Listeners
+  // ✅ Buttons
   document.getElementById("saveBtn").addEventListener("click", e => { e.preventDefault(); saveSettings(); });
   document.getElementById("cancelBtn").addEventListener("click", () => window.location.href = "index.html");
   document.getElementById("logoutBtn").addEventListener("click", handleLogout);
   document.getElementById("switchRoleBtn").addEventListener("click", promptRoleSwitch);
   document.getElementById("switchUserBtn").addEventListener("click", promptUserSwitch);
 
-  // ✅ Add Child Button
+  // ✅ Add Child modal events
   document.getElementById("addChildBtn").addEventListener("click", () => {
     document.getElementById("addChildModal").style.display = "flex";
   });
