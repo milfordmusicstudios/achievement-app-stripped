@@ -1551,18 +1551,19 @@ body.white-page form input {
 }
 
 .leaderboard-header {
-  position: sticky;
+  position: sticky;     /* stays visible while scrolling */
   top: 0;
-  z-index: 1000;
   background: white;
+  z-index: 1000;
+  height: 50px;
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 50px;
+  padding: 0 20px;
   border-bottom: 1px solid #ddd;
 }
 
-/* Home button stays fixed on left */
+/* Home button stays on the left */
 .leaderboard-header .blue-button {
   position: absolute;
   left: 10px;
@@ -1570,22 +1571,26 @@ body.white-page form input {
   transform: translateY(-50%);
 }
 
-/* Title stays centered and doesn’t wrap */
+/* Default: centered title */
 .leaderboard-title {
   margin: 0;
   font-size: 20px;
   color: #00477d;
-  text-align: center;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: calc(100% - 120px); /* ✅ reserves space so it never goes under the button */
 }
 
-/* Slightly smaller on small screens */
+/* ✅ On small screens, move title to the right */
 @media (max-width: 480px) {
+  .leaderboard-header {
+    justify-content: flex-end;   /* title shifts to the right */
+    padding-right: 15px;
+  }
   .leaderboard-title {
     font-size: 16px;
+    max-width: 75%;
+    text-align: right;
   }
 }
 
