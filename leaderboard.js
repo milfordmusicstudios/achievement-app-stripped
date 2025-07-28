@@ -109,6 +109,12 @@ async function generateLeaderboard() {
         avatar.title = `${user.firstName} ${user.lastName} (${user.points} pts)`;
         avatar.style.left = `${adjustedLeft}%`;
         avatar.style.top = `${10 + bumpLevel * bumpY}px`;
+// ✅ Highlight and bring logged-in user's avatar to front
+const loggedInUser = JSON.parse(localStorage.getItem("loggedInUser"));
+if (loggedInUser && user.id === loggedInUser.id) {
+  avatar.style.zIndex = "999";              // Always on top
+  avatar.style.border = "3px solid gold";   // Optional highlight
+}
 
         avatarTrack.appendChild(avatar);
       });
