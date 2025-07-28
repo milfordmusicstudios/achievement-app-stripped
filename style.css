@@ -1592,10 +1592,10 @@ body.white-page form input {
   min-width: calc(1200px + 80px); /* ✅ adds extra scroll room */
 }
 
-/* ✅ Restrict FAQ, Login, and Log Points container widths */
+/* ✅ Restrict FAQ, Login, and Log Points container widths to be slightly narrower */
 body.white-page main.app {
-  width: 100%;
-  max-width: 500px;     /* same as Settings */
+  width: 95%;             /* ✅ leaves a small margin on both sides */
+  max-width: 480px;       /* ✅ slightly narrower than Settings (500px) */
   margin: 20px auto;
   padding: 20px;
   box-sizing: border-box;
@@ -1603,12 +1603,13 @@ body.white-page main.app {
   background: white;
 }
 
-/* ✅ On very small screens, allow full width */
+/* ✅ On very small screens, allow full width with small padding */
 @media (max-width: 480px) {
   body.white-page main.app {
-    max-width: 100%;
-    margin: 10px;
+    width: 92%;           /* ✅ still leaves breathing room */
+    max-width: none;
+    margin: 10px auto;
     border-radius: 8px;
-    padding: 10px;
+    padding: 12px;
   }
 }
