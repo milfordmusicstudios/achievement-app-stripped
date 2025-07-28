@@ -1,8 +1,15 @@
 import { supabase } from './supabase.js';
 
 document.addEventListener("DOMContentLoaded", async () => {
+  // Show popup immediately
+  const popup = document.getElementById("loadingPopup");
+  if (popup) popup.style.display = "flex";
+
   await updateAllUsersLevels();   // ✅ First, sync points & levels
   await generateLeaderboard();    // ✅ Then render leaderboard
+
+  // Hide popup when loading completes
+  if (popup) popup.style.display = "none";
 });
 
 // 🔹 Step 1: Sync all users' levels
