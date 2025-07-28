@@ -10,7 +10,7 @@ function capitalize(str) {
   return str ? str.charAt(0).toUpperCase() + str.slice(1) : "";
 }
 
-// ✅ UUID generator for child accounts
+// ✅ UUID generator for new child accounts
 function generateUUID() {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
     const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
@@ -18,23 +18,45 @@ function generateUUID() {
   });
 }
 
-// ✅ Create Child User
+// ✅ Load teacher options into the child modal
+async function loadChildTeachers() {
+  const { data: teachers, error } = await supabase.from("users").select("id, firstName, lastName, roles");
+  if (error) {
+    console.error("Error loading teachers:", error);
+    return;
+  }
+
+  const teacherSelect = document.getElementById("childTeacherIds");
+  teacherSelect.innerHTML = "";
+
+  teachers
+    .filter(t => Array.isArray(t.roles) && (t.roles.includes("teacher") || t.roles.includes("admin")))
+    .forEach(t => {
+      const opt = document.createElement("option");
+      opt.value = t.id;
+      opt.textContent = `${t.firstName} ${t.lastName}`;
+      teacherSelect.appendChild(opt);
+    });
+}
+
+// ✅ Create child user in Supabase
 async function createChildUser() {
   const currentUser = JSON.parse(localStorage.getItem("loggedInUser"));
 
+  const teacherIds = Array.from(document.getElementById('childTeacherIds').selectedOptions).map(o => o.value);
+
   const child = {
-    id: generateUUID(), // ✅ unique ID for child
+    id: generateUUID(), // ✅ unique ID
     firstName: document.getElementById("childFirstName").value.trim(),
     lastName: document.getElementById("childLastName").value.trim(),
-    email: document.getElementById("childEmail").value.trim(),
+    email: currentUser.email, // ✅ use parent’s email
     instrument: [document.getElementById("childInstrument").value.trim()],
     roles: ["student"],
-    teacherIds: [],
-    parent_uuid: currentUser.id // ✅ link to parent
+    teacherIds,
+    parent_uuid: currentUser.id // ✅ link child to parent
   };
 
-  const { data, error } = await supabase.from("users").insert([child]).select();
-
+  const { error } = await supabase.from("users").insert([child]);
   if (error) {
     alert("Error adding child: " + error.message);
     return;
@@ -44,44 +66,7 @@ async function createChildUser() {
   document.getElementById("addChildModal").style.display = "none";
 }
 
-// ✅ Event Listeners
-document.addEventListener("DOMContentLoaded", async () => {
-  const user = JSON.parse(localStorage.getItem("loggedInUser"));
-  const activeRole = localStorage.getItem("activeRole");
-
-  if (!user || !activeRole) {
-    alert("You must be logged in.");
-    window.location.href = "index.html";
-    return;
-  }
-
-  // Populate fields
-  document.getElementById('firstName').value = user.firstName || '';
-  document.getElementById('lastName').value = user.lastName || '';
-  document.getElementById('newEmail').value = user.email || '';
-  document.getElementById('avatarImage').src = user.avatarUrl || "images/logos/default.png";
-
-  // ✅ Buttons
-  document.getElementById("saveBtn").addEventListener("click", e => { e.preventDefault(); saveSettings(); });
-  document.getElementById("cancelBtn").addEventListener("click", () => window.location.href = "index.html");
-  document.getElementById("logoutBtn").addEventListener("click", handleLogout);
-  document.getElementById("switchRoleBtn").addEventListener("click", promptRoleSwitch);
-  document.getElementById("switchUserBtn").addEventListener("click", promptUserSwitch);
-
-  // ✅ Add Child modal events
-  document.getElementById("addChildBtn").addEventListener("click", () => {
-    document.getElementById("addChildModal").style.display = "flex";
-  });
-  document.getElementById("cancelChildBtn").addEventListener("click", () => {
-    document.getElementById("addChildModal").style.display = "none";
-  });
-  document.getElementById("createChildBtn").addEventListener("click", createChildUser);
-
-  // ✅ Avatar Upload
-  document.getElementById("avatarImage").addEventListener("click", () => document.getElementById("avatarInput").click());
-  document.getElementById("avatarInput").addEventListener("change", uploadAvatar);
-});
-
+// ✅ Save user settings
 async function saveSettings() {
   const user = JSON.parse(localStorage.getItem("loggedInUser"));
   const updatedUser = {
@@ -101,11 +86,13 @@ async function saveSettings() {
   }
 }
 
+// ✅ Logout
 function handleLogout() {
   localStorage.clear();
   window.location.href = "login.html";
 }
 
+// ✅ Role Switch
 function promptRoleSwitch() {
   const user = JSON.parse(localStorage.getItem("loggedInUser"));
   const roles = Array.isArray(user.roles) ? user.roles : [user.role];
@@ -126,6 +113,7 @@ function promptRoleSwitch() {
   document.getElementById("roleSwitchModal").style.display = "flex";
 }
 
+// ✅ User Switch
 function promptUserSwitch() {
   const user = JSON.parse(localStorage.getItem("loggedInUser"));
   const allUsers = JSON.parse(localStorage.getItem("allUsers")) || [];
@@ -150,6 +138,7 @@ function promptUserSwitch() {
   document.getElementById("userSwitchModal").style.display = "flex";
 }
 
+// ✅ Avatar Upload
 async function uploadAvatar() {
   const user = JSON.parse(localStorage.getItem("loggedInUser"));
   const file = document.getElementById("avatarInput").files[0];
@@ -163,3 +152,42 @@ async function uploadAvatar() {
   localStorage.setItem("loggedInUser", JSON.stringify(user));
   document.getElementById("avatarImage").src = urlData.publicUrl;
 }
+
+// ✅ DOM Ready
+document.addEventListener("DOMContentLoaded", async () => {
+  const user = JSON.parse(localStorage.getItem("loggedInUser"));
+  const activeRole = localStorage.getItem("activeRole");
+
+  if (!user || !activeRole) {
+    alert("You must be logged in.");
+    window.location.href = "index.html";
+    return;
+  }
+
+  // ✅ Populate user info
+  document.getElementById('firstName').value = user.firstName || '';
+  document.getElementById('lastName').value = user.lastName || '';
+  document.getElementById('newEmail').value = user.email || '';
+  document.getElementById('avatarImage').src = user.avatarUrl || "images/logos/default.png";
+
+  // ✅ Event bindings
+  document.getElementById("saveBtn").addEventListener("click", e => { e.preventDefault(); saveSettings(); });
+  document.getElementById("cancelBtn").addEventListener("click", () => window.location.href = "index.html");
+  document.getElementById("logoutBtn").addEventListener("click", handleLogout);
+  document.getElementById("switchRoleBtn").addEventListener("click", promptRoleSwitch);
+  document.getElementById("switchUserBtn").addEventListener("click", promptUserSwitch);
+
+  // ✅ Child Modal Events
+  document.getElementById("addChildBtn").addEventListener("click", async () => {
+    await loadChildTeachers();
+    document.getElementById("addChildModal").style.display = "flex";
+  });
+  document.getElementById("cancelChildBtn").addEventListener("click", () => {
+    document.getElementById("addChildModal").style.display = "none";
+  });
+  document.getElementById("createChildBtn").addEventListener("click", createChildUser);
+
+  // ✅ Avatar Click
+  document.getElementById("avatarImage").addEventListener("click", () => document.getElementById("avatarInput").click());
+  document.getElementById("avatarInput").addEventListener("change", uploadAvatar);
+});

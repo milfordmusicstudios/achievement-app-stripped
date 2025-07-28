@@ -103,7 +103,11 @@
     <h3>Add Child Account</h3>
     <input type="text" id="childFirstName" placeholder="First Name">
     <input type="text" id="childLastName" placeholder="Last Name">
-    <input type="email" id="childEmail" placeholder="Child Email">
+    
+    <!-- ✅ Teacher Selection -->
+    <label>Assigned Teacher(s)</label>
+    <select id="childTeacherIds" multiple style="width:100%; height:80px;"></select>
+    
     <input type="text" id="childInstrument" placeholder="Instrument">
     <div class="button-row">
       <button id="createChildBtn" class="blue-button">Create</button>
