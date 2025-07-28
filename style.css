@@ -8,13 +8,6 @@ body, html {
   color: #333;
 }
 
-main.app {
-  width: 100%;          /* ✅ takes full screen width */
-  max-width: none;      /* ✅ prevent it from being capped */
-  margin: 0;            /* ✅ no auto-centering */
-  padding: 0;
-}
-
 
 main {
   padding-top: 0;
@@ -43,14 +36,6 @@ body {
   text-align: center;
 }
 
-/* On small screens, make it full width */
-@media (max-width: 350px) {
-  .app {
-    width: 350px;
-    max-width: 100%;
-    border-radius: 0;  /* optional: remove rounding */
-  }
-}
 
 /* Logo */
 .logo {
@@ -1469,7 +1454,9 @@ body.manage-users h2.page-title {
 #userHeaderTable th:last-child {
   border-top-right-radius: 6px;
 
-}body.white-page .app {
+}
+
+body.white-page .app {
   max-width: 400px;       /* ✅ center form */
   margin: 30px auto;
   padding: 20px;
@@ -1589,11 +1576,39 @@ body.white-page form input {
   .leaderboard-title {
     font-size: 18px;
   }
-}
+  body.white-page .app {
+  max-width: 300px;       /* ✅ center form */
+  margin: 30px auto;
+  padding: 20px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}}
 /*force*/
 
 /* Extend scrollable area slightly */
 .scroll-wrapper .level-bars {
   display: block;
   min-width: calc(1200px + 80px); /* ✅ adds extra scroll room */
+}
+
+/* ✅ Restrict FAQ, Login, and Log Points container widths */
+body.white-page main.app {
+  width: 100%;
+  max-width: 500px;     /* same as Settings */
+  margin: 20px auto;
+  padding: 20px;
+  box-sizing: border-box;
+  border-radius: 12px;
+  background: white;
+}
+
+/* ✅ On very small screens, allow full width */
+@media (max-width: 480px) {
+  body.white-page main.app {
+    max-width: 100%;
+    margin: 10px;
+    border-radius: 8px;
+    padding: 10px;
+  }
 }
