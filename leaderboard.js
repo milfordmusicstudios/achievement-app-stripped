@@ -15,7 +15,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 // 🔹 Step 1: Sync all users' levels
 async function updateAllUsersLevels() {
   try {
-    // Fetch data
     const [{ data: users, error: usersErr },
            { data: logs, error: logsErr },
            { data: levels, error: levelsErr }] = await Promise.all([
@@ -26,18 +25,15 @@ async function updateAllUsersLevels() {
 
     if (usersErr || logsErr || levelsErr) throw usersErr || logsErr || levelsErr;
 
-    // Loop through users and calculate points/level
     for (const user of users) {
       const userLogs = logs.filter(l => l.userId === user.id);
       const totalPoints = userLogs.reduce((sum, l) => sum + (l.points || 0), 0);
 
-      // Find correct level
       let userLevel = levels.find(l =>
         totalPoints >= Number(l.minPoints) && totalPoints <= Number(l.maxPoints)
       );
       if (!userLevel && levels.length > 0) userLevel = levels[levels.length - 1];
 
-      // Update in Supabase
       await supabase.from("users")
         .update({ points: totalPoints, level: userLevel?.id || 1 })
         .eq("id", user.id);
@@ -49,7 +45,7 @@ async function updateAllUsersLevels() {
   }
 }
 
-// 🔹 Step 2: Render the leaderboard (same as before but using updated points)
+// 🔹 Step 2: Render the leaderboard with scrollable level tracks
 async function generateLeaderboard() {
   const container = document.getElementById("leaderboardContainer");
   if (!container) return;
@@ -63,7 +59,6 @@ async function generateLeaderboard() {
       supabase.from("levels").select("*").order("minPoints", { ascending: true })
     ]);
 
-    // Sort levels highest → lowest
     const sortedLevels = [...levels].sort((a, b) => b.id - a.id);
 
     for (const level of sortedLevels) {
@@ -77,6 +72,10 @@ async function generateLeaderboard() {
       badge.style.marginRight = "10px";
       badge.style.width = "60px";
       badge.style.height = "60px";
+
+      // 🔹 Scrollable Container for Track
+      const scrollBox = document.createElement("div");
+      scrollBox.classList.add("level-scroll-box");
 
       // 🔹 Level Track
       const levelTrack = document.createElement("div");
@@ -92,7 +91,6 @@ async function generateLeaderboard() {
       users.forEach(user => {
         const isStudent = Array.isArray(user.roles) ? user.roles.includes("student") : user.roles === "student";
         if (!isStudent) return;
-
         if (user.level !== level.id) return;
 
         const percent = ((user.points - level.minPoints) / (level.maxPoints - level.minPoints)) * 100;
@@ -102,13 +100,13 @@ async function generateLeaderboard() {
         const maxStack = 3;
         let bumpLevel = 0;
         let adjustedLeft = percent;
+
         while (placedAvatars.some(p => Math.abs(p.left - adjustedLeft) < spacingThreshold && p.top === bumpLevel)) {
           bumpLevel++;
           if (bumpLevel >= maxStack) { bumpLevel = 0; adjustedLeft += bumpX; }
         }
         placedAvatars.push({ left: adjustedLeft, top: bumpLevel });
 
-        // Avatar
         const avatar = document.createElement("img");
         avatar.src = user.avatarUrl || "images/logos/default.png";
         avatar.classList.add("avatar");
@@ -121,8 +119,10 @@ async function generateLeaderboard() {
       });
 
       levelTrack.appendChild(avatarTrack);
+      scrollBox.appendChild(levelTrack);
+
       levelRow.appendChild(badge);
-      levelRow.appendChild(levelTrack);
+      levelRow.appendChild(scrollBox);
       container.appendChild(levelRow);
     }
   } catch (err) {

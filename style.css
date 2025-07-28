@@ -43,6 +43,14 @@ body {
   text-align: center;
 }
 
+/* On small screens, make it full width */
+@media (max-width: 400px) {
+  .app {
+    width: 100%;
+    max-width: 100%;
+    border-radius: 0;  /* optional: remove rounding */
+  }
+}
 
 /* Logo */
 .logo {
@@ -1511,4 +1519,23 @@ body.white-page form input {
 }
 .modal-overlay.show {
   display: flex !important;
+}
+
+.level-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.level-scroll-box {
+  overflow-x: auto;
+  flex: 1;
+  background: transparent;
+  white-space: nowrap;
+}
+
+.level-track {
+  min-width: 800px; /* makes it scrollable */
+  position: relative;
+  height: 80px;
 }
