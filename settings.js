@@ -26,24 +26,28 @@ async function loadChildTeachers() {
     return;
   }
 
-  const teacherSelect = document.getElementById("childTeacherIds");
-  teacherSelect.innerHTML = "";
+  const teacherList = teachers.filter(t => Array.isArray(t.roles) && (t.roles.includes("teacher") || t.roles.includes("admin")));
+  const container = document.getElementById("childTeacherTags");
+  container.innerHTML = "";
 
-  teachers
-    .filter(t => Array.isArray(t.roles) && (t.roles.includes("teacher") || t.roles.includes("admin")))
-    .forEach(t => {
-      const opt = document.createElement("option");
-      opt.value = t.id;
-      opt.textContent = `${t.firstName} ${t.lastName}`;
-      teacherSelect.appendChild(opt);
+  teacherList.forEach(t => {
+    const tag = document.createElement("span");
+    tag.className = "tag teacher-tag";
+    tag.dataset.id = t.id;
+    tag.textContent = `${t.firstName} ${t.lastName}`;
+    tag.addEventListener("click", () => {
+      tag.classList.toggle("selected");
     });
+    container.appendChild(tag);
+  });
 }
 
 // ✅ Create child user in Supabase
 async function createChildUser() {
   const currentUser = JSON.parse(localStorage.getItem("loggedInUser"));
 
-  const teacherIds = Array.from(document.getElementById('childTeacherIds').selectedOptions).map(o => o.value);
+const teacherIds = Array.from(document.querySelectorAll("#childTeacherTags .teacher-tag.selected"))
+  .map(tag => tag.dataset.id);
 
   const child = {
     id: generateUUID(), // ✅ unique ID

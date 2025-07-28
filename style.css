@@ -1460,7 +1460,7 @@ body.manage-users h2.page-title {
 }
 #userHeaderTable th:last-child {
   border-top-right-radius: 6px;
-  
+
 }body.white-page .app {
   max-width: 400px;       /* ✅ center form */
   margin: 30px auto;
@@ -1475,4 +1475,18 @@ body.white-page form input {
   max-width: 350px;       /* ✅ prevent stretching */
   margin: 10px auto;
   display: block;
+}
+
+.teacher-tag {
+  display: inline-block;
+  padding: 5px 10px;
+  margin: 3px;
+  border: 1px solid #00477d;
+  border-radius: 6px;
+  cursor: pointer;
+  background: #f8f8f8;
+}
+.teacher-tag.selected {
+  background: #00477d;
+  color: white;
 }
