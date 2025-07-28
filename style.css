@@ -1053,12 +1053,14 @@ body.leaderboard-page .level-badge-icon {
 body.leaderboard-page .level-track {
   position: relative;
   flex: 1;
-  height: 70px;
+  min-width: 1200px;      /* keeps it wide for scrolling */
+  height: 80px;           /* use the taller size */
   border-radius: 50px;
   background: #3eb7f8;
   border: 4px solid #222;
-  overflow: hidden;
   box-shadow: inset 0 0 6px rgba(0,0,0,0.3);
+  overflow: visible;      /* ✅ allows avatars to overflow */
+  padding-right: 60px;    /* ✅ gives extra scroll space */
 }
 
 body.leaderboard-page .avatar-track {
@@ -1534,20 +1536,13 @@ body.white-page form input {
   white-space: nowrap;
 }
 
-.level-track {
-  min-width: 1200px; /* makes it scrollable */
-  position: relative;
-  padding-right: 40px;
-  overflow: visible;
-  height: 80px;
-}
 
 /* Make the entire leaderboard scroll horizontally */
 .scroll-wrapper {
   overflow-x: auto;
   white-space: nowrap;
+  padding-bottom: 10px;      /* gives a little breathing room */
 }
-
 /* Keep rows side-by-side alignment */
 .level-row {
   display: flex;
