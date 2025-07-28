@@ -1077,10 +1077,8 @@ body.leaderboard-page .avatar {
   height: 50px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid white;
   box-shadow: 0 2px 4px rgba(0,0,0,0.3);
   transition: transform 0.2s ease;
-  background: white;
 }
 
 body.leaderboard-page .avatar:hover {
