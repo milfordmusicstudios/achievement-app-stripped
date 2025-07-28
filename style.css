@@ -1467,9 +1467,10 @@ body.white-page .app {
 
 body.white-page form input {
   width: 100%;            /* ✅ only fill container */
-  max-width: 350px;       /* ✅ prevent stretching */
+  max-width: 100%;       /* ✅ prevent stretching */
   margin: 10px auto;
   display: block;
+  box-sizing: border-box;
 }
 
 .teacher-tag {
@@ -1611,5 +1612,35 @@ body.white-page main.app {
     margin: 10px auto;
     border-radius: 8px;
     padding: 12px;
+  }
+}
+
+/* ✅ Make Review Logs table scroll horizontally on small screens */
+@media (max-width: 768px) {
+  #logsSection {
+    overflow-x: auto;          /* allows horizontal scroll */
+    overflow-y: auto;
+    white-space: nowrap;       /* prevent columns from wrapping */
+  }
+  #logsTable {
+    min-width: 800px;          /* ensures table doesn't squish */
+    width: auto;
+  }
+  #logsHeaderTable {
+    min-width: 800px;
+    width: auto;
+  }
+}
+
+/* ✅ Make Manage Users table scroll horizontally on small screens */
+@media (max-width: 768px) {
+  #usersScrollSection {
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  #userTable,
+  #userHeaderTable {
+    min-width: 900px;          /* keep columns readable */
+    width: auto;
   }
 }
