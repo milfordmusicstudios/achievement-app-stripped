@@ -1479,14 +1479,23 @@ body.white-page form input {
 
 .teacher-tag {
   display: inline-block;
-  padding: 5px 10px;
-  margin: 3px;
+  padding: 6px 12px;
+  margin: 4px;
   border: 1px solid #00477d;
   border-radius: 6px;
   cursor: pointer;
-  background: #f8f8f8;
+  background: #3eb7f8;   /* ✅ Button Blue */
+  color: white;          /* ✅ White text */
+  font-weight: 500;
+  transition: background 0.2s;
 }
+
+.teacher-tag:hover {
+  background: #3399e8;   /* ✅ Slightly darker on hover */
+}
+
 .teacher-tag.selected {
-  background: #00477d;
+  background: #00477d;   /* ✅ Dark Blue when selected */
   color: white;
+  border: 1px solid #00477d;
 }
