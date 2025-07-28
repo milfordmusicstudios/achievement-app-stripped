@@ -75,21 +75,23 @@ function renderUsers() {
 
   pageUsers.forEach(user => {
     const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td><input type="text" value="${user.firstName || ""}" onchange="updateField('${user.id}','firstName',this.value)"></td>
-      <td><input type="text" value="${user.lastName || ""}" onchange="updateField('${user.id}','lastName',this.value)"></td>
-      <td><input type="email" value="${user.email || ""}" onchange="updateField('${user.id}','email',this.value)"></td>
-      <td class="avatar-cell">
-        <img src="${user.avatarUrl || 'images/logos/default.png'}" class="avatar-preview">
-        <label class="upload-btn">Change
-          <input type="file" data-id="${user.id}" class="avatar-upload">
-        </label>
-      </td>
-      <td>${renderRoleTags(user)}</td>
-      <td>${renderTeacherTags(user)}</td>
-      <td><input type="text" value="${user.instrument || ""}" onchange="updateField('${user.id}','instrument',this.value)"></td>
-      <td><button id="save-${user.id}" class="blue-button" style="display:none;" onclick="saveUser('${user.id}')">Save</button></td>
-    `;
+tr.innerHTML = `
+  <td><input type="text" value="${user.firstName || ""}" onchange="updateField('${user.id}','firstName',this.value)"></td>
+  <td><input type="text" value="${user.lastName || ""}" onchange="updateField('${user.id}','lastName',this.value)"></td>
+  <td><input type="email" value="${user.email || ""}" onchange="updateField('${user.id}','email',this.value)"></td>
+  <td class="avatar-cell">
+    <img src="${user.avatarUrl || 'images/logos/default.png'}" class="avatar-preview">
+    <label class="upload-btn">Change
+      <input type="file" data-id="${user.id}" class="avatar-upload">
+    </label>
+  </td>
+  <td>${renderRoleTags(user)}</td>
+  <td>${renderTeacherTags(user)}</td>
+  <td><input type="text" value="${user.instrument || ""}" onchange="updateField('${user.id}','instrument',this.value)"></td>
+  <td>${user.points || 0}</td>               <!-- ✅ Display Points -->
+  <td>${user.level || "—"}</td>             <!-- ✅ Display Level -->
+  <td><button id="save-${user.id}" class="blue-button" style="display:none;" onclick="saveUser('${user.id}')">Save</button></td>
+`;
     tbody.appendChild(tr);
   });
 

@@ -127,4 +127,19 @@ document.addEventListener("DOMContentLoaded", async () => {
         </tr>`;
     });
   }
+  function syncHeaderWidths() {
+  const headerCells = document.querySelectorAll("#pointsHeaderTable th");
+  const firstRowCells = document.querySelectorAll("#logsTable tr:first-child td");
+  if (!firstRowCells.length) return;
+
+  headerCells.forEach((th, i) => {
+    if (firstRowCells[i]) {
+      th.style.width = firstRowCells[i].offsetWidth + "px";
+    }
+  });
+}
+
+// ✅ Call after logs are rendered
+new ResizeObserver(syncHeaderWidths).observe(document.querySelector("#logsTable"));
+
 });

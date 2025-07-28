@@ -1718,3 +1718,50 @@ body.white-page main.app {
     text-align: center;
   }
 }
+
+/* ✅ Fix Log Points content alignment on mobile */
+body.white-page #logForm table {
+  margin: 0 auto !important;
+  width: 100% !important;
+}
+
+body.white-page #logForm td {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+/* ✅ Make Review Logs header stick to the top of the screen */
+#logsHeaderTable thead th {
+  position: sticky;
+  top: 0;
+  z-index: 50;              /* ensure it stays above content */
+  background: #3eb7f8;      /* keep header color */
+  color: white;
+  border-bottom: 2px solid #00477d;
+}
+
+/* ✅ Also fix the header container */
+#logsHeaderTable {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+/* ✅ Make Manage Users header sticky */
+#userHeaderTable thead th {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: #3eb7f8;
+  color: white;
+  border-bottom: 2px solid #00477d;
+}
+/* ✅ Sticky Header for My Points */
+#pointsHeaderTable thead th {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: #3eb7f8;
+  color: white;
+  border-bottom: 2px solid #00477d;
+}
