@@ -4,6 +4,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const storedUser = JSON.parse(localStorage.getItem("loggedInUser"));
   const activeRole = localStorage.getItem("activeRole");
   const isParent = JSON.parse(localStorage.getItem("isParent") || "false");
+console.log("DEBUG isParent flag:", isParent);
 
   if (!storedUser || !activeRole) {
     alert("You must be logged in.");
