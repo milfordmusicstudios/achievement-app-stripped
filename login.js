@@ -77,40 +77,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
     console.log("DEBUG: Normalized roles", userData.roles);
 
-    // ✅ Check if parent account has multiple children
-    const { data: students, error: studentError } = await supabase
-      .from('users')
-      .select('id, "firstName", "lastName"')
-      .eq('parent_uuid', userData.id);
-
-    console.log("DEBUG: Student fetch", students, studentError);
-
-    if (!studentError && students && students.length > 1) {
-      console.log("DEBUG: Multiple students found, showing modal");
-      const overlay = document.getElementById('studentSelectOverlay');
-      const btnContainer = document.getElementById('studentButtons');
-      btnContainer.innerHTML = '';
-
-      students.forEach(st => {
-        const btn = document.createElement('button');
-        btn.textContent = `${st.firstName} ${st.lastName}`;
-        btn.className = 'blue-button';
-        btn.style.margin = '5px 0';
-        btn.onclick = () => selectStudent(st.id, userData);
-        btnContainer.appendChild(btn);
-      });
-
-      overlay.classList.add('show');
-      overlay.style.display = 'flex';
-      return; // ✅ prevent auto redirect
-    }
-
     // ✅ Save to localStorage and redirect if no modal needed
     localStorage.setItem('loggedInUser', JSON.stringify(userData));
     const roles = userData.roles || ['student'];
     const defaultRole = roles.includes('admin') ? 'admin' :
                         roles.includes('teacher') ? 'teacher' : 'student';
     localStorage.setItem('activeRole', defaultRole);
+
+    // ✅ Flag parent accounts so home.js can trigger child modal
+localStorage.setItem('isParent', userData.roles.includes("parent"));
+
 
     console.log("DEBUG: No modal needed, redirecting to home");
     window.location.href = 'index.html';
