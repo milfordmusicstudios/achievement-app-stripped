@@ -1,3 +1,6 @@
+console.log("DEBUG: home.js loaded");
+
+
 import { supabase } from './supabase.js';
 
 document.addEventListener("DOMContentLoaded", async () => {
