@@ -1,6 +1,21 @@
 // login.js
 import { supabase } from './supabase.js';
 
+window.selectStudent = function(studentId, parentData) {
+  // Save selected student
+  localStorage.setItem('activeStudentId', studentId);
+  localStorage.setItem('loggedInUser', JSON.stringify(parentData)); // keep parent data
+  document.getElementById('studentSelectOverlay').style.display = 'none';
+  window.location.href = 'index.html';
+};
+
+window.cancelStudentSelect = function() {
+  localStorage.clear();
+  document.getElementById('studentSelectOverlay').style.display = 'none';
+  window.location.href = 'login.html';
+};
+
+
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById('loginForm');
   const errorDisplay = document.getElementById('loginError');

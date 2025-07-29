@@ -1765,3 +1765,12 @@ body.white-page #logForm td {
   color: white;
   border-bottom: 2px solid #00477d;
 }
+/* ✅ Limit table body height to ~6 rows */
+#logsSection,
+#usersScrollWrapper,
+#myPointsLogsWrapper {
+  max-height: 300px;   /* adjust for ~6 rows */
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
