@@ -195,6 +195,13 @@ document.addEventListener("DOMContentLoaded", async () => {
       console.error("Avatar upload error:", err);
       alert("Failed to upload avatar: " + err.message);
     }
+     // ✅ At the end of DOMContentLoaded, after everything is initialized:
+  if (sessionStorage.getItem("forceUserSwitch") === "true") {
+    sessionStorage.removeItem("forceUserSwitch");
+    setTimeout(() => {
+      promptUserSwitch(); // use the existing function to show modal
+    }, 300);
+  }
   });
 
   document.getElementById("avatarImage").addEventListener("click", () => document.getElementById("avatarInput").click());

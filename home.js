@@ -10,6 +10,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
+   // ✅ If the active role is parent, redirect to settings and flag modal
+  if (activeRole.toLowerCase() === "parent") {
+    sessionStorage.setItem("forceUserSwitch", "true");
+    window.location.href = "settings.html";
+    return;
+  }
+
   try {
     // ✅ Fetch logs for current user
     const { data: logs, error: logsError } = await supabase
