@@ -130,12 +130,33 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById('avatarImage').src = user.avatarUrl || "images/logos/default.png";
 
   // ✅ Load related users
-  const relatedUsers = await fetchRelatedUsers(user);
-  let existingAllUsers = JSON.parse(localStorage.getItem("allUsers")) || [];
-  const updatedAllUsers = [...existingAllUsers];
-  if (!updatedAllUsers.some(u => u.id === user.id)) updatedAllUsers.push(user);
-  relatedUsers.forEach(ru => { if (!updatedAllUsers.some(u => u.id === ru.id)) updatedAllUsers.push(ru); });
-  localStorage.setItem("allUsers", JSON.stringify(updatedAllUsers));
+// ✅ Load related users
+const relatedUsers = await fetchRelatedUsers(user);
+let existingAllUsers = JSON.parse(localStorage.getItem("allUsers")) || [];
+const updatedAllUsers = [...existingAllUsers];
+
+// ✅ Always include the current user
+if (!updatedAllUsers.some(u => u.id === user.id)) {
+  updatedAllUsers.push(user);
+}
+
+// ✅ Add children if any
+relatedUsers.forEach(ru => {
+  if (!updatedAllUsers.some(u => u.id === ru.id)) {
+    updatedAllUsers.push(ru);
+  }
+});
+
+// ✅ If the user is teacher/admin AND also has parent_uuid logic (children exist), 
+// ensure a "parent self" entry is added
+if ((user.roles || []).some(r => ["teacher", "admin"].includes(r.toLowerCase())) && relatedUsers.length > 0) {
+  const parentCopy = { ...user, roles: [...new Set([...(user.roles || []), "parent"])] };
+  if (!updatedAllUsers.some(u => u.id === parentCopy.id && u.roles.includes("parent"))) {
+    updatedAllUsers.push(parentCopy);
+  }
+}
+
+localStorage.setItem("allUsers", JSON.stringify(updatedAllUsers));
 
   // ✅ Show/hide buttons
   document.getElementById("switchUserBtn").style.display = (updatedAllUsers.length > 1) ? "inline-block" : "none";
