@@ -14,9 +14,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  // ✅ Show modal if this account is parent/teacher/admin
-  if (isParent || (storedUser.roles && storedUser.roles.some(r => ["teacher", "admin", "parent"].includes(r)))) {
-    console.log("DEBUG: Parent detected, fetching children...");
+  // ✅ Only show modal if this user is a parent
+  if (isParent || (storedUser.roles && storedUser.roles.includes("parent"))) {
+    console.log("DEBUG: Parent account detected, fetching children...");
     const { data: children, error } = await supabase
       .from('users')
       .select('id, firstName, lastName, email, roles, avatarUrl')
@@ -34,48 +34,40 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
       });
 
-      showChildModal(children, storedUser);
-      return; // Stop UI load until selection
+      showChildModal(children);
+      return; // stop UI until child is selected
     }
   }
 
+  // ✅ Load normal UI for teacher/admin/student
   loadHomeUI(storedUser, activeRole);
 });
 
-function showChildModal(children, parent) {
-  parent._children = children;
+// ✅ Modal only lists children
+function showChildModal(children) {
   const modal = document.getElementById("childSelectModal");
   const container = document.getElementById("childButtons");
   container.innerHTML = '';
 
-  // ✅ Always add parent first
-  const parentBtn = document.createElement("button");
-  const rolesText = parent.roles?.length ? ` (${parent.roles.join(", ")})` : "";
-  parentBtn.textContent = `${parent.firstName} ${parent.lastName}${rolesText}`;
-  parentBtn.className = "blue-button modal-button";
-  parentBtn.onclick = () => setActiveChild(parent, parent);
-  container.appendChild(parentBtn);
-
-  // ✅ Add children
   children.forEach(child => {
     const btn = document.createElement("button");
     btn.textContent = `${child.firstName} ${child.lastName}`;
     btn.className = "blue-button modal-button";
-    btn.onclick = () => setActiveChild(child, parent);
+    btn.onclick = () => setActiveChild(child);
     container.appendChild(btn);
   });
 
   modal.style.display = "flex";
 }
 
-// ✅ Store parent context when child is selected
-function setActiveChild(child, parent) {
+// ✅ When a child is selected
+function setActiveChild(child) {
   console.log("DEBUG: Switching to child", child);
   if (!child.id) return console.error("ERROR: Child missing ID");
 
   localStorage.setItem("loggedInUser", JSON.stringify(child));
   localStorage.setItem("activeRole", Array.isArray(child.roles) ? child.roles[0] : "student");
-  localStorage.setItem("loggedInParent", JSON.stringify(parent));
+  localStorage.removeItem("loggedInParent"); // no parent context
   localStorage.setItem("isParent", false);
 
   location.reload();

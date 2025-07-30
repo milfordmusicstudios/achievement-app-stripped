@@ -15,11 +15,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  // ✅ Use parent context if available
-  const parentContext = JSON.parse(localStorage.getItem("loggedInParent"));
-
+  // ✅ Fetch siblings (other users with same parent_uuid)
   async function fetchRelatedUsers(user) {
-    const parentId = parentContext ? normalizeUUID(parentContext.id) : normalizeUUID(user.parent_uuid);
+    const parentId = normalizeUUID(user.parent_uuid);
     let siblings = [];
 
     if (parentId) {
@@ -35,24 +33,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     return siblings;
   }
 
-  // ✅ Build full user list
+  // ✅ Build user list: current user + siblings
   const siblings = await fetchRelatedUsers(storedUser);
   let updatedAllUsers = [storedUser, ...siblings];
-
-  if (parentContext && !updatedAllUsers.some(u => u.id === parentContext.id)) {
-    updatedAllUsers.push(parentContext);
-
-    const { data: parentChildren } = await supabase
-      .from('users')
-      .select('id, firstName, lastName, email, roles')
-      .eq('parent_uuid', parentContext.id);
-
-    if (parentChildren) {
-      parentChildren.forEach(c => {
-        if (!updatedAllUsers.some(u => u.id === c.id)) updatedAllUsers.push(c);
-      });
-    }
-  }
 
   // ✅ Normalize roles
   updatedAllUsers.forEach(u => {
@@ -66,10 +49,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   console.log("[DEBUG] allUsers:", updatedAllUsers);
 
-  // ✅ Show Switch User button if >1 profiles
+  // ✅ Show Switch User button if multiple profiles exist
   switchUserBtn.style.display = updatedAllUsers.length > 1 ? "inline-block" : "none";
 
-  // ✅ Show Role Switch if multiple roles
+  // ✅ Show Role Switch button if multiple roles
   const hasMultipleRoles = storedUser.roles && storedUser.roles.length > 1;
   roleSwitchBtn.style.display = hasMultipleRoles ? "inline-block" : "none";
 
