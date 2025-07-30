@@ -1789,3 +1789,32 @@ body.white-page #logForm td {
   font-size: 1.1rem;
   padding: 6px;
 }
+/* ==== FIX CHILD SELECTION MODAL ==== */
+#childSelectModal .modal-box {
+  width: 400px;            /* ✅ wider modal */
+  max-width: 90%;          /* ✅ responsive */
+  padding: 25px;           /* ✅ more padding */
+  border-radius: 10px;
+  box-sizing: border-box;
+}
+
+#childButtons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;               /* ✅ vertical spacing */
+}
+
+#childButtons .blue-button {
+  width: 100%;             /* ✅ full width inside modal */
+  padding: 10px;
+  font-size: 1.1rem;
+}
+
+/* ✅ Also add spacing to parent option and cancel button */
+#childButtons .blue-button:first-child {
+  margin-top: 5px;
+}
+
+#childSelectModal .modal-actions {
+  display: none;           /* ✅ remove cancel button area */
+}

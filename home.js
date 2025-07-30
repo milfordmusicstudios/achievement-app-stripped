@@ -14,7 +14,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  // ✅ Show modal if logged-in user is parent, teacher, or admin
+  // ✅ Show modal for parent/teacher/admin accounts
   if (isParent || (storedUser.roles && (storedUser.roles.includes("teacher") || storedUser.roles.includes("admin") || storedUser.roles.includes("parent")))) {
     console.log("DEBUG: Parent detected, fetching children...");
     const { data: children, error } = await supabase
@@ -35,14 +35,14 @@ document.addEventListener("DOMContentLoaded", async () => {
       });
 
       showChildModal(children, storedUser);
-      return; // stop UI load until selection
+      return; // Stop UI load until selection is made
     }
   }
 
+  // ✅ If no modal, load the home UI
   loadHomeUI(storedUser, activeRole);
 });
 
-// ✅ Modal to select parent/child
 function showChildModal(children, parent) {
   parent._children = children;
   const modal = document.getElementById("childSelectModal");
@@ -69,7 +69,7 @@ function showChildModal(children, parent) {
   modal.style.display = "flex";
 }
 
-// ✅ Save child as logged-in user, keep parent context
+// ✅ When child is selected, keep parent context
 function setActiveChild(child, parent) {
   console.log("DEBUG: Switching to child", child);
   if (!child.id) {
@@ -85,25 +85,33 @@ function setActiveChild(child, parent) {
   location.reload();
 }
 
-// ✅ Load home UI normally
+// ✅ Normal home UI loader
 async function loadHomeUI(userData, activeRole) {
   console.log("DEBUG: Loading home UI for", userData);
 
-  // Load user info
-  document.getElementById("welcomeTitle").textContent = `Welcome, ${userData.firstName}!`;
-  document.getElementById("homeAvatar").src = userData.avatarUrl || "images/logos/default.png";
+  // Update welcome title
+  const welcomeTitle = document.getElementById("welcomeTitle");
+  if (welcomeTitle) welcomeTitle.textContent = `Welcome, ${userData.firstName || "User"}!`;
 
-  // Load level badge
-  document.getElementById("homeBadge").src = (activeRole === "student")
-    ? `images/levelBadges/level${userData.level || 1}.png`
-    : `images/levelBadges/${activeRole}.png`;
+  // Set avatar
+  const avatarImg = document.getElementById("homeAvatar");
+  if (avatarImg) avatarImg.src = userData.avatarUrl || "images/logos/default.png";
 
-  // Level progress
+  // Set level badge
+  const badgeImg = document.getElementById("homeBadge");
+  if (badgeImg) {
+    badgeImg.src = (activeRole === "student")
+      ? `images/levelBadges/level${userData.level || 1}.png`
+      : `images/levelBadges/${activeRole}.png`;
+  }
+
+  // Progress bar
   const progressBar = document.getElementById("homeProgressBar");
   const progressLabel = document.getElementById("homeProgressLabel");
   if (progressBar && progressLabel) {
-    progressBar.style.width = `${userData.progress || 0}%`;
-    progressLabel.textContent = `${Math.round(userData.progress || 0)}% to next level`;
+    const progress = userData.progress || 0;
+    progressBar.style.width = `${progress}%`;
+    progressLabel.textContent = `${Math.round(progress)}% to next level`;
   }
 
   // Role-specific buttons
@@ -111,7 +119,7 @@ async function loadHomeUI(userData, activeRole) {
   const reviewLogsBtn = document.getElementById("reviewLogsBtn");
   const manageUsersBtn = document.getElementById("manageUsersBtn");
 
-  myPointsBtn.style.display = (activeRole === "student") ? "flex" : "none";
-  reviewLogsBtn.style.display = (activeRole === "admin" || activeRole === "teacher") ? "flex" : "none";
-  manageUsersBtn.style.display = (activeRole === "admin") ? "inline-block" : "none";
+  if (myPointsBtn) myPointsBtn.style.display = (activeRole === "student") ? "flex" : "none";
+  if (reviewLogsBtn) reviewLogsBtn.style.display = (activeRole === "admin" || activeRole === "teacher") ? "flex" : "none";
+  if (manageUsersBtn) manageUsersBtn.style.display = (activeRole === "admin") ? "inline-block" : "none";
 }
