@@ -77,24 +77,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
     console.log("DEBUG: Normalized roles", userData.roles);
 
-    // ✅ Save to localStorage and redirect if no modal needed
+    // ✅ Save user and determine role
     localStorage.setItem('loggedInUser', JSON.stringify(userData));
-    const roles = userData.roles || ['student'];
-    const defaultRole = roles.includes('admin') ? 'admin' :
-                        roles.includes('teacher') ? 'teacher' : 'student';
+    const normalizedRoles = (userData.roles || ['student']).map(r => r.toLowerCase());
+    const defaultRole = normalizedRoles.includes('admin') ? 'admin' :
+                        normalizedRoles.includes('teacher') ? 'teacher' :
+                        normalizedRoles.includes('parent') ? 'parent' : 'student';
     localStorage.setItem('activeRole', defaultRole);
 
-    // ✅ Flag parent accounts so home.js can trigger child modal
-localStorage.setItem('isParent', userData.roles.includes("parent"));
-
-
-if (normalizedRoles.includes("parent")) {
-  console.log("DEBUG: Parent role – redirecting directly to settings");
-  sessionStorage.setItem("forceUserSwitch", "true");
-  window.location.href = "settings.html";   // ✅ relative path works on Vercel
-} else {
-  console.log("DEBUG: Redirecting to home");
-  window.location.href = "index.html";
-}
+    // ✅ Redirect based on role
+    if (normalizedRoles.includes('parent')) {
+      console.log("DEBUG: Parent role detected – redirecting directly to settings");
+      sessionStorage.setItem("forceUserSwitch", "true");
+      window.location.href = 'settings.html';  // ✅ relative path avoids 404 on Vercel
+    } else {
+      console.log("DEBUG: Redirecting to home");
+      window.location.href = 'index.html';
+    }
   });
 });
