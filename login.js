@@ -88,7 +88,13 @@ document.addEventListener("DOMContentLoaded", () => {
 localStorage.setItem('isParent', userData.roles.includes("parent"));
 
 
-    console.log("DEBUG: No modal needed, redirecting to home");
-    window.location.href = 'index.html';
+if (normalizedRoles.includes("parent")) {
+  console.log("DEBUG: Parent role – redirecting directly to settings");
+  sessionStorage.setItem("forceUserSwitch", "true");
+  window.location.href = "settings.html";   // ✅ relative path works on Vercel
+} else {
+  console.log("DEBUG: Redirecting to home");
+  window.location.href = "index.html";
+}
   });
 });
