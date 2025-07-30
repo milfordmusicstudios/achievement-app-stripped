@@ -96,18 +96,19 @@ function showChildModal(children, parent) {
   const container = document.getElementById("childButtons");
   container.innerHTML = '';
 
-  // ✅ Add teacher/admin option first
+  // ✅ Teacher/Admin parent option
   const parentBtn = document.createElement("button");
-  parentBtn.textContent = `${parent.firstName} ${parent.lastName} (${parent.roles.join(", ")})`;
-  parentBtn.className = "blue-button";
+  const rolesText = parent.roles && parent.roles.length ? ` (${parent.roles.join(", ")})` : "";
+  parentBtn.textContent = `${parent.firstName} ${parent.lastName}${rolesText}`;
+  parentBtn.className = "blue-button modal-button";
   parentBtn.onclick = () => setActiveChild(parent, parent);
   container.appendChild(parentBtn);
 
-  // ✅ Add children
+  // ✅ Child options
   children.forEach(child => {
     const btn = document.createElement("button");
     btn.textContent = `${child.firstName} ${child.lastName}`;
-    btn.className = "blue-button";
+    btn.className = "blue-button modal-button";
     btn.onclick = () => setActiveChild(child, parent);
     container.appendChild(btn);
   });

@@ -38,39 +38,36 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   // ✅ Load siblings and parent to build user list
-  const siblings = await fetchRelatedUsers(storedUser);
-  let updatedAllUsers = [storedUser, ...siblings];
+const siblings = await fetchRelatedUsers(storedUser);
+let updatedAllUsers = [storedUser, ...siblings];
 
-  // ✅ Add loggedInParent and its children
-  const loggedInParent = JSON.parse(localStorage.getItem("loggedInParent"));
-  if (loggedInParent && !updatedAllUsers.some(u => u.id === loggedInParent.id)) {
-    updatedAllUsers.push(loggedInParent);
+const loggedInParent = JSON.parse(localStorage.getItem("loggedInParent"));
+if (loggedInParent && !updatedAllUsers.some(u => u.id === loggedInParent.id)) {
+  updatedAllUsers.push(loggedInParent);
 
-    const { data: parentChildren } = await supabase
-      .from('users')
-      .select('id, firstName, lastName, email, roles')
-      .eq('parent_uuid', loggedInParent.id);
-
-    if (parentChildren) {
-      parentChildren.forEach(c => {
-        if (!updatedAllUsers.some(u => u.id === c.id)) updatedAllUsers.push(c);
-      });
-    }
+  const { data: parentChildren } = await supabase
+    .from('users')
+    .select('id, firstName, lastName, email, roles')
+    .eq('parent_uuid', loggedInParent.id);
+  if (parentChildren) {
+    parentChildren.forEach(c => {
+      if (!updatedAllUsers.some(u => u.id === c.id)) updatedAllUsers.push(c);
+    });
   }
+}
 
-  // ✅ Normalize roles
-  updatedAllUsers.forEach(u => {
-    if (typeof u.roles === "string") {
-      try { u.roles = JSON.parse(u.roles); }
-      catch { u.roles = u.roles.split(",").map(r => r.trim()); }
-    } else if (!Array.isArray(u.roles)) {
-      u.roles = u.roles ? [u.roles] : [];
-    }
-  });
+// ✅ Normalize roles
+updatedAllUsers.forEach(u => {
+  if (typeof u.roles === "string") {
+    try { u.roles = JSON.parse(u.roles); }
+    catch { u.roles = u.roles.split(",").map(r => r.trim()); }
+  } else if (!Array.isArray(u.roles)) {
+    u.roles = u.roles ? [u.roles] : [];
+  }
+});
 
-  // ✅ Show Switch User Button if multiple profiles exist
-  const hasMultipleProfiles = updatedAllUsers.length > 1;
-  switchUserBtn.style.display = hasMultipleProfiles ? "inline-block" : "none";
+// ✅ Switch User button visibility
+switchUserBtn.style.display = updatedAllUsers.length > 1 ? "inline-block" : "none";
 
   // ✅ Show Switch Role Button only if multiple roles exist
   const hasMultipleRoles = storedUser.roles && storedUser.roles.length > 1;

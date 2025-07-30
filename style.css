@@ -1781,3 +1781,11 @@ body.white-page #logForm td {
   margin: 5px auto;
   text-align: center;
 }
+
+.modal-button {
+  display: block;
+  width: 90%;
+  margin: 8px auto;
+  font-size: 1.1rem;
+  padding: 6px;
+}
