@@ -10,7 +10,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  const userId = user.id;
+  const userId = String(user.id).trim(); // ✅ normalize UUID
+  console.log("[DEBUG] Fetching logs for user ID:", userId);
+
   const logsTableBody = document.querySelector("#logsTable tbody");
   const categorySummary = document.getElementById("categorySummary");
   const levelBadge = document.getElementById("levelBadge");
@@ -26,7 +28,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (logsError) throw logsError;
     console.log("[DEBUG] Logs fetched:", logs);
 
-    // ✅ Filter only approved logs for points/levels
     const approvedLogs = logs.filter(l => l.status === "approved");
 
     // ✅ Fetch levels
@@ -34,22 +35,14 @@ document.addEventListener("DOMContentLoaded", async () => {
       .from("levels")
       .select("*")
       .order("minPoints", { ascending: true });
-
     if (levelsError) throw levelsError;
 
-    // ✅ Calculate total points from approved logs only
     const totalPoints = approvedLogs.reduce((sum, log) => sum + (log.points || 0), 0);
     console.log("[DEBUG] Total approved points:", totalPoints);
 
-    // ✅ Determine user level based on approved points
-    let userLevel = levelsData.find(l =>
-      totalPoints >= Number(l.minPoints) && totalPoints <= Number(l.maxPoints)
-    );
-    if (!userLevel && levelsData.length > 0) {
-      userLevel = levelsData[levelsData.length - 1];
-    }
+    let userLevel = levelsData.find(l => totalPoints >= Number(l.minPoints) && totalPoints <= Number(l.maxPoints));
+    if (!userLevel && levelsData.length > 0) userLevel = levelsData[levelsData.length - 1];
 
-    // ✅ Update user record in Supabase with approved points & level
     if (userLevel) {
       const { error: updateError } = await supabase
         .from("users")
@@ -58,13 +51,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (updateError) console.error("[ERROR] Failed to update user level:", updateError);
     }
 
-    // ✅ Set level badge
     levelBadge.src = userLevel?.badge || "images/levelBadges/level1.png";
-
-    // ✅ Render category summary (only approved logs count)
     renderCategorySummary(approvedLogs, totalPoints);
 
-    // ✅ Sort all logs by date (newest first) & render them all
     logs.sort((a, b) => new Date(b.date) - new Date(a.date));
     renderLogs(logs);
 
@@ -73,7 +62,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   // ---- FUNCTIONS ----
-
   function renderCategorySummary(logs, totalPoints) {
     categorySummary.innerHTML = "";
     const icons = {
@@ -112,7 +100,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       </div>`;
   }
 
-  // ✅ Render logs with Status column
   function renderLogs(logs) {
     logsTableBody.innerHTML = "";
     logs.forEach((log, index) => {
@@ -127,19 +114,17 @@ document.addEventListener("DOMContentLoaded", async () => {
         </tr>`;
     });
   }
+
   function syncHeaderWidths() {
-  const headerCells = document.querySelectorAll("#pointsHeaderTable th");
-  const firstRowCells = document.querySelectorAll("#logsTable tr:first-child td");
-  if (!firstRowCells.length) return;
+    const headerCells = document.querySelectorAll("#pointsHeaderTable th");
+    const firstRowCells = document.querySelectorAll("#logsTable tr:first-child td");
+    if (!firstRowCells.length) return;
+    headerCells.forEach((th, i) => {
+      if (firstRowCells[i]) {
+        th.style.width = firstRowCells[i].offsetWidth + "px";
+      }
+    });
+  }
 
-  headerCells.forEach((th, i) => {
-    if (firstRowCells[i]) {
-      th.style.width = firstRowCells[i].offsetWidth + "px";
-    }
-  });
-}
-
-// ✅ Call after logs are rendered
-new ResizeObserver(syncHeaderWidths).observe(document.querySelector("#logsTable"));
-
+  new ResizeObserver(syncHeaderWidths).observe(document.querySelector("#logsTable"));
 });

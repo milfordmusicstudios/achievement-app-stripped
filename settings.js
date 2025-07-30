@@ -1,206 +1,119 @@
 import { supabase } from './supabase.js';
 
-function normalizeUUID(value) {
-  if (!value) return null;
-  if (typeof value === 'object' && value.id) return String(value.id);
-  return String(value);
-}
-
-function capitalize(str) {
-  return str ? str.charAt(0).toUpperCase() + str.slice(1) : "";
-}
-
-async function fetchRelatedUsers(user) {
-  const userIdStr = normalizeUUID(user.id);
-  const parentIdStr = normalizeUUID(user.parent_uuid);
-  let sameGroupUsers = [];
-
-  const { data: children, error: childErr } = await supabase
-    .from('users')
-    .select('*')
-    .eq('parent_uuid', userIdStr);
-  if (!childErr && children.length > 0) {
-    sameGroupUsers = children;
-  } else if (parentIdStr) {
-    const { data: siblings, error: sibErr } = await supabase
-      .from('users')
-      .select('*')
-      .eq('parent_uuid', parentIdStr);
-    if (!sibErr && siblings.length > 0) {
-      sameGroupUsers = siblings.filter(u => normalizeUUID(u.id) !== userIdStr);
-    }
-  }
-
-  console.log("[DEBUG] Related users fetched:", sameGroupUsers);
-  return sameGroupUsers;
-}
-
-function promptUserSwitch() {
-  const user = JSON.parse(localStorage.getItem("loggedInUser"));
-  const allUsers = JSON.parse(localStorage.getItem("allUsers")) || [];
-  const userIdStr = normalizeUUID(user.id);
-
-  const listContainer = document.getElementById("userSwitchList");
-  listContainer.innerHTML = "";
-  allUsers.forEach(u => {
-    if (normalizeUUID(u.id) === userIdStr) return;
-    const li = document.createElement("li");
-    const btn = document.createElement("button");
-    btn.className = "blue-button";
-    btn.style = "margin: 5px 0; width: 100%;";
-    let roleText = Array.isArray(u.roles) ? ` (${u.roles.join(", ")})` : "";
-    btn.textContent = `${u.firstName} ${u.lastName}${roleText}`;
-    btn.onclick = () => {
-      localStorage.setItem("loggedInUser", JSON.stringify(u));
-      const defaultRole = Array.isArray(u.roles) ? u.roles[0] : "student";
-      localStorage.setItem("activeRole", defaultRole);
-      window.location.href = "index.html";
-    };
-    li.appendChild(btn);
-    listContainer.appendChild(li);
-  });
-  document.getElementById("userSwitchModal").style.display = "flex";
-}
-
-function promptRoleSwitch() {
-  const user = JSON.parse(localStorage.getItem("loggedInUser"));
-  const roles = Array.isArray(user.roles) ? user.roles : [user.role];
-  const listContainer = document.getElementById("roleSwitchList");
-  listContainer.innerHTML = "";
-  roles.forEach(role => {
-    const li = document.createElement("li");
-    const btn = document.createElement("button");
-    btn.className = "blue-button";
-    btn.style = "margin: 5px 0; width: 100%;";
-    btn.textContent = capitalize(role);
-    btn.onclick = () => {
-      localStorage.setItem("activeRole", role);
-      window.location.href = "index.html";
-    };
-    li.appendChild(btn);
-    listContainer.appendChild(li);
-  });
-  document.getElementById("roleSwitchModal").style.display = "flex";
-}
-
-async function saveSettings() {
-  const user = JSON.parse(localStorage.getItem("loggedInUser"));
-  const updatedUser = {
-    firstName: document.getElementById('firstName').value.trim(),
-    lastName: document.getElementById('lastName').value.trim(),
-    email: document.getElementById('newEmail').value.trim()
-  };
-  try {
-    const { error } = await supabase.from("users").update(updatedUser).eq("id", user.id);
-    if (error) throw error;
-    Object.assign(user, updatedUser);
-    localStorage.setItem("loggedInUser", JSON.stringify(user));
-    alert("Settings saved!");
-    window.location.href = "index.html";
-  } catch (err) {
-    console.error("Save error:", err);
-    alert("Could not save settings: " + err.message);
-  }
-}
-
-function handleLogout() {
-  localStorage.clear();
-  window.location.href = "login.html";
+function normalizeUUID(uuid) {
+  return uuid ? String(uuid).trim().toLowerCase() : null;
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
-  const user = JSON.parse(localStorage.getItem("loggedInUser"));
-  const activeRole = localStorage.getItem("activeRole");
-  if (!user || !activeRole) {
+  const storedUser = JSON.parse(localStorage.getItem("loggedInUser"));
+  const switchUserBtn = document.getElementById("switchUserBtn");
+  const roleSwitchBtn = document.getElementById("switchRoleBtn");
+
+  if (!storedUser) {
     alert("You must be logged in.");
-    window.location.href = "index.html";
+    window.location.href = "login.html";
     return;
   }
 
-  document.getElementById('firstName').value = user.firstName || '';
-  document.getElementById('lastName').value = user.lastName || '';
-  document.getElementById('newEmail').value = user.email || '';
-  document.getElementById('avatarImage').src = user.avatarUrl || "images/logos/default.png";
+  // ✅ Fetch related users, using parent_uuid or loggedInParent
+  async function fetchRelatedUsers(user) {
+    const userIdStr = normalizeUUID(user.id);
+    const loggedInParent = JSON.parse(localStorage.getItem("loggedInParent"));
+    const parentId = normalizeUUID(user.parent_uuid) || (loggedInParent ? normalizeUUID(loggedInParent.id) : null);
+    let siblings = [];
 
-  // ✅ Ensure roles is always an array
-  if (!user.roles && user.role) {
-    user.roles = [user.role];
-  } else if (typeof user.roles === "string") {
-    try {
-      user.roles = JSON.parse(user.roles);
-    } catch {
-      user.roles = user.roles.split(",").map(r => r.trim());
+    if (parentId) {
+      const { data: related, error } = await supabase
+        .from('users')
+        .select('id, firstName, lastName, email, roles')
+        .eq('parent_uuid', parentId);
+
+      if (!error && related.length > 0) {
+        siblings = related.filter(u => normalizeUUID(u.id) !== userIdStr);
+      }
     }
-  } else if (!Array.isArray(user.roles)) {
-    user.roles = user.roles ? [user.roles] : [];
-  }
-  console.log("DEBUG (fixed) user.roles:", user.roles);
 
-  const relatedUsers = await fetchRelatedUsers(user);
-
-  // ✅ Preserve any previously stored allUsers list
-  let existingAllUsers = JSON.parse(localStorage.getItem("allUsers")) || [];
-  const updatedAllUsers = [...existingAllUsers];
-
-  if (!updatedAllUsers.some(u => u.id === user.id)) {
-    updatedAllUsers.push(user);
+    console.log("[DEBUG] Related users fetched:", siblings);
+    return siblings;
   }
 
-  relatedUsers.forEach(ru => {
-    if (!updatedAllUsers.some(u => u.id === ru.id)) {
-      updatedAllUsers.push(ru);
-    }
-  });
+  // ✅ Load siblings and parent to build user list
+  const siblings = await fetchRelatedUsers(storedUser);
+  let updatedAllUsers = [storedUser, ...siblings];
 
-  localStorage.setItem("allUsers", JSON.stringify(updatedAllUsers));
-  console.log("DEBUG allUsers:", updatedAllUsers);
-
-  // ✅ Show Switch User if multiple profiles exist
-  const switchUserBtn = document.getElementById("switchUserBtn");
-  const sameEmailUsers = updatedAllUsers.filter(u => u.email?.toLowerCase() === user.email?.toLowerCase());
-  if (updatedAllUsers.length > 1 || relatedUsers.length > 0 || sameEmailUsers.length > 1) {
-    switchUserBtn.style.display = "inline-block";
-  } else {
-    switchUserBtn.style.display = "none";
+  const loggedInParent = JSON.parse(localStorage.getItem("loggedInParent"));
+  if (loggedInParent && !updatedAllUsers.some(u => u.id === loggedInParent.id)) {
+    updatedAllUsers.push(loggedInParent);
   }
 
-  // ✅ Show Switch Role if multiple roles
-  const switchRoleBtn = document.getElementById("switchRoleBtn");
-  if (user.roles.length > 1) {
-    switchRoleBtn.style.display = "inline-block";
-    switchRoleBtn.textContent = `Switch Role (Currently: ${capitalize(activeRole)})`;
-  } else {
-    switchRoleBtn.style.display = "none";
-  }
-
-  // ✅ Avatar Upload
-  document.getElementById("avatarInput").addEventListener("change", async () => {
-    const file = document.getElementById("avatarInput").files[0];
-    if (!file) return;
-    const fileExt = file.name.split('.').pop();
-    const filePath = `public/${user.id}.${fileExt}`;
-    try {
-      const { error: uploadError } = await supabase.storage.from("avatars").upload(filePath, file, { upsert: true });
-      if (uploadError) throw uploadError;
-      const { data: urlData, error: urlError } = supabase.storage.from("avatars").getPublicUrl(filePath);
-      if (urlError) throw urlError;
-      const avatarUrl = urlData.publicUrl;
-      const { error: updateError } = await supabase.from("users").update({ avatarUrl }).eq("id", user.id);
-      if (updateError) throw updateError;
-      user.avatarUrl = avatarUrl;
-      localStorage.setItem("loggedInUser", JSON.stringify(user));
-      document.getElementById("avatarImage").src = avatarUrl;
-      alert("Avatar updated successfully!");
-    } catch (err) {
-      console.error("Avatar upload error:", err);
-      alert("Failed to upload avatar: " + err.message);
+  // ✅ Normalize roles
+  updatedAllUsers.forEach(u => {
+    if (typeof u.roles === "string") {
+      try { u.roles = JSON.parse(u.roles); }
+      catch { u.roles = u.roles.split(",").map(r => r.trim()); }
+    } else if (!Array.isArray(u.roles)) {
+      u.roles = u.roles ? [u.roles] : [];
     }
   });
 
-  document.getElementById("avatarImage").addEventListener("click", () => document.getElementById("avatarInput").click());
-  document.getElementById("saveBtn").addEventListener("click", e => { e.preventDefault(); saveSettings(); });
-  document.getElementById("logoutBtn").addEventListener("click", handleLogout);
-  document.getElementById("cancelBtn").addEventListener("click", () => window.location.href = "index.html");
-  document.getElementById("switchRoleBtn").addEventListener("click", promptRoleSwitch);
-  document.getElementById("switchUserBtn").addEventListener("click", promptUserSwitch);
+  // ✅ Show Switch User Button if multiple profiles exist
+  const hasMultipleProfiles = updatedAllUsers.length > 1;
+  switchUserBtn.style.display = hasMultipleProfiles ? "inline-block" : "none";
+
+  // ✅ Show Switch Role Button only if multiple roles exist
+  const hasMultipleRoles = storedUser.roles && storedUser.roles.length > 1;
+  roleSwitchBtn.style.display = hasMultipleRoles ? "inline-block" : "none";
+
+  // ✅ Switch User Modal
+  switchUserBtn.addEventListener("click", () => {
+    const modal = document.getElementById("userSwitchModal");
+    const container = document.getElementById("userSwitchList");
+    container.innerHTML = "";
+
+    updatedAllUsers.forEach(u => {
+      const btn = document.createElement("button");
+      btn.textContent = `${u.firstName} ${u.lastName}`;
+      btn.className = "blue-button";
+      btn.onclick = () => {
+        localStorage.setItem("loggedInUser", JSON.stringify(u));
+        const defaultRole = Array.isArray(u.roles) ? u.roles[0] : "student";
+        localStorage.setItem("activeRole", defaultRole);
+        modal.style.display = "none";
+        location.reload();
+      };
+      container.appendChild(btn);
+    });
+
+    modal.style.display = "flex";
+  });
+
+  // ✅ Close modal on cancel
+  document.getElementById("cancelUserSwitch").addEventListener("click", () => {
+    document.getElementById("userSwitchModal").style.display = "none";
+  });
+
+  // ✅ Switch Role Modal
+  roleSwitchBtn.addEventListener("click", () => {
+    const modal = document.getElementById("roleSwitchModal");
+    const container = document.getElementById("roleSwitchList");
+    container.innerHTML = "";
+
+    storedUser.roles.forEach(role => {
+      const btn = document.createElement("button");
+      btn.textContent = role;
+      btn.className = "blue-button";
+      btn.onclick = () => {
+        localStorage.setItem("activeRole", role);
+        modal.style.display = "none";
+        location.reload();
+      };
+      container.appendChild(btn);
+    });
+
+    modal.style.display = "flex";
+  });
+
+  document.getElementById("cancelRoleSwitch").addEventListener("click", () => {
+    document.getElementById("roleSwitchModal").style.display = "none";
+  });
 });

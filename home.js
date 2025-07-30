@@ -1,13 +1,10 @@
-console.log("DEBUG: home.js loaded");
-
-
 import { supabase } from './supabase.js';
 
 document.addEventListener("DOMContentLoaded", async () => {
   const storedUser = JSON.parse(localStorage.getItem("loggedInUser"));
   const activeRole = localStorage.getItem("activeRole");
   const isParent = JSON.parse(localStorage.getItem("isParent") || "false");
-console.log("DEBUG isParent flag:", isParent);
+  console.log("DEBUG isParent flag:", isParent);
 
   if (!storedUser || !activeRole) {
     alert("You must be logged in.");
@@ -15,9 +12,9 @@ console.log("DEBUG isParent flag:", isParent);
     return;
   }
 
-  // ✅ Show child selection modal only on login if parent
-  if (isParent) {
-    console.log("DEBUG: Parent detected, fetching children...");
+  // ✅ Show modal for parent OR teacher/admin with children
+  if (isParent || (storedUser.roles && storedUser.roles.includes("teacher"))) {
+    console.log("DEBUG: Parent/Teacher detected, fetching children...");
     const { data: children, error } = await supabase
       .from('users')
       .select('id, firstName, lastName, email, roles, avatarUrl')
@@ -26,7 +23,6 @@ console.log("DEBUG isParent flag:", isParent);
     console.log("DEBUG: Children fetched:", children, error);
 
     if (!error && children && children.length > 0) {
-      // ✅ Normalize roles to array
       children.forEach(c => {
         if (typeof c.roles === "string") {
           try { c.roles = JSON.parse(c.roles); }
@@ -37,10 +33,9 @@ console.log("DEBUG isParent flag:", isParent);
       });
 
       const onlyChildren = children.filter(c => !c.roles.includes("parent"));
-
       if (onlyChildren.length > 1) {
         showChildModal(onlyChildren, storedUser);
-        return; // ✅ Stop further home rendering until selection
+        return;
       } else if (onlyChildren.length === 1) {
         setActiveChild(onlyChildren[0], storedUser);
         return;
@@ -48,7 +43,6 @@ console.log("DEBUG isParent flag:", isParent);
     }
   }
 
-  // ✅ Normal home page logic if not parent or already selected
   try {
     const { data: logs, error: logsError } = await supabase
       .from("logs")
@@ -96,10 +90,8 @@ console.log("DEBUG isParent flag:", isParent);
   }
 });
 
-// ✅ Modal Functions
-
 function showChildModal(children, parent) {
-  parent._children = children; // attach for later use
+  parent._children = children;
   const modal = document.getElementById("childSelectModal");
   const container = document.getElementById("childButtons");
   container.innerHTML = '';
@@ -116,21 +108,22 @@ function showChildModal(children, parent) {
 }
 
 function setActiveChild(child, parent) {
+  if (!child.id) {
+    console.error("ERROR: Child object missing ID", child);
+    return;
+  }
+  child.id = String(child.id);
+
   console.log("DEBUG: Switching to child", child);
 
-  // ✅ Use child as logged-in user
   localStorage.setItem("loggedInUser", JSON.stringify(child));
   const defaultRole = Array.isArray(child.roles) ? child.roles[0] : "student";
   localStorage.setItem("activeRole", defaultRole);
-
-  // ✅ Save reference to parent
   localStorage.setItem("loggedInParent", JSON.stringify(parent));
-
-  // ✅ Clear flag so modal doesn't reappear
   localStorage.setItem('isParent', false);
 
   document.getElementById("childSelectModal").style.display = "none";
-  location.reload(); // reload home with child data
+  location.reload();
 }
 
 function cancelChildSelection() {
@@ -138,7 +131,6 @@ function cancelChildSelection() {
   window.location.href = "login.html";
 }
 
-// ✅ UI Rendering
 function updateHomeUI(userData, activeRole, currentLevel, nextLevel) {
   const welcome = document.getElementById("welcomeTitle");
   if (welcome) {
