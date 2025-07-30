@@ -51,10 +51,11 @@ btn.onclick = () => {
   const defaultRole = Array.isArray(u.roles) ? u.roles[0] : "student";
   localStorage.setItem("activeRole", defaultRole);
 
-  // ✅ Clear modal flag if switching to a student (stop loop)
-  if (!u.isParentView) {
-    sessionStorage.removeItem("parentModalShown");
-  }
+if (u.isParentView) {
+  sessionStorage.setItem("parentModalShown", "true"); // ✅ prevents loops
+} else {
+  sessionStorage.removeItem("parentModalShown"); // ✅ for students
+}
 
   window.location.href = "index.html";
 };
