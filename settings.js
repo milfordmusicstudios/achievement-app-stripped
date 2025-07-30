@@ -151,9 +151,19 @@ relatedUsers.forEach(ru => {
 // ensure a "parent self" entry is added
 if ((user.roles || []).some(r => ["teacher", "admin"].includes(r.toLowerCase())) && relatedUsers.length > 0) {
   const parentCopy = { ...user, roles: [...new Set([...(user.roles || []), "parent"])] };
-  if (!updatedAllUsers.some(u => u.id === parentCopy.id && u.roles.includes("parent"))) {
-    updatedAllUsers.push(parentCopy);
-  }
+// ✅ Always include current user
+if (!updatedAllUsers.some(u => u.id === user.id)) {
+  updatedAllUsers.push(user);
+}
+
+// ✅ If teacher/admin and has children, add a separate "parent mode" entry
+const hasChildren = relatedUsers.length > 0;
+const hasStaffRole = (user.roles || []).some(r => ["teacher", "admin"].includes(r.toLowerCase()));
+
+if (hasChildren && hasStaffRole) {
+  const parentViewUser = { ...user, id: user.id + "-parentview", roles: ["parent"] };
+  updatedAllUsers.push(parentViewUser);
+}
 }
 
 localStorage.setItem("allUsers", JSON.stringify(updatedAllUsers));
