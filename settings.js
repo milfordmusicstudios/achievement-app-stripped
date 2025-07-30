@@ -33,20 +33,26 @@ function promptUserSwitch() {
   const listContainer = document.getElementById("userSwitchList");
   listContainer.innerHTML = "";
   allUsers.forEach(u => {
-    if (normalizeUUID(u.id) === userIdStr) return;
+    if (normalizeUUID(u.id) === userIdStr && !u.isParentView) return;
+
     const li = document.createElement("li");
     const btn = document.createElement("button");
     btn.className = "blue-button";
     btn.style = "margin: 5px 0; width: 100%;";
-    let roleText = Array.isArray(u.roles) ? ` (${u.roles.join(", ")})` : "";
-btn.textContent = `${u.displayName || (u.firstName + " " + u.lastName)} (${Array.isArray(u.roles) ? u.roles.join(", ") : ""})`;
-btn.onclick = () => {
-  const userToStore = { ...u };
-  delete userToStore.isParentView;
-  localStorage.setItem("loggedInUser", JSON.stringify(userToStore));
-  localStorage.setItem("activeRole", "parent");
-  window.location.href = "index.html";
-};
+
+    btn.textContent = u.displayName 
+      ? u.displayName 
+      : `${u.firstName} ${u.lastName} (${Array.isArray(u.roles) ? u.roles.join(", ") : ""})`;
+
+    btn.onclick = () => {
+      const userToStore = { ...u };
+      delete userToStore.isParentView;
+      localStorage.setItem("loggedInUser", JSON.stringify(userToStore));
+      const defaultRole = Array.isArray(u.roles) ? u.roles[0] : "student";
+      localStorage.setItem("activeRole", defaultRole);
+      window.location.href = "index.html";
+    };
+
     li.appendChild(btn);
     listContainer.appendChild(li);
   });
@@ -77,37 +83,48 @@ function promptRoleSwitch() {
 /** ✅ Save Settings - Updates Auth email/password AND users table */
 async function saveSettings() {
   const user = JSON.parse(localStorage.getItem("loggedInUser"));
+  const currentEmail = user.email;
   const newEmail = document.getElementById('newEmail').value.trim();
   const newPassword = document.getElementById('newPassword').value.trim();
 
   const updatedUser = {
     firstName: document.getElementById('firstName').value.trim(),
     lastName: document.getElementById('lastName').value.trim(),
-    email: newEmail || user.email
+    email: newEmail || currentEmail
   };
 
   try {
-    // ✅ 1. Update Supabase Auth credentials if changed
-    if (newEmail || newPassword) {
+    let emailChanged = newEmail && newEmail !== currentEmail;
+    let passwordChanged = newPassword && newPassword.length > 0;
+
+    // ✅ 1. Auth update only if something changed
+    if (emailChanged || passwordChanged) {
       const { error: authError } = await supabase.auth.updateUser({
-        email: newEmail || undefined,
-        password: newPassword || undefined
+        email: emailChanged ? newEmail : undefined,
+        password: passwordChanged ? newPassword : undefined
       });
-      if (authError) throw authError;
-      console.log("[DEBUG] Auth email/password updated successfully");
+      if (authError) {
+        console.warn("[WARN] Auth update failed:", authError.message);
+        alert("Warning: " + authError.message);
+      } else {
+        console.log("[DEBUG] Auth credentials updated successfully");
+        if (emailChanged) {
+          alert("Check your new email to confirm the change. Email will not update until verified.");
+        }
+      }
     }
 
-    // ✅ 2. Update metadata in users table
+    // ✅ 2. Update users table metadata
     const { error: dbError } = await supabase
       .from("users")
       .update(updatedUser)
       .eq("id", user.id);
     if (dbError) throw dbError;
 
-    // ✅ 3. Save changes locally and confirm
+    // ✅ 3. Save locally
     Object.assign(user, updatedUser);
     localStorage.setItem("loggedInUser", JSON.stringify(user));
-    alert("Settings updated successfully!");
+    alert("Settings saved successfully!");
     window.location.href = "index.html";
   } catch (err) {
     console.error("[ERROR] Save settings failed:", err);
@@ -130,55 +147,42 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById('newEmail').value = user.email || '';
   document.getElementById('avatarImage').src = user.avatarUrl || "images/logos/default.png";
 
-  // ✅ Load related users
-// ✅ Load related users
-const relatedUsers = await fetchRelatedUsers(user);
-let existingAllUsers = JSON.parse(localStorage.getItem("allUsers")) || [];
-const updatedAllUsers = [...existingAllUsers];
+  // ✅ Load related users and build list
+  const relatedUsers = await fetchRelatedUsers(user);
+  let existingAllUsers = JSON.parse(localStorage.getItem("allUsers")) || [];
+  const updatedAllUsers = [...existingAllUsers];
 
-// ✅ Always include the current user
-if (!updatedAllUsers.some(u => u.id === user.id)) {
-  updatedAllUsers.push(user);
-}
-
-// ✅ Add children if any
-relatedUsers.forEach(ru => {
-  if (!updatedAllUsers.some(u => u.id === ru.id)) {
-    updatedAllUsers.push(ru);
+  // Always include current user
+  if (!updatedAllUsers.some(u => u.id === user.id)) {
+    updatedAllUsers.push(user);
   }
-});
 
-// ✅ If the user is teacher/admin AND also has parent_uuid logic (children exist), 
-// ensure a "parent self" entry is added
-if ((user.roles || []).some(r => ["teacher", "admin"].includes(r.toLowerCase())) && relatedUsers.length > 0) {
-  const parentCopy = { ...user, roles: [...new Set([...(user.roles || []), "parent"])] };
-// ✅ Always include current user
-if (!updatedAllUsers.some(u => u.id === user.id)) {
-  updatedAllUsers.push(user);
-}
+  // Add children
+  relatedUsers.forEach(ru => {
+    if (!updatedAllUsers.some(u => u.id === ru.id)) {
+      updatedAllUsers.push(ru);
+    }
+  });
 
-// ✅ If teacher/admin and has children, add a separate "parent mode" entry
-const hasChildren = relatedUsers.length > 0;
-const hasStaffRole = (user.roles || []).some(r => ["teacher", "admin"].includes(r.toLowerCase()));
+  // ✅ If teacher/admin with children, add a parent view entry
+  const hasChildren = relatedUsers.length > 0;
+  const hasStaffRole = (user.roles || []).some(r => ["teacher", "admin"].includes(r.toLowerCase()));
+  if (hasChildren && hasStaffRole) {
+    updatedAllUsers.push({
+      ...user,
+      displayName: `${user.firstName} ${user.lastName} (Parent View)`,
+      isParentView: true,
+      roles: ["parent"]
+    });
+  }
 
-if (hasChildren && hasStaffRole) {
-const parentViewUser = { 
-  ...user, 
-  displayName: `${user.firstName} ${user.lastName} (Parent View)`, 
-  roles: ["parent"], 
-  isParentView: true 
-};
-updatedAllUsers.push(parentViewUser);
-}
-}
-
-localStorage.setItem("allUsers", JSON.stringify(updatedAllUsers));
+  localStorage.setItem("allUsers", JSON.stringify(updatedAllUsers));
 
   // ✅ Show/hide buttons
   document.getElementById("switchUserBtn").style.display = (updatedAllUsers.length > 1) ? "inline-block" : "none";
   document.getElementById("switchRoleBtn").style.display = (user.roles?.length > 1) ? "inline-block" : "none";
 
-  // ✅ Button bindings
+  // ✅ Event bindings
   document.getElementById("logoutBtn").addEventListener("click", () => { localStorage.clear(); window.location.href = "login.html"; });
   document.getElementById("cancelBtn").addEventListener("click", () => window.location.href = "index.html");
   document.getElementById("switchRoleBtn").addEventListener("click", promptRoleSwitch);
