@@ -44,14 +44,20 @@ function promptUserSwitch() {
       ? u.displayName 
       : `${u.firstName} ${u.lastName} (${Array.isArray(u.roles) ? u.roles.join(", ") : ""})`;
 
-    btn.onclick = () => {
-      const userToStore = { ...u };
-      delete userToStore.isParentView;
-      localStorage.setItem("loggedInUser", JSON.stringify(userToStore));
-      const defaultRole = Array.isArray(u.roles) ? u.roles[0] : "student";
-      localStorage.setItem("activeRole", defaultRole);
-      window.location.href = "index.html";
-    };
+btn.onclick = () => {
+  const userToStore = { ...u };
+  delete userToStore.isParentView;
+  localStorage.setItem("loggedInUser", JSON.stringify(userToStore));
+  const defaultRole = Array.isArray(u.roles) ? u.roles[0] : "student";
+  localStorage.setItem("activeRole", defaultRole);
+
+  // ✅ Clear modal flag if switching to a student (stop loop)
+  if (!u.isParentView) {
+    sessionStorage.removeItem("parentModalShown");
+  }
+
+  window.location.href = "index.html";
+};
 
     li.appendChild(btn);
     listContainer.appendChild(li);

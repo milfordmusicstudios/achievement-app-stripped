@@ -11,12 +11,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   // ✅ If user is parent, force redirect to settings with modal flag
-  if (activeRole.toLowerCase() === "parent") {
-    console.log("[DEBUG] Parent role detected – redirecting to settings and forcing modal.");
-    sessionStorage.setItem("forceUserSwitch", "true");
-    window.location.replace("/settings.html");
-    return;
-  }
+if (activeRole.toLowerCase() === "parent" && !sessionStorage.getItem("parentModalShown")) {
+  console.log("DEBUG: Parent role detected – redirecting to settings and forcing modal.");
+  sessionStorage.setItem("forceUserSwitch", "true");
+  sessionStorage.setItem("parentModalShown", "true"); // ✅ prevent repeated redirects
+  window.location.href = "settings.html";
+  return;
+}
 
   try {
     // ✅ Fetch logs for current user
