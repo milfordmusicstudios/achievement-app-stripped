@@ -41,9 +41,21 @@ document.addEventListener("DOMContentLoaded", async () => {
   const siblings = await fetchRelatedUsers(storedUser);
   let updatedAllUsers = [storedUser, ...siblings];
 
+  // ✅ Add loggedInParent and its children
   const loggedInParent = JSON.parse(localStorage.getItem("loggedInParent"));
   if (loggedInParent && !updatedAllUsers.some(u => u.id === loggedInParent.id)) {
     updatedAllUsers.push(loggedInParent);
+
+    const { data: parentChildren } = await supabase
+      .from('users')
+      .select('id, firstName, lastName, email, roles')
+      .eq('parent_uuid', loggedInParent.id);
+
+    if (parentChildren) {
+      parentChildren.forEach(c => {
+        if (!updatedAllUsers.some(u => u.id === c.id)) updatedAllUsers.push(c);
+      });
+    }
   }
 
   // ✅ Normalize roles
