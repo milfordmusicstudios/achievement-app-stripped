@@ -73,6 +73,47 @@ function promptRoleSwitch() {
   document.getElementById("roleSwitchModal").style.display = "flex";
 }
 
+/** ✅ Save Settings - Updates Auth email/password AND users table */
+async function saveSettings() {
+  const user = JSON.parse(localStorage.getItem("loggedInUser"));
+  const newEmail = document.getElementById('newEmail').value.trim();
+  const newPassword = document.getElementById('newPassword').value.trim();
+
+  const updatedUser = {
+    firstName: document.getElementById('firstName').value.trim(),
+    lastName: document.getElementById('lastName').value.trim(),
+    email: newEmail || user.email
+  };
+
+  try {
+    // ✅ 1. Update Supabase Auth credentials if changed
+    if (newEmail || newPassword) {
+      const { error: authError } = await supabase.auth.updateUser({
+        email: newEmail || undefined,
+        password: newPassword || undefined
+      });
+      if (authError) throw authError;
+      console.log("[DEBUG] Auth email/password updated successfully");
+    }
+
+    // ✅ 2. Update metadata in users table
+    const { error: dbError } = await supabase
+      .from("users")
+      .update(updatedUser)
+      .eq("id", user.id);
+    if (dbError) throw dbError;
+
+    // ✅ 3. Save changes locally and confirm
+    Object.assign(user, updatedUser);
+    localStorage.setItem("loggedInUser", JSON.stringify(user));
+    alert("Settings updated successfully!");
+    window.location.href = "index.html";
+  } catch (err) {
+    console.error("[ERROR] Save settings failed:", err);
+    alert("Failed to update settings: " + err.message);
+  }
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
   const user = JSON.parse(localStorage.getItem("loggedInUser"));
   const activeRole = localStorage.getItem("activeRole");
@@ -82,6 +123,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
+  // ✅ Populate user fields
   document.getElementById('firstName').value = user.firstName || '';
   document.getElementById('lastName').value = user.lastName || '';
   document.getElementById('newEmail').value = user.email || '';
@@ -99,11 +141,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("switchUserBtn").style.display = (updatedAllUsers.length > 1) ? "inline-block" : "none";
   document.getElementById("switchRoleBtn").style.display = (user.roles?.length > 1) ? "inline-block" : "none";
 
-  // ✅ Button events
+  // ✅ Button bindings
   document.getElementById("logoutBtn").addEventListener("click", () => { localStorage.clear(); window.location.href = "login.html"; });
   document.getElementById("cancelBtn").addEventListener("click", () => window.location.href = "index.html");
   document.getElementById("switchRoleBtn").addEventListener("click", promptRoleSwitch);
   document.getElementById("switchUserBtn").addEventListener("click", promptUserSwitch);
+  document.getElementById("saveBtn").addEventListener("click", (e) => { e.preventDefault(); saveSettings(); });
 
   // ✅ Auto-trigger modal if coming from parent redirect
   if (sessionStorage.getItem("forceUserSwitch") === "true") {
