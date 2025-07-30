@@ -10,10 +10,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-   // ✅ If the active role is parent, redirect to settings and flag modal
+  // ✅ If user is parent, force redirect to settings with modal flag
   if (activeRole.toLowerCase() === "parent") {
+    console.log("[DEBUG] Parent role detected – redirecting to settings and forcing modal.");
     sessionStorage.setItem("forceUserSwitch", "true");
-    window.location.href = "settings.html";
+    window.location.replace("/settings.html");
     return;
   }
 
@@ -23,7 +24,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       .from("logs")
       .select("*")
       .eq("userId", storedUser.id);
-
     if (logsError) throw logsError;
 
     // ✅ Filter approved logs for points/level calculation
@@ -35,7 +35,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       .from("levels")
       .select("*")
       .order("minPoints", { ascending: true });
-
     if (levelsError) throw levelsError;
 
     // ✅ Determine current and next level
@@ -44,30 +43,26 @@ document.addEventListener("DOMContentLoaded", async () => {
     const currentIndex = levels.findIndex(l => l.id === currentLevel.id);
     const nextLevel = levels[currentIndex + 1];
 
-// ✅ Fetch latest user info, including lastName and roles
-const { data: freshUser, error: userError } = await supabase
-  .from("users")
-  .select("id, firstName, lastName, avatarUrl, roles")
-  .eq("id", storedUser.id)
-  .single();
-
+    // ✅ Fetch latest user info
+    const { data: freshUser, error: userError } = await supabase
+      .from("users")
+      .select("id, firstName, lastName, avatarUrl, roles")
+      .eq("id", storedUser.id)
+      .single();
     if (userError) throw userError;
 
-// ✅ Build user object while preserving roles if missing
-const userData = {
-  ...freshUser,
-  lastName: freshUser?.lastName || storedUser.lastName || "",
-  roles: freshUser?.roles || storedUser.roles || [],
-  points: totalPoints,
-  level: currentLevel?.id || 1,
-  badge: currentLevel?.badge || `images/levelBadges/level${currentLevel?.id || 1}.png`,
-  levelColor: currentLevel?.color || "#3eb7f8"
-};
+    // ✅ Build updated user object
+    const userData = {
+      ...freshUser,
+      lastName: freshUser?.lastName || storedUser.lastName || "",
+      roles: freshUser?.roles || storedUser.roles || [],
+      points: totalPoints,
+      level: currentLevel?.id || 1,
+      badge: currentLevel?.badge || `images/levelBadges/level${currentLevel?.id || 1}.png`,
+      levelColor: currentLevel?.color || "#3eb7f8"
+    };
 
-    // ✅ Update local storage
     localStorage.setItem("loggedInUser", JSON.stringify(userData));
-
-    // ✅ Update UI with all dynamic features
     updateHomeUI(userData, activeRole, currentLevel, nextLevel);
 
   } catch (err) {
@@ -77,7 +72,6 @@ const userData = {
 });
 
 function updateHomeUI(userData, activeRole, currentLevel, nextLevel) {
-  // ✅ Welcome Title
   const welcome = document.getElementById("welcomeTitle");
   if (welcome) {
     welcome.textContent = `Welcome, ${userData.firstName}!`;
@@ -86,11 +80,9 @@ function updateHomeUI(userData, activeRole, currentLevel, nextLevel) {
     welcome.style.fontWeight = "bold";
   }
 
-  // ✅ Avatar
   const avatar = document.getElementById("homeAvatar");
   if (avatar) avatar.src = userData.avatarUrl || "images/logos/default.png";
 
-  // ✅ Badge
   const badgeImg = document.getElementById("homeBadge");
   if (badgeImg) {
     badgeImg.src = (activeRole === "student")
@@ -98,27 +90,24 @@ function updateHomeUI(userData, activeRole, currentLevel, nextLevel) {
       : `images/levelBadges/${activeRole}.png`;
   }
 
-  // ✅ Progress Bar (Dynamic % & Color)
-const progressBar = document.getElementById("homeProgressBar");
-const progressLabel = document.getElementById("homeProgressLabel");
+  const progressBar = document.getElementById("homeProgressBar");
+  const progressLabel = document.getElementById("homeProgressLabel");
   const levelTitle = document.querySelector("#progressCard h3");
 
   if (levelTitle) levelTitle.style.color = "white";
 
-if (progressBar && progressLabel && currentLevel) {
-  let percent = 100;
-  if (nextLevel) {
-    percent = ((userData.points - currentLevel.minPoints) /
-      (nextLevel.minPoints - currentLevel.minPoints)) * 100;
+  if (progressBar && progressLabel && currentLevel) {
+    let percent = 100;
+    if (nextLevel) {
+      percent = ((userData.points - currentLevel.minPoints) /
+        (nextLevel.minPoints - currentLevel.minPoints)) * 100;
+    }
+    percent = Math.min(100, Math.max(0, percent));
+    progressBar.style.width = percent + "%";
+    progressBar.style.backgroundColor = userData.levelColor;
+    progressLabel.textContent = `${Math.round(percent)}% to next level`;
   }
-  percent = Math.min(100, Math.max(0, percent));
 
-  progressBar.style.width = percent + "%";
-  progressBar.style.backgroundColor = userData.levelColor;
-  progressLabel.textContent = `${Math.round(percent)}% to next level`;
-}
-
-  // ✅ Role-based UI visibility
   const myPointsBtn = document.getElementById("myPointsBtn");
   const reviewLogsBtn = document.getElementById("reviewLogsBtn");
   const manageUsersBtn = document.getElementById("manageUsersBtn");

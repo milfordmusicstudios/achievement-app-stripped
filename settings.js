@@ -15,23 +15,13 @@ async function fetchRelatedUsers(user) {
   const parentIdStr = normalizeUUID(user.parent_uuid);
   let sameGroupUsers = [];
 
-  const { data: children, error: childErr } = await supabase
-    .from('users')
-    .select('*')
-    .eq('parent_uuid', userIdStr);
-  if (!childErr && children.length > 0) {
+  const { data: children } = await supabase.from('users').select('*').eq('parent_uuid', userIdStr);
+  if (children?.length) {
     sameGroupUsers = children;
   } else if (parentIdStr) {
-    const { data: siblings, error: sibErr } = await supabase
-      .from('users')
-      .select('*')
-      .eq('parent_uuid', parentIdStr);
-    if (!sibErr && siblings.length > 0) {
-      sameGroupUsers = siblings.filter(u => normalizeUUID(u.id) !== userIdStr);
-    }
+    const { data: siblings } = await supabase.from('users').select('*').eq('parent_uuid', parentIdStr);
+    if (siblings?.length) sameGroupUsers = siblings.filter(u => normalizeUUID(u.id) !== userIdStr);
   }
-
-  console.log("[DEBUG] Related users fetched:", sameGroupUsers);
   return sameGroupUsers;
 }
 
@@ -83,31 +73,6 @@ function promptRoleSwitch() {
   document.getElementById("roleSwitchModal").style.display = "flex";
 }
 
-async function saveSettings() {
-  const user = JSON.parse(localStorage.getItem("loggedInUser"));
-  const updatedUser = {
-    firstName: document.getElementById('firstName').value.trim(),
-    lastName: document.getElementById('lastName').value.trim(),
-    email: document.getElementById('newEmail').value.trim()
-  };
-  try {
-    const { error } = await supabase.from("users").update(updatedUser).eq("id", user.id);
-    if (error) throw error;
-    Object.assign(user, updatedUser);
-    localStorage.setItem("loggedInUser", JSON.stringify(user));
-    alert("Settings saved!");
-    window.location.href = "index.html";
-  } catch (err) {
-    console.error("Save error:", err);
-    alert("Could not save settings: " + err.message);
-  }
-}
-
-function handleLogout() {
-  localStorage.clear();
-  window.location.href = "login.html";
-}
-
 document.addEventListener("DOMContentLoaded", async () => {
   const user = JSON.parse(localStorage.getItem("loggedInUser"));
   const activeRole = localStorage.getItem("activeRole");
@@ -122,92 +87,28 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById('newEmail').value = user.email || '';
   document.getElementById('avatarImage').src = user.avatarUrl || "images/logos/default.png";
 
-  // ✅ Ensure roles is always an array
-  if (!user.roles && user.role) {
-    user.roles = [user.role];
-  } else if (typeof user.roles === "string") {
-    try {
-      user.roles = JSON.parse(user.roles);
-    } catch {
-      user.roles = user.roles.split(",").map(r => r.trim());
-    }
-  } else if (!Array.isArray(user.roles)) {
-    user.roles = user.roles ? [user.roles] : [];
-  }
-  console.log("DEBUG (fixed) user.roles:", user.roles);
-
+  // ✅ Load related users
   const relatedUsers = await fetchRelatedUsers(user);
-
-  // ✅ Preserve any previously stored allUsers list
   let existingAllUsers = JSON.parse(localStorage.getItem("allUsers")) || [];
   const updatedAllUsers = [...existingAllUsers];
-
-  if (!updatedAllUsers.some(u => u.id === user.id)) {
-    updatedAllUsers.push(user);
-  }
-
-  relatedUsers.forEach(ru => {
-    if (!updatedAllUsers.some(u => u.id === ru.id)) {
-      updatedAllUsers.push(ru);
-    }
-  });
-
+  if (!updatedAllUsers.some(u => u.id === user.id)) updatedAllUsers.push(user);
+  relatedUsers.forEach(ru => { if (!updatedAllUsers.some(u => u.id === ru.id)) updatedAllUsers.push(ru); });
   localStorage.setItem("allUsers", JSON.stringify(updatedAllUsers));
-  console.log("DEBUG allUsers:", updatedAllUsers);
 
-  // ✅ Show Switch User if multiple profiles exist
-  const switchUserBtn = document.getElementById("switchUserBtn");
-  const sameEmailUsers = updatedAllUsers.filter(u => u.email?.toLowerCase() === user.email?.toLowerCase());
-  if (updatedAllUsers.length > 1 || relatedUsers.length > 0 || sameEmailUsers.length > 1) {
-    switchUserBtn.style.display = "inline-block";
-  } else {
-    switchUserBtn.style.display = "none";
-  }
+  // ✅ Show/hide buttons
+  document.getElementById("switchUserBtn").style.display = (updatedAllUsers.length > 1) ? "inline-block" : "none";
+  document.getElementById("switchRoleBtn").style.display = (user.roles?.length > 1) ? "inline-block" : "none";
 
-  // ✅ Show Switch Role if multiple roles
-  const switchRoleBtn = document.getElementById("switchRoleBtn");
-  if (user.roles.length > 1) {
-    switchRoleBtn.style.display = "inline-block";
-    switchRoleBtn.textContent = `Switch Role (Currently: ${capitalize(activeRole)})`;
-  } else {
-    switchRoleBtn.style.display = "none";
-  }
-
-  // ✅ Avatar Upload
-  document.getElementById("avatarInput").addEventListener("change", async () => {
-    const file = document.getElementById("avatarInput").files[0];
-    if (!file) return;
-    const fileExt = file.name.split('.').pop();
-    const filePath = `public/${user.id}.${fileExt}`;
-    try {
-      const { error: uploadError } = await supabase.storage.from("avatars").upload(filePath, file, { upsert: true });
-      if (uploadError) throw uploadError;
-      const { data: urlData, error: urlError } = supabase.storage.from("avatars").getPublicUrl(filePath);
-      if (urlError) throw urlError;
-      const avatarUrl = urlData.publicUrl;
-      const { error: updateError } = await supabase.from("users").update({ avatarUrl }).eq("id", user.id);
-      if (updateError) throw updateError;
-      user.avatarUrl = avatarUrl;
-      localStorage.setItem("loggedInUser", JSON.stringify(user));
-      document.getElementById("avatarImage").src = avatarUrl;
-      alert("Avatar updated successfully!");
-    } catch (err) {
-      console.error("Avatar upload error:", err);
-      alert("Failed to upload avatar: " + err.message);
-    }
-     // ✅ At the end of DOMContentLoaded, after everything is initialized:
-  if (sessionStorage.getItem("forceUserSwitch") === "true") {
-    sessionStorage.removeItem("forceUserSwitch");
-    setTimeout(() => {
-      promptUserSwitch(); // use the existing function to show modal
-    }, 300);
-  }
-  });
-
-  document.getElementById("avatarImage").addEventListener("click", () => document.getElementById("avatarInput").click());
-  document.getElementById("saveBtn").addEventListener("click", e => { e.preventDefault(); saveSettings(); });
-  document.getElementById("logoutBtn").addEventListener("click", handleLogout);
+  // ✅ Button events
+  document.getElementById("logoutBtn").addEventListener("click", () => { localStorage.clear(); window.location.href = "login.html"; });
   document.getElementById("cancelBtn").addEventListener("click", () => window.location.href = "index.html");
   document.getElementById("switchRoleBtn").addEventListener("click", promptRoleSwitch);
   document.getElementById("switchUserBtn").addEventListener("click", promptUserSwitch);
+
+  // ✅ Auto-trigger modal if coming from parent redirect
+  if (sessionStorage.getItem("forceUserSwitch") === "true") {
+    console.log("[DEBUG] Forcing user switch modal...");
+    sessionStorage.removeItem("forceUserSwitch");
+    setTimeout(() => promptUserSwitch(), 400);
+  }
 });
