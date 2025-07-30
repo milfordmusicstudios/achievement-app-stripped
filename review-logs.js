@@ -15,42 +15,33 @@ document.addEventListener("DOMContentLoaded", async () => {
   const logsTableBody = document.getElementById("logsTableBody");
   const categorySummary = document.getElementById("categorySummary");
   const searchInput = document.getElementById("searchInput");
+  const statusFilter = document.getElementById("statusFilter");
 
   let logs = [];
   let users = [];
   let filteredLogs = [];
   let currentSort = { field: "date", order: "desc" };
-
   let currentPage = 1;
   let logsPerPage = 50;
 
   try {
-    const { data: logsData, error: logsError } = await supabase
-      .from("logs")
-      .select("*")
-      .order("date", { ascending: false });
+    const { data: logsData, error: logsError } = await supabase.from("logs").select("*").order("date", { ascending: false });
     if (logsError) throw logsError;
 
-const { data: usersData, error: usersError } = await supabase
-  .from("users")
-  .select("id, firstName, lastName, teacherIds");
+    const { data: usersData, error: usersError } = await supabase.from("users").select("id, firstName, lastName, teacherIds");
     if (usersError) throw usersError;
 
     users = usersData;
     logs = logsData.map(l => ({
       ...l,
-      fullName: (users.find(u => u.id === l.userId)?.firstName || "Unknown") +
-                " " +
+      fullName: (users.find(u => u.id === l.userId)?.firstName || "Unknown") + " " +
                 (users.find(u => u.id === l.userId)?.lastName || "")
     }));
-// ✅ Restrict logs for teacher role
-if (activeRole === "teacher") {
-  const myStudents = users
-    .filter(u => Array.isArray(u.teacherIds) && u.teacherIds.includes(user.id))
-    .map(s => s.id);
 
-  logs = logs.filter(l => myStudents.includes(l.userId));
-}
+    if (activeRole === "teacher") {
+      const myStudents = users.filter(u => Array.isArray(u.teacherIds) && u.teacherIds.includes(user.id)).map(s => s.id);
+      logs = logs.filter(l => myStudents.includes(l.userId));
+    }
 
     filteredLogs = [...logs];
     renderCategorySummary(filteredLogs);
@@ -60,109 +51,42 @@ if (activeRole === "teacher") {
     alert("Failed to load logs.");
   }
 
-  const bulkPanel = document.getElementById("bulkApprovePanel");
-  const bulkPointsInput = document.getElementById("bulkPoints");
+  // ✅ Search + Status Filter Combined
+  searchInput.addEventListener("input", applyFilters);
+  statusFilter.addEventListener("change", applyFilters);
 
-  document.getElementById("bulkApproveBtn").addEventListener("click", () => {
-    bulkPanel.style.display = "block";
-  });
-
-  document.getElementById("cancelBulkApprove").addEventListener("click", () => {
-    bulkPanel.style.display = "none";
-    bulkPointsInput.value = "";
-  });
-
-  // ✅ Confirm Bulk Approve Selected Logs
-  document.getElementById("confirmBulkApprove").addEventListener("click", async () => {
-    const pointsInput = bulkPointsInput.value.trim();
-    const assignPoints = pointsInput !== "";
-    const points = assignPoints ? parseInt(pointsInput) : null;
-
-    const selectedIds = Array.from(document.querySelectorAll(".select-log:checked"))
-      .map(cb => cb.dataset.id);
-
-    if (selectedIds.length === 0) {
-      alert("No logs selected.");
-      return;
-    }
-
-    if (!confirm(`Approve ${selectedIds.length} logs${assignPoints ? ` with ${points} points` : ""}?`)) return;
-
-    try {
-      for (let id of selectedIds) {
-        const updateData = { status: "approved" };
-        if (assignPoints) updateData.points = points;
-
-        const { error } = await supabase.from("logs").update(updateData).eq("id", id);
-        if (error) throw error;
-
-        const log = logs.find(l => l.id.toString() === id);
-        if (log) {
-          log.status = "approved";
-          if (assignPoints) log.points = points;
-        }
-        const flog = filteredLogs.find(l => l.id.toString() === id);
-        if (flog) {
-          flog.status = "approved";
-          if (assignPoints) flog.points = points;
-        }
-      }
-      renderLogsTable(filteredLogs);
-      bulkPanel.style.display = "none";
-      bulkPointsInput.value = "";
-      alert("✅ Selected logs approved successfully.");
-    } catch (err) {
-      console.error("Bulk approve failed:", err);
-      alert("❌ Failed to approve selected logs.");
-    }
-  });
-
-  // ✅ NEW: Delete Selected Logs
-  document.getElementById("deleteSelectedBtn").addEventListener("click", async () => {
-    const selectedIds = Array.from(document.querySelectorAll(".select-log:checked"))
-      .map(cb => cb.dataset.id);
-
-    if (selectedIds.length === 0) {
-      alert("No logs selected.");
-      return;
-    }
-
-    if (!confirm(`Are you sure you want to permanently delete ${selectedIds.length} logs? This action cannot be undone.`)) {
-      return;
-    }
-
-    try {
-      const { error } = await supabase.from("logs").delete().in("id", selectedIds);
-      if (error) throw error;
-
-      logs = logs.filter(l => !selectedIds.includes(l.id.toString()));
-      filteredLogs = filteredLogs.filter(l => !selectedIds.includes(l.id.toString()));
-      renderLogsTable(filteredLogs);
-
-      alert("✅ Selected logs deleted successfully.");
-    } catch (err) {
-      console.error("Delete logs failed:", err);
-      alert("❌ Failed to delete selected logs.");
-    }
-  });
-
-  // ✅ Search Filter
-  searchInput.addEventListener("input", () => {
+  function applyFilters() {
     const searchVal = searchInput.value.toLowerCase();
-    filteredLogs = logs.filter(l =>
-      l.fullName.toLowerCase().includes(searchVal) ||
-      (l.notes || "").toLowerCase().includes(searchVal) ||
-      (l.category || "").toLowerCase().includes(searchVal)
-    );
+    const statusVal = statusFilter.value;
+
+    filteredLogs = logs.filter(l => {
+      const matchesSearch =
+        l.fullName.toLowerCase().includes(searchVal) ||
+        (l.notes || "").toLowerCase().includes(searchVal) ||
+        (l.category || "").toLowerCase().includes(searchVal);
+      const matchesStatus = !statusVal || (l.status && l.status.toLowerCase() === statusVal.toLowerCase());
+      return matchesSearch && matchesStatus;
+    });
+
     currentPage = 1;
     sortLogs();
     renderCategorySummary(filteredLogs);
     renderLogsTable(filteredLogs);
-  });
+  }
 
-  document.getElementById("selectAll").addEventListener("change", (e) => {
-    document.querySelectorAll(".select-log").forEach(cb => {
-      cb.checked = e.target.checked;
+  // ✅ Column Sorting
+  document.querySelectorAll("#logsHeaderTable th[data-sort]").forEach(th => {
+    th.style.cursor = "pointer";
+    th.addEventListener("click", () => {
+      const field = th.dataset.sort;
+      if (currentSort.field === field) {
+        currentSort.order = currentSort.order === "asc" ? "desc" : "asc";
+      } else {
+        currentSort.field = field;
+        currentSort.order = "asc";
+      }
+      sortLogs();
+      renderLogsTable(filteredLogs);
     });
   });
 
@@ -170,6 +94,7 @@ if (activeRole === "teacher") {
     filteredLogs.sort((a, b) => {
       let aVal = a[currentSort.field] || "";
       let bVal = b[currentSort.field] || "";
+
       if (currentSort.field === "date") {
         aVal = new Date(aVal);
         bVal = new Date(bVal);
@@ -178,10 +103,12 @@ if (activeRole === "teacher") {
         aVal = parseInt(aVal) || 0;
         bVal = parseInt(bVal) || 0;
       }
+
       return currentSort.order === "asc" ? (aVal > bVal ? 1 : -1) : (aVal < bVal ? 1 : -1);
     });
   }
 
+  // ✅ Pagination Controls
   document.getElementById("prevPageBtn").addEventListener("click", () => {
     if (currentPage > 1) {
       currentPage--;
@@ -197,7 +124,7 @@ if (activeRole === "teacher") {
     }
   });
 
-  document.getElementById("logsPerPage").addEventListener("change", (e) => {
+  document.getElementById("logsPerPage").addEventListener("change", e => {
     logsPerPage = parseInt(e.target.value);
     currentPage = 1;
     renderLogsTable(filteredLogs);
@@ -241,14 +168,8 @@ if (activeRole === "teacher") {
       </div>`;
   }
 
-  function autoResizeTextarea(textarea) {
-    textarea.style.height = "auto";
-    textarea.style.height = textarea.scrollHeight + "px";
-  }
-
   function renderLogsTable(logs) {
     logsTableBody.innerHTML = "";
-
     const start = (currentPage - 1) * logsPerPage;
     const end = start + logsPerPage;
     const pageLogs = logs.slice(start, end);
@@ -285,8 +206,10 @@ if (activeRole === "teacher") {
   function applyEditListeners() {
     document.querySelectorAll(".edit-input").forEach(el => {
       if (el.tagName.toLowerCase() === "textarea") {
-        autoResizeTextarea(el);
-        el.addEventListener("input", () => autoResizeTextarea(el));
+        el.addEventListener("input", () => {
+          el.style.height = "auto";
+          el.style.height = el.scrollHeight + "px";
+        });
       }
       el.addEventListener("change", async e => {
         const logId = e.target.dataset.id;

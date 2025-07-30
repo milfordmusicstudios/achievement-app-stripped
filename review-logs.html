@@ -16,46 +16,53 @@
       <h2>Review Logs</h2>
     </header>
 
-    <!-- ✅ Category Summary (Centered) -->
+    <!-- ✅ Category Summary -->
     <section id="categorySummary"></section>
 
-    <!-- ✅ Action Bar (Moved Under Cards) -->
+    <!-- ✅ Action Bar -->
     <div id="actionBar">
       <input id="searchInput" type="text" placeholder="Search logs...">
+      <select id="statusFilter" class="blue-button">
+        <option value="">All Statuses</option>
+        <option value="pending">Pending</option>
+        <option value="approved">Approved</option>
+        <option value="rejected">Rejected</option>
+        <option value="needs info">Needs Info</option>
+      </select>
       <button id="bulkApproveBtn" class="blue-button">Bulk Approve Selected</button>
-      <!-- ✅ NEW Delete Button -->
       <button id="deleteSelectedBtn" class="blue-button" style="background:#d9534f;">Delete Selected Logs</button>
     </div>
 
     <!-- ✅ Bulk Approve Panel -->
     <div id="bulkApprovePanel" style="display:none; text-align:center; margin-bottom:10px;">
-      <label>Points to assign: 
+      <label>Points to assign:
         <input type="number" id="bulkPoints" style="width:80px;">
       </label>
       <button id="confirmBulkApprove" class="blue-button">Confirm</button>
       <button id="cancelBulkApprove" class="blue-button" style="background:#999;">Cancel</button>
     </div>
-<div id="logsWrapper">
-    <!-- ✅ Table Header -->
-    <table id="logsHeaderTable">
-      <thead>
-        <tr>
-          <th><input type="checkbox" id="selectAll"></th>
-          <th>Student</th>
-          <th>Category</th>
-          <th>Date</th>
-          <th>Points</th>
-          <th>Note</th>
-          <th>Status</th>
-        </tr>
-      </thead>
-    </table>
 
     <!-- ✅ Scrollable Table -->
+    <div id="logsWrapper">
+      <table id="logsHeaderTable">
+        <thead>
+          <tr>
+            <th><input type="checkbox" id="selectAll"></th>
+            <th data-sort="fullName">Student</th>
+            <th data-sort="category">Category</th>
+            <th data-sort="date">Date</th>
+            <th data-sort="points">Points</th>
+            <th>Note</th>
+            <th data-sort="status">Status</th>
+          </tr>
+        </thead>
+      </table>
+
       <table id="logsTable">
         <tbody id="logsTableBody"></tbody>
       </table>
-  </div>
+    </div>
+
     <!-- ✅ Pagination -->
     <div id="paginationControls">
       <button id="prevPageBtn" class="blue-button">Prev</button>
