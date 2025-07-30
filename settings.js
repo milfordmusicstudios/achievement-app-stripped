@@ -99,10 +99,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     modal.style.display = "flex";
   });
 
-  // ✅ Close modal on cancel
-  document.getElementById("cancelUserSwitch").addEventListener("click", () => {
-    document.getElementById("userSwitchModal").style.display = "none";
-  });
 
   // ✅ Switch Role Modal
   roleSwitchBtn.addEventListener("click", () => {
@@ -125,7 +121,4 @@ document.addEventListener("DOMContentLoaded", async () => {
     modal.style.display = "flex";
   });
 
-  document.getElementById("cancelRoleSwitch").addEventListener("click", () => {
-    document.getElementById("roleSwitchModal").style.display = "none";
-  });
 });

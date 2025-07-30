@@ -96,7 +96,7 @@ function showChildModal(children, parent) {
   const container = document.getElementById("childButtons");
   container.innerHTML = '';
 
-  // ✅ Add teacher/admin parent as an option
+  // ✅ Add teacher/admin option first
   const parentBtn = document.createElement("button");
   parentBtn.textContent = `${parent.firstName} ${parent.lastName} (${parent.roles.join(", ")})`;
   parentBtn.className = "blue-button";
@@ -132,11 +132,6 @@ function setActiveChild(child, parent) {
 
   document.getElementById("childSelectModal").style.display = "none";
   location.reload();
-}
-
-function cancelChildSelection() {
-  localStorage.clear();
-  window.location.href = "login.html";
 }
 
 function updateHomeUI(userData, activeRole, currentLevel, nextLevel) {
