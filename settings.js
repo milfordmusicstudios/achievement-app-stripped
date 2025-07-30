@@ -39,13 +39,14 @@ function promptUserSwitch() {
     btn.className = "blue-button";
     btn.style = "margin: 5px 0; width: 100%;";
     let roleText = Array.isArray(u.roles) ? ` (${u.roles.join(", ")})` : "";
-    btn.textContent = `${u.firstName} ${u.lastName}${roleText}`;
-    btn.onclick = () => {
-      localStorage.setItem("loggedInUser", JSON.stringify(u));
-      const defaultRole = Array.isArray(u.roles) ? u.roles[0] : "student";
-      localStorage.setItem("activeRole", defaultRole);
-      window.location.href = "index.html";
-    };
+btn.textContent = `${u.displayName || (u.firstName + " " + u.lastName)} (${Array.isArray(u.roles) ? u.roles.join(", ") : ""})`;
+btn.onclick = () => {
+  const userToStore = { ...u };
+  delete userToStore.isParentView;
+  localStorage.setItem("loggedInUser", JSON.stringify(userToStore));
+  localStorage.setItem("activeRole", "parent");
+  window.location.href = "index.html";
+};
     li.appendChild(btn);
     listContainer.appendChild(li);
   });
@@ -161,8 +162,13 @@ const hasChildren = relatedUsers.length > 0;
 const hasStaffRole = (user.roles || []).some(r => ["teacher", "admin"].includes(r.toLowerCase()));
 
 if (hasChildren && hasStaffRole) {
-  const parentViewUser = { ...user, id: user.id + "-parentview", roles: ["parent"] };
-  updatedAllUsers.push(parentViewUser);
+const parentViewUser = { 
+  ...user, 
+  displayName: `${user.firstName} ${user.lastName} (Parent View)`, 
+  roles: ["parent"], 
+  isParentView: true 
+};
+updatedAllUsers.push(parentViewUser);
 }
 }
 
