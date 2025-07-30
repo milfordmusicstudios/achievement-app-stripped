@@ -15,9 +15,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  // ✅ Fetch siblings of the user
+  // ✅ Use parent context if available
+  const parentContext = JSON.parse(localStorage.getItem("loggedInParent"));
+
   async function fetchRelatedUsers(user) {
-    const parentId = normalizeUUID(user.parent_uuid);
+    const parentId = parentContext ? normalizeUUID(parentContext.id) : normalizeUUID(user.parent_uuid);
     let siblings = [];
 
     if (parentId) {
@@ -25,6 +27,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         .from('users')
         .select('id, firstName, lastName, email, roles')
         .eq('parent_uuid', parentId);
+
       if (!error && data) siblings = data;
     }
 
@@ -36,26 +39,22 @@ document.addEventListener("DOMContentLoaded", async () => {
   const siblings = await fetchRelatedUsers(storedUser);
   let updatedAllUsers = [storedUser, ...siblings];
 
-  // ✅ Include loggedInParent and its children
-  const loggedInParent = JSON.parse(localStorage.getItem("loggedInParent"));
-  if (loggedInParent && !updatedAllUsers.some(u => u.id === loggedInParent.id)) {
-    updatedAllUsers.push(loggedInParent);
+  if (parentContext && !updatedAllUsers.some(u => u.id === parentContext.id)) {
+    updatedAllUsers.push(parentContext);
 
     const { data: parentChildren } = await supabase
       .from('users')
       .select('id, firstName, lastName, email, roles')
-      .eq('parent_uuid', loggedInParent.id);
+      .eq('parent_uuid', parentContext.id);
 
     if (parentChildren) {
       parentChildren.forEach(c => {
-        if (!updatedAllUsers.some(u => u.id === c.id)) {
-          updatedAllUsers.push(c);
-        }
+        if (!updatedAllUsers.some(u => u.id === c.id)) updatedAllUsers.push(c);
       });
     }
   }
 
-  // ✅ Normalize roles for every user
+  // ✅ Normalize roles
   updatedAllUsers.forEach(u => {
     if (typeof u.roles === "string") {
       try { u.roles = JSON.parse(u.roles); }
@@ -67,10 +66,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   console.log("[DEBUG] allUsers:", updatedAllUsers);
 
-  // ✅ Show Switch User button if more than one profile
+  // ✅ Show Switch User button if >1 profiles
   switchUserBtn.style.display = updatedAllUsers.length > 1 ? "inline-block" : "none";
 
-  // ✅ Show Switch Role button if multiple roles exist
+  // ✅ Show Role Switch if multiple roles
   const hasMultipleRoles = storedUser.roles && storedUser.roles.length > 1;
   roleSwitchBtn.style.display = hasMultipleRoles ? "inline-block" : "none";
 
