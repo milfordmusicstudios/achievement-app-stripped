@@ -1665,17 +1665,20 @@ body.white-page main.app {
 }
 /* ✅ Single scroll container for Review Logs */
 #logsWrapper {
-  overflow-x: auto;
-  overflow-y: hidden;
-  -webkit-overflow-scrolling: touch;
   width: 100%;
+  overflow-x: auto;
+  overflow-y: auto;
+  border: 1px solid #ccc;
+  background: #fff;
+  max-height: 70vh;   /* ✅ allows scrolling but keeps header visible */
 }
 
+/* Make sure table is wide enough and scrolls */
 #logsWrapper table {
-  min-width: 950px;
-  width: auto;
+  min-width: 1000px;   /* ✅ ensures columns fit */
   border-collapse: collapse;
 }
+
 /* ✅ Remove inner scroll and allow the wrapper to handle it */
 #usersScrollWrapper {
   overflow-x: auto;
@@ -1822,16 +1825,15 @@ body.white-page #logForm td {
   html, body {
     overflow-x: hidden !important;   /* ✅ prevents body from scrolling sideways */
   }
-  #logsWrapper {
-    width: 100% !important;
-    overflow-x: auto !important;     /* ✅ table scrolls inside wrapper */
-    padding-bottom: 2px;             /* ✅ remove white strip at bottom */
+ #logsWrapper {
+    max-height: 65vh;       /* ✅ show 4–5 logs on mobile */
+    overflow-x: auto !important;
+    overflow-y: auto !important;
   }
   #logsWrapper table {
-    min-width: 100% !important;      /* ✅ table matches wrapper width */
+    min-width: 800px;       /* ✅ narrower for mobile scroll */
   }
-}
-/* === FIX: Manage Users Table Height and Horizontal Scrolling === */
+}/* === FIX: Manage Users Table Height and Horizontal Scrolling === */
 #usersScrollWrapper {
   width: 95%;
   margin: 0 auto;
