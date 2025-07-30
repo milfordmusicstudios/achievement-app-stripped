@@ -1817,4 +1817,41 @@ body.white-page #logForm td {
   width: 420px !important;
   max-width: 95% !important;
   padding: 20px;
+}/* === FIX: Prevent horizontal white strip on Review Logs (Mobile) === */
+@media (max-width: 768px) {
+  html, body {
+    overflow-x: hidden !important;   /* ✅ prevents body from scrolling sideways */
+  }
+  #logsWrapper {
+    width: 100% !important;
+    overflow-x: auto !important;     /* ✅ table scrolls inside wrapper */
+    padding-bottom: 2px;             /* ✅ remove white strip at bottom */
+  }
+  #logsWrapper table {
+    min-width: 100% !important;      /* ✅ table matches wrapper width */
+  }
+}
+/* === FIX: Manage Users Table Height and Horizontal Scrolling === */
+#usersScrollWrapper {
+  width: 95%;
+  margin: 0 auto;
+  overflow-x: auto;          /* ✅ enables horizontal scroll */
+  overflow-y: auto;          /* ✅ enables vertical scroll */
+  max-height: 70vh;          /* ✅ allows 4–5 rows on screen */
+  border: 1px solid #ccc;
+  background: #fff;
+}
+
+#usersScrollWrapper table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 900px;          /* ✅ keeps columns readable */
+}
+
+#usersScrollWrapper th,
+#usersScrollWrapper td {
+  padding: 6px;
+  border-bottom: 1px solid #ddd;
+  text-align: left;
+  white-space: nowrap;       /* ✅ prevent wrapping so horizontal scroll works */
 }
