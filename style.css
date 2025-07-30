@@ -1785,7 +1785,7 @@ body.white-page #logForm td {
 .modal-button {
   display: block;
   width: 90%;
-  margin: 8px auto;
+  margin: 8px auto !important;
   font-size: 1.1rem;
   padding: 6px;
 }
