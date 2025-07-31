@@ -227,4 +227,40 @@ document.addEventListener("DOMContentLoaded", async () => {
       });
     });
   }
+// ✅ DELETE SELECTED LOGS
+document.getElementById("deleteSelectedBtn").addEventListener("click", async () => {
+  const selectedIds = Array.from(document.querySelectorAll(".select-log:checked"))
+    .map(cb => cb.dataset.id.trim());
+
+  if (selectedIds.length === 0) {
+    alert("No logs selected.");
+    return;
+  }
+
+  if (!confirm(`Are you sure you want to permanently delete ${selectedIds.length} logs? This action cannot be undone.`)) {
+    return;
+  }
+
+  try {
+    console.log("[DEBUG] Deleting logs:", selectedIds);
+    const { error } = await supabase.from("logs").delete().in("id", selectedIds);
+
+    if (error) {
+      console.error("[DELETE ERROR]", error);
+      alert("❌ Failed to delete logs: " + error.message);
+      return;
+    }
+
+    // ✅ Remove from local arrays
+    logs = logs.filter(l => !selectedIds.includes(l.id));
+    filteredLogs = filteredLogs.filter(l => !selectedIds.includes(l.id));
+
+    renderLogsTable(filteredLogs);
+    renderCategorySummary(filteredLogs);
+    alert("✅ Selected logs deleted successfully.");
+  } catch (err) {
+    console.error("Delete logs failed:", err);
+    alert("❌ Failed to delete logs.");
+  }
+});
 });
