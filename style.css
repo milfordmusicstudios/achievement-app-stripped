@@ -1025,20 +1025,6 @@ body.leaderboard-page .level-row {
   width: 95%;
   max-width: 900px;
 }
-body.leaderboard-page {
-  height: 100vh;
-  overflow: hidden;          /* ✅ keep page fixed (no double scroll) */
-  display: flex;
-  flex-direction: column;
-}
-
-.leaderboard-scroll-wrapper {
-  flex: 1;
-  height: 100%;              /* ✅ fill available space */
-  max-height: calc(100vh - 60px); /* ✅ allows full scroll */  overflow-y: auto;          /* ✅ inner scroll works fully */
-  overflow-x: auto;
-  overflow-y: auto;
-}
 
 body.leaderboard-page .level-badge-icon {
   width: 60px;
@@ -1883,11 +1869,6 @@ body.white-page #logForm td {
   max-width: 1200px;         /* ✅ keeps proper layout */
 }
 
-@media (max-width: 1200px) {
-  .leaderboard-scroll-wrapper {
-    overflow-x: auto;        /* ✅ only scrolls on small screens */
-  }
-}
 #logsWrapper, #usersScrollWrapper {
   overflow-x: auto;
   overflow-y: auto;
@@ -1969,22 +1950,6 @@ body.leaderboard-page h2
 }
 
 @media (max-width: 768px) {
-  body.leaderboard-page h2 {
-    font-size: 2rem;          /* ✅ even smaller on mobile */
-  }
-  .leaderboard-scroll-wrapper {
-    max-height: 100vh;
-  }
-}
-.leaderboard-scroll-wrapper {
-  flex: 1;
-  height: 100%;
-  max-height: calc(100vh - 60px); /* ✅ room for header */
-  overflow-y: auto;
-  overflow-x: auto;
-}
-/* === MOBILE FIX FOR LEADERBOARD === */
-@media (max-width: 768px) {
   .leaderboard-header {
     padding: 5px 10px;      
   }
@@ -1992,7 +1957,25 @@ body.leaderboard-page h2
     font-size: 1.5rem;
     margin: 5px 0;
   }
+}
+body.leaderboard-page {
+  height: 100vh;
+  overflow: hidden;        /* ✅ keep only inner scroll */
+  display: flex;
+  flex-direction: column;
+}
+
+.leaderboard-scroll-wrapper {
+  flex: 1;
+  height: auto;
+  max-height: calc(100vh - 20px); /* ✅ allow almost full viewport */
+  overflow-y: auto;
+  overflow-x: auto;
+}
+
+/* === MOBILE FIX: USE FULL HEIGHT === */
+@media (max-width: 768px) {
   .leaderboard-scroll-wrapper {
-    max-height: calc(100vh - 40px); /* ✅ more space for scroll */
+    max-height: 100vh !important; /* ✅ removes subtraction */
   }
 }
