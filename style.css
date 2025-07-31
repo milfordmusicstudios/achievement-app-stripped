@@ -1866,3 +1866,20 @@ body.white-page #logForm td {
 #paginationControls select {
   margin-right: 8px;
 }
+/* === Fix Horizontal Scroll ONLY for Leaderboard === */
+.leaderboard-scroll-wrapper {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;        /* ✅ no scroll on desktop */
+}
+
+.leaderboard-scroll-wrapper .level-bars {
+  min-width: 100%;
+  max-width: 1200px;         /* ✅ keeps proper layout */
+}
+
+@media (max-width: 1200px) {
+  .leaderboard-scroll-wrapper {
+    overflow-x: auto;        /* ✅ only scrolls on small screens */
+  }
+}
