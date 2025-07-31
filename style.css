@@ -1039,7 +1039,7 @@ body.leaderboard-page {
   height: auto;                  /* ✅ no forced height */
   overflow-y: auto;              /* ✅ inner scroll works */
   overflow-x: auto;              /* ✅ allow horizontal scroll if needed */
-  max-height: calc(100vh - 100px); /* ✅ limit height so only inner scroll is active */
+  max-height: 100vh; /* ✅ limit height so only inner scroll is active */
 }
 
 body.leaderboard-page .level-badge-icon {
@@ -1975,6 +1975,6 @@ body.leaderboard-page h2
     font-size: 2rem;          /* ✅ even smaller on mobile */
   }
   .leaderboard-scroll-wrapper {
-    max-height: calc(100vh - 40px);
+    max-height: 100vh;
   }
 }
