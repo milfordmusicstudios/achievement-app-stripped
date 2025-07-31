@@ -1959,17 +1959,17 @@ body.leaderboard-page h2
   }
 }
 body.leaderboard-page {
-  height: 100vh;
-  overflow: hidden;        /* ✅ keep only inner scroll */
+  height: auto;
+  overflow: auto;        /* ✅ keep only inner scroll */
   display: flex;
   flex-direction: column;
 }
 
 .leaderboard-scroll-wrapper {
-  flex: 1;
-  height: auto;
-  max-height: calc(100vh - 20px); /* ✅ allow almost full viewport */
-  overflow-y: auto;
+  flex: none;
+  height: auto !important;
+  max-height: none;
+  overflow-y: visible !important;
   overflow-x: auto;
 }
 
