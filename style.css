@@ -1026,7 +1026,20 @@ body.leaderboard-page .level-row {
   max-width: 900px;
 }
 body.leaderboard-page {
-  overflow-y: auto; /* ✅ only main page scrolls */
+  height: 100vh;             /* ✅ lock page height */
+  overflow: hidden;          /* ✅ disable page scroll */
+  display: flex;
+  flex-direction: column;
+}
+
+.leaderboard-scroll-wrapper {
+  flex: 1;                       /* ✅ fills remaining height */
+  width: 100%;
+  max-width: 100%;
+  height: auto;                  /* ✅ no forced height */
+  overflow-y: auto;              /* ✅ inner scroll works */
+  overflow-x: auto;              /* ✅ allow horizontal scroll if needed */
+  max-height: calc(100vh - 100px); /* ✅ limit height so only inner scroll is active */
 }
 
 body.leaderboard-page .level-badge-icon {
@@ -1874,13 +1887,6 @@ body.white-page #logForm td {
 #paginationControls select {
   margin-right: 8px;
 }
-/* === Fix Horizontal Scroll ONLY for Leaderboard === */
-.leaderboard-scroll-wrapper {
-  width: 100%;
-  max-width: 100%;
-  height: auto !important;
-  overflow-y: visible !important;
-}
 
 .leaderboard-scroll-wrapper .level-bars {
   min-width: 100%;
@@ -1896,11 +1902,4 @@ body.white-page #logForm td {
   overflow-x: auto;
   overflow-y: auto;
   max-height: 70vh;
-}
-body.review-logs, body.manage-users {
-  overflow-y: auto; /* ✅ main page scroll works */
-}
-.scroll-wrapper {
-  overflow-x: visible !important;
-  overflow-y: visible !important;
 }
