@@ -77,8 +77,8 @@ async function generateLeaderboard() {
       levelTrack.style.backgroundColor = level.color || "#3eb7f8";
       levelTrack.style.border = `4px solid ${darkenColor(level.color || "#3eb7f8")}`;
 // ✅ Fit to screen width but allow scrolling on very small screens
-levelTrack.style.width = "100%";
-levelTrack.style.maxWidth = "1200px";
+levelTrack.style.width = "100%";      // ✅ fits container
+levelTrack.style.maxWidth = "100%";   // ✅ no horizontal overflow
 
       const avatarTrack = document.createElement("div");
       avatarTrack.classList.add("avatar-track");
