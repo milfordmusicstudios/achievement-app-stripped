@@ -2,6 +2,33 @@ import { supabase } from './supabase.js';
 
 document.addEventListener("DOMContentLoaded", async () => {
   const popup = document.getElementById("loadingPopup");
+  const loadingText = document.getElementById("loadingMessage");
+
+  // ✅ List of 15-20 fun loading messages
+const messages = [
+  "🎶 Loading the rhythm of success…",
+  "🎸 Tuning up the strings of greatness…",
+  "🥁 Drumming up some excitement…",
+  "🎹 Hitting all the right keys…",
+  "🎤 Mic check... 1, 2, 3, almost there!",
+  "🎧 Mixing the perfect soundtrack for victory…",
+  "🎼 Arranging the notes of achievement…",
+  "🔥 Shredding through the data like a solo guitar riff…",
+  "🏆 Composing the champions’ anthem…",
+  "💃 Dancing through the scores…",
+  "🎯 Hitting every note with precision…",
+  "🧩 Piecing together the perfect harmony…",
+  "🎶 Where words fail, music speaks… loading greatness…",
+  "🌟 Every note counts… loading your masterpiece…"
+];
+
+  // ✅ Cycle through messages every 2 seconds
+  let i = 0;
+  setInterval(() => {
+    i = (i + 1) % messages.length;
+    loadingText.textContent = messages[i];
+  }, 2000);
+
   if (popup) popup.style.display = "flex";
 
   await updateAllUsersLevels();
