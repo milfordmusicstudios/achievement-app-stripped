@@ -1959,8 +1959,8 @@ body.white-page #logForm td {
   80%, 100% { text-shadow: .25em 0 white, .5em 0 white; }
 }
 /* === Stylish Page Titles for Blue Background Pages === */
-body.leaderboard-page h1,
-body.review-logs h1 {
+body.leaderboard-page h2
+ {
   font-family: 'Trebuchet MS', 'Segoe UI', sans-serif; /* ✅ modern clean font */
   font-size: 3rem;                                     /* ✅ larger size */
   font-weight: 800;                                    /* ✅ bold */
