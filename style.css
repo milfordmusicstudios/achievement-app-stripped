@@ -1667,19 +1667,24 @@ body.white-page main.app {
   }
 }
 /* ✅ Single scroll container for Review Logs */
+body.review-logs {
+  height: 100vh;               /* ✅ full viewport */
+  overflow: hidden;            /* ✅ no page scroll */
+  display: flex;
+  flex-direction: column;
+}
+
 #logsWrapper {
-  width: 100%;
+  flex: 1;                     /* ✅ take remaining height */
+  overflow-y: auto;            /* ✅ only inner scroll */
   overflow-x: auto;
-  overflow-y: auto;
-  border: 1px solid #ccc;
-  background: #fff;
-  max-height: 70vh;   /* ✅ allows scrolling but keeps header visible */
+  max-height: calc(100vh - 200px); /* ✅ adjust based on header/footer */
 }
 
 /* Make sure table is wide enough and scrolls */
 #logsWrapper table {
-  min-width: 1000px;   /* ✅ ensures columns fit */
-  border-collapse: collapse;
+  min-width: 900px;
+  width: 100%;
 }
 
 /* ✅ Remove inner scroll and allow the wrapper to handle it */
