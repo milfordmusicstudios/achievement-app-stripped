@@ -124,10 +124,18 @@ sorted.forEach(s => {
         return;
       }
 
-      let status = "pending";
-      if (!(activeRole === "admin" || activeRole === "teacher") && category === "practice") {
-        status = "approved";
-      }
+// ✅ Determine status
+let status = "pending";
+
+// ✅ Any log created by teacher/admin is auto-approved
+if (activeRole === "admin" || activeRole === "teacher") {
+  status = "approved";
+}
+
+// ✅ Any practice log is auto-approved (even if student created it)
+if (category.toLowerCase() === "practice") {
+  status = "approved";
+}
 
       const { error: logErr } = await supabase.from("logs").insert([{
         userId: targetUser,
