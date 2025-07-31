@@ -1871,6 +1871,7 @@ body.white-page #logForm td {
   width: 100%;
   max-width: 100%;
   overflow-x: hidden;        /* ✅ no scroll on desktop */
+  overflow-y: visible;
 }
 
 .leaderboard-scroll-wrapper .level-bars {
