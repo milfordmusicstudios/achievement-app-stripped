@@ -1,9 +1,6 @@
 import { supabase } from './supabase.js';
 
 document.addEventListener("DOMContentLoaded", async () => {
-  // ✅ Apply zoom when the leaderboard loads
-  document.body.classList.add("zoomed-out");
-
   const popup = document.getElementById("loadingPopup");
   if (popup) popup.style.display = "flex";
 
