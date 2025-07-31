@@ -1026,20 +1026,18 @@ body.leaderboard-page .level-row {
   max-width: 900px;
 }
 body.leaderboard-page {
-  height: 100vh;             /* ✅ lock page height */
-  overflow: hidden;          /* ✅ disable page scroll */
+  height: 100vh;
+  overflow: hidden;          /* ✅ keep page fixed (no double scroll) */
   display: flex;
   flex-direction: column;
 }
 
 .leaderboard-scroll-wrapper {
-  flex: 1;                       /* ✅ fills remaining height */
-  width: 100%;
-  max-width: 100%;
-  height: auto;                  /* ✅ no forced height */
-  overflow-y: auto;              /* ✅ inner scroll works */
-  overflow-x: auto;              /* ✅ allow horizontal scroll if needed */
-  max-height: 100vh; /* ✅ limit height so only inner scroll is active */
+  flex: 1;
+  height: 100%;              /* ✅ fill available space */
+  max-height: calc(100vh - 60px); /* ✅ allows full scroll */  overflow-y: auto;          /* ✅ inner scroll works fully */
+  overflow-x: auto;
+  overflow-y: auto;
 }
 
 body.leaderboard-page .level-badge-icon {
@@ -1976,5 +1974,25 @@ body.leaderboard-page h2
   }
   .leaderboard-scroll-wrapper {
     max-height: 100vh;
+  }
+}
+.leaderboard-scroll-wrapper {
+  flex: 1;
+  height: 100%;
+  max-height: calc(100vh - 60px); /* ✅ room for header */
+  overflow-y: auto;
+  overflow-x: auto;
+}
+/* === MOBILE FIX FOR LEADERBOARD === */
+@media (max-width: 768px) {
+  .leaderboard-header {
+    padding: 5px 10px;      
+  }
+  .leaderboard-header h2 {
+    font-size: 1.5rem;
+    margin: 5px 0;
+  }
+  .leaderboard-scroll-wrapper {
+    max-height: calc(100vh - 40px); /* ✅ more space for scroll */
   }
 }
