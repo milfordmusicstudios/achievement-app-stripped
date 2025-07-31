@@ -1093,13 +1093,6 @@ body.manage-users {
   color: #333;
 }
 
-body.manage-users h2.page-title {
-  color: #00477d;
-  text-align: center;
-  margin: 10px 0;
-  font-size: 2rem;
-}
-
 /* Table wrapper */
 #usersSection {
   background: white;
@@ -1964,4 +1957,15 @@ body.white-page #logForm td {
   40% { color: white; text-shadow: .25em 0 transparent, .5em 0 transparent; }
   60% { text-shadow: .25em 0 white, .5em 0 transparent; }
   80%, 100% { text-shadow: .25em 0 white, .5em 0 white; }
+}
+/* === Stylish Page Titles for Blue Background Pages === */
+body.leaderboard-page h1,
+body.review-logs h1 {
+  font-family: 'Trebuchet MS', 'Segoe UI', sans-serif; /* ✅ modern clean font */
+  font-size: 3rem;                                     /* ✅ larger size */
+  font-weight: 800;                                    /* ✅ bold */
+  letter-spacing: 1px;
+  color: #00477d;                                      /* ✅ matches your theme */
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);         /* ✅ subtle pop */
+  margin-bottom: 20px;
 }
