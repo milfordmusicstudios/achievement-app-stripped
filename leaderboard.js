@@ -4,30 +4,32 @@ document.addEventListener("DOMContentLoaded", async () => {
   const popup = document.getElementById("loadingPopup");
   const loadingText = document.getElementById("loadingMessage");
 
-  // ✅ List of 15-20 fun loading messages
-const messages = [
-  "🎶 Loading the rhythm of success…",
-  "🎸 Tuning up the strings of greatness…",
-  "🥁 Drumming up some excitement…",
-  "🎹 Hitting all the right keys…",
-  "🎤 Mic check... 1, 2, 3, almost there!",
-  "🎧 Mixing the perfect soundtrack for victory…",
-  "🎼 Arranging the notes of achievement…",
-  "🔥 Shredding through the data like a solo guitar riff…",
-  "🏆 Composing the champions’ anthem…",
-  "💃 Dancing through the scores…",
-  "🎯 Hitting every note with precision…",
-  "🧩 Piecing together the perfect harmony…",
-  "🎶 Where words fail, music speaks… loading greatness…",
-  "🌟 Every note counts… loading your masterpiece…"
-];
+  const messages = [
+    "🎶 Loading the rhythm of success…",
+    "🎸 Tuning up the strings of greatness…",
+    "🥁 Drumming up some excitement…",
+    "🎹 Hitting all the right keys…",
+    "🎤 Mic check... 1, 2, 3, almost there!",
+    "🎧 Mixing the perfect soundtrack for victory…",
+    "🎼 Arranging the notes of achievement…",
+    "🎷 Saxing up the leaderboard…",
+    "🎻 Violins of victory are warming up…",
+    "🔥 Shredding through the data like a solo guitar riff…",
+    "🚀 Blasting off to the high notes…",
+    "🏆 Composing the champions’ anthem…",
+    "💃 Dancing through the scores…",
+    "🎯 Hitting every note with precision…",
+    "🎨 Painting the leaderboard with melodies…",
+    "👑 Crowns and choruses are being prepared…",
+    "🧩 Piecing together the perfect harmony…",
+    "📡 Broadcasting epic tunes to the top players…",
+    "🎶 Where words fail, music speaks… loading greatness…",
+    "🌟 Every note counts… loading your masterpiece…"
+  ];
 
-  // ✅ Cycle through messages every 2 seconds
-  let i = 0;
-  setInterval(() => {
-    i = (i + 1) % messages.length;
-    loadingText.textContent = messages[i];
-  }, 2000);
+  // ✅ Pick one random message
+  const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+  loadingText.textContent = randomMessage;
 
   if (popup) popup.style.display = "flex";
 
