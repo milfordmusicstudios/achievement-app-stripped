@@ -1963,9 +1963,18 @@ body.leaderboard-page h2
  {
   font-family: 'Trebuchet MS', 'Segoe UI', sans-serif; /* ✅ modern clean font */
   font-size: 3rem;                                     /* ✅ larger size */
-  font-weight: 800;                                    /* ✅ bold */
+  font-weight: 700;                                    /* ✅ bold */
   letter-spacing: 1px;
   color: #00477d;                                      /* ✅ matches your theme */
   text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);         /* ✅ subtle pop */
-  margin-bottom: 20px;
+  margin-bottom: 10px;
+}
+
+@media (max-width: 768px) {
+  body.leaderboard-page h2 {
+    font-size: 2rem;          /* ✅ even smaller on mobile */
+  }
+  .leaderboard-scroll-wrapper {
+    max-height: calc(100vh - 40px);
+  }
 }
