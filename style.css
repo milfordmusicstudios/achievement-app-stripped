@@ -1857,3 +1857,12 @@ body.white-page #logForm td {
   text-align: left;
   white-space: nowrap;       /* ✅ prevent wrapping so horizontal scroll works */
 }
+/* === Add spacing between action buttons === */
+#actionBar button {
+  margin-right: 10px;     /* ✅ horizontal gap */
+}
+
+#paginationControls button,
+#paginationControls select {
+  margin-right: 8px;
+}
