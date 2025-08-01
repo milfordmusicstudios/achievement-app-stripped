@@ -171,16 +171,6 @@ storedUsers.forEach(stored => {
   if (!updatedAllUsers.some(u => u.id === stored.id)) updatedAllUsers.push(stored);
 });
 
-// ✅ Add Parent View if applicable
-const hasChildren = relatedUsers.length > 0;
-const hasStaffRole = (user.roles || []).some(r => ["teacher", "admin"].includes(r.toLowerCase()));
-if (hasChildren && hasStaffRole && !updatedAllUsers.some(u => u.isParentView)) {
-  updatedAllUsers.push({
-    ...user,
-    displayName: `${user.firstName} ${user.lastName} (Parent View)`,
-    isParentView: true
-  });
-}
 
 // ✅ Save merged list back to storage
 localStorage.setItem("allUsers", JSON.stringify(updatedAllUsers));
