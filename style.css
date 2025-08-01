@@ -949,11 +949,6 @@ main.app > header h2 {
 /* ---- My Points Table Layout ---- */
 
 /* ✅ Fixed Header Table */
-#pointsHeaderTable {
-  width: 95%;
-  margin: 0 auto;
-  border-collapse: collapse;
-}
 #pointsHeaderTable th {
   background: #3eb7f8;
   color: white;
@@ -977,10 +972,6 @@ main.app > header h2 {
   overflow-y: auto;
   border: 1px solid #ddd;
   border-top: none;
-}
-#logsTable {
-  width: 100%;
-  border-collapse: collapse;
 }
 #logsTable td {
   padding: 6px 8px;
@@ -1766,13 +1757,18 @@ body.white-page #logForm td {
   border-bottom: 2px solid #00477d;
 }
 /* ✅ Limit table body height to ~6 rows */
-#logsSection,
-#usersScrollWrapper,
 #myPointsLogsWrapper {
-  max-height: 300px;   /* adjust for ~6 rows */
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow-x: auto;
+  overflow-y: hidden; /* ✅ only horizontal scroll here */
   -webkit-overflow-scrolling: touch;
+  display: block;
+}
+
+#pointsHeaderTable,
+#logsTable {
+  min-width: 800px;   /* ✅ keeps columns readable */
+  width: auto;
+  table-layout: fixed;
 }
 
 #childButtons button {
