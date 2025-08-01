@@ -15,13 +15,17 @@ main {
 }
 
 body {
-  background-image: url('images/background/tallBackground.png');
   background-repeat: no-repeat;
   background-size: cover;
   margin-top: 0 !important;
   padding: 0 !important;
 }
-
+/* ✅ Apply the tall background only to pages that need it */
+body.tall-background {
+  background-image: url('images/background/tallBackground.png');
+  background-repeat: no-repeat;
+  background-size: cover;
+}
 * {
   background: transparent;
   box-shadow: none;
