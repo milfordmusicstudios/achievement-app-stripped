@@ -580,20 +580,14 @@ body.white-page button {
   margin: 0 auto 30px;
 }
 
-#logsTable {
-  width: 100%;
-  border-collapse: collapse;
-  background: white;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-  border-radius: 8px;
-  table-layout: auto;
-  overflow: hidden;
-}
 #logsTable th {
-  background: #00477d;
+  background: white;
+  position: sticky;
+  top: 0;
   color: white;
   padding: 10px;
   text-align: left;
+  z-index: 10;
 }
 #logsTable td {
   padding: 10px;
@@ -715,12 +709,6 @@ main.app > header h2 {
   background: white;
 }
 
-/* ✅ Full-width Table */
-#logsTable {
-  width: 100%;
-  border-collapse: collapse;
-  table-layout: auto;
-}
 
 /* ✅ Sticky Table Header */
 #logsTable thead th {
@@ -844,10 +832,6 @@ main.app > header h2 {
   overflow-y: auto;
   border: 1px solid #ddd;
   border-top: none;
-}
-#logsTable {
-  width: 100%;
-  border-collapse: collapse;
 }
 #logsTable td {
   padding: 6px 8px;
@@ -1764,11 +1748,15 @@ body.white-page #logForm td {
   display: block;
 }
 
-#pointsHeaderTable,
 #logsTable {
-  min-width: 800px;   /* ✅ keeps columns readable */
-  width: auto;
-  table-layout: fixed;
+  min-width: 800px;                /* ✅ ensures horizontal scrolling works */
+  width: 100%;                     /* ✅ allows table to stretch */
+  border-collapse: collapse;       /* ✅ correct property */
+  background: white;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  border-radius: 8px;
+  table-layout: auto;              /* ✅ use auto for proper column width */
+  overflow: hidden;
 }
 
 #childButtons button {

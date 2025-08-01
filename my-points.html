@@ -24,18 +24,17 @@
 
     <!-- ✅ Logs Table (Wrapped for Mobile Scroll) -->
 <!-- ✅ Fixed Table Header -->
-<div id="myPointsLogsWrapper" style="overflow:auto; -webkit-overflow-scrolling:touch;">
-<table id="pointsHeaderTable">
-  <thead>
-    <tr>
-      <th>Category</th>
-      <th>Date</th>
-      <th>Points</th>
-      <th>Note</th>
-      <th>Status</th> <!-- ✅ New column -->
-    </tr>
-  </thead>
-</table>
+<div id="myPointsLogsWrapper">
+  <table id="logsTable">
+    <thead>
+      <tr>
+        <th>Category</th>
+        <th>Points</th>
+        <th>Logs</th>
+      </tr>
+    </thead>
+    <tbody id="logsTableBody"></tbody>
+  </table>
 </div>
 <!-- ✅ Scrollable Table Body -->
 <section id="logsSection">
