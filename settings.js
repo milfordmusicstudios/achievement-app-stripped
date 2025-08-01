@@ -1,3 +1,4 @@
+
 import { supabase } from './supabase.js';
 
 function normalizeUUID(value) {
@@ -34,32 +35,19 @@ function promptUserSwitch() {
   listContainer.innerHTML = "";
 
   allUsers.forEach(u => {
-    if (normalizeUUID(u.id) === userIdStr && !u.isParentView) return;
+    if (normalizeUUID(u.id) === userIdStr) return;
 
     const li = document.createElement("li");
     const btn = document.createElement("button");
     btn.className = "blue-button";
     btn.style = "margin: 5px 0; width: 100%;";
 
-    btn.textContent = u.displayName 
-      ? u.displayName 
-      : `${u.firstName} ${u.lastName} (${Array.isArray(u.roles) ? u.roles.join(", ") : ""})`;
+    btn.textContent = `${u.firstName} ${u.lastName} (${Array.isArray(u.roles) ? u.roles.join(", ") : ""})`;
 
     btn.onclick = () => {
       const userToStore = { ...u };
-      delete userToStore.isParentView;
       localStorage.setItem("loggedInUser", JSON.stringify(userToStore));
-
-      if (u.isParentView) {
-        // ✅ Keep teacher/admin as active role when using Parent View
-        const originalRole = (user.roles || []).find(r => ["teacher", "admin"].includes(r.toLowerCase())) || "teacher";
-        localStorage.setItem("activeRole", originalRole);
-        sessionStorage.setItem("parentModalShown", "true");
-      } else {
-        localStorage.setItem("activeRole", Array.isArray(u.roles) ? u.roles[0] : "student");
-        sessionStorage.removeItem("parentModalShown");
-      }
-
+      localStorage.setItem("activeRole", Array.isArray(u.roles) ? u.roles[0] : "student");
       window.location.href = "index.html";
     };
 
@@ -93,7 +81,6 @@ function promptRoleSwitch() {
   document.getElementById("roleSwitchModal").style.display = "flex";
 }
 
-/** ✅ Save Settings - Updates Auth email/password AND users table */
 async function saveSettings() {
   const user = JSON.parse(localStorage.getItem("loggedInUser"));
   const currentEmail = user.email;
@@ -145,52 +132,32 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  // Populate fields
   document.getElementById('firstName').value = user.firstName || '';
   document.getElementById('lastName').value = user.lastName || '';
   document.getElementById('newEmail').value = user.email || '';
   document.getElementById('avatarImage').src = user.avatarUrl || "images/logos/default.png";
 
-// ✅ Always try to include any previously stored user group
-let updatedAllUsers = JSON.parse(localStorage.getItem("allUsers")) || [];
+  let updatedAllUsers = JSON.parse(localStorage.getItem("allUsers")) || [];
+  if (!updatedAllUsers.some(u => u.id === user.id)) updatedAllUsers.push(user);
 
-// Ensure current user is in the list
-if (!updatedAllUsers.some(u => u.id === user.id)) {
-  updatedAllUsers.push(user);
-}
+  const relatedUsers = await fetchRelatedUsers(user);
+  relatedUsers.forEach(ru => {
+    if (!updatedAllUsers.some(u => u.id === ru.id)) updatedAllUsers.push(ru);
+  });
 
-// ✅ If user has children or siblings, fetch and merge them
-const relatedUsers = await fetchRelatedUsers(user);
-relatedUsers.forEach(ru => {
-  if (!updatedAllUsers.some(u => u.id === ru.id)) updatedAllUsers.push(ru);
-});
-
-// ✅ If we logged in as a student but we have older parent/staff info in allUsers, keep it
-const storedUsers = JSON.parse(localStorage.getItem("allUsers")) || [];
-storedUsers.forEach(stored => {
-  if (!updatedAllUsers.some(u => u.id === stored.id)) updatedAllUsers.push(stored);
-});
-
-
-// ✅ Save merged list back to storage
-localStorage.setItem("allUsers", JSON.stringify(updatedAllUsers));
-
+  updatedAllUsers = updatedAllUsers.filter((v,i,a)=>a.findIndex(t=>(t.id===v.id))===i);
   localStorage.setItem("allUsers", JSON.stringify(updatedAllUsers));
 
-  // Show/hide buttons
   document.getElementById("switchUserBtn").style.display = (updatedAllUsers.length > 1) ? "inline-block" : "none";
   document.getElementById("switchRoleBtn").style.display = (user.roles?.length > 1) ? "inline-block" : "none";
 
-  // Bind buttons
   document.getElementById("logoutBtn").addEventListener("click", () => { localStorage.clear(); window.location.href = "login.html"; });
   document.getElementById("cancelBtn").addEventListener("click", () => window.location.href = "index.html");
   document.getElementById("switchRoleBtn").addEventListener("click", promptRoleSwitch);
   document.getElementById("switchUserBtn").addEventListener("click", promptUserSwitch);
   document.getElementById("saveBtn").addEventListener("click", (e) => { e.preventDefault(); saveSettings(); });
 
-  // Auto-trigger modal if coming from parent redirect
   if (sessionStorage.getItem("forceUserSwitch") === "true") {
-    console.log("[DEBUG] Forcing user switch modal...");
     sessionStorage.removeItem("forceUserSwitch");
     setTimeout(() => promptUserSwitch(), 400);
   }
