@@ -2013,3 +2013,27 @@ body.leaderboard-page {
   border-collapse: separate;   /* ✅ allows row spacing */
   border-spacing: 0 8px;       /* ✅ extra gap between rows */
 }
+/* === FIX: Adjust Notes Column for Log Points === */
+#logForm td.notes-cell {
+  width: 55% !important;           /* ✅ shrink notes column */
+}
+
+#logForm td.category-cell {
+  width: 40% !important;           /* ✅ keep category column wider */
+}
+
+#logForm textarea#logNote {
+  min-height: 100px;
+  width: 95% !important;           /* ✅ shrink textarea a bit */
+  margin: 5px auto !important;     /* ✅ add breathing room */
+  display: block;
+}
+
+/* === Add Vertical Spacing Between Rows === */
+#logForm tr {
+  border-bottom: 8px solid transparent; /* ✅ space between rows */
+}
+
+#logForm td {
+  padding: 10px 8px !important;        /* ✅ slightly more padding */
+}
