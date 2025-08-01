@@ -1282,17 +1282,15 @@ body.manage-users {
 /* Tag Container */
 .tag-container {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
+  flex-wrap: wrap;       /* ✅ allows multiple rows */
   gap: 3px;
+  max-width: 100%;       /* ✅ prevents overflow */
+  overflow-x: auto;      /* ✅ adds scroll if needed */
   border: 1px solid #ccc;
   border-radius: 4px;
   padding: 3px;
   background: #fff;
-  position: relative;
-  min-height: 30px;
 }
-
 /* Individual Tags */
 .tag {
   background: #3eb7f8;
@@ -1302,6 +1300,10 @@ body.manage-users {
   border-radius: 12px;
   display: inline-flex;
   align-items: center;
+  max-width: 90%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .remove-tag {
   margin-left: 4px;
@@ -1978,4 +1980,22 @@ body.leaderboard-page {
   border: 1px solid #ccc;
   border-radius: 4px;
   box-sizing: border-box;
+}
+.tag-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 3px;
+  background: #fff;
+}
+
+.tag {
+  max-width: 90%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }

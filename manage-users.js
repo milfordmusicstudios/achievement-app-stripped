@@ -39,10 +39,8 @@ function getFilteredAndSortedUsers() {
     }).join(" ");
 
     const rolesText = Array.isArray(u.roles) ? u.roles.join(" ").toLowerCase() : String(u.roles || "").toLowerCase();
-
-    const instrumentText = Array.isArray(u.instrument)
-      ? u.instrument.join(" ").toLowerCase()
-      : (typeof u.instrument === "string" ? u.instrument.toLowerCase() : "");
+    const instrumentText = Array.isArray(u.instrument) ? u.instrument.join(" ").toLowerCase() :
+      (typeof u.instrument === "string" ? u.instrument.toLowerCase() : "");
 
     return (
       String(u.firstName || "").toLowerCase().includes(query) ||
@@ -61,11 +59,10 @@ function getFilteredAndSortedUsers() {
       return valA > valB ? sortDirection : valA < valB ? -sortDirection : 0;
     });
   }
-
   return filtered;
 }
 
-// ✅ Render Table
+// ✅ Render Users Table
 function renderUsers() {
   const tbody = document.getElementById("userTableBody");
   tbody.innerHTML = "";
@@ -75,33 +72,41 @@ function renderUsers() {
 
   pageUsers.forEach(user => {
     const tr = document.createElement("tr");
-tr.innerHTML = `
-  <td><input type="text" value="${user.firstName || ""}" onchange="updateField('${user.id}','firstName',this.value)"></td>
-  <td><input type="text" value="${user.lastName || ""}" onchange="updateField('${user.id}','lastName',this.value)"></td>
-  <td><input type="email" value="${user.email || ""}" onchange="updateField('${user.id}','email',this.value)"></td>
-  <td class="avatar-cell">
-    <img src="${user.avatarUrl || 'images/logos/default.png'}" class="avatar-preview">
-    <label class="upload-btn">Change
-      <input type="file" data-id="${user.id}" class="avatar-upload">
-    </label>
-  </td>
-  <td>${renderRoleTags(user)}</td>
-  <td>${renderTeacherTags(user)}</td>
-  <td><input type="text" value="${user.instrument || ""}" onchange="updateField('${user.id}','instrument',this.value)"></td>
-  <td>${user.points || 0}</td>               <!-- ✅ Display Points -->
-  <td>${user.level || "—"}</td>             <!-- ✅ Display Level -->
-  <td><button id="save-${user.id}" class="blue-button" style="display:none;" onclick="saveUser('${user.id}')">Save</button></td>
-`;
+    tr.innerHTML = `
+      <td><input type="text" value="${user.firstName || ""}" onchange="updateField('${user.id}','firstName',this.value)"></td>
+      <td><input type="text" value="${user.lastName || ""}" onchange="updateField('${user.id}','lastName',this.value)"></td>
+      <td><input type="email" value="${user.email || ""}" onchange="updateField('${user.id}','email',this.value)"></td>
+      <td class="avatar-cell">
+        <img src="${user.avatarUrl || 'images/logos/default.png'}" class="avatar-preview">
+        <label class="upload-btn">Change
+          <input type="file" data-id="${user.id}" class="avatar-upload">
+        </label>
+      </td>
+      <td>${renderRoleTags(user)}</td>
+      <td>${renderTeacherTags(user)}</td>
+      <td><input type="text" value="${user.instrument || ""}" onchange="updateField('${user.id}','instrument',this.value)"></td>
+      <td>${user.points || 0}</td>
+      <td>${user.level || "—"}</td>
+    `;
     tbody.appendChild(tr);
   });
 
   setupTagListeners();
   setupAvatarUploads();
   renderPagination();
-  syncHeaderWidths();
 }
 
-// ✅ Tag Renderers
+// ✅ Auto-Save Field Updates
+window.updateField = async function(id, field, value) {
+  const user = allUsers.find(u => u.id === id);
+  if (!user) return;
+  user[field] = value;
+
+  const { error } = await supabase.from("users").update({ [field]: value }).eq("id", id);
+  if (error) console.error("Auto-save failed:", error);
+};
+
+// ✅ Render Tags
 function renderRoleTags(user) {
   const roles = ["student", "teacher", "admin"];
   const selected = Array.isArray(user.roles) ? user.roles : [user.roles].filter(Boolean);
@@ -140,7 +145,7 @@ function buildTagContainer(userId, type, selected, options) {
   `;
 }
 
-// ✅ Tag Listeners
+// ✅ Tag Listeners (Auto-Save on Change)
 function setupTagListeners() {
   document.querySelectorAll(".tag-add-icon").forEach(icon => {
     icon.addEventListener("click", e => {
@@ -150,7 +155,7 @@ function setupTagListeners() {
   });
 
   document.querySelectorAll(".tag-option").forEach(opt => {
-    opt.addEventListener("click", e => {
+    opt.addEventListener("click", async e => {
       const container = e.target.closest(".tag-container");
       const id = container.dataset.id;
       const type = container.dataset.type;
@@ -160,44 +165,26 @@ function setupTagListeners() {
       if (!Array.isArray(user[type])) user[type] = [];
       if (!user[type].includes(value)) user[type].push(value);
 
-      document.getElementById(`save-${id}`).style.display = "inline-block";
-      e.target.remove();
+      // Auto-save roles/teachers
+      await supabase.from("users").update({ [type]: user[type] }).eq("id", id);
 
+      e.target.remove();
       const tagLabel = (type === "roles") ? value : (allUsers.find(t => t.id === value)?.firstName + " " + allUsers.find(t => t.id === value)?.lastName);
       const newTag = document.createElement("span");
       newTag.className = "tag";
       newTag.innerHTML = `${tagLabel}<span class="remove-tag" data-value="${value}">×</span>`;
       container.insertBefore(newTag, container.querySelector(".tag-add-icon"));
 
-      newTag.querySelector(".remove-tag").addEventListener("click", () => {
+      newTag.querySelector(".remove-tag").addEventListener("click", async () => {
         user[type] = user[type].filter(v => v !== value);
+        await supabase.from("users").update({ [type]: user[type] }).eq("id", id);
         newTag.remove();
-        document.getElementById(`save-${id}`).style.display = "inline-block";
       });
     });
   });
 }
 
-// ✅ Inline Edit
-window.updateField = function(id, field, value) {
-  const user = allUsers.find(u => u.id === id);
-  if (!user) return;
-  user[field] = value;
-  document.getElementById(`save-${id}`).style.display = "inline-block";
-};
-
-// ✅ Save User
-window.saveUser = async function(id) {
-  const user = allUsers.find(u => u.id === id);
-  const { error } = await supabase.from("users").update(user).eq("id", id);
-  if (error) alert("Save failed");
-  else {
-    document.getElementById(`save-${id}`).style.display = "none";
-    fetchUsers();
-  }
-};
-
-// ✅ Avatar Upload
+// ✅ Avatar Upload (Auto-Save)
 function setupAvatarUploads() {
   document.querySelectorAll(".avatar-upload").forEach(input => {
     input.addEventListener("change", async e => {
@@ -214,7 +201,7 @@ function setupAvatarUploads() {
   });
 }
 
-// ✅ Invitation Modal for Add User
+// ✅ Invite Modal
 function openAddUserModal() {
   const modal = document.createElement("div");
   modal.className = "modal-overlay";
@@ -234,12 +221,10 @@ function openAddUserModal() {
   document.body.appendChild(modal);
 
   document.getElementById("cancelUserBtn").addEventListener("click", () => modal.remove());
-  document.getElementById("sendInviteBtn").addEventListener("click", () => {
-    sendInviteLink(modal);
-  });
+  document.getElementById("sendInviteBtn").addEventListener("click", () => sendInviteLink(modal));
 }
 
-// ✅ Generate Invite Link
+// ✅ Invite Link
 function sendInviteLink(modal) {
   const email = document.getElementById("newEmail").value.trim();
   const firstName = document.getElementById("newFirstName").value.trim();
@@ -255,18 +240,20 @@ function sendInviteLink(modal) {
   modal.remove();
 }
 
-// ✅ Search & Sort Setup
+// ✅ Search & Sort
 function setupSearchAndSort() {
   document.getElementById("userSearch").addEventListener("input", e => {
     searchQuery = e.target.value.toLowerCase();
     currentPage = 1;
     renderUsers();
   });
+
   document.querySelectorAll("#userHeaderTable th[data-sort]").forEach(th => {
     th.style.cursor = "pointer";
     th.addEventListener("click", () => {
       const col = th.dataset.sort;
-      if (sortColumn === col) sortDirection *= -1; else { sortColumn = col; sortDirection = 1; }
+      if (sortColumn === col) sortDirection *= -1;
+      else { sortColumn = col; sortDirection = 1; }
       renderUsers();
       updateSortIndicators(col);
     });
@@ -292,12 +279,4 @@ function renderPagination() {
     btn.addEventListener("click", () => { currentPage = i; renderUsers(); });
     controls.appendChild(btn);
   }
-}
-
-// ✅ Header Width Sync
-function syncHeaderWidths() {
-  const headerCells = document.querySelectorAll("#userHeaderTable th");
-  const rowCells = document.querySelectorAll("#userTable tr:first-child td");
-  if (!rowCells.length) return;
-  headerCells.forEach((th, i) => { if (rowCells[i]) th.style.width = rowCells[i].offsetWidth + "px"; });
 }
