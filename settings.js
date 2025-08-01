@@ -60,7 +60,8 @@ function promptUserSwitch() {
 
 function promptRoleSwitch() {
   const user = JSON.parse(localStorage.getItem("loggedInUser"));
-  const roles = Array.isArray(user.roles) ? user.roles : [user.role];
+const roles = (Array.isArray(user.roles) ? user.roles : [user.role])
+  .filter(r => r.toLowerCase() !== "parent");
   const listContainer = document.getElementById("roleSwitchList");
   listContainer.innerHTML = "";
 
