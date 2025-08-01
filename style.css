@@ -1917,3 +1917,25 @@ body.leaderboard-page {
 #logsTable thead th {
   background: #3eb7f8 !important;
 }
+#userHeaderTable, #userTable {
+  table-layout: fixed;        /* ✅ columns stay consistent */
+  width: 100%;
+  border-collapse: collapse;
+}
+
+#userHeaderTable th, #userTable td {
+  padding: 6px 8px;
+  border-bottom: 1px solid #ddd;
+  text-align: center;         /* ✅ same alignment */
+}
+
+#userHeaderTable th {
+  background: #3eb7f8;
+  color: white;
+  font-weight: bold;
+}
+#usersScrollWrapper {
+  overflow-x: auto;
+  width: 95%;
+  margin: 0 auto;
+}

@@ -1,54 +1,71 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Manage Users | Achievement App</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="manage-users.js" defer></script>
 </head>
-<body class="white-page manage-users">
+<body class="manage-users">
 
-  <!-- 🔹 Header -->
-  <header style="display:flex; align-items:center; padding:10px 20px;">
-    <button class="blue-button" onclick="window.location.href='index.html'">Home</button>
-    <h2 style="flex:1; text-align:center; color:#3eb7f8; margin:0;">Manage Users</h2>
-    <button id="addUserBtn" class="blue-button">
-      <img src="images/icons/plus.png" alt="Add" class="plus-icon"> Add User
-    </button>
-  </header>
+  <main class="app">
+    <!-- ✅ Top Bar -->
+    <header style="display:flex; justify-content:space-between; align-items:center; padding:10px 20px;">
+      <button class="blue-button" onclick="window.location.href='index.html'">Home</button>
+      <h2 style="color:#00477d; flex:1; text-align:center;">Manage Users</h2>
+    </header>
 
-  <!-- 🔹 Search Bar -->
-  <div id="userSearchContainer" style="width:95%; margin:10px auto; display:flex; justify-content:flex-end;">
-    <input type="text" id="userSearch" placeholder="Search users..." style="width:200px; padding:5px; border:1px solid #ccc; border-radius:4px;">
-  </div>
+    <!-- ✅ Add User Button -->
+    <div style="text-align:center; margin:15px 0;">
+      <button id="addUserBtn" class="blue-button">+ Add User</button>
+    </div>
 
-  <!-- 🔹 Table Header -->
-<div id="usersScrollWrapper">
-  <table id="userHeaderTable">
-    <thead>
-      <tr>
-        <th data-sort="firstName">First</th>
-        <th data-sort="lastName">Last</th>
-        <th data-sort="email">Email</th>
-        <th>Avatar</th>
-        <th>Roles</th>
-        <th>Teacher(s)</th>
-        <th>Instrument</th>
-        <th>Points</th>    <!-- ✅ NEW COLUMN -->
-        <th>Level</th>     <!-- ✅ NEW COLUMN -->
-        <th></th>
-      </tr>
-    </thead>
-  </table>
+    <!-- ✅ Table Wrapper -->
+    <div id="usersScrollWrapper">
+      <!-- ✅ Sticky Header Table -->
+      <table id="userHeaderTable">
+        <thead>
+          <tr>
+            <th>First Name</th>
+            <th>Last Name</th>
+            <th>Email</th>
+            <th>Avatar</th>
+            <th>Roles</th>
+            <th>Teachers</th>
+            <th>Instrument</th>
+            <th>Save</th>
+          </tr>
+        </thead>
+      </table>
 
-  <!-- 🔹 Scrollable Table -->
-    <table id="userTable">
-      <tbody id="userTableBody"></tbody>
-    </table>
-</div>
-  <!-- 🔹 Pagination -->
-  <div id="paginationControls" style="text-align:center; margin:10px 0;"></div>
+      <!-- ✅ Scrollable User Data Table -->
+      <div id="usersScrollSection">
+        <table id="userTable">
+          <tbody id="userTableBody">
+            <!-- ✅ Rows populated dynamically by JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
 
-  <script type="module" src="manage-users.js"></script>
+    <!-- ✅ Pagination -->
+    <div id="paginationControls"></div>
+  </main>
+
+  <!-- ✅ Script to Sync Header & Body Column Widths -->
+  <script>
+    function syncUserTableWidths() {
+      const headerCells = document.querySelectorAll("#userHeaderTable th");
+      const firstRowCells = document.querySelectorAll("#userTable tr:first-child td");
+      if (!firstRowCells.length) return;
+      headerCells.forEach((th, i) => {
+        if (firstRowCells[i]) th.style.width = firstRowCells[i].offsetWidth + "px";
+      });
+    }
+    window.addEventListener("load", syncUserTableWidths);
+    window.addEventListener("resize", syncUserTableWidths);
+  </script>
+
 </body>
 </html>
