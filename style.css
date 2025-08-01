@@ -549,15 +549,6 @@ body.white-page button {
 }
 
 /* Logs Table */
-#logsSection {
-  width: 98%;             /* ✅ no overflow */
-  margin: 0 auto;
-  overflow-y: auto;       /* ✅ only vertical scroll */
-  overflow-x: hidden;     /* ✅ no horizontal scroll */
-  max-height: calc(100vh - 300px);
-  border: 1px solid #ddd;
-  border-radius: 5px;
-}
 .log-icon {
   width: 30px;
   height: 30px;
@@ -580,15 +571,18 @@ body.white-page button {
   margin: 0 auto 30px;
 }
 
-#logsTable th {
-  background: white;
+#logsTable thead th {
+  background: #3eb7f8;       /* ✅ consistent blue */
+  color: white;
+  text-align: center;        /* ✅ centered */
+  font-weight: bold;
   position: sticky;
   top: 0;
-  color: white;
-  padding: 10px;
-  text-align: left;
-  z-index: 10;
+  z-index: 100;
+  border-bottom: 2px solid #00477d;
+  padding: 8px;
 }
+
 #logsTable td {
   padding: 10px;
   border-bottom: 1px solid #ddd;
@@ -695,19 +689,6 @@ main.app > header h2 {
   display: block;
 }
 
-/* ✅ Logs Section */
-#logsSection {
-  display: block;
-  width: calc(100% - 40px); /* ✅ add margin space */
-  max-width: 100%;
-  margin: 0 auto 10px;
-  overflow-y: auto;
-  overflow-x: auto;
-  max-height: calc(100vh - 300px);
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  background: white;
-}
 
 
 /* ✅ Sticky Table Header */
@@ -754,15 +735,6 @@ main.app > header h2 {
 /* ✅ Row Styles */
 #logsTable tr:nth-child(even) { background: #f9f9f9; }
 #logsTable tr:hover { background: #eef7ff; }
-#logsSection {
-  width: 98%;             /* ✅ no overflow */
-  margin: 0 auto;
-  overflow-y: auto;       /* ✅ only vertical scroll */
-  overflow-x: hidden;     /* ✅ no horizontal scroll */
-  max-height: calc(100vh - 300px);
-  border: 1px solid #ddd;
-  border-radius: 5px;
-}
 /* ---- Layout Adjustments ---- */
 #pageHeader {
   display: flex;
@@ -825,14 +797,6 @@ main.app > header h2 {
 }
 
 /* ✅ Scrollable Table Body */
-#logsSection {
-  width: 95%;
-  height: calc(100vh - 350px);
-  margin: 0 auto 10px;
-  overflow-y: auto;
-  border: 1px solid #ddd;
-  border-top: none;
-}
 #logsTable td {
   padding: 6px 8px;
   border-bottom: 1px solid #ddd;
@@ -922,14 +886,6 @@ main.app > header h2 {
 }
 
 /* ✅ Scrollable Table Body */
-#logsSection {
-  width: 95%;
-  height: calc(100vh - 350px);
-  margin: 0 auto 10px;
-  overflow-y: auto;
-  border: 1px solid #ddd;
-  border-top: none;
-}
 /* ---- My Points Table Layout ---- */
 
 /* ✅ Fixed Header Table */
@@ -949,14 +905,6 @@ main.app > header h2 {
 }
 
 /* ✅ Scrollable Table Body */
-#logsSection {
-  width: 95%;
-  height: calc(100vh - 350px);
-  margin: 0 auto 10px;
-  overflow-y: auto;
-  border: 1px solid #ddd;
-  border-top: none;
-}
 #logsTable td {
   padding: 6px 8px;
   border-bottom: 1px solid #ddd;
@@ -1962,4 +1910,13 @@ body.leaderboard-page {
   .leaderboard-scroll-wrapper {
     max-height: 100vh !important; /* ✅ removes subtraction */
   }
+}
+#logsSection {
+  width: 95%;
+  max-height: 65vh;          /* ✅ limits height but avoids giant box */
+  margin: 0 auto 20px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  background: white;
 }
