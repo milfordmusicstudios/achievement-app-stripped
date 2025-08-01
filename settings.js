@@ -151,28 +151,39 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById('newEmail').value = user.email || '';
   document.getElementById('avatarImage').src = user.avatarUrl || "images/logos/default.png";
 
-  // ✅ Load related users
-  const relatedUsers = await fetchRelatedUsers(user);
-  let updatedAllUsers = [];
+// ✅ Always try to include any previously stored user group
+let updatedAllUsers = JSON.parse(localStorage.getItem("allUsers")) || [];
 
-  // Add current user once
+// Ensure current user is in the list
+if (!updatedAllUsers.some(u => u.id === user.id)) {
   updatedAllUsers.push(user);
+}
 
-  // Add children
-  relatedUsers.forEach(ru => {
-    if (!updatedAllUsers.some(u => u.id === ru.id)) updatedAllUsers.push(ru);
+// ✅ If user has children or siblings, fetch and merge them
+const relatedUsers = await fetchRelatedUsers(user);
+relatedUsers.forEach(ru => {
+  if (!updatedAllUsers.some(u => u.id === ru.id)) updatedAllUsers.push(ru);
+});
+
+// ✅ If we logged in as a student but we have older parent/staff info in allUsers, keep it
+const storedUsers = JSON.parse(localStorage.getItem("allUsers")) || [];
+storedUsers.forEach(stored => {
+  if (!updatedAllUsers.some(u => u.id === stored.id)) updatedAllUsers.push(stored);
+});
+
+// ✅ Add Parent View if applicable
+const hasChildren = relatedUsers.length > 0;
+const hasStaffRole = (user.roles || []).some(r => ["teacher", "admin"].includes(r.toLowerCase()));
+if (hasChildren && hasStaffRole && !updatedAllUsers.some(u => u.isParentView)) {
+  updatedAllUsers.push({
+    ...user,
+    displayName: `${user.firstName} ${user.lastName} (Parent View)`,
+    isParentView: true
   });
+}
 
-  // ✅ Add Parent View entry only if teacher/admin AND children exist
-  const hasChildren = relatedUsers.length > 0;
-  const hasStaffRole = (user.roles || []).some(r => ["teacher", "admin"].includes(r.toLowerCase()));
-  if (hasChildren && hasStaffRole && !updatedAllUsers.some(u => u.isParentView)) {
-    updatedAllUsers.push({
-      ...user,
-      displayName: `${user.firstName} ${user.lastName} (Parent View)`,
-      isParentView: true
-    });
-  }
+// ✅ Save merged list back to storage
+localStorage.setItem("allUsers", JSON.stringify(updatedAllUsers));
 
   localStorage.setItem("allUsers", JSON.stringify(updatedAllUsers));
 
