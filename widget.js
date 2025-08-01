@@ -8,14 +8,21 @@
   style.href = 'https://achievement-app-stripped.vercel.app/style.css'; // ✅ fixed
   document.head.appendChild(style);
 
-  // ---- 2. Create widget container ----
-  const container = document.createElement('div');
-  container.id = 'achievement-login-widget';
+// ---- 2. Create widget container ----
+const container = document.createElement('div');
+container.id = 'achievement-login-widget';
+
+// ✅ Force container to cover its section with white background
+container.style.background = "white";
+container.style.padding = "40px 0";
+container.style.width = "100%";
+container.style.display = "flex";
+container.style.justifyContent = "center";
+
 container.innerHTML = `
-  <div style="background:white !important; max-width:400px; margin:20px auto; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.2); padding:20px;" class="white-page">
+  <div style="background:white; max-width:400px; width:90%; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.2); padding:20px;" class="white-page">
     <main class="app">
-      <img src="https://achievement-app-stripped.vercel.app/images/logos/logo.png" 
-           alt="App Logo" class="logo" />
+      <img src="https://achievement-app-stripped.vercel.app/images/logos/logo.png" alt="App Logo" class="logo" />
       <h2 class="welcome-title" style="color:#3eb7f8; text-align:center;">Achievement Awards</h2>
 
       <form id="widgetLoginForm">
@@ -30,8 +37,7 @@ container.innerHTML = `
     </main>
   </div>
 `;
-  document.body.appendChild(container);
-
+document.body.appendChild(container);
   // ---- 3. Load Supabase client ----
   const supabaseScript = document.createElement('script');
   supabaseScript.type = 'module';
