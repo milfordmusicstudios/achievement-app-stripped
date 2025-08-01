@@ -1110,11 +1110,12 @@ body.manage-users {
 }
 /* ===== Manage Users Table Scroll & Layout ===== */
 
+/* ✅ Table Layout */
 #userHeaderTable {
-  width: 95%;
-  margin: 0 auto;
+  width: 100%;
   border-collapse: collapse;
-  border-radius: 0;
+  table-layout: fixed;    /* consistent column widths */
+  min-width: 900px;       /* prevent squishing */
 }
 
 #userHeaderTable th {
@@ -1590,13 +1591,17 @@ body.review-logs {
   width: 100%;
 }
 
-/* ✅ Remove inner scroll and allow the wrapper to handle it */
+/* ✅ Single Scroll Container */
 #usersScrollWrapper {
-  overflow-x: auto;
-  overflow-y: hidden;
-  width: 100%;
+  width: 95%;
+  margin: 0 auto 20px;
+  max-height: 70vh;       /* limits height so it scrolls */
+  overflow-y: auto;       /* only ONE vertical scrollbar */
+  overflow-x: auto;       /* horizontal scroll if needed */
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  background: white;
 }
-
 #usersScrollWrapper table {
   min-width: 950px;
   width: auto;
@@ -1661,16 +1666,17 @@ body.white-page #logForm td {
   border-collapse: collapse;
 }
 
-/* ✅ Make Manage Users header sticky */
+/* ✅ Sticky Header */
 #userHeaderTable thead th {
   position: sticky;
   top: 0;
-  z-index: 50;
   background: #3eb7f8;
   color: white;
+  z-index: 50;
   border-bottom: 2px solid #00477d;
-}
-/* ✅ Sticky Header for My Points */
+  padding: 6px;
+  text-align: center;
+}/* ✅ Sticky Header for My Points */
 #pointsHeaderTable thead th {
   position: sticky;
   top: 0;
@@ -1754,15 +1760,6 @@ body.white-page #logForm td {
     min-width: 800px;       /* ✅ narrower for mobile scroll */
   }
 }/* === FIX: Manage Users Table Height and Horizontal Scrolling === */
-#usersScrollWrapper {
-  width: 95%;
-  margin: 0 auto;
-  overflow-x: auto;          /* ✅ enables horizontal scroll */
-  overflow-y: auto;          /* ✅ enables vertical scroll */
-  max-height: 70vh;          /* ✅ allows 4–5 rows on screen */
-  border: 1px solid #ccc;
-  background: #fff;
-}
 
 #usersScrollWrapper table {
   width: 100%;
@@ -1938,4 +1935,15 @@ body.leaderboard-page {
   overflow-x: auto;
   width: 95%;
   margin: 0 auto;
+}
+/* ✅ Table Body Rows */
+#userHeaderTable tbody td {
+  padding: 6px 8px;
+  border-bottom: 1px solid #ddd;
+  background: white;
+}
+
+/* ✅ Alternating Row Colors */
+#userHeaderTable tbody tr:nth-child(even) {
+  background: #f9f9f9;
 }
