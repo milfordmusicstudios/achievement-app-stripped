@@ -22,7 +22,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   let filteredLogs = [];
   let currentSort = { field: "date", order: "desc" };
   let currentPage = 1;
-  let logsPerPage = 50;
+  let logsPerPage = 25;
 
   try {
     const { data: logsData, error: logsError } = await supabase.from("logs").select("*").order("date", { ascending: false });

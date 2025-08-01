@@ -1999,3 +1999,17 @@ body.leaderboard-page {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* === FIX: Add More Spacing Between Log Points Rows === */
+#logForm td {
+  padding: 12px 10px !important;   /* ✅ more padding inside cells */
+  vertical-align: middle;
+}
+
+#logForm tr {
+  border-bottom: 10px solid transparent; /* ✅ space between rows */
+}
+
+#logForm table {
+  border-collapse: separate;   /* ✅ allows row spacing */
+  border-spacing: 0 8px;       /* ✅ extra gap between rows */
+}
