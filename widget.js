@@ -11,24 +11,25 @@
   // ---- 2. Create widget container ----
   const container = document.createElement('div');
   container.id = 'achievement-login-widget';
-  container.innerHTML = `
-    <main class="app" style="max-width:400px; margin:20px auto; background:white; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.2); padding:20px; font-family:Segoe UI, sans-serif;">
+container.innerHTML = `
+  <div style="background:white; max-width:400px; margin:20px auto; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.2); padding:20px;" class="white-page">
+    <main class="app">
       <img src="https://achievement-app-stripped.vercel.app/images/logos/logo.png" 
-           alt="App Logo" class="logo" 
-           style="width:200px; display:block; margin:10px auto;" />
-      <h2 style="text-align:center; color:#00477d;">Achievement Awards</h2>
+           alt="App Logo" class="logo" />
+      <h2 class="welcome-title" style="color:#00477d; text-align:center;">Achievement Awards</h2>
 
       <form id="widgetLoginForm">
-        <input type="email" id="widgetEmail" placeholder="Email" required style="display:block;width:100%;padding:12px;margin:10px 0;border:1px solid #ccc;border-radius:8px;" />
-        <input type="password" id="widgetPassword" placeholder="Password" required style="display:block;width:100%;padding:12px;margin:10px 0;border:1px solid #ccc;border-radius:8px;" />
+        <input type="email" id="widgetEmail" placeholder="Email" required class="white-input" />
+        <input type="password" id="widgetPassword" placeholder="Password" required class="white-input" />
         <div style="display:flex;justify-content:center;gap:10px;margin-top:10px;">
-          <button type="submit" style="background:#00477d;color:white;padding:12px 20px;border:none;border-radius:8px;cursor:pointer;">Login</button>
-          <button type="button" onclick="window.open('https://achievement-app-stripped.vercel.app/signup.html','_blank')" style="background:#00477d;color:white;padding:12px 20px;border:none;border-radius:8px;cursor:pointer;">Sign Up</button>
+          <button type="submit" class="blue-button">Login</button>
+          <button type="button" class="blue-button" onclick="window.open('https://achievement-app-stripped.vercel.app/signup.html','_blank')">Sign Up</button>
         </div>
       </form>
       <p id="widgetLoginError" style="color:red; display:none; text-align:center;">Invalid email or password.</p>
     </main>
-  `;
+  </div>
+`;
   document.body.appendChild(container);
 
   // ---- 3. Load Supabase client ----
