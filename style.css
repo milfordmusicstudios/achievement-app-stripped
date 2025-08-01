@@ -572,9 +572,9 @@ body.white-page button {
 }
 
 #logsTable thead th {
-  background: #3eb7f8;       /* ✅ consistent blue */
+  background: #3eb7f8;   /* ✅ Full blue */
   color: white;
-  text-align: center;        /* ✅ centered */
+  text-align: center;
   font-weight: bold;
   position: sticky;
   top: 0;
@@ -691,15 +691,6 @@ main.app > header h2 {
 
 
 
-/* ✅ Sticky Table Header */
-#logsTable thead th {
-  position: sticky;
-  top: 0;
-  background: #3eb7f8;
-  color: white;
-  z-index: 10;
-  border-bottom: 2px solid #00477d;
-}
 
 /* ✅ Table Cells */
 #logsTable th, #logsTable td {
@@ -1919,4 +1910,10 @@ body.leaderboard-page {
   border: 1px solid #ddd;
   border-radius: 5px;
   background: white;
+}
+#logsTable thead {
+  background: #3eb7f8 !important;
+}
+#logsTable thead th {
+  background: #3eb7f8 !important;
 }
