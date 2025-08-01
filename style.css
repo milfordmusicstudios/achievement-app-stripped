@@ -1118,15 +1118,6 @@ body.manage-users {
   min-width: 900px;       /* prevent squishing */
 }
 
-#userHeaderTable th {
-  background: #3eb7f8;
-  color: white;
-  padding: 8px;
-  text-align: center;
-  border-bottom: 2px solid #00477d;
-  border-radius: 0;
-}
-
 #userHeaderTable thead tr th:first-child {
   border-top-left-radius: 6px;   /* only left edge rounded */
 }
@@ -1338,13 +1329,6 @@ body.manage-users {
   cursor: pointer;
 }
 .tag-option:hover { background: #eef; }
-
-#userHeaderTable th {
-  text-align: center;      /* ✅ center text */
-  background: #3eb7f8;
-  color: white;
-  padding: 8px;
-}
 
 .tag-add-icon {
   width: 14px;
@@ -1591,17 +1575,6 @@ body.review-logs {
   width: 100%;
 }
 
-/* ✅ Single Scroll Container */
-#usersScrollWrapper {
-  width: 95%;
-  margin: 0 auto 20px;
-  max-height: 70vh;       /* limits height so it scrolls */
-  overflow-y: auto;       /* only ONE vertical scrollbar */
-  overflow-x: auto;       /* horizontal scroll if needed */
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  background: white;
-}
 #usersScrollWrapper table {
   min-width: 950px;
   width: auto;
@@ -1789,7 +1762,7 @@ body.white-page #logForm td {
   max-width: 1200px;         /* ✅ keeps proper layout */
 }
 
-#logsWrapper, #usersScrollWrapper {
+#logsWrapper {
   overflow-x: auto;
   overflow-y: auto;
   max-height: 70vh;
@@ -1926,16 +1899,6 @@ body.leaderboard-page {
   text-align: center;         /* ✅ same alignment */
 }
 
-#userHeaderTable th {
-  background: #3eb7f8;
-  color: white;
-  font-weight: bold;
-}
-#usersScrollWrapper {
-  overflow-x: auto;
-  width: 95%;
-  margin: 0 auto;
-}
 /* ✅ Table Body Rows */
 #userHeaderTable tbody td {
   padding: 6px 8px;
@@ -1946,4 +1909,73 @@ body.leaderboard-page {
 /* ✅ Alternating Row Colors */
 #userHeaderTable tbody tr:nth-child(even) {
   background: #f9f9f9;
+}
+
+
+/* ===== MANAGE USERS FINAL FIX ===== */
+#usersScrollWrapper {
+  width: 95%;
+  margin: 0 auto 20px;
+  max-height: 70vh;
+  overflow-y: auto;
+  overflow-x: auto;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  background: white;
+}
+
+#userHeaderTable {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  min-width: 1000px;
+}
+
+#userHeaderTable th {
+  background: #3eb7f8;
+  color: white;
+  font-weight: bold;
+  text-align: center;
+  padding: 8px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  border-bottom: 2px solid #00477d;
+}
+
+/* ✅ Column Widths */
+#userHeaderTable th:nth-child(1),
+#userHeaderTable td:nth-child(1) { width: 12%; }
+#userHeaderTable th:nth-child(2),
+#userHeaderTable td:nth-child(2) { width: 12%; }
+#userHeaderTable th:nth-child(3),
+#userHeaderTable td:nth-child(3) { width: 20%; }
+#userHeaderTable th:nth-child(4),
+#userHeaderTable td:nth-child(4) { width: 10%; }
+#userHeaderTable th:nth-child(5),
+#userHeaderTable td:nth-child(5) { width: 10%; }
+#userHeaderTable th:nth-child(6),
+#userHeaderTable td:nth-child(6) { width: 13%; }
+#userHeaderTable th:nth-child(7),
+#userHeaderTable td:nth-child(7) { width: 10%; }
+#userHeaderTable th:nth-child(8),
+#userHeaderTable td:nth-child(8) { width: 6%; }
+#userHeaderTable th:nth-child(9),
+#userHeaderTable td:nth-child(9) { width: 7%; }
+#userHeaderTable th:nth-child(10),
+#userHeaderTable td:nth-child(10) { width: 6%; }
+
+/* ✅ Inputs */
+#userHeaderTable input[type="text"],
+#userHeaderTable input[type="email"],
+#userHeaderTable td input[type="text"],
+#userHeaderTable td input[type="email"] {
+  width: calc(100% - 8px);
+  max-width: 95%;
+  padding: 5px 8px;
+  margin: 2px;
+  font-size: 0.9rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
 }

@@ -9,58 +9,57 @@
 </head>
 <body class="manage-users">
 
-  <main class="app">
-    <!-- ✅ Top Bar -->
-    <header style="display:flex; justify-content:space-between; align-items:center; padding:10px 20px;">
-      <button class="blue-button" onclick="window.location.href='index.html'">Home</button>
-      <h2 style="color:#00477d; flex:1; text-align:center;">Manage Users</h2>
-    </header>
+<main class="app">
+  <!-- ✅ Top Bar -->
+  <header style="display:flex; justify-content:space-between; align-items:center; padding:10px 20px;">
+    <button class="blue-button" onclick="window.location.href='index.html'">Home</button>
+    <h2 style="color:#00477d; flex:1; text-align:center;">Manage Users</h2>
+  </header>
 
-    <!-- ✅ Add User Button -->
-    <div style="text-align:center; margin:15px 0;">
-      <button id="addUserBtn" class="blue-button">+ Add User</button>
-    </div>
+  <!-- ✅ Add User Button -->
+  <div style="text-align:center; margin:15px 0;">
+    <button id="addUserBtn" class="blue-button">+ Add User</button>
+  </div>
 
-    <!-- ✅ Table Wrapper -->
-<div id="usersScrollWrapper">
-  <table id="userHeaderTable">
-    <thead>
-      <tr>
-        <th>First Name</th>
-        <th>Last Name</th>
-        <th>Email</th>
-        <th>Avatar</th>
-        <th>Roles</th>
-        <th>Teachers</th>
-        <th>Instrument</th>
-        <th>Points</th>
-        <th>Level</th>
-        <th>Save</th>
-      </tr>
-    </thead>
-    <tbody id="userTableBody">
-      <!-- ✅ user rows inserted dynamically -->
-    </tbody>
-  </table>
-</div>
+  <!-- ✅ Single Scrollable Table -->
+  <div id="usersScrollWrapper">
+    <table id="userHeaderTable">
+      <thead>
+        <tr>
+          <th>First Name</th>
+          <th>Last Name</th>
+          <th>Email</th>
+          <th>Avatar</th>
+          <th>Roles</th>
+          <th>Teachers</th>
+          <th>Instrument</th>
+          <th>Points</th>
+          <th>Level</th>
+          <th>Save</th>
+        </tr>
+      </thead>
+      <tbody id="userTableBody">
+        <!-- ✅ Rows inserted dynamically -->
+      </tbody>
+    </table>
+  </div>
 
-    <!-- ✅ Pagination -->
-    <div id="paginationControls"></div>
-  </main>
+  <!-- ✅ Pagination -->
+  <div id="paginationControls"></div>
+</main>
 
-  <!-- ✅ Script to Sync Header & Body Column Widths -->
-  <script>
-    function syncUserTableWidths() {
-      const headerCells = document.querySelectorAll("#userHeaderTable th");
-      const firstRowCells = document.querySelectorAll("#userTable tr:first-child td");
-      if (!firstRowCells.length) return;
-      headerCells.forEach((th, i) => {
-        if (firstRowCells[i]) th.style.width = firstRowCells[i].offsetWidth + "px";
-      });
-    }
-    window.addEventListener("load", syncUserTableWidths);
-    window.addEventListener("resize", syncUserTableWidths);
-  </script>
+<script>
+function syncUserTableWidths() {
+  const headerCells = document.querySelectorAll("#userHeaderTable th");
+  const rowCells = document.querySelectorAll("#userHeaderTable tr:first-child td");
+  if (!rowCells.length) return;
+  headerCells.forEach((th, i) => {
+    if (rowCells[i]) th.style.width = rowCells[i].offsetWidth + "px";
+  });
+}
+window.addEventListener("load", syncUserTableWidths);
+window.addEventListener("resize", syncUserTableWidths);
+</script>
 
 </body>
 </html>
