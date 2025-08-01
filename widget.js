@@ -12,11 +12,11 @@
   const container = document.createElement('div');
   container.id = 'achievement-login-widget';
 container.innerHTML = `
-  <div style="background:white; max-width:400px; margin:20px auto; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.2); padding:20px;" class="white-page">
+  <div style="background:white !important; max-width:400px; margin:20px auto; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.2); padding:20px;" class="white-page">
     <main class="app">
       <img src="https://achievement-app-stripped.vercel.app/images/logos/logo.png" 
            alt="App Logo" class="logo" />
-      <h2 class="welcome-title" style="color:#00477d; text-align:center;">Achievement Awards</h2>
+      <h2 class="welcome-title" style="color:#3eb7f8; text-align:center;">Achievement Awards</h2>
 
       <form id="widgetLoginForm">
         <input type="email" id="widgetEmail" placeholder="Email" required class="white-input" />
