@@ -12,25 +12,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     "🎤 Mic check... 1, 2, 3, almost there!",
     "🎧 Mixing the perfect soundtrack for victory…",
     "🎼 Arranging the notes of achievement…",
-    "🎷 Saxing up the leaderboard…",
     "🎻 Violins of victory are warming up…",
     "🔥 Shredding through the data like a solo guitar riff…",
-    "🚀 Blasting off to the high notes…",
     "🏆 Composing the champions’ anthem…",
     "💃 Dancing through the scores…",
-    "🎯 Hitting every note with precision…",
-    "🎨 Painting the leaderboard with melodies…",
-    "👑 Crowns and choruses are being prepared…",
     "🧩 Piecing together the perfect harmony…",
-    "📡 Broadcasting epic tunes to the top players…",
     "🎶 Where words fail, music speaks… loading greatness…",
     "🌟 Every note counts… loading your masterpiece…"
   ];
 
-  // ✅ Pick one random message
-  const randomMessage = messages[Math.floor(Math.random() * messages.length)];
-  loadingText.textContent = randomMessage;
-
+  loadingText.textContent = messages[Math.floor(Math.random() * messages.length)];
   if (popup) popup.style.display = "flex";
 
   await updateAllUsersLevels();
@@ -42,41 +33,30 @@ document.addEventListener("DOMContentLoaded", async () => {
 // 🔹 Step 1: Sync all users' levels
 async function updateAllUsersLevels() {
   try {
-    const [{ data: users, error: usersErr },
-           { data: logs, error: logsErr },
-           { data: levels, error: levelsErr }] = await Promise.all([
+    const [{ data: users }, { data: logs }, { data: levels }] = await Promise.all([
       supabase.from("users").select("id, roles"),
       supabase.from("logs").select("*").eq("status", "approved"),
       supabase.from("levels").select("*").order("minPoints", { ascending: true })
     ]);
 
-    if (usersErr || logsErr || levelsErr) throw usersErr || logsErr || levelsErr;
-
     for (const user of users) {
       const userLogs = logs.filter(l => l.userId === user.id);
       const totalPoints = userLogs.reduce((sum, l) => sum + (l.points || 0), 0);
 
-      let userLevel = levels.find(l =>
-        totalPoints >= Number(l.minPoints) && totalPoints <= Number(l.maxPoints)
-      );
-      if (!userLevel && levels.length > 0) userLevel = levels[levels.length - 1];
+      let userLevel = levels.find(l => totalPoints >= l.minPoints && totalPoints <= l.maxPoints);
+      if (!userLevel) userLevel = levels[levels.length - 1];
 
-      await supabase.from("users")
-        .update({ points: totalPoints, level: userLevel?.id || 1 })
-        .eq("id", user.id);
+      await supabase.from("users").update({ points: totalPoints, level: userLevel?.id || 1 }).eq("id", user.id);
     }
-
-    console.log("[INFO] All user levels synced successfully.");
   } catch (err) {
     console.error("[ERROR] Syncing user levels:", err);
   }
 }
 
-// 🔹 Step 2: Render leaderboard (one scroll for all)
+// 🔹 Step 2: Render leaderboard
 async function generateLeaderboard() {
   const container = document.getElementById("leaderboardContainer");
   if (!container) return;
-
   container.innerHTML = "";
 
   try {
@@ -92,40 +72,26 @@ async function generateLeaderboard() {
       const levelRow = document.createElement("div");
       levelRow.classList.add("level-row");
 
-      // 🔹 Level Badge
       const badge = document.createElement("img");
       badge.src = level.badge || `images/levelBadges/level${level.id}.png`;
       badge.classList.add("level-badge-icon");
-      badge.style.marginRight = "10px";
-      badge.style.width = "60px";
-      badge.style.height = "60px";
 
-      // 🔹 Level Track (wider than screen)
       const levelTrack = document.createElement("div");
       levelTrack.classList.add("level-track");
       levelTrack.style.backgroundColor = level.color || "#3eb7f8";
       levelTrack.style.border = `4px solid ${darkenColor(level.color || "#3eb7f8")}`;
-// ✅ Fit to screen width but allow scrolling on very small screens
-levelTrack.style.width = "100%";      // ✅ fits container
-levelTrack.style.maxWidth = "100%";   // ✅ no horizontal overflow
 
       const avatarTrack = document.createElement("div");
       avatarTrack.classList.add("avatar-track");
-
       const placedAvatars = [];
 
       users.forEach(user => {
         const isStudent = Array.isArray(user.roles) ? user.roles.includes("student") : user.roles === "student";
-        if (!isStudent) return;
-        if (user.level !== level.id) return;
+        if (!isStudent || user.level !== level.id) return;
 
         const percent = ((user.points - level.minPoints) / (level.maxPoints - level.minPoints)) * 100;
-        const spacingThreshold = 3;
-        const bumpX = 6;
-        const bumpY = 22;
-        const maxStack = 3;
-        let bumpLevel = 0;
-        let adjustedLeft = percent;
+        const spacingThreshold = 3, bumpX = 6, bumpY = 22, maxStack = 3;
+        let bumpLevel = 0, adjustedLeft = percent;
 
         while (placedAvatars.some(p => Math.abs(p.left - adjustedLeft) < spacingThreshold && p.top === bumpLevel)) {
           bumpLevel++;
@@ -133,33 +99,25 @@ levelTrack.style.maxWidth = "100%";   // ✅ no horizontal overflow
         }
         placedAvatars.push({ left: adjustedLeft, top: bumpLevel });
 
-// ✅ Only show avatar if user.avatarUrl is provided and not empty
-if (user.avatarUrl && user.avatarUrl.trim() !== "") {
-  const avatar = document.createElement("img");
-  avatar.src = user.avatarUrl;
-  avatar.classList.add("avatar");
-  avatar.alt = `${user.firstName} ${user.lastName}`;
-  avatar.title = `${user.firstName} ${user.lastName} (${user.points} pts)`;
-  avatar.style.left = `${adjustedLeft}%`;
-  avatar.style.top = `${10 + bumpLevel * bumpY}px`;
+        // ✅ Only render avatars with a valid URL
+        if (user.avatarUrl && user.avatarUrl.trim() !== "") {
+          const avatar = document.createElement("img");
+          avatar.src = user.avatarUrl;
+          avatar.classList.add("avatar");
+          avatar.alt = `${user.firstName} ${user.lastName}`;
+          avatar.title = `${user.firstName} ${user.lastName} (${user.points} pts)`;
+          avatar.style.left = `${adjustedLeft}%`;
+          avatar.style.top = `${10 + bumpLevel * bumpY}px`;
 
-  // ✅ Highlight logged-in user's avatar
-  const loggedInUser = JSON.parse(localStorage.getItem("loggedInUser"));
-  if (loggedInUser && user.id === loggedInUser.id) {
-    avatar.style.zIndex = "999";
-    avatar.style.border = "3px solid gold";
-  }
+          // ✅ Highlight logged-in user's avatar
+          const loggedInUser = JSON.parse(localStorage.getItem("loggedInUser"));
+          if (loggedInUser && user.id === loggedInUser.id) {
+            avatar.style.zIndex = "999";
+            avatar.style.border = "3px solid gold";
+          }
 
-  avatarTrack.appendChild(avatar);
-}
-// ✅ Highlight and bring logged-in user's avatar to front
-const loggedInUser = JSON.parse(localStorage.getItem("loggedInUser"));
-if (loggedInUser && user.id === loggedInUser.id) {
-  avatar.style.zIndex = "999";              // Always on top
-  avatar.style.border = "3px solid gold";   // Optional highlight
-}
-
-        avatarTrack.appendChild(avatar);
+          avatarTrack.appendChild(avatar);
+        }
       });
 
       levelTrack.appendChild(avatarTrack);
@@ -172,7 +130,6 @@ if (loggedInUser && user.id === loggedInUser.id) {
   }
 }
 
-// 🔹 Helper: Darken border color
 function darkenColor(hex, amt = -30) {
   try {
     let col = hex.replace("#", "");
