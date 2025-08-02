@@ -143,6 +143,32 @@ document.addEventListener("DOMContentLoaded", async () => {
   helpModal.addEventListener("click", (e) => {
     if (e.target === helpModal) helpModal.classList.remove("show");
   });
+// ✅ Add Cancel Listeners for Switch User and Switch Role
+const cancelUserSwitchBtn = document.getElementById("cancelUserSwitchBtn");
+const cancelRoleSwitchBtn = document.getElementById("cancelRoleSwitchBtn");
+const userSwitchModal = document.getElementById("userSwitchModal");
+const roleSwitchModal = document.getElementById("roleSwitchModal");
+
+if (cancelUserSwitchBtn) {
+  cancelUserSwitchBtn.addEventListener("click", () => {
+    userSwitchModal.style.display = "none";
+  });
+}
+
+if (cancelRoleSwitchBtn) {
+  cancelRoleSwitchBtn.addEventListener("click", () => {
+    roleSwitchModal.style.display = "none";
+  });
+}
+
+// ✅ Optional: Close when clicking outside modal content
+userSwitchModal?.addEventListener("click", (e) => {
+  if (e.target === userSwitchModal) userSwitchModal.style.display = "none";
+});
+
+roleSwitchModal?.addEventListener("click", (e) => {
+  if (e.target === roleSwitchModal) roleSwitchModal.style.display = "none";
+});
 
   // ✅ Populate user data
   document.getElementById('firstName').value = user.firstName || '';
