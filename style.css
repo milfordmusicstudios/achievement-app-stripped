@@ -2065,3 +2065,9 @@ body.leaderboard-page {
   content: "▼";
   color: white;
 }
+#avatarHelpModal {
+  display: none;
+}
+#avatarHelpModal.show {
+  display: flex !important;
+}

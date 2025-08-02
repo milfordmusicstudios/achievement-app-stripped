@@ -133,11 +133,24 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
+  // ✅ Avatar Help Modal Logic
+  const helpLink = document.getElementById("howToAvatar");
+  const helpModal = document.getElementById("avatarHelpModal");
+  const closeHelpBtn = document.getElementById("closeAvatarHelp");
+
+  helpLink.addEventListener("click", () => helpModal.classList.add("show"));
+  closeHelpBtn.addEventListener("click", () => helpModal.classList.remove("show"));
+  helpModal.addEventListener("click", (e) => {
+    if (e.target === helpModal) helpModal.classList.remove("show");
+  });
+
+  // ✅ Populate user data
   document.getElementById('firstName').value = user.firstName || '';
   document.getElementById('lastName').value = user.lastName || '';
   document.getElementById('newEmail').value = user.email || '';
   document.getElementById('avatarImage').src = user.avatarUrl || "images/logos/default.png";
 
+  // ✅ Setup user list and buttons
   let updatedAllUsers = JSON.parse(localStorage.getItem("allUsers")) || [];
   if (!updatedAllUsers.some(u => u.id === user.id)) updatedAllUsers.push(user);
 
@@ -152,12 +165,14 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("switchUserBtn").style.display = (updatedAllUsers.length > 1) ? "inline-block" : "none";
   document.getElementById("switchRoleBtn").style.display = (user.roles?.length > 1) ? "inline-block" : "none";
 
+  // ✅ Event Listeners
   document.getElementById("logoutBtn").addEventListener("click", () => { localStorage.clear(); window.location.href = "login.html"; });
   document.getElementById("cancelBtn").addEventListener("click", () => window.location.href = "index.html");
   document.getElementById("switchRoleBtn").addEventListener("click", promptRoleSwitch);
   document.getElementById("switchUserBtn").addEventListener("click", promptUserSwitch);
   document.getElementById("saveBtn").addEventListener("click", (e) => { e.preventDefault(); saveSettings(); });
 
+  // ✅ Auto open user switch modal if required
   if (sessionStorage.getItem("forceUserSwitch") === "true") {
     sessionStorage.removeItem("forceUserSwitch");
     setTimeout(() => promptUserSwitch(), 400);

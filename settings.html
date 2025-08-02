@@ -36,7 +36,7 @@
     .avatar-wrapper {
       position: relative;
       text-align: center;
-      margin-bottom: 20px;
+      margin-bottom: 10px;
     }
     .avatar-overlay {
       position: absolute;
@@ -77,6 +77,12 @@
       <img id="avatarImage" class="avatar" src="" alt="Your avatar" />
       <div class="avatar-overlay">Click to change avatar</div>
     </div>
+
+    <!-- ✅ Help Link -->
+    <small id="howToAvatar" style="color:#00477d; cursor:pointer; display:block; text-align:center; margin-bottom:15px;">
+      How do I create an avatar?
+    </small>
+
     <input type="file" id="avatarInput" accept="image/*" style="display: none;" />
 
     <input type="text" id="firstName" placeholder="First Name" />
@@ -100,35 +106,36 @@
   </form>
 </main>
 
-
-  <!-- Switch User Modal -->
-  <div id="userSwitchModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 999;">
-    <div style="background: white; padding: 20px; border-radius: 10px; max-width: 300px; width: 90%;">
-      <h3>Select User</h3>
-      <ul id="userSwitchList" style="list-style: none; padding: 0;"></ul>
-      <button id="cancelUserSwitchBtn" class="blue-button" style="margin-top: 10px; width: 100%;">Cancel</button>
-    </div>
+<!-- ✅ Avatar Help Modal -->
+<div id="avatarHelpModal" class="modal-overlay">
+  <div class="modal-box">
+    <h3>How to Create an Avatar</h3>
+    <p>
+      Please go to 
+      <a href="https://www.bitmoji.com" target="_blank" style="color:#00477d; font-weight:bold;">bitmoji.com</a> 
+      to create your avatar. After creating it, download a Bitmoji sticker and upload it here on this settings page.
+    </p>
+    <button id="closeAvatarHelp" class="blue-button" style="margin-top:10px; width:100%;">Close</button>
   </div>
+</div>
 
-  <!-- Switch Role Modal -->
-  <div id="roleSwitchModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 999;">
-    <div style="background: white; padding: 20px; border-radius: 10px; max-width: 300px; width: 90%;">
-      <h3>Select Role</h3>
-      <ul id="roleSwitchList" style="list-style: none; padding: 0;"></ul>
-      <button id="cancelRoleSwitchBtn" class="blue-button" style="margin-top: 10px; width: 100%;">Cancel</button>
-    </div>
+<!-- Existing Modals -->
+<div id="userSwitchModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 999;">
+  <div style="background: white; padding: 20px; border-radius: 10px; max-width: 300px; width: 90%;">
+    <h3>Select User</h3>
+    <ul id="userSwitchList" style="list-style: none; padding: 0;"></ul>
+    <button id="cancelUserSwitchBtn" class="blue-button" style="margin-top: 10px; width: 100%;">Cancel</button>
   </div>
+</div>
 
-  <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      document.getElementById("cancelUserSwitchBtn")?.addEventListener("click", () => {
-        document.getElementById("userSwitchModal").style.display = "none";
-      });
-      document.getElementById("cancelRoleSwitchBtn")?.addEventListener("click", () => {
-        document.getElementById("roleSwitchModal").style.display = "none";
-      });
-    });
-  </script>
+<div id="roleSwitchModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 999;">
+  <div style="background: white; padding: 20px; border-radius: 10px; max-width: 300px; width: 90%;">
+    <h3>Select Role</h3>
+    <ul id="roleSwitchList" style="list-style: none; padding: 0;"></ul>
+    <button id="cancelRoleSwitchBtn" class="blue-button" style="margin-top: 10px; width: 100%;">Cancel</button>
+  </div>
+</div>
+
 <script src="config.js"></script>
 <script type="module" src="supabase.js"></script>
 <script type="module" src="settings.js"></script>
