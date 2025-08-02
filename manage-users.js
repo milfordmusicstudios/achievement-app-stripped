@@ -4,8 +4,8 @@ let allUsers = [];
 let currentPage = 1;
 const usersPerPage = 25;
 let searchQuery = "";
-let sortColumn = null;
-let sortDirection = 1;
+let sortColumn = "lastName";     // ✅ Default sort column
+let sortDirection = 1;           // ✅ Ascending by default
 
 document.addEventListener("DOMContentLoaded", async () => {
   const user = JSON.parse(localStorage.getItem("loggedInUser"));
@@ -18,6 +18,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   await fetchUsers();
   document.getElementById("addUserBtn").addEventListener("click", openAddUserModal);
   setupSearchAndSort();
+  updateSortIndicators("lastName");  // ✅ Show arrow for default sort
 });
 
 // ✅ Fetch Users
@@ -54,8 +55,19 @@ function getFilteredAndSortedUsers() {
 
   if (sortColumn) {
     filtered.sort((a, b) => {
-      const valA = String(a[sortColumn] || "").toLowerCase();
-      const valB = String(b[sortColumn] || "").toLowerCase();
+      let valA = a[sortColumn];
+      let valB = b[sortColumn];
+
+      // ✅ Numeric sort for points & level
+      if (["points", "level"].includes(sortColumn)) {
+        valA = Number(valA) || 0;
+        valB = Number(valB) || 0;
+        return (valA - valB) * sortDirection;
+      }
+
+      // ✅ Text sort for other fields
+      valA = String(valA || "").toLowerCase();
+      valB = String(valB || "").toLowerCase();
       return valA > valB ? sortDirection : valA < valB ? -sortDirection : 0;
     });
   }
@@ -145,7 +157,7 @@ function buildTagContainer(userId, type, selected, options) {
   `;
 }
 
-// ✅ Tag Listeners (Auto-Save on Change)
+// ✅ Tag Listeners
 function setupTagListeners() {
   document.querySelectorAll(".tag-add-icon").forEach(icon => {
     icon.addEventListener("click", e => {
@@ -165,7 +177,6 @@ function setupTagListeners() {
       if (!Array.isArray(user[type])) user[type] = [];
       if (!user[type].includes(value)) user[type].push(value);
 
-      // Auto-save roles/teachers
       await supabase.from("users").update({ [type]: user[type] }).eq("id", id);
 
       e.target.remove();
@@ -240,7 +251,7 @@ function sendInviteLink(modal) {
   modal.remove();
 }
 
-// ✅ Search & Sort
+// ✅ Search & Sort Setup
 function setupSearchAndSort() {
   document.getElementById("userSearch").addEventListener("input", e => {
     searchQuery = e.target.value.toLowerCase();
@@ -260,10 +271,13 @@ function setupSearchAndSort() {
   });
 }
 
+// ✅ Update Sort Indicators
 function updateSortIndicators(active) {
   document.querySelectorAll("#userHeaderTable th[data-sort]").forEach(th => {
-    th.textContent = th.textContent.replace(/ ▲| ▼/, "");
-    if (th.dataset.sort === active) th.textContent += sortDirection === 1 ? " ▲" : " ▼";
+    th.classList.remove("asc", "desc");
+    if (th.dataset.sort === active) {
+      th.classList.add(sortDirection === 1 ? "asc" : "desc");
+    }
   });
 }
 

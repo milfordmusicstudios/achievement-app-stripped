@@ -16,8 +16,9 @@
     <h2 style="color:#00477d; flex:1; text-align:center;">Manage Users</h2>
   </header>
 
-  <!-- ✅ Add User Button -->
-  <div style="text-align:center; margin:15px 0;">
+  <!-- ✅ Search Bar -->
+  <div id="actionBar">
+    <input type="text" id="userSearch" placeholder="Search users..." />
     <button id="addUserBtn" class="blue-button">+ Add User</button>
   </div>
 
@@ -26,15 +27,15 @@
     <table id="userHeaderTable">
       <thead>
         <tr>
-          <th>First Name</th>
-          <th>Last Name</th>
-          <th>Email</th>
+          <th data-sort="firstName">First Name</th>
+          <th data-sort="lastName">Last Name</th>
+          <th data-sort="email">Email</th>
           <th>Avatar</th>
-          <th>Roles</th>
-          <th>Teachers</th>
-          <th>Instrument</th>
-          <th>Points</th>
-          <th>Level</th>
+          <th data-sort="roles">Roles</th>
+          <th data-sort="teacherIds">Teachers</th>
+          <th data-sort="instrument">Instrument</th>
+          <th data-sort="points">Points</th>
+          <th data-sort="level">Level</th>
         </tr>
       </thead>
       <tbody id="userTableBody">

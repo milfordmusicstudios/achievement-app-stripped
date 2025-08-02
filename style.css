@@ -2041,3 +2041,27 @@ body.leaderboard-page {
 #logForm td {
   padding: 10px 8px !important;        /* ✅ slightly more padding */
 }
+/* === Sortable Header Styling === */
+#userHeaderTable th[data-sort] {
+  cursor: pointer;
+  position: relative;
+  padding-right: 18px;
+}
+
+#userHeaderTable th[data-sort]:after {
+  content: "⇅";  /* neutral arrow */
+  position: absolute;
+  right: 6px;
+  color: rgba(255,255,255,0.6);
+  font-size: 0.8rem;
+}
+
+#userHeaderTable th[data-sort].asc:after {
+  content: "▲";
+  color: white;
+}
+
+#userHeaderTable th[data-sort].desc:after {
+  content: "▼";
+  color: white;
+}
