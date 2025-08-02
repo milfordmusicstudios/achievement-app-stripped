@@ -133,13 +133,25 @@ levelTrack.style.maxWidth = "100%";   // ✅ no horizontal overflow
         }
         placedAvatars.push({ left: adjustedLeft, top: bumpLevel });
 
-        const avatar = document.createElement("img");
-        avatar.src = user.avatarUrl || "images/logos/default.png";
-        avatar.classList.add("avatar");
-        avatar.alt = `${user.firstName} ${user.lastName}`;
-        avatar.title = `${user.firstName} ${user.lastName} (${user.points} pts)`;
-        avatar.style.left = `${adjustedLeft}%`;
-        avatar.style.top = `${10 + bumpLevel * bumpY}px`;
+// ✅ Only show avatar if user.avatarUrl is provided and not empty
+if (user.avatarUrl && user.avatarUrl.trim() !== "") {
+  const avatar = document.createElement("img");
+  avatar.src = user.avatarUrl;
+  avatar.classList.add("avatar");
+  avatar.alt = `${user.firstName} ${user.lastName}`;
+  avatar.title = `${user.firstName} ${user.lastName} (${user.points} pts)`;
+  avatar.style.left = `${adjustedLeft}%`;
+  avatar.style.top = `${10 + bumpLevel * bumpY}px`;
+
+  // ✅ Highlight logged-in user's avatar
+  const loggedInUser = JSON.parse(localStorage.getItem("loggedInUser"));
+  if (loggedInUser && user.id === loggedInUser.id) {
+    avatar.style.zIndex = "999";
+    avatar.style.border = "3px solid gold";
+  }
+
+  avatarTrack.appendChild(avatar);
+}
 // ✅ Highlight and bring logged-in user's avatar to front
 const loggedInUser = JSON.parse(localStorage.getItem("loggedInUser"));
 if (loggedInUser && user.id === loggedInUser.id) {
