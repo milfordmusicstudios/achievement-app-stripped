@@ -1323,23 +1323,28 @@ body.manage-users {
 /* Dropdown Options */
 .tag-options {
   display: none;
-  position: absolute;
-  top: 100%;
-  left: 0;
+  position: fixed;           /* ✅ detach from table cell flow */
   background: white;
   border: 1px solid #ccc;
   border-radius: 4px;
-  min-width: 120px;
-  max-height: 120px;
+  min-width: 180px;          /* ✅ give it more width */
+  max-height: 200px;         /* ✅ more space */
   overflow-y: auto;
-  z-index: 1000;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2); /* ✅ floating look */
+  z-index: 9999;             /* ✅ stays above table */
+  padding: 4px 0;
 }
-.tag-options.show { display: block; }
+.tag-options.show {
+  display: block;
+}
 .tag-option {
-  padding: 4px 6px;
+  padding: 6px 10px;
   cursor: pointer;
+  white-space: nowrap;       /* ✅ prevent wrapping */
 }
-.tag-option:hover { background: #eef; }
+.tag-option:hover {
+  background: #eef;
+}
 
 .tag-add-icon {
   width: 14px;

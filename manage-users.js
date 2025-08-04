@@ -159,12 +159,20 @@ function buildTagContainer(userId, type, selected, options) {
 
 // ✅ Tag Listeners
 function setupTagListeners() {
-  document.querySelectorAll(".tag-add-icon").forEach(icon => {
-    icon.addEventListener("click", e => {
-      const container = e.target.closest(".tag-container");
-      container.querySelector(".tag-options").classList.toggle("show");
-    });
+document.querySelectorAll(".tag-add-icon").forEach(icon => {
+  icon.addEventListener("click", e => {
+    const container = e.target.closest(".tag-container");
+    const options = container.querySelector(".tag-options");
+
+    // ✅ Get screen position of the icon
+    const rect = e.target.getBoundingClientRect();
+    options.style.top = rect.bottom + "px";
+    options.style.left = rect.left + "px";
+
+    // ✅ Show dropdown
+    options.classList.toggle("show");
   });
+});
 
   document.querySelectorAll(".tag-option").forEach(opt => {
     opt.addEventListener("click", async e => {
