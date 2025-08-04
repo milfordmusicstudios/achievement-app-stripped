@@ -165,7 +165,10 @@ footer {
 
 .progress-bar {
   height: 100%;
+  border-radius: 10px;
   transition: width 0.3s ease-in-out, background 0.3s ease;
+  border-top-left-radius: 10px;
+  border-bottom-left-radius: 10px;
 }
 
 .percent-text {
@@ -2086,15 +2089,15 @@ body.leaderboard-page {
 
 .points-overlay {
   position: absolute;
-  width: 100%;
-  text-align: center;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  top: 50%;
   font-weight: bold;
   font-size: 14px;
   color: #00477d;
-  z-index: 20; /* always above the bar */
-  top: 50%;
-  transform: translateY(-50%);
-  pointer-events: none; /* avoid interfering with clicks */
+  z-index: 20;
+  pointer-events: none;
+  width: auto;  /* ✅ prevents shrinking */
 }
 
 .progress-container {
