@@ -2073,11 +2073,13 @@ body.leaderboard-page {
 }
 
 #homeProgressBar {
-  position: relative;
-  display: flex;
+  position: relative !important;
+  display: flex !important;
   justify-content: center;
   align-items: center;
   font-weight: bold;
   font-size: 14px;
-  color: #00477d;  /* ✅ Dark Blue for visibility */
+  color: #00477d !important;   /* Dark Blue Text */
+  z-index: 10 !important;      /* Text stays above bar */
+  overflow: visible !important;/* Ensure text is not clipped */
 }
