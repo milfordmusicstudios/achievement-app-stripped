@@ -1,5 +1,7 @@
 import { supabase } from './supabase.js';
 
+const categoryOptions = ["Practice", "Participation", "Performance", "Personal", "Proficiency"];
+
 document.addEventListener("DOMContentLoaded", async () => {
   console.log("[DEBUG] Review Logs: Script loaded");
 
@@ -180,7 +182,11 @@ function renderLogsTable(logs) {
     row.innerHTML = `
       <td><input type="checkbox" class="select-log" data-id="${log.id}"></td>
       <td>${log.fullName}</td>
-      <td><input class="edit-input" data-id="${log.id}" data-field="category" value="${log.category}"></td>
+<td>
+  <select class="edit-input" data-id="${log.id}" data-field="category">
+${categoryOptions.map(c => `<option value="${c}" ${log.category?.toLowerCase() === c.toLowerCase() ? "selected" : ""}>${c}</option>`).join("")}
+  </select>
+</td>
       <td><input type="date" class="edit-input" data-id="${log.id}" data-field="date" value="${log.date.split('T')[0]}"></td>
       <td><input type="number" class="edit-input" data-id="${log.id}" data-field="points" value="${log.points}"></td>
       <td><textarea class="edit-input" data-id="${log.id}" data-field="notes">${log.notes || ""}</textarea></td>

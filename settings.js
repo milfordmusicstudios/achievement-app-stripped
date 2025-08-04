@@ -1,6 +1,12 @@
 
 import { supabase } from './supabase.js';
 
+function getHighestRole(roles) {
+  const priority = { admin: 3, teacher: 2, student: 1, parent: 0 };
+  if (!Array.isArray(roles)) return "student";
+  return roles.slice().sort((a, b) => (priority[b.toLowerCase()] ?? -1) - (priority[a.toLowerCase()] ?? -1))[0];
+}
+
 function normalizeUUID(value) {
   if (!value) return null;
   if (typeof value === 'object' && value.id) return String(value.id);
@@ -47,7 +53,7 @@ function promptUserSwitch() {
     btn.onclick = () => {
       const userToStore = { ...u };
       localStorage.setItem("loggedInUser", JSON.stringify(userToStore));
-      localStorage.setItem("activeRole", Array.isArray(u.roles) ? u.roles[0] : "student");
+localStorage.setItem("activeRole", getHighestRole(u.roles));
       window.location.href = "index.html";
     };
 
@@ -126,7 +132,11 @@ async function saveSettings() {
 
 document.addEventListener("DOMContentLoaded", async () => {
   const user = JSON.parse(localStorage.getItem("loggedInUser"));
-  const activeRole = localStorage.getItem("activeRole");
+let activeRole = localStorage.getItem("activeRole");
+if (!activeRole && user.roles) {
+  activeRole = getHighestRole(user.roles);
+  localStorage.setItem("activeRole", activeRole);
+}
   if (!user || !activeRole) {
     alert("You must be logged in.");
     window.location.href = "index.html";
