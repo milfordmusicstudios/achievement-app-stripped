@@ -107,6 +107,14 @@ function updateHomeUI(userData, activeRole, currentLevel, nextLevel) {
     progressBar.style.width = percent + "%";
     progressBar.style.backgroundColor = userData.levelColor;
     progressLabel.textContent = `${Math.round(percent)}% of the way to the next level`;
+// ✅ Adjust text color if the bar background is very dark
+const barColor = userData.levelColor.toLowerCase();
+if (["#00477d", "#00345c", "#000", "#222"].includes(barColor)) {
+  progressBar.style.color = "white";
+} else {
+  progressBar.style.color = "#00477d";
+}
+
   }
 
   const myPointsBtn = document.getElementById("myPointsBtn");
