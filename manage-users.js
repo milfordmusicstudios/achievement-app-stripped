@@ -168,12 +168,20 @@ document.querySelectorAll(".tag-add-icon").forEach(icon => {
     const rect = e.target.getBoundingClientRect();
     options.style.top = rect.bottom + "px";
     options.style.left = rect.left + "px";
+options.classList.remove("show");
 
     // ✅ Show dropdown
     options.classList.toggle("show");
   });
 });
-
+document.addEventListener("click", e => {
+  document.querySelectorAll(".tag-options.show").forEach(openMenu => {
+    // ✅ Close if click is outside the dropdown and not the plus icon
+    if (!openMenu.contains(e.target) && !e.target.classList.contains("tag-add-icon")) {
+      openMenu.classList.remove("show");
+    }
+  });
+});
   document.querySelectorAll(".tag-option").forEach(opt => {
     opt.addEventListener("click", async e => {
       const container = e.target.closest(".tag-container");
