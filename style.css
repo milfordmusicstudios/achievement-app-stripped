@@ -2096,3 +2096,8 @@ body.leaderboard-page {
   transform: translateY(-50%);
   pointer-events: none; /* avoid interfering with clicks */
 }
+
+.progress-container {
+  position: relative;   /* ✅ ensures overlay is positioned correctly */
+  overflow: visible;    /* ✅ allows overlay text to be seen fully */
+}
