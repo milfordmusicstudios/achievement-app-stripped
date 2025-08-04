@@ -1297,6 +1297,7 @@ body.manage-users {
   border: 1px solid #ccc;
   border-radius: 4px;
   padding: 3px;
+  position: relative;
   background: #fff;
 }
 /* Individual Tags */
