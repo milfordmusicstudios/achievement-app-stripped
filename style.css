@@ -2071,3 +2071,13 @@ body.leaderboard-page {
 #avatarHelpModal.show {
   display: flex !important;
 }
+
+#homeProgressBar {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+  font-size: 14px;
+  color: #00477d;  /* ✅ Dark Blue for visibility */
+}
