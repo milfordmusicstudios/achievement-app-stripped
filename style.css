@@ -165,10 +165,11 @@ footer {
 
 .progress-bar {
   height: 100%;
-  border-radius: 10px;
   transition: width 0.3s ease-in-out, background 0.3s ease;
-  border-top-left-radius: 10px;
-  border-bottom-left-radius: 10px;
+  border-top-left-radius: 8px;   /* ✅ matches inner curve of container */
+  border-bottom-left-radius: 8px;
+  border-top-right-radius: 8px;  /* keeps rounded on right */
+  border-bottom-right-radius: 8px;
 }
 
 .percent-text {
