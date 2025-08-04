@@ -2083,3 +2083,16 @@ body.leaderboard-page {
   z-index: 10 !important;      /* Text stays above bar */
   overflow: visible !important;/* Ensure text is not clipped */
 }
+
+.points-overlay {
+  position: absolute;
+  width: 100%;
+  text-align: center;
+  font-weight: bold;
+  font-size: 14px;
+  color: #00477d;
+  z-index: 20; /* always above the bar */
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none; /* avoid interfering with clicks */
+}

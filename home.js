@@ -108,6 +108,7 @@ function updateHomeUI(userData, activeRole, currentLevel, nextLevel) {
     progressBar.style.backgroundColor = userData.levelColor;
     progressLabel.textContent = `${Math.round(percent)}% of the way to the next level`;
   }
+document.getElementById("pointsOverlay").textContent = `${userData.points} pts`;
 
   const myPointsBtn = document.getElementById("myPointsBtn");
   const reviewLogsBtn = document.getElementById("reviewLogsBtn");
