@@ -111,13 +111,15 @@ sorted.forEach(s => {
         ? studentSelect.value
         : user.id;
 
-      let points = null;
-      if (category === "practice") {
-        points = 5;
-      } else if (activeRole === "admin" || activeRole === "teacher") {
-        const enteredPoints = parseInt(pointsInput?.value);
-        if (!isNaN(enteredPoints)) points = enteredPoints;
-      }
+let points = 5; // ✅ default for practice
+
+// ✅ If teacher/admin, allow manual override
+if (activeRole === "admin" || activeRole === "teacher") {
+  const enteredPoints = parseInt(pointsInput?.value);
+  if (!isNaN(enteredPoints)) {
+    points = enteredPoints;
+  }
+}
 
       if (!category || !date) {
         alert("Please complete category and date.");
