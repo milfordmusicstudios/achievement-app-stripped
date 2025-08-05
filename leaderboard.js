@@ -24,13 +24,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   loadingText.textContent = messages[Math.floor(Math.random() * messages.length)];
   if (popup) popup.style.display = "flex";
 
-  await updateAllUsersLevels();
-  await generateLeaderboard();
+  await updateAllUsersLevels();   // ✅ Recalculate all user points
+  await generateLeaderboard();    // ✅ Render leaderboard after recalculation
 
   if (popup) popup.style.display = "none";
 });
 
-// 🔹 Step 1: Sync all users' levels
+// ✅ Step 1: Recalculate and sync all users' points/levels
 async function updateAllUsersLevels() {
   try {
     const [{ data: users }, { data: logs }, { data: levels }] = await Promise.all([
@@ -39,21 +39,30 @@ async function updateAllUsersLevels() {
       supabase.from("levels").select("*").order("minPoints", { ascending: true })
     ]);
 
+    if (!users || !logs || !levels) {
+      console.error("[ERROR] Missing data for users/logs/levels");
+      return;
+    }
+
     for (const user of users) {
-      const userLogs = logs.filter(l => l.userId === user.id);
-      const totalPoints = userLogs.reduce((sum, l) => sum + (l.points || 0), 0);
+      const userLogs = logs.filter(l => String(l.userId).trim() === String(user.id).trim()); // ✅ normalize ID comparison
+      const totalPoints = userLogs.reduce((sum, l) => sum + (parseInt(l.points) || 0), 0);
 
       let userLevel = levels.find(l => totalPoints >= l.minPoints && totalPoints <= l.maxPoints);
       if (!userLevel) userLevel = levels[levels.length - 1];
 
-      await supabase.from("users").update({ points: totalPoints, level: userLevel?.id || 1 }).eq("id", user.id);
+      await supabase.from("users")
+        .update({ points: totalPoints, level: userLevel?.id || 1 })
+        .eq("id", user.id);
     }
+
+    console.log("[DEBUG] User points/levels successfully recalculated for all users.");
   } catch (err) {
     console.error("[ERROR] Syncing user levels:", err);
   }
 }
 
-// 🔹 Step 2: Render leaderboard
+// ✅ Step 2: Render leaderboard avatars
 async function generateLeaderboard() {
   const container = document.getElementById("leaderboardContainer");
   if (!container) return;
@@ -89,9 +98,12 @@ async function generateLeaderboard() {
         const isStudent = Array.isArray(user.roles) ? user.roles.includes("student") : user.roles === "student";
         if (!isStudent || user.level !== level.id) return;
 
+        // ✅ Calculate avatar position using recalculated points
         const percent = ((user.points - level.minPoints) / (level.maxPoints - level.minPoints)) * 100;
+        const clampedPercent = Math.min(100, Math.max(0, percent)); // ✅ ensure safe range
+
         const spacingThreshold = 3, bumpX = 6, bumpY = 22, maxStack = 3;
-        let bumpLevel = 0, adjustedLeft = percent;
+        let bumpLevel = 0, adjustedLeft = clampedPercent;
 
         while (placedAvatars.some(p => Math.abs(p.left - adjustedLeft) < spacingThreshold && p.top === bumpLevel)) {
           bumpLevel++;
@@ -99,7 +111,6 @@ async function generateLeaderboard() {
         }
         placedAvatars.push({ left: adjustedLeft, top: bumpLevel });
 
-        // ✅ Only render avatars with a valid URL
         if (user.avatarUrl && user.avatarUrl.trim() !== "") {
           const avatar = document.createElement("img");
           avatar.src = user.avatarUrl;
@@ -109,7 +120,6 @@ async function generateLeaderboard() {
           avatar.style.left = `${adjustedLeft}%`;
           avatar.style.top = `${10 + bumpLevel * bumpY}px`;
 
-          // ✅ Highlight logged-in user's avatar
           const loggedInUser = JSON.parse(localStorage.getItem("loggedInUser"));
           if (loggedInUser && user.id === loggedInUser.id) {
             avatar.style.zIndex = "999";
