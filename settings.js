@@ -93,6 +93,7 @@ async function saveSettings() {
   const currentEmail = user.email;
   const newEmail = document.getElementById('newEmail').value.trim();
   const newPassword = document.getElementById('newPassword').value.trim();
+  const currentPassword = document.getElementById('currentPassword').value.trim();
 
   const updatedUser = {
     firstName: document.getElementById('firstName').value.trim(),
@@ -104,19 +105,45 @@ async function saveSettings() {
     let emailChanged = newEmail && newEmail !== currentEmail;
     let passwordChanged = newPassword && newPassword.length > 0;
 
+    // ✅ Require current password if changing email or password
+    if ((emailChanged || passwordChanged) && !currentPassword) {
+      alert("Please enter your current password to make changes.");
+      return;
+    }
+
+    // ✅ Re-authenticate user if needed
     if (emailChanged || passwordChanged) {
-      const { error: authError } = await supabase.auth.updateUser({
-        email: emailChanged ? newEmail : undefined,
-        password: passwordChanged ? newPassword : undefined
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: currentEmail,
+        password: currentPassword
       });
-      if (authError) {
-        console.warn("[WARN] Auth update failed:", authError.message);
-        alert("Warning: " + authError.message);
-      } else if (emailChanged) {
-        alert("Check your new email to confirm the change.");
+      if (signInError) {
+        alert("Current password is incorrect.");
+        return;
       }
     }
 
+    // ✅ Update email separately
+    if (emailChanged) {
+      const { error: emailError } = await supabase.auth.updateUser({ email: newEmail });
+      if (emailError) {
+        alert("Failed to update email: " + emailError.message);
+        return;
+      }
+      alert("Check your new email to confirm the change.");
+    }
+
+    // ✅ Update password separately
+    if (passwordChanged) {
+      const { error: passError } = await supabase.auth.updateUser({ password: newPassword });
+      if (passError) {
+        alert("Failed to update password: " + passError.message);
+        return;
+      }
+      alert("Password updated successfully.");
+    }
+
+    // ✅ Update user info in DB
     const { error: dbError } = await supabase.from("users").update(updatedUser).eq("id", user.id);
     if (dbError) throw dbError;
 
@@ -124,6 +151,7 @@ async function saveSettings() {
     localStorage.setItem("loggedInUser", JSON.stringify(user));
     alert("Settings saved successfully!");
     window.location.href = "index.html";
+
   } catch (err) {
     console.error("[ERROR] Save settings failed:", err);
     alert("Failed to update settings: " + err.message);
