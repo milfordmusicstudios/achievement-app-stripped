@@ -33,7 +33,7 @@ const { totalPoints, currentLevel } = await recalculateUserPoints(userId);
 console.log("[DEBUG] Total approved points:", totalPoints);
 
 levelBadge.src = currentLevel?.badge || "images/levelBadges/level1.png";
-    renderCategorySummary(approvedLogs, totalPoints);
+renderCategorySummary(logs.filter(l => l.status === "approved"), totalPoints);
 
     logs.sort((a, b) => new Date(b.date) - new Date(a.date));
     renderLogs(logs);
