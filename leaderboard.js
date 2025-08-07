@@ -23,7 +23,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   loadingText.textContent = messages[Math.floor(Math.random() * messages.length)];
   if (popup) popup.style.display = "flex";
-console.log(`[DEBUG] Updating user ${user.id} (${user.firstName}): ${totalPoints} pts`);
 
   await updateAllUsersLevels();   // ✅ Recalculate all user points
   await generateLeaderboard();    // ✅ Render leaderboard after recalculation
@@ -34,11 +33,11 @@ console.log(`[DEBUG] Updating user ${user.id} (${user.firstName}): ${totalPoints
 // ✅ Step 1: Recalculate and sync all users' points/levels
 async function updateAllUsersLevels() {
   try {
-const [{ data: users }, { data: logs }, { data: levels }] = await Promise.all([
-  supabase.from("users").select("*"), // or include at least id, roles, firstName, lastName, avatarUrl, etc.
-  supabase.from("logs").select("*").eq("status", "approved"),
-  supabase.from("levels").select("*").order("minPoints", { ascending: true })
-]);
+    const [{ data: users }, { data: logs }, { data: levels }] = await Promise.all([
+      supabase.from("users").select("*"),
+      supabase.from("logs").select("*").eq("status", "approved"),
+      supabase.from("levels").select("*").order("minPoints", { ascending: true })
+    ]);
 
     if (!users || !logs || !levels) {
       console.error("[ERROR] Missing data for users/logs/levels");
@@ -46,12 +45,13 @@ const [{ data: users }, { data: logs }, { data: levels }] = await Promise.all([
     }
 
     for (const user of users) {
-      const userLogs = logs.filter(l => String(l.userId).trim() === String(user.id).trim()); // ✅ normalize ID comparison
+      const userLogs = logs.filter(l => String(l.userId).trim() === String(user.id).trim());
       const totalPoints = userLogs.reduce((sum, l) => sum + (parseInt(l.points) || 0), 0);
 
       let userLevel = levels.find(l => totalPoints >= l.minPoints && totalPoints <= l.maxPoints);
       if (!userLevel) userLevel = levels[levels.length - 1];
-if (!user.id) continue;
+
+      console.log(`[DEBUG] Updating user ${user.id} (${user.firstName}): ${totalPoints} pts → Level ${userLevel.id}`);
 
       await supabase.from("users")
         .update({ points: totalPoints, level: userLevel?.id || 1 })
@@ -100,16 +100,18 @@ async function generateLeaderboard() {
         const isStudent = Array.isArray(user.roles) ? user.roles.includes("student") : user.roles === "student";
         if (!isStudent || user.level !== level.id) return;
 
-        // ✅ Calculate avatar position using recalculated points
         const percent = ((user.points - level.minPoints) / (level.maxPoints - level.minPoints)) * 100;
-        const clampedPercent = Math.min(100, Math.max(0, percent)); // ✅ ensure safe range
+        const clampedPercent = Math.min(100, Math.max(0, percent));
 
         const spacingThreshold = 3, bumpX = 6, bumpY = 22, maxStack = 3;
         let bumpLevel = 0, adjustedLeft = clampedPercent;
 
         while (placedAvatars.some(p => Math.abs(p.left - adjustedLeft) < spacingThreshold && p.top === bumpLevel)) {
           bumpLevel++;
-          if (bumpLevel >= maxStack) { bumpLevel = 0; adjustedLeft += bumpX; }
+          if (bumpLevel >= maxStack) {
+            bumpLevel = 0;
+            adjustedLeft += bumpX;
+          }
         }
         placedAvatars.push({ left: adjustedLeft, top: bumpLevel });
 
