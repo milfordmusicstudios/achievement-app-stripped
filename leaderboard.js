@@ -23,6 +23,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   loadingText.textContent = messages[Math.floor(Math.random() * messages.length)];
   if (popup) popup.style.display = "flex";
+console.log(`[DEBUG] Updating user ${user.id} (${user.firstName}): ${totalPoints} pts`);
 
   await updateAllUsersLevels();   // ✅ Recalculate all user points
   await generateLeaderboard();    // ✅ Render leaderboard after recalculation
@@ -33,11 +34,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 // ✅ Step 1: Recalculate and sync all users' points/levels
 async function updateAllUsersLevels() {
   try {
-    const [{ data: users }, { data: logs }, { data: levels }] = await Promise.all([
-      supabase.from("users").select("id, roles"),
-      supabase.from("logs").select("*").eq("status", "approved"),
-      supabase.from("levels").select("*").order("minPoints", { ascending: true })
-    ]);
+const [{ data: users }, { data: logs }, { data: levels }] = await Promise.all([
+  supabase.from("users").select("*"), // or include at least id, roles, firstName, lastName, avatarUrl, etc.
+  supabase.from("logs").select("*").eq("status", "approved"),
+  supabase.from("levels").select("*").order("minPoints", { ascending: true })
+]);
 
     if (!users || !logs || !levels) {
       console.error("[ERROR] Missing data for users/logs/levels");
@@ -50,6 +51,7 @@ async function updateAllUsersLevels() {
 
       let userLevel = levels.find(l => totalPoints >= l.minPoints && totalPoints <= l.maxPoints);
       if (!userLevel) userLevel = levels[levels.length - 1];
+if (!user.id) continue;
 
       await supabase.from("users")
         .update({ points: totalPoints, level: userLevel?.id || 1 })
