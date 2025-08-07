@@ -46,8 +46,15 @@ async function updateAllUsersLevels() {
 
     for (const user of users) {
       const userLogs = logs.filter(l => String(l.userId).trim() === String(user.id).trim());
-      const totalPoints = userLogs.reduce((sum, l) => sum + (parseInt(l.points) || 0), 0);
 
+      if (!userLogs.length) {
+        console.warn(`[WARN] No logs found for ${user.firstName} (${user.id})`);
+      } else {
+        const totalPoints = userLogs.reduce((sum, l) => sum + (parseInt(l.points) || 0), 0);
+        console.log(`[DEBUG] ${user.firstName} has ${userLogs.length} logs, ${totalPoints} points`);
+      }
+
+      const totalPoints = userLogs.reduce((sum, l) => sum + (parseInt(l.points) || 0), 0);
       let userLevel = levels.find(l => totalPoints >= l.minPoints && totalPoints <= l.maxPoints);
       if (!userLevel) userLevel = levels[levels.length - 1];
 
