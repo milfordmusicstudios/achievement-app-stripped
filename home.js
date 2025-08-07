@@ -1,32 +1,5 @@
 import { supabase } from './supabase.js';
-
-export async function recalculateUserPoints(userId) {
-  try {
-    const { data: logs, error: logsError } = await supabase
-      .from('logs')
-      .select('*')
-      .eq('userId', userId)
-      .eq('status', 'approved');
-    if (logsError) throw logsError;
-
-    const totalPoints = logs.reduce((sum, log) => sum + (log.points || 0), 0);
-
-    const { data: levels, error: levelsError } = await supabase
-      .from('levels')
-      .select('*')
-      .order('minPoints', { ascending: true });
-    if (levelsError) throw levelsError;
-
-    let currentLevel = levels.find(l => totalPoints >= l.minPoints && totalPoints <= l.maxPoints) || levels[levels.length - 1];
-
-    await supabase.from('users').update({ points: totalPoints, level: currentLevel.id }).eq('id', userId);
-    console.log(`[DEBUG] Recalculated points for user ${userId}: ${totalPoints} pts, Level ${currentLevel.id}`);
-    return { totalPoints, currentLevel };
-  } catch (err) {
-    console.error('[ERROR] Recalculate failed:', err);
-    return null;
-  }
-}
+import { recalculateUserPoints } from './utils.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
   const storedUser = JSON.parse(localStorage.getItem('loggedInUser'));
@@ -48,21 +21,21 @@ document.addEventListener('DOMContentLoaded', async () => {
   await recalculateUserPoints(storedUser.id);
 
   try {
-    const { data: logs } = await supabase.from('logs').select('*').eq('userId', storedUser.id);
-    const approvedLogs = logs.filter(l => l.status === 'approved');
-    const totalPoints = approvedLogs.reduce((sum, log) => sum + (log.points || 0), 0);
+    const { data: freshUser } = await supabase
+      .from('users')
+      .select('id, firstName, lastName, avatarUrl, roles, points, level')
+      .eq('id', storedUser.id)
+      .single();
 
     const { data: levels } = await supabase.from('levels').select('*').order('minPoints', { ascending: true });
-    let currentLevel = levels.find(l => totalPoints >= l.minPoints && totalPoints <= l.maxPoints) || levels[levels.length - 1];
-    const nextLevel = levels[levels.findIndex(l => l.id === currentLevel.id) + 1];
-
-    const { data: freshUser } = await supabase.from('users').select('id, firstName, lastName, avatarUrl, roles').eq('id', storedUser.id).single();
+    const currentLevel = levels.find(l => l.id === freshUser.level);
+    const nextLevel = levels[levels.findIndex(l => l.id === currentLevel?.id) + 1];
 
     const userData = {
       ...freshUser,
       lastName: freshUser?.lastName || storedUser.lastName || '',
       roles: freshUser?.roles || storedUser.roles || [],
-      points: totalPoints,
+      points: freshUser.points || 0,
       level: currentLevel?.id || 1,
       badge: currentLevel?.badge || `images/levelBadges/level${currentLevel?.id || 1}.png`,
       levelColor: currentLevel?.color || '#3eb7f8'

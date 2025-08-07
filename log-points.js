@@ -1,4 +1,5 @@
 import { supabase } from './supabase.js';
+import { recalculateUserPoints } from './utils.js';
 
 document.addEventListener("DOMContentLoaded", async () => {
   const user = JSON.parse(localStorage.getItem("loggedInUser"));
@@ -152,6 +153,8 @@ if (category.toLowerCase() === "practice") {
         console.error("Failed to save log:", logErr.message);
         alert("Error saving log.");
       } else {
+      await recalculateUserPoints(targetUser);
+
         alert("✅ Log submitted successfully!");
         window.location.href = "index.html";
       }
