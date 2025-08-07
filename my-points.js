@@ -1,4 +1,5 @@
 import { supabase } from './supabase.js';
+import { recalculateUserPoints } from './utils.js';
 
 document.addEventListener("DOMContentLoaded", async () => {
   console.log("[DEBUG] My Points: Script loaded");
@@ -28,30 +29,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (logsError) throw logsError;
     console.log("[DEBUG] Logs fetched:", logs);
 
-    const approvedLogs = logs.filter(l => l.status === "approved");
+const { totalPoints, currentLevel } = await recalculateUserPoints(userId);
+console.log("[DEBUG] Total approved points:", totalPoints);
 
-    // ✅ Fetch levels
-    const { data: levelsData, error: levelsError } = await supabase
-      .from("levels")
-      .select("*")
-      .order("minPoints", { ascending: true });
-    if (levelsError) throw levelsError;
-
-    const totalPoints = approvedLogs.reduce((sum, log) => sum + (log.points || 0), 0);
-    console.log("[DEBUG] Total approved points:", totalPoints);
-
-    let userLevel = levelsData.find(l => totalPoints >= Number(l.minPoints) && totalPoints <= Number(l.maxPoints));
-    if (!userLevel && levelsData.length > 0) userLevel = levelsData[levelsData.length - 1];
-
-    if (userLevel) {
-      const { error: updateError } = await supabase
-        .from("users")
-        .update({ points: totalPoints, level: userLevel.id })
-        .eq("id", userId);
-      if (updateError) console.error("[ERROR] Failed to update user level:", updateError);
-    }
-
-    levelBadge.src = userLevel?.badge || "images/levelBadges/level1.png";
+levelBadge.src = currentLevel?.badge || "images/levelBadges/level1.png";
     renderCategorySummary(approvedLogs, totalPoints);
 
     logs.sort((a, b) => new Date(b.date) - new Date(a.date));
