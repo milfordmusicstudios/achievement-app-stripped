@@ -1,5 +1,5 @@
 import { supabase } from './supabase.js';
-import { recalculateUserPoints } from './home.js';
+import { recalculateUserPoints } from './utils.js';
 
 function getHighestRole(roles) {
   const priority = { admin: 3, teacher: 2, student: 1, parent: 0 };
