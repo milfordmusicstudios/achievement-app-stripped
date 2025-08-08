@@ -51,14 +51,13 @@ async function updateAllUsersLevels() {
         console.warn(`[WARN] No logs found for ${user.firstName} (${user.id})`);
       } else {
         const totalPoints = userLogs.reduce((sum, l) => sum + (parseInt(l.points) || 0), 0);
+        console.log(`[DEBUG] Updating user ${user.id} (${user.firstName}): ${totalPoints} pts`);
         console.log(`[DEBUG] ${user.firstName} has ${userLogs.length} logs, ${totalPoints} points`);
       }
 
       const totalPoints = userLogs.reduce((sum, l) => sum + (parseInt(l.points) || 0), 0);
       let userLevel = levels.find(l => totalPoints >= l.minPoints && totalPoints <= l.maxPoints);
       if (!userLevel) userLevel = levels[levels.length - 1];
-
-      console.log(`[DEBUG] Updating user ${user.id} (${user.firstName}): ${totalPoints} pts → Level ${userLevel.id}`);
 
       await supabase.from("users")
         .update({ points: totalPoints, level: userLevel?.id || 1 })
