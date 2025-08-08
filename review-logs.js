@@ -1,6 +1,6 @@
 import { supabase } from './supabase.js';
 
-const categoryOptions = ["Practice", "Participation", "Performance", "Personal", "Proficiency"];
+const categoryOptions = ["practice", "participation", "performance", "personal", "proficiency"];
 
 document.addEventListener("DOMContentLoaded", async () => {
   console.log("[DEBUG] Review Logs: Script loaded");
