@@ -34,6 +34,13 @@ async function fetchRelatedUsers(user) {
 
 function promptUserSwitch() {
   const user = JSON.parse(localStorage.getItem('loggedInUser'));
+
+  // ✅ Only allow if user has "parent" role
+  const roles = Array.isArray(user.roles) ? user.roles.map(r => r.toLowerCase()) : [];
+  if (!roles.includes('parent')) {
+    return; // Do nothing if not a parent
+  }
+
   const allUsers = JSON.parse(localStorage.getItem('allUsers')) || [];
   const userIdStr = normalizeUUID(user.id);
   const listContainer = document.getElementById('userSwitchList');
@@ -177,6 +184,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('switchRoleBtn').addEventListener('click', promptRoleSwitch);
   document.getElementById('switchUserBtn').addEventListener('click', promptUserSwitch);
   document.getElementById('saveBtn').addEventListener('click', e => { e.preventDefault(); saveSettings(); });
+
+  // ✅ Cancel button for Switch User modal
+  document.getElementById('cancelUserSwitchBtn').addEventListener('click', () => {
+    document.getElementById('userSwitchModal').style.display = 'none';
+  });
+
+  // ✅ Cancel button for Switch Role modal
+  document.getElementById('cancelRoleSwitchBtn').addEventListener('click', () => {
+    document.getElementById('roleSwitchModal').style.display = 'none';
+  });
 
   if (sessionStorage.getItem('forceUserSwitch') === 'true') {
     sessionStorage.removeItem('forceUserSwitch');
