@@ -1,4 +1,5 @@
 import { supabase } from './supabase.js';
+import { recalculateUserPoints } from './utils.js';
 
 const categoryOptions = ["practice", "participation", "performance", "personal", "proficiency"];
 
@@ -27,22 +28,31 @@ document.addEventListener("DOMContentLoaded", async () => {
   let logsPerPage = 25;
 
   try {
-    const { data: logsData, error: logsError } = await supabase.from("logs").select("*").order("date", { ascending: false });
+    const { data: logsData, error: logsError } = await supabase
+      .from("logs")
+      .select("*")
+      .order("date", { ascending: false });
     if (logsError) throw logsError;
 
-    const { data: usersData, error: usersError } = await supabase.from("users").select("id, firstName, lastName, teacherIds");
+    const { data: usersData, error: usersError } = await supabase
+      .from("users")
+      .select("id, firstName, lastName, teacherIds");
     if (usersError) throw usersError;
 
-    users = usersData;
-    logs = logsData.map(l => ({
+    users = usersData || [];
+    logs = (logsData || []).map(l => ({
       ...l,
-      fullName: (users.find(u => u.id === l.userId)?.firstName || "Unknown") + " " +
-                (users.find(u => u.id === l.userId)?.lastName || "")
+      fullName:
+        (users.find(u => String(u.id) === String(l.userId))?.firstName || "Unknown") +
+        " " +
+        (users.find(u => String(u.id) === String(l.userId))?.lastName || "")
     }));
 
     if (activeRole === "teacher") {
-      const myStudents = users.filter(u => Array.isArray(u.teacherIds) && u.teacherIds.includes(user.id)).map(s => s.id);
-      logs = logs.filter(l => myStudents.includes(l.userId));
+      const myStudents = users
+        .filter(u => Array.isArray(u.teacherIds) && u.teacherIds.map(String).includes(String(user.id)))
+        .map(s => String(s.id));
+      logs = logs.filter(l => myStudents.includes(String(l.userId)));
     }
 
     filteredLogs = [...logs];
@@ -53,7 +63,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     alert("Failed to load logs.");
   }
 
-  // ✅ Search + Status Filter Combined
+  // Search + Status Filter
   searchInput.addEventListener("input", applyFilters);
   statusFilter.addEventListener("change", applyFilters);
 
@@ -76,7 +86,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     renderLogsTable(filteredLogs);
   }
 
-  // ✅ Column Sorting
+  // Column Sorting
   document.querySelectorAll("#logsHeaderTable th[data-sort]").forEach(th => {
     th.style.cursor = "pointer";
     th.addEventListener("click", () => {
@@ -110,7 +120,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  // ✅ Pagination Controls
+  // Pagination
   document.getElementById("prevPageBtn").addEventListener("click", () => {
     if (currentPage > 1) {
       currentPage--;
@@ -132,7 +142,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     renderLogsTable(filteredLogs);
   });
 
-  function renderCategorySummary(logs) {
+  function renderCategorySummary(list) {
     categorySummary.innerHTML = "";
     const icons = {
       practice: "images/categories/practice.png",
@@ -145,7 +155,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const categories = ["practice", "participation", "performance", "personal", "proficiency"];
     const totals = {};
-    logs.forEach(l => {
+    list.forEach(l => {
       const cat = l.category?.toLowerCase();
       if (!totals[cat]) totals[cat] = { points: 0, logs: 0 };
       totals[cat].points += l.points || 0;
@@ -165,47 +175,47 @@ document.addEventListener("DOMContentLoaded", async () => {
     categorySummary.innerHTML += `
       <div class="category-card total-card">
         <img src="${icons.total}" alt="Total">
-        <h3>${logs.reduce((sum, l) => sum + (l.points || 0), 0)} pts</h3>
-        <p>${logs.length} logs</p>
+        <h3>${list.reduce((sum, l) => sum + (l.points || 0), 0)} pts</h3>
+        <p>${list.length} logs</p>
       </div>`;
   }
 
-function renderLogsTable(logs) {
-  logsTableBody.innerHTML = "";
-  const start = (currentPage - 1) * logsPerPage;
-  const end = start + logsPerPage;
-  const pageLogs = logs.slice(start, end);
+  function renderLogsTable(list) {
+    logsTableBody.innerHTML = "";
+    const start = (currentPage - 1) * logsPerPage;
+    const end = start + logsPerPage;
+    const pageLogs = list.slice(start, end);
 
-  pageLogs.forEach((log, index) => {
-    const row = document.createElement("tr");
-    row.className = index % 2 === 0 ? "log-row-even" : "log-row-odd";
-    row.innerHTML = `
-      <td><input type="checkbox" class="select-log" data-id="${log.id}"></td>
-      <td>${log.fullName}</td>
-<td>
-  <select class="edit-input" data-id="${log.id}" data-field="category">
-${categoryOptions.map(c => `<option value="${c}" ${log.category?.toLowerCase() === c.toLowerCase() ? "selected" : ""}>${c}</option>`).join("")}
-  </select>
-</td>
-      <td><input type="date" class="edit-input" data-id="${log.id}" data-field="date" value="${log.date.split('T')[0]}"></td>
-      <td><input type="number" class="edit-input" data-id="${log.id}" data-field="points" value="${log.points}"></td>
-      <td><textarea class="edit-input" data-id="${log.id}" data-field="notes">${log.notes || ""}</textarea></td>
-      <td>
-        <select class="edit-input" data-id="${log.id}" data-field="status">
-          <option value="pending" ${log.status === "pending" ? "selected" : ""}>Pending</option>
-          <option value="approved" ${log.status === "approved" ? "selected" : ""}>Approved</option>
-          <option value="rejected" ${log.status === "rejected" ? "selected" : ""}>Rejected</option>
-          <option value="needs info" ${log.status === "needs info" ? "selected" : ""}>Needs Info</option>
-        </select>
-      </td>`;
-    logsTableBody.appendChild(row);
-  });
+    pageLogs.forEach((log, index) => {
+      const row = document.createElement("tr");
+      row.className = index % 2 === 0 ? "log-row-even" : "log-row-odd";
+      row.innerHTML = `
+        <td><input type="checkbox" class="select-log" data-id="${log.id}"></td>
+        <td>${log.fullName}</td>
+        <td>
+          <select class="edit-input" data-id="${log.id}" data-field="category">
+            ${categoryOptions.map(c =>
+              `<option value="${c}" ${log.category?.toLowerCase() === c ? "selected" : ""}>${c}</option>`
+            ).join("")}
+          </select>
+        </td>
+        <td><input type="date" class="edit-input" data-id="${log.id}" data-field="date" value="${(log.date || '').split('T')[0] || ''}"></td>
+        <td><input type="number" class="edit-input" data-id="${log.id}" data-field="points" value="${log.points ?? 0}"></td>
+        <td><textarea class="edit-input" data-id="${log.id}" data-field="notes">${log.notes || ""}</textarea></td>
+        <td>
+          <select class="edit-input" data-id="${log.id}" data-field="status">
+            <option value="pending" ${log.status === "pending" ? "selected" : ""}>Pending</option>
+            <option value="approved" ${log.status === "approved" ? "selected" : ""}>Approved</option>
+            <option value="rejected" ${log.status === "rejected" ? "selected" : ""}>Rejected</option>
+            <option value="needs info" ${log.status === "needs info" ? "selected" : ""}>Needs Info</option>
+          </select>
+        </td>`;
+      logsTableBody.appendChild(row);
+    });
 
-  // ✅ Reset Select All checkbox once after rendering
-  document.getElementById("selectAll").checked = false;
-
-  applyEditListeners();
-}
+    document.getElementById("selectAll").checked = false;
+    applyEditListeners();
+  }
 
   function applyEditListeners() {
     document.querySelectorAll(".edit-input").forEach(el => {
@@ -215,65 +225,86 @@ ${categoryOptions.map(c => `<option value="${c}" ${log.category?.toLowerCase() =
           el.style.height = el.scrollHeight + "px";
         });
       }
+
       el.addEventListener("change", async e => {
         const logId = e.target.dataset.id;
         const field = e.target.dataset.field;
         let value = e.target.value;
+
+        // Normalize values
         if (field === "points") value = parseInt(value) || 0;
+        if (field === "category") value = String(value).toLowerCase();
 
         const { error } = await supabase.from("logs").update({ [field]: value }).eq("id", logId);
         if (error) {
           alert("Failed to update log.");
           console.error(error);
-        } else {
-          console.log(`[DEBUG] Updated log ${logId}: ${field} = ${value}`);
+          return;
+        }
+        console.log(`[DEBUG] Updated log ${logId}: ${field} = ${value}`);
+
+        // Find the affected log to know which user to recalc
+        const updated = logs.find(l => String(l.id) === String(logId));
+        if (!updated) return;
+
+        // Keep our local copy in sync
+        updated[field] = value;
+
+        // If the log is now approved, or points changed while approved, recalc that student
+        const nowApproved = field === "status" && String(value).toLowerCase() === "approved";
+        const pointsChangedWhileApproved = field === "points" && String(updated.status).toLowerCase() === "approved";
+
+        if (nowApproved || pointsChangedWhileApproved) {
+          try {
+            await recalculateUserPoints(String(updated.userId));
+          } catch (recalcErr) {
+            console.error("[ERROR] recalculateUserPoints:", recalcErr);
+          }
         }
       });
     });
   }
-// ✅ DELETE SELECTED LOGS
-document.getElementById("deleteSelectedBtn").addEventListener("click", async () => {
-  const selectedIds = Array.from(document.querySelectorAll(".select-log:checked"))
-    .map(cb => cb.dataset.id.trim());
 
-  if (selectedIds.length === 0) {
-    alert("No logs selected.");
-    return;
-  }
+  // Delete selected logs
+  document.getElementById("deleteSelectedBtn").addEventListener("click", async () => {
+    const selectedIds = Array.from(document.querySelectorAll(".select-log:checked"))
+      .map(cb => String(cb.dataset.id).trim());
 
-  if (!confirm(`Are you sure you want to permanently delete ${selectedIds.length} logs? This action cannot be undone.`)) {
-    return;
-  }
-
-  try {
-    console.log("[DEBUG] Deleting logs:", selectedIds);
-    const { error } = await supabase.from("logs").delete().in("id", selectedIds);
-
-    if (error) {
-      console.error("[DELETE ERROR]", error);
-      alert("❌ Failed to delete logs: " + error.message);
+    if (selectedIds.length === 0) {
+      alert("No logs selected.");
       return;
     }
 
-    // ✅ Remove from local arrays
-    logs = logs.filter(l => !selectedIds.includes(l.id));
-    filteredLogs = filteredLogs.filter(l => !selectedIds.includes(l.id));
+    if (!confirm(`Are you sure you want to permanently delete ${selectedIds.length} logs? This action cannot be undone.`)) {
+      return;
+    }
 
-    renderLogsTable(filteredLogs);
-    renderCategorySummary(filteredLogs);
-    alert("✅ Selected logs deleted successfully.");
-  } catch (err) {
-    console.error("Delete logs failed:", err);
-    alert("❌ Failed to delete logs.");
-  }
-});
+    try {
+      const { error } = await supabase.from("logs").delete().in("id", selectedIds);
+      if (error) {
+        console.error("[DELETE ERROR]", error);
+        alert("❌ Failed to delete logs: " + error.message);
+        return;
+      }
 
-// ✅ SELECT ALL CHECKBOX HANDLER
-document.getElementById("selectAll").addEventListener("change", (e) => {
-  const isChecked = e.target.checked;
-  document.querySelectorAll("#logsTableBody .select-log").forEach(cb => {
-    cb.checked = isChecked;
+      // Remove from local arrays
+      logs = logs.filter(l => !selectedIds.includes(String(l.id)));
+      filteredLogs = filteredLogs.filter(l => !selectedIds.includes(String(l.id)));
+
+      renderLogsTable(filteredLogs);
+      renderCategorySummary(filteredLogs);
+      alert("✅ Selected logs deleted successfully.");
+    } catch (err) {
+      console.error("Delete logs failed:", err);
+      alert("❌ Failed to delete logs.");
+    }
   });
-});
 
+  // Select all
+  document.getElementById("selectAll").addEventListener("change", (e) => {
+    const isChecked = e.target.checked;
+    document.querySelectorAll("#logsTableBody .select-log").forEach(cb => {
+      cb.checked = isChecked;
+    });
+  });
 });

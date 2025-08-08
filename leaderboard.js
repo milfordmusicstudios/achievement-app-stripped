@@ -22,70 +22,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     "🌟 Every note counts… loading your masterpiece…"
   ];
 
-  if (loadingText) {
-    loadingText.textContent = messages[Math.floor(Math.random() * messages.length)];
-  }
+  if (loadingText) loadingText.textContent = messages[Math.floor(Math.random() * messages.length)];
   if (popup) popup.style.display = "flex";
 
-  // Admin controls (show recalc button only if current user is an admin)
-  await setupAdminControls();
-
-  // Render leaderboard from existing user points/levels in Supabase (no DB writes)
-  await loadLeaderboard();
+  await loadLeaderboard(); // read-only
 
   if (popup) popup.style.display = "none";
 });
 
-/**
- * Show the "Recalculate All" button for admins and wire its click handler.
- * The recalculation touches Supabase ONLY when an admin explicitly triggers it.
- */
-async function setupAdminControls() {
-  try {
-    const { data: auth } = await supabase.auth.getUser();
-    const supaUser = auth?.user;
-    if (!supaUser) return;
-
-    const { data: me } = await supabase
-      .from("users")
-      .select("id, roles")
-      .eq("id", supaUser.id)
-      .single();
-
-    const isAdmin = Array.isArray(me?.roles) ? me.roles.includes("admin") : me?.roles === "admin";
-    const btn = document.getElementById("recalcAllBtn");
-
-    if (isAdmin && btn) {
-      btn.style.display = "inline-block";
-      btn.addEventListener("click", async () => {
-        btn.disabled = true;
-        const oldText = btn.textContent;
-        btn.textContent = "Recalculating...";
-        try {
-          await recalculateAllUsers();   // recomputes from logs -> writes users.points/level
-          await loadLeaderboard();       // refresh UI after recalc
-          alert("All users recalculated.");
-        } catch (e) {
-          console.error(e);
-          alert("Recalculation failed. Check console for details.");
-        } finally {
-          btn.disabled = false;
-          btn.textContent = oldText;
-        }
-      });
-    } else if (btn) {
-      // hide for non-admins
-      btn.style.display = "none";
-    }
-  } catch (err) {
-    console.error("[ERROR] setupAdminControls:", err);
-  }
-}
-
-/**
- * Load leaderboard purely from Users + Levels tables.
- * DOES NOT update Supabase — read-only.
- */
+/** Read-only leaderboard: uses users.points & users.level as-is */
 async function loadLeaderboard() {
   const container = document.getElementById("leaderboardContainer");
   if (!container) return;
@@ -93,13 +38,8 @@ async function loadLeaderboard() {
 
   try {
     const [{ data: users }, { data: levels }] = await Promise.all([
-      supabase
-        .from("users")
-        .select("id, firstName, lastName, avatarUrl, roles, points, level"),
-      supabase
-        .from("levels")
-        .select("*")
-        .order("minPoints", { ascending: true })
+      supabase.from("users").select("id, firstName, lastName, avatarUrl, roles, points, level"),
+      supabase.from("levels").select("*").order("minPoints", { ascending: true })
     ]);
 
     const sortedLevels = [...(levels || [])].sort((a, b) => b.id - a.id);
@@ -122,12 +62,9 @@ async function loadLeaderboard() {
       const placedAvatars = [];
 
       (users || []).forEach(user => {
-        const isStudent = Array.isArray(user.roles)
-          ? user.roles.includes("student")
-          : user.roles === "student";
+        const isStudent = Array.isArray(user.roles) ? user.roles.includes("student") : user.roles === "student";
         if (!isStudent || user.level !== level.id) return;
 
-        // Position based on stored points vs level min/max — read-only
         const span = Math.max(1, (level.maxPoints - level.minPoints));
         const percent = ((Number(user.points) - level.minPoints) / span) * 100;
         const clampedPercent = Math.min(100, Math.max(0, percent));
@@ -137,10 +74,7 @@ async function loadLeaderboard() {
 
         while (placedAvatars.some(p => Math.abs(p.left - adjustedLeft) < spacingThreshold && p.top === bumpLevel)) {
           bumpLevel++;
-          if (bumpLevel >= maxStack) {
-            bumpLevel = 0;
-            adjustedLeft += bumpX;
-          }
+          if (bumpLevel >= maxStack) { bumpLevel = 0; adjustedLeft += bumpX; }
         }
         placedAvatars.push({ left: adjustedLeft, top: bumpLevel });
 
@@ -170,40 +104,6 @@ async function loadLeaderboard() {
     }
   } catch (err) {
     console.error("[ERROR] Rendering leaderboard:", err);
-  }
-}
-
-/**
- * Admin-only recalculation: recompute each user's points from APPROVED logs
- * and write back users.points / users.level. This is only called on button click.
- */
-async function recalculateAllUsers() {
-  const [{ data: users }, { data: logs }, { data: levels }] = await Promise.all([
-    supabase.from("users").select("id, firstName, roles"),
-    supabase.from("logs").select("*").eq("status", "approved"),
-    supabase.from("levels").select("*").order("minPoints", { ascending: true }),
-  ]);
-
-  if (!users || !logs || !levels) throw new Error("Missing users/logs/levels");
-
-  // Fast in-memory map of totals
-  const totals = new Map();
-  for (const log of logs) {
-    const uid = String(log.userId).trim();
-    const prev = totals.get(uid) || 0;
-    totals.set(uid, prev + (parseInt(log.points) || 0));
-  }
-
-  // Batch over users
-  for (const u of users) {
-    const totalPoints = totals.get(String(u.id).trim()) || 0;
-    let userLevel = levels.find(l => totalPoints >= l.minPoints && totalPoints <= l.maxPoints);
-    if (!userLevel) userLevel = levels[levels.length - 1];
-
-    await supabase
-      .from("users")
-      .update({ points: totalPoints, level: userLevel?.id || 1 })
-      .eq("id", u.id);
   }
 }
 
