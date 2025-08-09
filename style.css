@@ -2110,3 +2110,22 @@ body.leaderboard-page {
   position: relative;   /* ✅ ensures overlay is positioned correctly */
   overflow: visible;    /* ✅ allows overlay text to be seen fully */
 }
+/* Wrapper that contains all the level rows */
+.leaderboard-page .leaderboard-container {
+  display: flex;
+  flex-direction: column; /* stack levels vertically */
+  align-items: center;    /* ✅ center all level rows */
+  width: 100%;
+  padding-inline: clamp(8px, 1.5vw, 16px);
+  box-sizing: border-box;
+}
+
+/* Each level row */
+.leaderboard-page .level-row {
+  display: flex;
+  align-items: center;
+  gap: clamp(6px, 1.2vw, 12px);
+  justify-content: center; /* ✅ center badge + lane as a group */
+  width: 100%;
+  max-width: 1200px;        /* optional: keeps things neat on large screens */
+}
