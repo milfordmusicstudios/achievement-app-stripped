@@ -1,75 +1,67 @@
-// settings.js — complete replacement
 import { supabase } from './supabase.js';
+import { recalculateUserPoints } from './utils.js';
 
-// Optional: try to import utils.recalculateUserPoints if it exists.
-// If not, we safely no-op.
-let recalculateUserPoints = async () => {};
-try {
-  const m = await import('./utils.js');
-  if (typeof m.recalculateUserPoints === 'function') recalculateUserPoints = m.recalculateUserPoints;
-} catch { /* ok if missing */ }
-
-// ----- Helpers -----
 function getHighestRole(roles) {
   const priority = { admin: 3, teacher: 2, student: 1, parent: 0 };
   if (!Array.isArray(roles)) return 'student';
-  return roles
-    .slice()
-    .sort((a, b) => (priority[b?.toLowerCase()] ?? -1) - (priority[a?.toLowerCase()] ?? -1))[0];
+  return roles.slice().sort((a, b) => (priority[b.toLowerCase()] ?? -1) - (priority[a.toLowerCase()] ?? -1))[0];
 }
+
 function normalizeUUID(value) {
   if (!value) return null;
   if (typeof value === 'object' && value.id) return String(value.id);
   return String(value);
 }
-function cap(s){return s? s.charAt(0).toUpperCase()+s.slice(1):''}
 
-// ----- Related users (parent/children/siblings) -----
+function capitalize(str) {
+  return str ? str.charAt(0).toUpperCase() + str.slice(1) : '';
+}
+
 async function fetchRelatedUsers(user) {
   const userIdStr = normalizeUUID(user.id);
   const parentIdStr = normalizeUUID(user.parent_uuid);
-  let out = [];
+  let sameGroupUsers = [];
 
-  // children
   const { data: children } = await supabase.from('users').select('*').eq('parent_uuid', userIdStr);
-  if (children?.length) out = children;
-
-  // siblings (if this user has parent)
-  if (parentIdStr) {
+  if (children?.length) {
+    sameGroupUsers = children;
+  } else if (parentIdStr) {
     const { data: siblings } = await supabase.from('users').select('*').eq('parent_uuid', parentIdStr);
-    if (siblings?.length) {
-      const filtered = siblings.filter(u => normalizeUUID(u.id) !== userIdStr);
-      out = [...out, ...filtered];
-    }
+    if (siblings?.length) sameGroupUsers = siblings.filter(u => normalizeUUID(u.id) !== userIdStr);
   }
-  // dedupe by id
-  const seen = new Set();
-  return out.filter(u => (seen.has(u.id) ? false : seen.add(u.id)));
+  return sameGroupUsers;
 }
 
-// ----- Switch User / Role -----
 function promptUserSwitch() {
-  const current = JSON.parse(localStorage.getItem('loggedInUser'));
+  const user = JSON.parse(localStorage.getItem('loggedInUser'));
+
+  // ✅ Only allow if user has "parent" role
+  const roles = Array.isArray(user.roles) ? user.roles.map(r => r.toLowerCase()) : [];
+  if (!roles.includes('parent')) {
+    return; // Do nothing if not a parent
+  }
+
   const allUsers = JSON.parse(localStorage.getItem('allUsers')) || [];
-  const list = document.getElementById('userSwitchList');
-  list.innerHTML = '';
+  const userIdStr = normalizeUUID(user.id);
+  const listContainer = document.getElementById('userSwitchList');
+  listContainer.innerHTML = '';
 
   allUsers.forEach(u => {
-    if (normalizeUUID(u.id) === normalizeUUID(current.id)) return;
+    if (normalizeUUID(u.id) === userIdStr) return;
     const li = document.createElement('li');
     const btn = document.createElement('button');
     btn.className = 'blue-button';
-    btn.style = 'width:100%';
-    const rolesText = Array.isArray(u.roles) ? u.roles.join(', ') : (u.role || '');
-    btn.textContent = `${u.firstName || ''} ${u.lastName || ''} (${rolesText})`.trim();
+    btn.style = 'margin: 5px 0; width: 100%;';
+    btn.textContent = `${u.firstName} ${u.lastName} (${Array.isArray(u.roles) ? u.roles.join(', ') : ''})`;
     btn.onclick = async () => {
-      localStorage.setItem('loggedInUser', JSON.stringify(u));
+      const userToStore = { ...u };
+      localStorage.setItem('loggedInUser', JSON.stringify(userToStore));
       localStorage.setItem('activeRole', getHighestRole(u.roles));
-      try { await recalculateUserPoints(u.id); } catch {}
+      await recalculateUserPoints(userToStore.id);
       window.location.href = 'index.html';
     };
     li.appendChild(btn);
-    list.appendChild(li);
+    listContainer.appendChild(li);
   });
 
   document.getElementById('userSwitchModal').style.display = 'flex';
@@ -77,52 +69,28 @@ function promptUserSwitch() {
 
 function promptRoleSwitch() {
   const user = JSON.parse(localStorage.getItem('loggedInUser'));
-  const roles = (Array.isArray(user.roles) ? user.roles : [user.role])
-    .filter(Boolean)
-    .map(r => r.toLowerCase())
-    .filter(r => r !== 'parent'); // hide parent in the switcher
-
-  const list = document.getElementById('roleSwitchList');
-  list.innerHTML = '';
+  const roles = (Array.isArray(user.roles) ? user.roles : [user.role]).filter(r => r.toLowerCase() !== 'parent');
+  const listContainer = document.getElementById('roleSwitchList');
+  listContainer.innerHTML = '';
   roles.forEach(role => {
     const li = document.createElement('li');
     const btn = document.createElement('button');
     btn.className = 'blue-button';
-    btn.style = 'width:100%';
-    btn.textContent = cap(role);
+    btn.style = 'margin: 5px 0; width: 100%;';
+    btn.textContent = capitalize(role);
     btn.onclick = () => {
       localStorage.setItem('activeRole', role);
       window.location.href = 'index.html';
     };
     li.appendChild(btn);
-    list.appendChild(li);
+    listContainer.appendChild(li);
   });
-
   document.getElementById('roleSwitchModal').style.display = 'flex';
 }
 
-// ----- Eye toggles -----
-function wireEyes() {
-  const bind = (btnId, inputId) => {
-    const btn = document.getElementById(btnId);
-    const input = document.getElementById(inputId);
-    if (!btn || !input) return;
-    btn.addEventListener('click', () => {
-      input.type = input.type === 'password' ? 'text' : 'password';
-    });
-  };
-  bind('toggleCurrentPw', 'currentPassword');
-  bind('toggleNewPw', 'newPassword');
-}
-
-// ----- Save -----
 async function saveSettings() {
-  const profile = JSON.parse(localStorage.getItem('loggedInUser'));
-  const { data: authData } = await supabase.auth.getUser();
-  const authUser = authData?.user || null;
-  const isEditingOwnAccount = !!(authUser && authUser.id === profile.id);
-
-  const currentEmail = profile.email || '';
+  const user = JSON.parse(localStorage.getItem('loggedInUser'));
+  const currentEmail = user.email;
   const newEmail = document.getElementById('newEmail').value.trim();
   const newPassword = document.getElementById('newPassword').value.trim();
   const currentPassword = document.getElementById('currentPassword').value.trim();
@@ -130,147 +98,105 @@ async function saveSettings() {
   const updatedUser = {
     firstName: document.getElementById('firstName').value.trim(),
     lastName: document.getElementById('lastName').value.trim(),
-    email: isEditingOwnAccount ? (newEmail || currentEmail) : currentEmail
+    email: newEmail || currentEmail
   };
 
   try {
-    // 1) Update profile fields in your users table
-    const { error: dbError } = await supabase
-      .from('users')
-      .update(updatedUser)
-      .eq('id', profile.id);
-    if (dbError) throw dbError;
+    let emailChanged = newEmail && newEmail !== currentEmail;
+    let passwordChanged = newPassword && newPassword.length > 0;
 
-    // 2) Auth email/password only when editing your own account
-    if (isEditingOwnAccount) {
-      const emailChanged = !!(newEmail && newEmail !== currentEmail);
-      const passwordChanged = !!newPassword;
+    if ((emailChanged || passwordChanged) && !currentPassword) {
+      alert('Please enter your current password to make changes.');
+      return;
+    }
 
-      if ((emailChanged || passwordChanged) && !currentPassword) {
-        alert('Please enter your current password to make changes.');
+    if (emailChanged || passwordChanged) {
+      const { error: signInError } = await supabase.auth.signInWithPassword({ email: currentEmail, password: currentPassword });
+      if (signInError) {
+        alert('Current password is incorrect.');
         return;
-      }
-
-      if (emailChanged || passwordChanged) {
-        // Re-auth with the actual signed-in email
-        const authEmail = authUser.email;
-        const { error: reauthErr } = await supabase.auth.signInWithPassword({
-          email: authEmail,
-          password: currentPassword
-        });
-        if (reauthErr) {
-          alert('Current password is incorrect.');
-          return;
-        }
-      }
-
-      if (emailChanged) {
-        const { error: emailErr } = await supabase.auth.updateUser({ email: newEmail });
-        if (emailErr) {
-          alert('Failed to update email: ' + emailErr.message);
-          return;
-        }
-        alert('Check your new email to confirm the change.');
-      }
-
-      if (passwordChanged) {
-        const { error: passErr } = await supabase.auth.updateUser({ password: newPassword });
-        if (passErr) {
-          alert('Failed to update password: ' + passErr.message);
-          return;
-        }
-        alert('Password updated successfully.');
       }
     }
 
-    // Update local cache and exit
-    Object.assign(profile, updatedUser);
-    localStorage.setItem('loggedInUser', JSON.stringify(profile));
+    if (emailChanged) {
+      const { error: emailError } = await supabase.auth.updateUser({ email: newEmail });
+      if (emailError) {
+        alert('Failed to update email: ' + emailError.message);
+        return;
+      }
+      alert('Check your new email to confirm the change.');
+    }
+
+    if (passwordChanged) {
+      const { error: passError } = await supabase.auth.updateUser({ password: newPassword });
+      if (passError) {
+        alert('Failed to update password: ' + passError.message);
+        return;
+      }
+      alert('Password updated successfully.');
+    }
+
+    const { error: dbError } = await supabase.from('users').update(updatedUser).eq('id', user.id);
+    if (dbError) throw dbError;
+
+    Object.assign(user, updatedUser);
+    localStorage.setItem('loggedInUser', JSON.stringify(user));
     alert('Settings saved successfully!');
     window.location.href = 'index.html';
   } catch (err) {
-    console.error('[settings] save error:', err);
-    alert('Failed to update settings: ' + (err?.message || err));
+    console.error('[ERROR] Save settings failed:', err);
+    alert('Failed to update settings: ' + err.message);
   }
 }
 
-// ----- Init -----
 document.addEventListener('DOMContentLoaded', async () => {
   const user = JSON.parse(localStorage.getItem('loggedInUser'));
-  if (!user) { window.location.href = 'login.html'; return; }
-
   let activeRole = localStorage.getItem('activeRole');
   if (!activeRole && user.roles) {
     activeRole = getHighestRole(user.roles);
     localStorage.setItem('activeRole', activeRole);
   }
+  if (!user || !activeRole) {
+    alert('You must be logged in.');
+    window.location.href = 'index.html';
+    return;
+  }
 
-  // hydrate
   document.getElementById('firstName').value = user.firstName || '';
   document.getElementById('lastName').value = user.lastName || '';
   document.getElementById('newEmail').value = user.email || '';
   document.getElementById('avatarImage').src = user.avatarUrl || 'images/logos/default.png';
 
-  // determine own vs other profile
-  const { data: authData } = await supabase.auth.getUser();
-  const authUser = authData?.user || null;
-  const isOwn = !!(authUser && authUser.id === user.id);
-
-  const guard = document.getElementById('credsGuard');
-  const emailInput = document.getElementById('newEmail');
-  const curPw = document.getElementById('currentPassword');
-  const newPw = document.getElementById('newPassword');
-  const t1 = document.getElementById('toggleCurrentPw');
-  const t2 = document.getElementById('toggleNewPw');
-
-  if (!isOwn) {
-    guard.style.display = 'block';
-    [emailInput, curPw, newPw, t1, t2].forEach(el => { if (el) el.disabled = true; });
-  } else {
-    guard.style.display = 'none';
-  }
-
-  // Build related users list for switcher
-  let allUsers = JSON.parse(localStorage.getItem('allUsers')) || [];
-  if (!allUsers.some(u => u.id === user.id)) allUsers.push(user);
-  try {
-    const related = await fetchRelatedUsers(user);
-    related.forEach(ru => { if (!allUsers.some(u => u.id === ru.id)) allUsers.push(ru); });
-    // dedupe
-    allUsers = allUsers.filter((v, i, a) => a.findIndex(t => t.id === v.id) === i);
-    localStorage.setItem('allUsers', JSON.stringify(allUsers));
-  } catch {}
-
-  // Show/hide switch buttons
-  document.getElementById('switchUserBtn').style.display = (allUsers.length > 1) ? 'inline-block' : 'none';
-
-  const roles = Array.isArray(user.roles) ? user.roles : (user.role ? [user.role] : []);
-  const rolesMinusParent = roles.filter(r => (r || '').toLowerCase() !== 'parent');
-  document.getElementById('switchRoleBtn').style.display = (rolesMinusParent.length > 1) ? 'inline-block' : 'none';
-
-  // Wire buttons
-  document.getElementById('logoutBtn').addEventListener('click', async () => {
-    await supabase.auth.signOut();
-    localStorage.clear();
-    window.location.href = 'login.html';
+  let updatedAllUsers = JSON.parse(localStorage.getItem('allUsers')) || [];
+  if (!updatedAllUsers.some(u => u.id === user.id)) updatedAllUsers.push(user);
+  const relatedUsers = await fetchRelatedUsers(user);
+  relatedUsers.forEach(ru => {
+    if (!updatedAllUsers.some(u => u.id === ru.id)) updatedAllUsers.push(ru);
   });
-  document.getElementById('cancelBtn').addEventListener('click', () => window.location.href = 'index.html');
-  document.getElementById('saveBtn').addEventListener('click', e => { e.preventDefault(); saveSettings(); });
+  updatedAllUsers = updatedAllUsers.filter((v, i, a) => a.findIndex(t => t.id === v.id) === i);
+  localStorage.setItem('allUsers', JSON.stringify(updatedAllUsers));
 
+  document.getElementById('switchUserBtn').style.display = (updatedAllUsers.length > 1) ? 'inline-block' : 'none';
+  document.getElementById('switchRoleBtn').style.display = (user.roles?.length > 1) ? 'inline-block' : 'none';
+
+  document.getElementById('logoutBtn').addEventListener('click', () => { localStorage.clear(); window.location.href = 'login.html'; });
+  document.getElementById('cancelBtn').addEventListener('click', () => window.location.href = 'index.html');
   document.getElementById('switchRoleBtn').addEventListener('click', promptRoleSwitch);
   document.getElementById('switchUserBtn').addEventListener('click', promptUserSwitch);
+  document.getElementById('saveBtn').addEventListener('click', e => { e.preventDefault(); saveSettings(); });
+
+  // ✅ Cancel button for Switch User modal
   document.getElementById('cancelUserSwitchBtn').addEventListener('click', () => {
     document.getElementById('userSwitchModal').style.display = 'none';
   });
+
+  // ✅ Cancel button for Switch Role modal
   document.getElementById('cancelRoleSwitchBtn').addEventListener('click', () => {
     document.getElementById('roleSwitchModal').style.display = 'none';
   });
 
-  // honor any flow that forces a switch prompt
   if (sessionStorage.getItem('forceUserSwitch') === 'true') {
     sessionStorage.removeItem('forceUserSwitch');
     setTimeout(() => promptUserSwitch(), 400);
   }
-
-  wireEyes();
 });
