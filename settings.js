@@ -32,28 +32,41 @@ async function fetchRelatedUsers(user) {
 }
 
 // ---------- UI: switchers ----------
+// REPLACE your existing promptUserSwitch() with this:
 function promptUserSwitch() {
-  const user = JSON.parse(localStorage.getItem('loggedInUser'));
-  const roles = Array.isArray(user.roles) ? user.roles.map(r => r.toLowerCase()) : [];
-  if (!roles.includes('parent')) return; // only parents can switch users
-
+  const current = JSON.parse(localStorage.getItem('loggedInUser')) || {};
   const allUsers = JSON.parse(localStorage.getItem('allUsers')) || [];
-  const userIdStr = normalizeUUID(user.id);
+
+  // Must have at least one *other* profile to switch to
+  const others = allUsers.filter(u => u.id !== current.id);
+  if (others.length === 0) {
+    alert('No other profiles are linked to this login yet.');
+    return;
+  }
+
   const listContainer = document.getElementById('userSwitchList');
   listContainer.innerHTML = '';
 
-  allUsers.forEach(u => {
-    if (normalizeUUID(u.id) === userIdStr) return;
+  others.forEach(u => {
     const li = document.createElement('li');
     const btn = document.createElement('button');
     btn.className = 'blue-button';
     btn.style = 'margin: 5px 0; width: 100%;';
-    btn.textContent = `${u.firstName} ${u.lastName} (${Array.isArray(u.roles) ? u.roles.join(', ') : ''})`;
+    const rolesText = Array.isArray(u.roles) ? u.roles.join(', ') : (u.role || '');
+    btn.textContent = `${u.firstName ?? ''} ${u.lastName ?? ''} (${rolesText})`.trim();
     btn.onclick = async () => {
-      const userToStore = { ...u };
-      localStorage.setItem('loggedInUser', JSON.stringify(userToStore));
-      localStorage.setItem('activeRole', getHighestRole(u.roles));
-      try { await recalculateUserPoints(userToStore.id); } catch {}
+      localStorage.setItem('loggedInUser', JSON.stringify(u));
+      // keep your existing "highest role" logic if present
+      const priority = { admin:3, teacher:2, student:1, parent:0 };
+      const roles = Array.isArray(u.roles) ? u.roles : (u.role ? [u.role] : []);
+      const highest = roles.slice().sort((a,b)=>(priority[b?.toLowerCase()]??-1)-(priority[a?.toLowerCase()]??-1))[0] || 'student';
+      localStorage.setItem('activeRole', highest);
+
+      try {
+        // if you have this util, it's okay to call; otherwise it just fails silently
+        const m = await import('./utils.js').catch(()=>null);
+        if (m?.recalculateUserPoints) await m.recalculateUserPoints(u.id);
+      } catch {}
       window.location.href = 'index.html';
     };
     li.appendChild(btn);
