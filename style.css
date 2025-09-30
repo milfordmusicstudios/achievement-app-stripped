@@ -2110,3 +2110,73 @@ body.leaderboard-page {
   position: relative;   /* ✅ ensures overlay is positioned correctly */
   overflow: visible;    /* ✅ allows overlay text to be seen fully */
 }
+/* Center the Leaderboard title without breaking existing styles */
+body.leaderboard-page .leaderboard-header {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr; /* left button | centered title | spacer */
+  align-items: center;
+  justify-content: initial;
+}
+
+body.leaderboard-page .leaderboard-header .blue-button {
+  margin: 0;            /* remove the margin-right:auto push */
+  justify-self: start;  /* pin button to the left */
+}
+
+body.leaderboard-page .leaderboard-title {
+  margin: 0;
+  text-align: center;   /* center the text itself */
+  justify-self: center; /* center in the middle column */
+}
+
+/* Mobile: stack like you already do */
+@media (max-width: 480px) {
+  body.leaderboard-page .leaderboard-header {
+    display: flex;
+    flex-direction: column;
+  }
+  body.leaderboard-page .leaderboard-header .blue-button {
+    align-self: flex-start;
+  }
+}
+/* ==== Flat icon-only password toggle (no pill) ==== */
+.pw-field { position: relative; }
+
+/* give the input a little room so text doesn't run under the icon */
+.pw-field > input[type="password"],
+.pw-field > input[type="text"],
+.pw-field > input[type="email"] {
+  padding-right: 2.25rem;
+}
+
+/* nuke any global button styles and make it icon-only */
+.pw-field .pw-toggle {
+  all: unset;                     /* wipe inherited button styles */
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  cursor: pointer;
+  color: #3399e8;                 /* your blue — eye uses currentColor */
+}
+
+/* hover/focus states (subtle + accessible) */
+.pw-field .pw-toggle:hover { filter: brightness(0.95); }
+.pw-field .pw-toggle:focus-visible {
+  outline: 2px solid #3399e8;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* the SVG itself */
+.pw-field .pw-toggle svg {
+  width: 20px;
+  height: 20px;
+  display: block;
+  stroke-width: 2;
+}

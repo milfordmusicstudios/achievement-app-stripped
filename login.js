@@ -96,3 +96,52 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 });
+/* === Append-only: flat 2D password toggle for Login === */
+(function () {
+  function svgEyeOpen() {
+    return `
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <g fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/>
+          <circle cx="12" cy="12" r="3"/>
+        </g>
+      </svg>`;
+  }
+  function svgEyeClosed() {
+    return `
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <g fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/>
+          <circle cx="12" cy="12" r="3"/>
+        </g>
+        <line x1="3" y1="21" x2="21" y2="3" stroke="currentColor" stroke-width="2"/>
+      </svg>`;
+  }
+  function addPwToggle(input) {
+    if (!input || input.dataset.hasToggle === '1') return;
+    input.dataset.hasToggle = '1';
+
+    const wrap = document.createElement('div');
+    wrap.className = 'pw-field';
+    input.parentNode.insertBefore(wrap, input);
+    wrap.appendChild(input);
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'pw-toggle';
+    btn.setAttribute('aria-label', 'Show password');
+    btn.setAttribute('aria-pressed', 'false');
+    btn.innerHTML = svgEyeOpen();
+    btn.addEventListener('click', () => {
+      const showing = input.type === 'text';
+      input.type = showing ? 'password' : 'text';
+      btn.setAttribute('aria-pressed', String(!showing));
+      btn.innerHTML = showing ? svgEyeOpen() : svgEyeClosed();
+    });
+    wrap.appendChild(btn);
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    addPwToggle(document.getElementById('loginPassword'));
+  });
+})();
