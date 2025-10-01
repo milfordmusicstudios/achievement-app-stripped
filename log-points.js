@@ -16,6 +16,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   const pointsInput = document.getElementById("logPoints");
   const notesInput = document.getElementById("logNote");
   const dateInput = document.getElementById("logDate");
+
+// ✅ Default date to today
+if (dateInput) {
+  const today = new Date().toISOString().split("T")[0];
+  dateInput.value = today;
+}
   const submitBtn = document.querySelector("button[type='submit']");
   const cancelBtn = document.querySelector("button[type='button']");
 
@@ -155,8 +161,46 @@ if (category.toLowerCase() === "practice") {
       } else {
       await recalculateUserPoints(targetUser);
 
-        alert("✅ Log submitted successfully!");
-        window.location.href = "index.html";
+// ✅ Custom popup instead of auto-redirect
+const popup = document.createElement("div");
+popup.style.position = "fixed";
+popup.style.top = "0";
+popup.style.left = "0";
+popup.style.width = "100%";
+popup.style.height = "100%";
+popup.style.background = "rgba(0,0,0,0.6)";
+popup.style.display = "flex";
+popup.style.justifyContent = "center";
+popup.style.alignItems = "center";
+popup.style.zIndex = "1000";
+
+popup.innerHTML = `
+  <div style="background:white; padding:30px; border-radius:12px; text-align:center; max-width:300px; box-shadow:0 2px 10px rgba(0,0,0,0.3);">
+    <h3 style="color:#00477d; margin-bottom:15px;">✅ Log submitted successfully!</h3>
+    <div style="display:flex; flex-direction:column; gap:10px;">
+      <button id="goHomeBtn" class="blue-button">Go to Home</button>
+      <button id="logMoreBtn" class="blue-button">Log More Points</button>
+    </div>
+  </div>
+`;
+
+// Append popup
+document.body.appendChild(popup);
+
+// Handle buttons
+document.getElementById("goHomeBtn").addEventListener("click", () => {
+  window.location.href = "index.html";
+});
+
+document.getElementById("logMoreBtn").addEventListener("click", () => {
+  document.body.removeChild(popup);
+  document.getElementById("logForm").reset();
+  if (!(activeRole === "admin" || activeRole === "teacher")) {
+    // re-hide fields for students
+    if (studentSelect) studentSelect.closest("tr").style.display = "none";
+    if (pointsInput) pointsInput.closest("tr").style.display = "none";
+  }
+});
       }
     });
   }
