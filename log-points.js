@@ -195,6 +195,12 @@ document.getElementById("goHomeBtn").addEventListener("click", () => {
 document.getElementById("logMoreBtn").addEventListener("click", () => {
   document.body.removeChild(popup);
   document.getElementById("logForm").reset();
+ // ✅ Re-apply today's date after reset
+  if (dateInput) {
+    const today = new Date().toISOString().split("T")[0];
+    dateInput.value = today;
+  }
+
   if (!(activeRole === "admin" || activeRole === "teacher")) {
     // re-hide fields for students
     if (studentSelect) studentSelect.closest("tr").style.display = "none";
