@@ -10,70 +10,54 @@
 <body class="tall-background">
   <main class="app">
 
-    <!-- ✅ Top Bar -->
     <header id="pageHeader">
       <button class="blue-button" onclick="window.location.href='index.html'">Home</button>
       <h2>Review Logs</h2>
     </header>
 
-    <!-- ✅ Category Summary -->
-    <section id="categorySummary"></section>
-
-    <!-- ✅ Action Bar -->
-    <div id="actionBar">
-      <input id="searchInput" type="text" placeholder="Search logs...">
-      <select id="statusFilter" class="blue-button">
-        <option value="">All Statuses</option>
-        <option value="pending">Pending</option>
-        <option value="approved">Approved</option>
-        <option value="rejected">Rejected</option>
-        <option value="needs info">Needs Info</option>
-      </select>
-      <button id="bulkApproveBtn" class="blue-button">Approve Selected</button>
-      <button id="deleteSelectedBtn" class="blue-button" style="background:#d9534f;">Delete Selected</button>
+    <!-- Tabs -->
+    <div style="text-align:center; margin-bottom:15px;">
+      <button id="showLogsBtn" class="blue-button">Show Logs</button>
+      <button id="showNotificationsBtn" class="blue-button">Show Notifications</button>
     </div>
 
-    <!-- ✅ Bulk Approve Panel -->
-    <div id="bulkApprovePanel" style="display:none; text-align:center; margin-bottom:10px;">
-      <label>Points to assign:
-        <input type="number" id="bulkPoints" style="width:80px;">
-      </label>
-      <button id="confirmBulkApprove" class="blue-button">Confirm</button>
-      <button id="cancelBulkApprove" class="blue-button" style="background:#999;">Cancel</button>
+    <!-- Logs Section -->
+    <div id="logsSection">
+      <section id="categorySummary"></section>
+      <div id="actionBar">
+        <input id="searchInput" type="text" placeholder="Search logs...">
+        <select id="statusFilter" class="blue-button">
+          <option value="">All Statuses</option>
+          <option value="pending">Pending</option>
+          <option value="approved">Approved</option>
+          <option value="rejected">Rejected</option>
+          <option value="needs info">Needs Info</option>
+        </select>
+        <button id="deleteSelectedBtn" class="blue-button" style="background:#d9534f;">Delete Selected</button>
+      </div>
+
+      <div id="logsWrapper">
+        <table id="logsHeaderTable">
+          <thead>
+            <tr>
+              <th><input type="checkbox" id="selectAll"></th>
+              <th data-sort="fullName">Student</th>
+              <th data-sort="category">Category</th>
+              <th data-sort="date">Date</th>
+              <th data-sort="points">Points</th>
+              <th>Note</th>
+              <th data-sort="status">Status</th>
+            </tr>
+          </thead>
+        </table>
+        <table id="logsTable">
+          <tbody id="logsTableBody"></tbody>
+        </table>
+      </div>
     </div>
 
-    <!-- ✅ Scrollable Table -->
-    <div id="logsWrapper">
-      <table id="logsHeaderTable">
-        <thead>
-          <tr>
-            <th><input type="checkbox" id="selectAll"></th>
-            <th data-sort="fullName">Student</th>
-            <th data-sort="category">Category</th>
-            <th data-sort="date">Date</th>
-            <th data-sort="points">Points</th>
-            <th>Note</th>
-            <th data-sort="status">Status</th>
-          </tr>
-        </thead>
-      </table>
-
-      <table id="logsTable">
-        <tbody id="logsTableBody"></tbody>
-      </table>
-    </div>
-
-    <!-- ✅ Pagination -->
-    <div id="paginationControls">
-      <button id="prevPageBtn" class="blue-button">Prev</button>
-      <span id="pageInfo"></span>
-      <button id="nextPageBtn" class="blue-button">Next</button>
-      <select id="logsPerPage" class="blue-button">
-        <option value="25">25</option>
-        <option value="50" selected>50</option>
-        <option value="100">100</option>
-      </select>
-    </div>
+    <!-- Notifications Section -->
+    <div id="notificationsSection" style="display:none; padding:20px;"></div>
 
   </main>
 </body>
