@@ -37,6 +37,7 @@
         <option value="rejected">Rejected</option>
         <option value="needs info">Needs Info</option>
       </select>
+      <button id="quickAddBtn" class="blue-button">Quick Add</button>
       <button id="bulkApproveBtn" class="blue-button">Approve Selected</button>
       <button id="deleteSelectedBtn" class="blue-button" style="background:#d9534f;">Delete Selected</button>
     </div>
@@ -82,6 +83,42 @@
         <option value="100">100</option>
       </select>
     </div>
+<!-- ✅ Quick Add Modal -->
+<div id="quickAddModal" class="modal" style="display:none;
+  position:fixed; top:0; left:0; width:100%; height:100%;
+  background:rgba(0,0,0,0.6); z-index:10000; justify-content:center; align-items:center;">
+  <div class="modal-content" style="background:white; padding:20px; border-radius:10px; width:90%; max-width:500px;">
+    <h3 style="text-align:center; color:#00477d;">Quick Add Points</h3>
+    <div style="max-height:400px; overflow-y:auto; margin-bottom:10px;">
+      <label><b>Select Students:</b></label>
+      <div id="quickAddStudentsList" style="display:flex; flex-direction:column; gap:5px; margin:10px 0;"></div>
+    </div>
+
+    <label><b>Category:</b></label>
+    <select id="quickAddCategory" class="white-input" style="width:100%; margin-bottom:10px;">
+      <option value="">Select category</option>
+      <option value="practice">Practice</option>
+      <option value="participation">Participation</option>
+      <option value="performance">Performance</option>
+      <option value="personal">Personal</option>
+      <option value="proficiency">Proficiency</option>
+    </select>
+
+    <label><b>Date:</b></label>
+    <input type="date" id="quickAddDate" class="white-input" style="width:100%; margin-bottom:10px;" />
+
+    <label><b>Points:</b></label>
+    <input type="number" id="quickAddPoints" class="white-input" placeholder="Enter points" style="width:100%; margin-bottom:10px;" />
+
+    <label><b>Notes:</b></label>
+    <textarea id="quickAddNotes" class="white-input" placeholder="Optional note" style="width:100%; margin-bottom:15px;"></textarea>
+
+    <div style="display:flex; justify-content:center; gap:15px;">
+      <button id="quickAddSubmit" class="blue-button">Submit</button>
+      <button id="quickAddCancel" class="blue-button" style="background:#999;">Cancel</button>
+    </div>
+  </div>
+</div>
 
   </main>
 </body>

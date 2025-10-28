@@ -364,5 +364,110 @@ async function loadNotifications() {
   notificationsSection.innerHTML = "";
   notificationsSection.appendChild(list);
 }
+// === QUICK ADD MODAL ===
+const quickAddBtn = document.getElementById("quickAddBtn");
+const quickAddModal = document.getElementById("quickAddModal");
+const quickAddCancel = document.getElementById("quickAddCancel");
+const quickAddSubmit = document.getElementById("quickAddSubmit");
+
+const quickAddStudentsList = document.getElementById("quickAddStudentsList");
+const quickAddCategory = document.getElementById("quickAddCategory");
+const quickAddDate = document.getElementById("quickAddDate");
+const quickAddPoints = document.getElementById("quickAddPoints");
+const quickAddNotes = document.getElementById("quickAddNotes");
+
+if (quickAddBtn) {
+  quickAddBtn.addEventListener("click", async () => {
+    quickAddModal.style.display = "flex";
+    await loadQuickAddStudents();
+    // Default date = today
+    quickAddDate.value = new Date().toISOString().split("T")[0];
+  });
+}
+
+if (quickAddCancel) {
+  quickAddCancel.addEventListener("click", () => {
+    quickAddModal.style.display = "none";
+  });
+}
+
+async function loadQuickAddStudents() {
+  quickAddStudentsList.innerHTML = "<p>Loading students...</p>";
+
+  const user = JSON.parse(localStorage.getItem("loggedInUser"));
+  const activeRole = localStorage.getItem("activeRole");
+
+  const { data: students, error } = await supabase
+    .from("users")
+    .select("id, firstName, lastName, roles, teacherIds");
+
+  if (error) {
+    quickAddStudentsList.innerHTML = `<p>Error: ${error.message}</p>`;
+    return;
+  }
+
+  let filtered = students.filter(s => {
+    const roles = Array.isArray(s.roles) ? s.roles : [s.roles];
+    const isStudent = roles.includes("student");
+    if (activeRole === "admin") return isStudent;
+    if (activeRole === "teacher")
+      return isStudent && Array.isArray(s.teacherIds) && s.teacherIds.includes(user.id);
+    return false;
+  });
+
+  filtered = filtered.sort((a, b) => `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`));
+
+  quickAddStudentsList.innerHTML = filtered
+    .map(s => `
+      <label style="display:flex; align-items:center; gap:8px;">
+        <input type="checkbox" class="quickAddStudent" value="${s.id}">
+        ${s.firstName} ${s.lastName}
+      </label>
+    `)
+    .join("");
+}
+
+if (quickAddSubmit) {
+  quickAddSubmit.addEventListener("click", async () => {
+    const selectedIds = Array.from(document.querySelectorAll(".quickAddStudent:checked")).map(cb => cb.value);
+    const category = quickAddCategory.value;
+    const date = quickAddDate.value;
+    const points = quickAddPoints.value ? parseInt(quickAddPoints.value) : (category === "practice" ? 5 : 0);
+    const notes = quickAddNotes.value.trim();
+
+    if (selectedIds.length === 0) return alert("Select at least one student.");
+    if (!category || !date) return alert("Please select a category and date.");
+
+    const inserts = selectedIds.map(id => ({
+      userId: id,
+      category,
+      notes,
+      date,
+      points,
+      status: "approved"
+    }));
+
+    const { error } = await supabase.from("logs").insert(inserts);
+    if (error) {
+      console.error("Quick Add failed:", error);
+      alert("Error adding logs.");
+      return;
+    }
+
+    // Recalculate each selected student's points
+    for (const id of selectedIds) {
+      try {
+        await recalculateUserPoints(id);
+      } catch (err) {
+        console.error("Recalc error:", err);
+      }
+    }
+
+    alert(`✅ Points added for ${selectedIds.length} student(s)!`);
+    quickAddModal.style.display = "none";
+    await new Promise(r => setTimeout(r, 300)); // short delay for backend sync
+    location.reload(); // refresh logs
+  });
+}
 
   });
