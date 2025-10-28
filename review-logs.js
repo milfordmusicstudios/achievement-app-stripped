@@ -333,6 +333,8 @@ async function loadNotifications() {
     .select("created_at, message")
     .order("created_at", { ascending: false });
 
+    console.log("[DEBUG] Notifications fetched:", notifications, error);
+
   if (error) {
     notificationsSection.innerHTML = `<p>Error loading notifications: ${error.message}</p>`;
     return;
