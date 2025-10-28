@@ -306,5 +306,4 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.querySelectorAll("#logsTableBody .select-log").forEach(cb => {
       cb.checked = isChecked;
     });
-  });
-});
+    // === Notific

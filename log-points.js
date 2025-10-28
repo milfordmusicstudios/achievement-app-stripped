@@ -51,6 +51,22 @@ document.addEventListener("DOMContentLoaded", async () => {
       opt.textContent = cat.name;
       categorySelect.appendChild(opt);
     });
+    // ✅ Category descriptions
+const categoryDescriptions = {
+  "practice": "Daily practice (5 point)s.",
+  "participation": "Points for group class (50 points) or studio competitions (100 points).",
+  "performance": "Points for recitals or other performances (100 points).",
+  "personal": "Assigned by your teacher (5-100 points)",
+  "proficiency": "Music Festival (100-200), Memorization (1 point per bar for vocals, 2 points per bar all other instruments ), Tests (50 points)."
+};
+
+const descBox = document.getElementById("categoryDescription");
+
+categorySelect.addEventListener("change", () => {
+  const selected = categorySelect.value.toLowerCase();
+  if (descBox) descBox.textContent = categoryDescriptions[selected] || "";
+});
+
 
     // ✅ Category preview
     categorySelect.addEventListener("change", () => {
