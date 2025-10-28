@@ -83,30 +83,46 @@ export async function recalculateUserPoints(userId) {
       .eq('id', userId);
 
     if (updateError) throw updateError;
+console.log("[DEBUG] userBefore.level:", userBefore.level);
+console.log("[DEBUG] currentLevel.id:", currentLevel.id);
+console.log("[DEBUG] totalPoints:", totalPoints);
 
-    // 🔹 5. Detect level up
-    if (userBefore && userBefore.level !== currentLevel.id) {
-      const fullName = `${userBefore.firstName || ''} ${userBefore.lastName || ''}`.trim();
-      console.log(`[DEBUG] LEVEL UP detected for: ${fullName} (Old: ${userBefore.level}, New: ${currentLevel.id})`);
+// 🔹 5. Detect level up reliably using localStorage
+let previousLevel = userBefore?.level;
 
-      // ✅ Insert admin notification
-      const { error: notifErr } = await supabase.from('notifications').insert([
-        {
-          userId,
-          message: `${fullName} advanced to Level ${currentLevel.name || currentLevel.id}!`
-        }
-      ]);
+// If this user is logged in locally, use stored level to compare
+const loggedIn = JSON.parse(localStorage.getItem('loggedInUser'));
+if (loggedIn && loggedIn.id === userId && loggedIn.level) {
+  previousLevel = loggedIn.level;
+}
 
-      if (notifErr) console.error("[ERROR] Notification insert failed:", notifErr.message);
+console.log("[DEBUG] previousLevel:", previousLevel, "currentLevel.id:", currentLevel.id);
 
-      // ✅ Show popup if this user is logged in
-      const loggedIn = JSON.parse(localStorage.getItem('loggedInUser'));
-      if (loggedIn && loggedIn.id === userId) {
-        setTimeout(() => {
-          showLevelUpPopup(fullName, currentLevel.name || `Level ${currentLevel.id}`);
-        }, 500); // slight delay to ensure previous popup doesn’t overlap
-      }
-    } else {
+if (previousLevel !== currentLevel.id) {
+  const fullName = `${userBefore.firstName || ''} ${userBefore.lastName || ''}`.trim();
+  console.log(`[DEBUG] LEVEL UP detected for ${fullName}`);
+
+  // ✅ Insert admin notification
+  const { error: notifErr } = await supabase.from('notifications').insert([
+    {
+      userId,
+      message: `${fullName} advanced to Level ${currentLevel.name || currentLevel.id}!`
+    }
+  ]);
+  if (notifErr) console.error("[ERROR] Notification insert failed:", notifErr.message);
+
+  // ✅ Show popup if this user is logged in
+  if (loggedIn && loggedIn.id === userId) {
+    setTimeout(() => {
+      showLevelUpPopup(fullName, currentLevel.name || `Level ${currentLevel.id}`);
+    }, 500);
+  }
+
+  // ✅ Update localStorage so it doesn't repeat next time
+  loggedIn.level = currentLevel.id;
+  localStorage.setItem('loggedInUser', JSON.stringify(loggedIn));
+
+} else {
       console.log("[DEBUG] No level change detected.");
     }
 
