@@ -159,32 +159,16 @@ if (category.toLowerCase() === "practice") {
         console.error("Failed to save log:", logErr.message);
         alert("Error saving log.");
       } else {
-      await recalculateUserPoints(targetUser);
+// ✅ Recalculate and wait for level-up handling
+const result = await recalculateUserPoints(targetUser);
 
-// ✅ Custom popup instead of auto-redirect
+// Small delay so the Level Up popup can show first (if triggered)
+await new Promise(res => setTimeout(res, 1500));
+
+// ✅ Then show regular success popup
 const popup = document.createElement("div");
 popup.style.position = "fixed";
-popup.style.top = "0";
-popup.style.left = "0";
-popup.style.width = "100%";
-popup.style.height = "100%";
-popup.style.background = "rgba(0,0,0,0.6)";
-popup.style.display = "flex";
-popup.style.justifyContent = "center";
-popup.style.alignItems = "center";
-popup.style.zIndex = "1000";
-
-popup.innerHTML = `
-  <div style="background:white; padding:30px; border-radius:12px; text-align:center; max-width:300px; box-shadow:0 2px 10px rgba(0,0,0,0.3);">
-    <h3 style="color:#00477d; margin-bottom:15px;">✅ Log submitted successfully!</h3>
-    <div style="display:flex; flex-direction:column; gap:10px;">
-      <button id="goHomeBtn" class="blue-button">Go to Home</button>
-      <button id="logMoreBtn" class="blue-button">Log More Points</button>
-    </div>
-  </div>
-`;
-
-// Append popup
+// ...
 document.body.appendChild(popup);
 
 // Handle buttons
