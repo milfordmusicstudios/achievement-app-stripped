@@ -300,12 +300,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   });
 
-  // Select all
-  document.getElementById("selectAll").addEventListener("change", (e) => {
-    const isChecked = e.target.checked;
-    document.querySelectorAll("#logsTableBody .select-log").forEach(cb => {
-      cb.checked = isChecked;
-    });
+// ✅ Select All Checkbox
+document.getElementById("selectAll").addEventListener("change", (e) => {
+  const isChecked = e.target.checked;
+  document.querySelectorAll("#logsTableBody .select-log").forEach(cb => {
+    cb.checked = isChecked;
+  });
+});
+
 // === Notifications Tab Integration ===
 const showLogsBtn = document.getElementById("showLogsBtn");
 const showNotificationsBtn = document.getElementById("showNotificationsBtn");
@@ -333,7 +335,7 @@ async function loadNotifications() {
     .select("created_at, message")
     .order("created_at", { ascending: false });
 
-    console.log("[DEBUG] Notifications fetched:", notifications, error);
+  console.log("[DEBUG] Notifications fetched:", notifications, error);
 
   if (error) {
     notificationsSection.innerHTML = `<p>Error loading notifications: ${error.message}</p>`;
@@ -364,4 +366,3 @@ async function loadNotifications() {
 }
 
   });
-});
