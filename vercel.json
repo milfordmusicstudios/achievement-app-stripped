@@ -2,6 +2,9 @@
   "redirects": [
     {
       "source": "/(.*)",
+      "has": [
+        { "type": "host", "value": "achievement-app-stripped.vercel.app" }
+      ],
       "destination": "https://awards.milfordmusic.com/$1",
       "permanent": true
     }
