@@ -4,39 +4,42 @@ import { supabase } from './supabase.js';
 function showLevelUpPopup(userName, newLevelName) {
   console.log("[DEBUG] Showing Level-Up popup for:", userName, newLevelName);
 
-  const overlay = document.createElement('div');
-  overlay.style = `
-    position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.7);
-    display: flex; justify-content: center; align-items: center;
-    z-index: 99999; /* ensure top layer */
-  `;
+  // Delay slightly so it appears AFTER the "Log submitted successfully" popup
+  setTimeout(() => {
+    const overlay = document.createElement('div');
+    overlay.style = `
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.7);
+      display: flex; justify-content: center; align-items: center;
+      z-index: 999999; /* ensure it's on top of everything */
+    `;
 
-  overlay.innerHTML = `
-    <div style="
-      background: white;
-      padding: 30px;
-      border-radius: 14px;
-      text-align: center;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.4);
-      max-width: 340px;
-    ">
-      <h2 style="color:#00477d; margin-bottom:10px;">🎉 Level Up!</h2>
-      <p>${userName} just reached <b>${newLevelName}</b>!</p>
-      <button id="closeLevelUpPopup" class="blue-button" style="margin-top:15px;">OK</button>
-    </div>
-  `;
+    overlay.innerHTML = `
+      <div style="
+        background: white;
+        padding: 30px;
+        border-radius: 14px;
+        text-align: center;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+        max-width: 340px;
+        animation: fadeIn 0.3s ease;
+      ">
+        <h2 style="color:#00477d; margin-bottom:10px;">🎉 Level Up!</h2>
+        <p>${userName} just reached <b>${newLevelName}</b>!</p>
+        <button id="closeLevelUpPopup" class="blue-button" style="margin-top:15px;">OK</button>
+      </div>
+    `;
 
-  document.body.appendChild(overlay);
+    document.body.appendChild(overlay);
 
-  // Attach close button
-  const closeBtn = document.getElementById('closeLevelUpPopup');
-  if (closeBtn) {
-    closeBtn.addEventListener('click', () => overlay.remove());
-  } else {
-    console.warn("[WARN] closeLevelUpPopup button not found!");
-  }
+    const closeBtn = document.getElementById('closeLevelUpPopup');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => overlay.remove());
+    } else {
+      console.warn("[WARN] closeLevelUpPopup button not found!");
+    }
+  }, 1500); // wait for the "Log submitted successfully" popup first
 }
 
 export async function recalculateUserPoints(userId) {
@@ -83,46 +86,42 @@ export async function recalculateUserPoints(userId) {
       .eq('id', userId);
 
     if (updateError) throw updateError;
-console.log("[DEBUG] userBefore.level:", userBefore.level);
-console.log("[DEBUG] currentLevel.id:", currentLevel.id);
-console.log("[DEBUG] totalPoints:", totalPoints);
 
-// 🔹 5. Detect level up reliably using localStorage
-let previousLevel = userBefore?.level;
+    // 🔹 5. Detect level up (with localStorage support for accuracy)
+    let previousLevel = userBefore?.level;
 
-// If this user is logged in locally, use stored level to compare
-const loggedIn = JSON.parse(localStorage.getItem('loggedInUser'));
-if (loggedIn && loggedIn.id === userId && loggedIn.level) {
-  previousLevel = loggedIn.level;
-}
-
-console.log("[DEBUG] previousLevel:", previousLevel, "currentLevel.id:", currentLevel.id);
-
-if (previousLevel !== currentLevel.id) {
-  const fullName = `${userBefore.firstName || ''} ${userBefore.lastName || ''}`.trim();
-  console.log(`[DEBUG] LEVEL UP detected for ${fullName}`);
-
-  // ✅ Insert admin notification
-  const { error: notifErr } = await supabase.from('notifications').insert([
-    {
-      userId,
-      message: `${fullName} advanced to Level ${currentLevel.name || currentLevel.id}!`
+    const loggedIn = JSON.parse(localStorage.getItem('loggedInUser'));
+    if (loggedIn && loggedIn.id === userId && loggedIn.level) {
+      previousLevel = loggedIn.level;
     }
-  ]);
-  if (notifErr) console.error("[ERROR] Notification insert failed:", notifErr.message);
 
-  // ✅ Show popup if this user is logged in
-  if (loggedIn && loggedIn.id === userId) {
-    setTimeout(() => {
-      showLevelUpPopup(fullName, currentLevel.name || `Level ${currentLevel.id}`);
-    }, 500);
-  }
+    console.log("[DEBUG] previousLevel:", previousLevel, "currentLevel.id:", currentLevel.id);
 
-  // ✅ Update localStorage so it doesn't repeat next time
-  loggedIn.level = currentLevel.id;
-  localStorage.setItem('loggedInUser', JSON.stringify(loggedIn));
+    if (previousLevel !== currentLevel.id) {
+      const fullName = `${userBefore.firstName || ''} ${userBefore.lastName || ''}`.trim();
+      console.log(`[DEBUG] LEVEL UP detected for ${fullName}`);
 
-} else {
+      // ✅ Insert admin notification
+      const { error: notifErr } = await supabase.from('notifications').insert([
+        {
+          userId,
+          message: `${fullName} advanced to Level ${currentLevel.name || currentLevel.id}!`
+        }
+      ]);
+
+      if (notifErr) console.error("[ERROR] Notification insert failed:", notifErr.message);
+
+      // ✅ Show popup if this user is logged in
+      if (loggedIn && loggedIn.id === userId) {
+        showLevelUpPopup(fullName, currentLevel.name || `Level ${currentLevel.id}`);
+      }
+
+      // ✅ Update localStorage so it doesn’t trigger again immediately
+      if (loggedIn) {
+        loggedIn.level = currentLevel.id;
+        localStorage.setItem('loggedInUser', JSON.stringify(loggedIn));
+      }
+    } else {
       console.log("[DEBUG] No level change detected.");
     }
 
