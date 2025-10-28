@@ -1,143 +1,219 @@
 import { supabase } from './supabase.js';
 import { recalculateUserPoints } from './utils.js';
 
-// === DOM elements ===
-const form = document.getElementById("logForm");
-const categorySelect = document.getElementById("categorySelect");
-const pointsInput = document.getElementById("pointsInput");
-const noteInput = document.getElementById("noteInput");
-const studentSelect = document.getElementById("studentSelect");
-const popupContainer = document.getElementById("popupContainer");
+document.addEventListener("DOMContentLoaded", async () => {
+  const user = JSON.parse(localStorage.getItem("loggedInUser"));
+  const activeRole = localStorage.getItem("activeRole");
 
-const loggedIn = JSON.parse(localStorage.getItem("loggedInUser"));
+  if (!user) {
+    window.location.href = "login.html";
+    return;
+  }
 
-// === Category Descriptions ===
-const categoryDescriptions = {
-  "practice": "Daily practice logs for instrument or voice. Worth 5 points.",
-  "participation": "Points for group class or studio involvement.",
-  "performance": "Points for recitals, gigs, or public shows.",
-  "personal": "Achievements or milestones in personal progress.",
-  "proficiency": "Demonstrating specific skill mastery or testing."
-};
+  const categorySelect = document.getElementById("logCategory");
+  const studentSelect = document.getElementById("logStudent");
+  const previewImage = document.getElementById("previewImage");
+  const pointsInput = document.getElementById("logPoints");
+  const notesInput = document.getElementById("logNote");
+  const dateInput = document.getElementById("logDate");
+  const submitBtn = document.querySelector("button[type='submit']");
+  const cancelBtn = document.querySelector("button[type='button']");
 
-categorySelect.addEventListener("change", () => {
-  const selected = categorySelect.value.toLowerCase();
-  const descBox = document.getElementById("categoryDescription");
-  if (descBox) descBox.textContent = categoryDescriptions[selected] || "";
-});
+  // ✅ Default date to today
+  if (dateInput) {
+    const today = new Date().toISOString().split("T")[0];
+    dateInput.value = today;
+  }
 
-// === Popup for Submission ===
-function showPopup(message) {
-  const overlay = document.createElement("div");
-  overlay.style = `
+  // ✅ Hide student dropdown & points input for students
+  if (!(activeRole === "admin" || activeRole === "teacher")) {
+    if (studentSelect) studentSelect.closest("tr").style.display = "none";
+    if (pointsInput) pointsInput.closest("tr").style.display = "none";
+  }
+
+  // ✅ Show default category preview
+  if (previewImage) previewImage.src = "images/categories/allCategories.png";
+
+  // ✅ Load categories
+  const { data: categories, error: catErr } = await supabase
+    .from("categories")
+    .select("*")
+    .order("id", { ascending: true });
+
+  if (catErr) console.error("Error loading categories:", catErr.message);
+
+  if (categories && categorySelect) {
+    categorySelect.innerHTML = "<option value=''>Category</option>";
+    categories.forEach(cat => {
+      const opt = document.createElement("option");
+      opt.value = cat.name;
+      opt.dataset.icon = cat.icon;
+      opt.textContent = cat.name;
+      categorySelect.appendChild(opt);
+    });
+
+    // ✅ Category preview
+    categorySelect.addEventListener("change", () => {
+      const selected = categorySelect.value;
+      previewImage.src = selected ? `images/categories/${selected.toLowerCase()}.png` : "images/categories/allCategories.png";
+      if (selected === "practice") {
+        pointsInput.value = 5;
+      } else if (pointsInput && (activeRole === "admin" || activeRole === "teacher")) {
+        pointsInput.value = "";
+      }
+    });
+  }
+
+  // ✅ Populate students only for teachers/admins
+  if ((activeRole === "admin" || activeRole === "teacher") && studentSelect) {
+    const { data: students, error: stuErr } = await supabase
+      .from("users")
+      .select("id, firstName, lastName, roles, teacherIds");
+
+    if (stuErr) {
+      console.error("Supabase error loading students:", stuErr.message);
+    } else if (students) {
+      const filtered = students.filter(s => {
+        const roles = Array.isArray(s.roles) ? s.roles : [s.roles];
+        const isStudent = roles.includes("student");
+
+        if (activeRole === "admin") return isStudent;
+
+        if (activeRole === "teacher") {
+          const teacherList = Array.isArray(s.teacherIds) ? s.teacherIds : [];
+          return isStudent && teacherList.includes(user.id);
+        }
+
+        return false;
+      });
+
+      // ✅ Sort students alphabetically
+      const sorted = filtered.sort((a, b) => {
+        const nameA = `${a.firstName} ${a.lastName}`.toLowerCase();
+        const nameB = `${b.firstName} ${b.lastName}`.toLowerCase();
+        return nameA.localeCompare(nameB);
+      });
+
+      // ✅ Populate dropdown
+      studentSelect.innerHTML = "<option value=''>Select a student</option>";
+      sorted.forEach(s => {
+        const opt = document.createElement("option");
+        opt.value = s.id;
+        opt.textContent = `${s.firstName} ${s.lastName}`;
+        studentSelect.appendChild(opt);
+      });
+    }
+  }
+
+  // ✅ Submit log
+  if (submitBtn) {
+    submitBtn.addEventListener("click", async (e) => {
+      e.preventDefault();
+
+      const category = categorySelect?.value;
+      const note = notesInput?.value.trim();
+      const date = dateInput?.value;
+
+      const targetUser =
+        (activeRole === "admin" || activeRole === "teacher") && studentSelect.value
+          ? studentSelect.value
+          : user.id;
+
+      let points = 5; // default for practice
+      if (activeRole === "admin" || activeRole === "teacher") {
+        const enteredPoints = parseInt(pointsInput?.value);
+        if (!isNaN(enteredPoints)) points = enteredPoints;
+      }
+
+      if (!category || !date) {
+        alert("Please complete category and date.");
+        return;
+      }
+
+      // ✅ Determine status
+      let status = "pending";
+      if (activeRole === "admin" || activeRole === "teacher" || category.toLowerCase() === "practice") {
+        status = "approved";
+      }
+
+      const { error: logErr } = await supabase.from("logs").insert([{
+        userId: targetUser,
+        category,
+        notes: note,
+        date,
+        points,
+        status
+      }]);
+
+      if (logErr) {
+        console.error("Failed to save log:", logErr.message);
+        alert("Error saving log.");
+        return;
+      }
+
+// ✅ Recalculate user points & allow Level Up popup to trigger
+await recalculateUserPoints(targetUser);
+
+// ✅ Wait a moment to ensure Level Up popup appears first
+await new Promise(resolve => setTimeout(resolve, 1500));
+
+// ✅ Always show success popup clearly
+const popup = document.createElement("div");
+popup.innerHTML = `
+  <div style="
     position: fixed;
     top: 0; left: 0; width: 100%; height: 100%;
     background: rgba(0,0,0,0.6);
     display: flex; justify-content: center; align-items: center;
-    z-index: 9999;
-  `;
-
-  overlay.innerHTML = `
-    <div style="
-      background: white;
-      padding: 30px;
-      border-radius: 12px;
-      text-align: center;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-      max-width: 300px;
-    ">
-      <p>${message}</p>
-      <button id="closePopup" class="blue-button" style="margin-top:10px;">OK</button>
+    z-index: 9999; /* Make sure it's on top */
+  ">
+    <div style="background:white; padding:30px; border-radius:12px; text-align:center; max-width:300px; box-shadow:0 2px 10px rgba(0,0,0,0.3);">
+      <h3 style="color:#00477d; margin-bottom:15px;">✅ Log submitted successfully!</h3>
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <button id="goHomeBtn" class="blue-button">Go to Home</button>
+        <button id="logMoreBtn" class="blue-button">Log More Points</button>
+      </div>
     </div>
-  `;
+  </div>
+`;
+document.body.appendChild(popup);
 
-  document.body.appendChild(overlay);
-  document.getElementById("closePopup").addEventListener("click", () => {
-    overlay.remove();
-  });
-}
+// ✅ Safely attach listeners after DOM insert
+setTimeout(() => {
+  const goHomeBtn = document.getElementById("goHomeBtn");
+  const logMoreBtn = document.getElementById("logMoreBtn");
 
-// === Load Students for Admin/Teacher ===
-async function loadStudents() {
-  if (!loggedIn) return;
-
-  // Only admins or teachers see this list
-  const roles = loggedIn.roles || [];
-  if (!roles.includes("admin") && !roles.includes("teacher")) {
-    if (studentSelect) studentSelect.parentElement.style.display = "none";
-    return;
+  if (goHomeBtn) {
+    goHomeBtn.addEventListener("click", () => {
+      popup.remove();
+      window.location.href = "index.html";
+    });
   }
 
-  const { data: students, error } = await supabase
-    .from("users")
-    .select("id, firstName, lastName, roles")
-    .order("lastName", { ascending: true });
+  if (logMoreBtn) {
+    logMoreBtn.addEventListener("click", () => {
+      popup.remove();
+      document.getElementById("logForm").reset();
 
-  if (error) {
-    console.error("Error loading students:", error.message);
-    return;
+      // Reset date and hide fields if student
+      if (dateInput) {
+        const today = new Date().toISOString().split("T")[0];
+        dateInput.value = today;
+      }
+      if (!(activeRole === "admin" || activeRole === "teacher")) {
+        if (studentSelect) studentSelect.closest("tr").style.display = "none";
+        if (pointsInput) pointsInput.closest("tr").style.display = "none";
+      }
+    });
+  }
+}, 100);
+    });
   }
 
-  const eligible = students.filter(u => u.roles?.includes("student"));
-  studentSelect.innerHTML = `<option value="">Select a Student</option>`;
-  eligible.forEach(s => {
-    const opt = document.createElement("option");
-    opt.value = s.id;
-    opt.textContent = `${s.firstName || ""} ${s.lastName || ""}`;
-    studentSelect.appendChild(opt);
-  });
-}
-
-// === Form Submission ===
-form.addEventListener("submit", async e => {
-  e.preventDefault();
-
-  if (!loggedIn) {
-    alert("You must be logged in to log points.");
-    return;
+  // ✅ Cancel → home
+  if (cancelBtn) {
+    cancelBtn.addEventListener("click", () => {
+      window.location.href = "index.html";
+    });
   }
-
-  const category = categorySelect.value;
-  const points = parseInt(pointsInput.value);
-  const note = noteInput.value.trim();
-
-  // determine target user
-  let targetUserId = loggedIn.id;
-  const roles = loggedIn.roles || [];
-
-  if ((roles.includes("admin") || roles.includes("teacher")) && studentSelect?.value) {
-    targetUserId = studentSelect.value;
-  }
-
-  if (!category || !points) {
-    alert("Please fill in all required fields.");
-    return;
-  }
-
-  const { error } = await supabase.from("logs").insert([
-    {
-      userId: targetUserId,
-      category,
-      points,
-      note,
-      status: roles.includes("student") ? "pending" : "approved",
-      date: new Date().toISOString(),
-    }
-  ]);
-
-  if (error) {
-    alert("Error logging points: " + error.message);
-    return;
-  }
-
-  showPopup("Log submitted successfully!");
-  form.reset();
-  const descBox = document.getElementById("categoryDescription");
-  if (descBox) descBox.textContent = "";
-
-  // Recalculate points & check for level up
-  await recalculateUserPoints(targetUserId);
 });
-
-// === Initialize ===
-loadStudents();

@@ -3,73 +3,80 @@
 <head>
   <meta charset="UTF-8" />
   <title>Log Points | Achievement App</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="stylesheet" href="style.css" />
-  <script type="module" src="log-points.js" defer></script>
 </head>
-<body class="tall-background">
-  <main class="app">
-    <header id="pageHeader">
-      <button class="blue-button" onclick="window.location.href='index.html'">Home</button>
-      <h2>Log Points</h2>
-    </header>
+<body class="white-page">
 
-    <form id="logForm">
-      <table>
+<main class="app white-page">
+  <h2 style="text-align: center; color: #3eb7f8; margin: 10px 0;">Log Points</h2>
 
-        <!-- Teacher/Admin Only -->
-        <tr id="studentRow">
-          <td><label for="studentSelect">Student:</label></td>
-          <td>
-            <select id="studentSelect">
-              <option value="">Select a Student</option>
-            </select>
-          </td>
-        </tr>
+<form class="settings-form" id="logForm">
+  <table style="width: 100%; border-collapse: collapse;">
+    <!-- Row 1: Student -->
+    <tr>
+      <td colspan="2" style="padding: 10px;">
+        <select id="logStudent" class="white-input" style="width: 100%;">
+          <option value="">Select a student</option>
+        </select>
+      </td>
+    </tr>
 
-        <!-- Category -->
-        <tr>
-          <td><label for="categorySelect">Category:</label></td>
-          <td>
-            <select id="categorySelect" required>
-              <option value="">Select a Category</option>
-              <option value="practice">Practice</option>
-              <option value="participation">Participation</option>
-              <option value="performance">Performance</option>
-              <option value="personal">Personal Growth</option>
-              <option value="proficiency">Proficiency</option>
-            </select>
-          </td>
-        </tr>
+    <!-- Row 2: Category + Notes -->
+<tr>
+  <td class="category-cell" style="vertical-align: top;">
+    <select id="logCategory" class="white-input" style="width: 100%;">
+      <option value="">Category</option>
+    </select>
+    <div style="text-align: center; margin-top: 10px;">
+      <img id="previewImage" src="images/categories/allCategories.png" alt="Category Preview"
+        style="max-width: 100px; display: block; margin: auto;" />
+    </div>
+  </td>
+  <td class="notes-cell">
+    <textarea id="logNote" class="white-input" placeholder="Add a note"></textarea>
+  </td>
+</tr>
 
-        <tr>
-          <td colspan="2">
-            <small id="categoryDescription" style="color:#555; font-size:0.9em;"></small>
-          </td>
-        </tr>
+    <!-- Row 3: Date -->
+    <tr>
+      <td colspan="2" style="padding: 10px;">
+        <input type="date" id="logDate" class="white-input" required style="width: 100%;" />
+      </td>
+    </tr>
 
-        <!-- Points -->
-        <tr>
-          <td><label for="pointsInput">Points:</label></td>
-          <td><input id="pointsInput" type="number" required /></td>
-        </tr>
+    <!-- Row 4: Points -->
+    <tr>
+      <td colspan="2" style="padding: 10px;">
+        <input type="number" id="logPoints" class="white-input" placeholder="Enter number of points" style="width: 100%;" />
+      </td>
+    </tr>
+<!-- Row 4.5: Info Text -->
+<tr>
+  <td colspan="2" style="padding: 5px 15px; text-align: center; font-size: 0.9rem; color: #00477d; font-weight: bold;">
+    Practice points automatically receive 5 points per day. Log your practice daily! 
+    All other entries will be assigned points and approved by your teacher.
+  </td>
+</tr>
 
-        <!-- Note -->
-        <tr>
-          <td><label for="noteInput">Note:</label></td>
-          <td><input id="noteInput" type="text" /></td>
-        </tr>
+<!-- Row 5: Submit + Cancel -->
+<tr>
+  <td colspan="2" style="padding: 20px; text-align: center;">
+    <div style="display: flex; justify-content: center; gap: 20px;">
+      <button type="submit">Submit</button>
+      <button type="button" onclick="window.location.href='index.html'">Back to Home</button>
+    </div>
+  </td>
+</tr>
+  </table>
+</form>
+</main>
 
-        <!-- Submit -->
-        <tr>
-          <td colspan="2">
-            <button type="submit" class="blue-button">Submit</button>
-          </td>
-        </tr>
-      </table>
-    </form>
+<footer>
+  &copy; 2025 Milford Music Studios Achievement App
+</footer>
 
-    <div id="popupContainer"></div>
-  </main>
+<script src="config.js"></script>
+<script type="module" src="log-points.js"></script>
 </body>
 </html>
