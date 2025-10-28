@@ -158,15 +158,60 @@ if (category.toLowerCase() === "practice") {
       if (logErr) {
         console.error("Failed to save log:", logErr.message);
         alert("Error saving log.");
-      } else {
-// ✅ Recalculate and wait for level-up handling
-const result = await recalculateUserPoints(targetUser);
+} else {
+  // ✅ Recalculate user points & allow Level Up popup to trigger
+  await recalculateUserPoints(targetUser);
 
-// Small delay so the Level Up popup can show first (if triggered)
-await new Promise(res => setTimeout(res, 1500));
+// ✅ Wait briefly to ensure any Level Up popup shows first
+await new Promise(resolve => setTimeout(resolve, 1000));
 
-// ✅ Then show regular success popup
+// ✅ Then show "Log submitted successfully" popup
 const popup = document.createElement("div");
+popup.innerHTML = `
+  <div style="
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.6);
+    display: flex; justify-content: center; align-items: center;
+    z-index: 1000;
+  ">
+    <div style="background:white; padding:30px; border-radius:12px; text-align:center; max-width:300px; box-shadow:0 2px 10px rgba(0,0,0,0.3);">
+      <h3 style="color:#00477d; margin-bottom:15px;">✅ Log submitted successfully!</h3>
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <button id="goHomeBtn" class="blue-button">Go to Home</button>
+        <button id="logMoreBtn" class="blue-button">Log More Points</button>
+      </div>
+    </div>
+  </div>
+`;
+document.body.appendChild(popup);
+
+// ✅ Wait until buttons are available in DOM before attaching listeners
+setTimeout(() => {
+  const goHomeBtn = document.getElementById("goHomeBtn");
+  const logMoreBtn = document.getElementById("logMoreBtn");
+
+  if (goHomeBtn) {
+    goHomeBtn.addEventListener("click", () => {
+      window.location.href = "index.html";
+    });
+  }
+
+  if (logMoreBtn) {
+    logMoreBtn.addEventListener("click", () => {
+      popup.remove();
+      document.getElementById("logForm").reset();
+      if (dateInput) {
+        const today = new Date().toISOString().split("T")[0];
+        dateInput.value = today;
+      }
+      if (!(activeRole === "admin" || activeRole === "teacher")) {
+        if (studentSelect) studentSelect.closest("tr").style.display = "none";
+        if (pointsInput) pointsInput.closest("tr").style.display = "none";
+      }
+    });
+  }
+}, 100); // small delay ensures buttons exist before adding listeners
 popup.style.position = "fixed";
 // ...
 document.body.appendChild(popup);
