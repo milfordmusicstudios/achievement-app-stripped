@@ -306,4 +306,60 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.querySelectorAll("#logsTableBody .select-log").forEach(cb => {
       cb.checked = isChecked;
     });
-    // === Notific
+// === Notifications Tab Integration ===
+const showLogsBtn = document.getElementById("showLogsBtn");
+const showNotificationsBtn = document.getElementById("showNotificationsBtn");
+const logsWrapper = document.getElementById("logsWrapper");
+const notificationsSection = document.getElementById("notificationsSection");
+
+if (showLogsBtn && showNotificationsBtn) {
+  showLogsBtn.addEventListener("click", () => {
+    logsWrapper.style.display = "block";
+    notificationsSection.style.display = "none";
+  });
+
+  showNotificationsBtn.addEventListener("click", async () => {
+    logsWrapper.style.display = "none";
+    notificationsSection.style.display = "block";
+    await loadNotifications();
+  });
+}
+
+async function loadNotifications() {
+  notificationsSection.innerHTML = "<p>Loading notifications...</p>";
+
+  const { data: notifications, error } = await supabase
+    .from("notifications")
+    .select("created_at, message")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    notificationsSection.innerHTML = `<p>Error loading notifications: ${error.message}</p>`;
+    return;
+  }
+
+  if (!notifications || notifications.length === 0) {
+    notificationsSection.innerHTML = "<p>No notifications yet.</p>";
+    return;
+  }
+
+  const list = document.createElement("ul");
+  list.style.listStyle = "none";
+  list.style.padding = "0";
+
+  notifications.forEach(n => {
+    const li = document.createElement("li");
+    li.style = "padding: 10px; border-bottom: 1px solid #ccc;";
+    li.innerHTML = `
+      <b>${new Date(n.created_at).toLocaleString()}</b><br>
+      ${n.message}
+    `;
+    list.appendChild(li);
+  });
+
+  notificationsSection.innerHTML = "";
+  notificationsSection.appendChild(list);
+}
+
+  });
+});
