@@ -6,64 +6,93 @@
   <title>Milford Music Studios Recital Sign-Up</title>
   <link rel="stylesheet" href="style.css" />
 
-  <style>
+<style>
+  body.white-page main.app {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    padding: 30px;
+    max-width: 600px;
+    text-align: center;
+    margin: 30px auto;
+  }
+
+  .logo {
+    width: 180px;
+    margin: 0 auto 20px;
+    display: block;
+  }
+
+  h1 {
+    color: #00477d;
+    font-size: 2rem;
+    margin-bottom: 10px;
+  }
+
+  p.subtitle {
+    color: #333;
+    font-size: 1rem;
+    margin-bottom: 25px;
+  }
+
+  .widget-wrapper {
+    background: #f9f9f9;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    padding: 20px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .blue-button {
+    display: inline-block;
+    background: #3eb7f8;
+    color: white;
+    font-weight: bold;
+    padding: 10px 20px;
+    border-radius: 8px;
+    text-decoration: none;
+    margin: 15px 10px 0;
+    transition: background 0.3s;
+  }
+
+  .blue-button:hover {
+    background: #00477d;
+  }
+
+  footer {
+    text-align: center;
+    color: #777;
+    font-size: 0.9rem;
+    margin-top: 30px;
+  }
+
+  /* ✅ MOBILE FIXES */
+  @media (max-width: 700px) {
     body.white-page main.app {
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-      padding: 30px;
-      max-width: 600px;
-      text-align: center;
-    }
-
-    .logo {
-      width: 180px;
-      margin: 0 auto 20px;
-      display: block;
-    }
-
-    h1 {
-      color: #00477d;
-      font-size: 2rem;
-      margin-bottom: 10px;
-    }
-
-    p.subtitle {
-      color: #333;
-      font-size: 1rem;
-      margin-bottom: 25px;
+      max-width: 95%;
+      padding: 16px;
+      margin: 10px auto;
+      border-radius: 10px;
     }
 
     .widget-wrapper {
-      background: #f9f9f9;
-      border-radius: 10px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      padding: 20px;
-    }
-
-    .blue-button {
-      display: inline-block;
-      background: #3eb7f8;
-      color: white;
-      font-weight: bold;
-      padding: 10px 20px;
+      padding: 10px;
       border-radius: 8px;
-      text-decoration: none;
-      margin: 15px 10px 0;
-      transition: background 0.3s;
+      box-shadow: none;
+      background: transparent;
+      width: 100%;
     }
 
-    .blue-button:hover {
-      background: #00477d;
+    h1 {
+      font-size: 1.6rem;
     }
 
-    footer {
-      text-align: center;
-      color: #777;
-      font-size: 0.9rem;
-      margin-top: 30px;
+    p.subtitle {
+      font-size: 0.95rem;
     }
-  </style>
+  }
+</style>
 </head>
 
 <body class="white-page">
