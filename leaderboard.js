@@ -1,5 +1,5 @@
 // leaderboard.js
-import { supabase } from './supabase.js';
+import { supabase } from "./supabaseClient.js";
 
 document.addEventListener("DOMContentLoaded", async () => {
   const popup = document.getElementById("loadingPopup");

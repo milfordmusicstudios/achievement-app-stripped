@@ -1,5 +1,5 @@
-// Supabase client config – updated to fix CDN + deploy issues
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.3/dist/esm/supabase.js";
+// supabase.js
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
 const SUPABASE_URL = "https://wygdmapqwqjqrmrksaef.supabase.co";
 

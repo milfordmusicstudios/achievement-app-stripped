@@ -1,5 +1,5 @@
 // settings.js — patched to fix password/email updates with switched profiles
-import { supabase } from './supabase.js';
+import { supabase } from "./supabaseClient.js";
 import { recalculateUserPoints } from './utils.js';
 
 // ---------- helpers ----------

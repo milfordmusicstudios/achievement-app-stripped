@@ -1,4 +1,4 @@
-import { supabase } from './supabase.js';
+import { supabase } from "./supabaseClient.js";
 import { recalculateUserPoints } from './utils.js';
 
 const categoryOptions = ["practice", "participation", "performance", "personal", "proficiency"];

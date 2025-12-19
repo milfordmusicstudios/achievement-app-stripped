@@ -1,5 +1,5 @@
 // login.js
-import { supabase } from './supabase.js';
+import { supabase } from "./supabaseClient.js";
 
 window.selectStudent = function(studentId, parentData) {
   console.log("DEBUG: Student selected", studentId);

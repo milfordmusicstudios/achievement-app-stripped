@@ -1,4 +1,4 @@
-import { supabase } from './supabase.js';
+import { supabase } from "./supabaseClient.js";
 
 let allUsers = [];
 let currentPage = 1;

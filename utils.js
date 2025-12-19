@@ -1,4 +1,4 @@
-import { supabase } from './supabase.js';
+import { supabase } from "./supabaseClient.js";
 
 // ✅ Helper: Popup for level-up event
 function showLevelUpPopup(userName, newLevelName) {
