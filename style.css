@@ -4,6 +4,24 @@
    - Focus: Home page layout + shared button styles
    - Keeps generic modal/toast styles for other pages
    ========================================================= */
+.env-badge{
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  z-index: 9999;
+  padding: 6px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .4px;
+  border: 2px solid rgba(0,0,0,.15);
+  box-shadow: 0 6px 16px rgba(0,0,0,.12);
+  background: rgba(255,255,255,.85);
+  backdrop-filter: blur(6px);
+}
+.env-badge.dev { background: rgba(0, 140, 255, .18); }
+.env-badge.demo { background: rgba(255, 200, 0, .22); }
+.env-badge.prod { display:none !important; }
 
 /* ===============================
    BASE / RESET

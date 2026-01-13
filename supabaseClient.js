@@ -41,3 +41,25 @@ export const supabase = createClient(finalConfig.url, finalConfig.anonKey, {
 });
 
 console.log(`[Supabase] client initialized (env=${env})`, supabase);
+
+function renderEnvBadge() {
+  const el = document.getElementById("envBadge");
+  if (!el) return;
+
+  // You likely already have something like ENV or APP_ENV
+  const env = (window.ENV || window.APP_ENV || "prod").toLowerCase();
+
+  el.textContent = `ENV: ${env.toUpperCase()}`;
+
+  el.classList.remove("dev", "demo", "prod");
+  el.classList.add(env);
+
+  // show for dev/demo only
+  if (env === "dev" || env === "demo") {
+    el.style.display = "block";
+  } else {
+    el.style.display = "none";
+  }
+}
+
+document.addEventListener("DOMContentLoaded", renderEnvBadge);
