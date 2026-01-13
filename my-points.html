@@ -9,18 +9,42 @@
 </head>
 <body class="tall-background">
   <main class="app">
+<!-- ✅ Top Bar with Home Button & Level Badge -->
+<section class="points-top">
+  <div class="points-header">
+    <button class="blue-button" onclick="window.location.href='index.html'">Home</button>
+    <img id="levelBadge" src="images/levelBadges/level1.png" alt="Level Badge">
+  </div>
 
-    <!-- ✅ Top Bar with Home Button & Level Badge -->
-    <header style="display:flex; justify-content:space-between; align-items:center; padding:10px 20px;">
-      <button class="blue-button" onclick="window.location.href='index.html'">Home</button>
-      <img id="levelBadge" src="images/levelBadges/level1.png" alt="Level Badge">
-    </header>
+  <h2 class="points-title">My Points</h2>
+</section>
 
-    <!-- ✅ Page Title -->
-    <h2 style="text-align:center; color:#00477d; margin:10px 0;">My Points</h2>
+<!-- 🌟 Highlights: Badges + Challenges -->
+<section class="points-highlight">
 
-    <!-- ✅ Category Summary Cards -->
-    <section id="categorySummary" class="category-summary"></section>
+  <!-- 🏅 Badges Earned -->
+  <section class="badges-section">
+    <h3>Badges Earned</h3>
+    <div class="badges-row" id="earnedBadges">
+      <p class="empty-state">Badges you earn will appear here.</p>
+    </div>
+  </section>
+
+  <!-- 🎯 Teacher Challenges -->
+  <section class="challenges-section">
+    <h3>Teacher Challenges</h3>
+    <div class="challenge-list" id="teacherChallenges">
+      <div class="challenge-card placeholder">
+        <p>No active challenges right now.</p>
+      </div>
+    </div>
+  </section>
+
+</section>
+
+<!-- 📊 Category Summary -->
+<section id="categorySummary" class="category-summary"></section>
+
 
 <!-- ✅ Logs Table (Wrapped for Mobile Scroll) -->
 <section id="logsSection">

@@ -188,8 +188,8 @@ function setIdentity(profile, levelInfo) {
   const pct = Math.max(0, Math.min(100, Math.round(((points - min) / (max - min)) * 100)));
 
   progressFill.style.width = `${pct}%`;
-progressText.textContent = `${points} / ${max} XP`;
-progressPercent.textContent = ''; // intentionally blank
+  progressText.textContent = `${points} pts`;
+  progressPercent.textContent = `${pct}% complete`;
 }
 
 /**
@@ -513,7 +513,7 @@ async function init() {
   if (levelInfo) setIdentity(profile, levelInfo);
 
   wireNavChips();
-  try { await wirePracticeButtons(profile); } catch (e) { console.error('wirePracticeButtons failed:', e); }
+  await wirePracticeButtons(profile);
   await maybeShowWelcomeBackModal(profile.id);
   await maybeShowTeacherGoal(profile);
 }

@@ -2,169 +2,118 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Home | Achievement App</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Achievement Awards - Home</title>
   <link rel="stylesheet" href="style.css" />
 </head>
-<body class="tall-background">
+<body class="app-bg bg-yellow">
 
-  <main>
-    <div class="app">
-      <h2 id="welcomeTitle" class="header"></h2>
+  <main class="home-wrap">
+    <!-- Identity first -->
+    <section class="home-identity">
+      <h1 id="welcomeText" class="home-welcome">Welcome!</h1>
 
-      <div class="avatar-badge">
-        <img id="homeAvatar" class="avatar" src="" alt="Your Avatar" />
-        <img id="homeBadge" class="badge" src="" alt="Level Badge" />
+      <div class="identity-row">
+        <div class="identity-avatar">
+<img
+  id="avatarImg"
+  src="images/icons/default.png"
+  alt="Avatar"
+  onerror="this.onerror=null; this.src='images/icons/default.png';"
+/>
+        </div>
+
+        <div class="identity-level">
+          <img id="levelBadgeImg" src="images/levelBadges/level1.png" alt="Level badge" />
+        </div>
       </div>
 
-      <!-- ✅ Level Progress section only for students -->
-<section id="levelSection">
-  <div id="progressCard" class="progress-card">
-    <h3 class="progress-label">Level Progress</h3>
-<div class="progress-container">
-  <span id="pointsOverlay" class="points-overlay"></span>
-  <div id="homeProgressBar" class="progress-bar"></div>
+      <div class="identity-progress">
+        <div class="progress-card">
+          <div class="progress-title">Level Progress</div>
+          <div class="progress-container">
+            <div id="progressFill" class="progress-fill"></div>
+            <div id="progressText" class="progress-text">0 pts</div>
+          </div>
+          <div id="progressPercent" class="progress-percent">0% complete</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Action hub -->
+    <section class="home-actions" aria-label="Log your progress">
+      <button id="quickPracticeBtn" class="action-primary">
+        ✅ <span>Practice Today</span> <span class="muted">(+5 XP)</span>
+      </button>
+
+      <button id="logPastPracticeBtn" class="action-secondary">
+        🗓️ <span>Log past practice</span> <span class="muted">(last 7 days)</span>
+      </button>
+
+      <div class="action-title">Did you do any of these?</div>
+
+      <div class="action-grid">
+        <button class="chip" data-category="proficiency" data-hint="Finish a book">📘 Finish a book</button>
+        <button class="chip" data-category="participation" data-hint="Group class">👥 Group class</button>
+        <button class="chip" data-category="performance" data-hint="Performance">🎤 Performance</button>
+        <button class="chip" data-category="participation" data-hint="Competition">🏅 Competition</button>
+        <button class="chip" data-category="proficiency" data-hint="Festival rating">🏆 Festival rating</button>
+        <button class="chip" data-category="proficiency" data-hint="Memorization">🧠 Memorization</button>
+        <button class="chip" data-category="proficiency" data-hint="Theory/Technique test">📝 Theory/Technique test</button>
+        <button class="chip" data-category="personal" data-hint="Personal goal">🎯 Personal goal</button>
+
+        <!-- Teacher goal (only shown if teacher/admin has assigned something active) -->
+        <button id="teacherGoalChip" class="chip chip-teacher" data-category="personal" data-hint="Teacher goal" style="display:none;">
+          ⭐ Teacher goal
+        </button>
+      </div>
+
+<div class="helper-text">
+  Pending = in review by your teacher 👍
 </div>
-  </div>
-  <div class="percent-text" id="homeProgressLabel">0% to next level</div>
-</section>
 
-      <div class="button-wrapper">
-        <div class="button-area">
-
-<!-- 🔹 Row 1: Log Points + My Points / Review Logs -->
-<div class="button-row" id="topButtonRow">
-  <!-- Log Points -->
-  <div class="button-col">
-    <button class="nav-button log" onclick="location.href='log-points.html'">
-      <div class="btn-content">
-        <div class="btn-icon">
-          <img src="images/icons/log.png" alt="Log Icon" />
-        </div>
-        <div class="btn-text">Log Points</div>
-      </div>
-    </button>
-  </div>
-
-  <!-- My Points (Student only, shows in center) -->
-  <div class="button-col" id="middleButtonCol">
-    <button id="myPointsBtn" class="nav-button points invisible" onclick="location.href='my-points.html'">
-      <div class="btn-content">
-        <div class="btn-icon">
-          <img src="images/icons/myAchievements.png" alt="My Points Icon" />
-        </div>
-        <div class="btn-text">My Points</div>
-      </div>
-    </button>
-
-    <!-- Review Logs (Teacher/Admin only, replaces My Points in same space) -->
-    <button id="reviewLogsBtn" class="nav-button review invisible" onclick="location.href='review-logs.html'">
-      <div class="btn-content">
-        <div class="btn-icon">
-          <img src="images/icons/review.png" alt="Review Logs Icon" />
-        </div>
-        <div class="btn-text">Review Logs</div>
-      </div>
-    </button>
-  </div>
+      <div class="recent-badge">
+<h3 class="achievement-title">✨ Your Latest Achievement</h3>
+<div id="recentBadgeSlot" class="recent-badge-slot">
+  <img
+    id="recentBadgeImg"
+    src="images/badges/demo.png"
+    alt="Most recent badge"
+  />
+<div class="badge-helper-text">
+  Keep logging wins — your next badge is coming ✨
 </div>
-
-          <!-- 🔹 Admin Only -->
-          <div class="button-row">
-            <div class="button-col"></div>
-             <div class="button-col">
-                <button id="manageUsersBtn" class="blue-button" style="display: none;" onclick="goToManageUsers()">
-              <div class="btn-content">
-                <div class="btn-icon">
-                  <img src="images/icons/manage.png" alt="Manage Icon" />
-                </div>
-                <div class="btn-text">Manage Users</div>
-              </div>
-            </button>
-          </div>
-          <div class="button-col"></div>
-         </div>
-          <!-- 🔹 Leaderboard -->
-          <div class="button-row center">
-                        <div class="button-col"></div>
-             <div class="button-col">
-
-            <button class="highlight-button leaderboard" onclick="location.href='leaderboard.html'">
-              <div class="btn-content">
-                <div class="btn-icon">
-                  <img src="images/icons/leaderboard.png" alt="Leaderboard Icon" />
-                </div>
-                <div class="btn-text">Leaderboard</div>
-              </div>
-            </button>
-          </div>
-          <div class="button-col"></div>
-         </div>
-
-          <!-- 🔹 Settings and FAQ -->
-          <div class="button-row">
-            <button class="nav-button settings" onclick="location.href='settings.html'">
-              <img class="icon" src="images/icons/settings.png" alt="Settings Icon" /> Settings
-            </button>
-            <button class="nav-button faq" onclick="location.href='faq.html'">
-              <img class="icon" src="images/icons/faq.png" alt="FAQ Icon" /> Points Info
-            </button>
-          </div>
-        </div>
+</div>
       </div>
-    </div>
+    </section>
+
+    <!-- Fun button -->
+    <section class="home-fun">
+      <a class="big-fun-btn" href="leaderboard.html">✨ Leaderboard</a>
+    </section>
+
+    <!-- Utility nav -->
+    <section class="home-nav">
+      <a class="nav-btn" href="my-points.html">My Points</a>
+      <a class="nav-btn" href="settings.html">Settings</a>
+    </section>
   </main>
 
-  <footer>
-    &copy; 2025 Milford Music Studios Achievement App
-  </footer>
+  <!-- Absence modal -->
+  <div id="welcomeBackOverlay" class="modal-overlay" style="display:none;">
+    <div class="modal">
+      <h2>Welcome back!</h2>
+      <p>We haven’t seen you in a bit. Want help catching up?</p>
+      <div class="modal-actions">
+        <button id="modalLogPractice" class="blue-button">Log Practice</button>
+        <button id="modalLogOther" class="blue-button">Log Other Music</button>
+      </div>
+      <button id="modalNotNow" class="modal-link">Not now</button>
+    </div>
+  </div>
 
-  <!-- ✅ Scripts -->
-  <script type="module" src="home.js"></script>
-
-  <!-- ✅ Role-based visibility + avatar fallback -->
-  <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      const user = JSON.parse(localStorage.getItem("loggedInUser"));
-      const role = localStorage.getItem("activeRole") || (Array.isArray(user?.role) ? user.role[0] : user?.role);
-
-      const myPointsBtn = document.getElementById("myPointsBtn");
-      const reviewLogsBtn = document.getElementById("reviewLogsBtn");
-      const manageUsersBtn = document.getElementById("manageUsersBtn");
-      const levelSection = document.getElementById("levelSection");
-      const homeAvatar = document.getElementById("homeAvatar");
-
-      // Show/hide buttons and sections based on role
-      myPointsBtn.classList.remove("invisible");
-      reviewLogsBtn.classList.remove("invisible");
-      myPointsBtn.style.display = "flex";
-      reviewLogsBtn.style.display = "flex";
-
-      if (role === "admin") {
-        myPointsBtn.classList.add("invisible");
-        reviewLogsBtn.classList.remove("invisible");
-        manageUsersBtn.style.display = "inline-block";
-        levelSection.style.display = "none";
-      } else if (role === "teacher") {
-        myPointsBtn.classList.add("invisible");
-        reviewLogsBtn.classList.remove("invisible");
-        levelSection.style.display = "none";
-      } else {
-        reviewLogsBtn.classList.add("invisible");
-        myPointsBtn.classList.remove("invisible");
-        levelSection.style.display = "block";
-      }
-
-      // Avatar fallback
-      if (homeAvatar && user) {
-        const avatarPath = user.avatar ? user.avatar : "images/logos/default.png";
-        homeAvatar.src = avatarPath;
-      }
-    });
-
-    function goToManageUsers() {
-      window.location.href = "manage-users.html";
-    }
-  </script>
+<script src="config.js"></script>
+<script type="module" src="supabaseClient.js"></script>
+<script type="module" src="home.js"></script>
 </body>
 </html>

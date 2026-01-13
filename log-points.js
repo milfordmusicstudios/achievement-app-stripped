@@ -1,5 +1,112 @@
 import { supabase } from "./supabaseClient.js";
 import { recalculateUserPoints } from './utils.js';
+// =========================
+// LOCAL DEMO MODE (no Supabase required)
+// Triggered when:
+// - URL has ?demo=1 OR
+// - running on localhost/127.0.0.1 OR
+// - opened via file://
+// Safe for production: does not trigger on hosted domains.
+// =========================
+const DEMO_MODE = (() => {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('demo') === '1') return true;
+    const host = window.location.hostname;
+    if (host === 'localhost' || host === '127.0.0.1') return true;
+    if (window.location.protocol === 'file:') return true;
+  } catch (e) {}
+  return false;
+})();
+
+function demoSeedSession() {
+  // Create a consistent demo user + role if missing
+  const existing = localStorage.getItem('loggedInUser');
+  const existingRole = localStorage.getItem('activeRole');
+  if (!existing) {
+    const demoUser = {
+      id: 'demo-student-1',
+      firstName: 'Demo',
+      lastName: 'Student',
+      avatarUrl: './images/bitmojis/default.png',
+      roles: ['student'],
+    };
+    localStorage.setItem('loggedInUser', JSON.stringify(demoUser));
+  }
+  if (!existingRole) localStorage.setItem('activeRole', 'student');
+}
+
+function demoGetUser() {
+  try {
+    const raw = localStorage.getItem('loggedInUser');
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function demoGetLogs() {
+  try {
+    const raw = localStorage.getItem('demoLogs');
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function demoSaveLogs(logs) {
+  localStorage.setItem('demoLogs', JSON.stringify(logs));
+}
+
+function demoComputePointsForUser(userId) {
+  const logs = demoGetLogs().filter(l => l.userId === userId && (l.status || 'approved') === 'approved');
+  return logs.reduce((sum, l) => sum + (Number(l.points) || 0), 0);
+}
+
+function demoLevels() {
+  // Simple progressive thresholds; replace later with your real 12-level table if desired
+  return [
+    { level: 1, min: 0,   max: 99 },
+    { level: 2, min: 100, max: 249 },
+    { level: 3, min: 250, max: 449 },
+    { level: 4, min: 450, max: 699 },
+    { level: 5, min: 700, max: 999 },
+    { level: 6, min: 1000, max: 1349 },
+    { level: 7, min: 1350, max: 1749 },
+    { level: 8, min: 1750, max: 2199 },
+    { level: 9, min: 2200, max: 2699 },
+    { level: 10, min: 2700, max: 3299 },
+    { level: 11, min: 3300, max: 3999 },
+    { level: 12, min: 4000, max: 999999 },
+  ];
+}
+
+function demoLevelFromPoints(points) {
+  const lvls = demoLevels();
+  const match = lvls.find(l => points >= l.min && points <= l.max) || lvls[0];
+  return match.level;
+}
+
+
+async function insertLogRow(row) {
+  if (DEMO_MODE) {
+    const logs = demoGetLogs();
+    logs.push({
+      id: `demo-log-${Date.now()}`,
+      userId: row.user_id || row.userId || (demoGetUser()||{}).id || 'demo-student-1',
+      category: row.category,
+      points: Number(row.points)||0,
+      date: row.date || new Date().toISOString().slice(0,10),
+      note: row.note || row.notes || '',
+      status: row.status || 'approved',
+      createdAt: new Date().toISOString(),
+    });
+    demoSaveLogs(logs);
+    return { data: logs[logs.length-1], error: null };
+  }
+  return await insertLogRow(row).select().single();
+}
+
 
 document.addEventListener("DOMContentLoaded", async () => {
   const user = JSON.parse(localStorage.getItem("loggedInUser"));
@@ -34,6 +141,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   // ✅ Show default category preview
   if (previewImage) previewImage.src = "images/categories/allCategories.png";
 
+// URL prefill (from Home chips)
+const urlParams = new URLSearchParams(window.location.search);
+const PREFILL_CATEGORY = urlParams.get('category');
+const PREFILL_HINT = urlParams.get('hint');
+const PREFILL_MODE = urlParams.get('mode');
+
   // ✅ Load categories
   const { data: categories, error: catErr } = await supabase
     .from("categories")
@@ -51,6 +164,17 @@ document.addEventListener("DOMContentLoaded", async () => {
       opt.textContent = cat.name;
       categorySelect.appendChild(opt);
     });
+
+    // Prefill category when arriving from Home shortcuts
+    if (PREFILL_CATEGORY) {
+      categorySelect.value = PREFILL_CATEGORY;
+      categorySelect.dispatchEvent(new Event('change'));
+    }
+    if (PREFILL_HINT) {
+      const notesEl = document.getElementById('notes');
+      if (notesEl && !notesEl.value) notesEl.placeholder = PREFILL_HINT;
+    }
+
     // ✅ Category descriptions
 const categoryDescriptions = {
   "practice": "Daily practice (5 point)s.",

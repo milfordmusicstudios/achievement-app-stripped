@@ -58,12 +58,7 @@ function demoSaveLogs(logs) {
 }
 
 function demoComputePointsForUser(userId) {
-  // Accept either userId or user_id field names (older demo snippets)
-  const logs = demoGetLogs().filter(l => {
-    const uid = l.userId || l.user_id;
-    const status = (l.status || 'approved');
-    return uid === userId && status === 'approved';
-  });
+  const logs = demoGetLogs().filter(l => l.userId === userId && (l.status || 'approved') === 'approved');
   return logs.reduce((sum, l) => sum + (Number(l.points) || 0), 0);
 }
 
@@ -152,7 +147,7 @@ async function getLevelInfo(levelNum) {
       id: `demo-level-${found.level}`,
       name: `Level ${found.level}`,
       color: '#00477d',
-      badge: `./images/levelBadges/level${found.level}.png`,
+      badge: './images/badges/level1.png',
       minPoints: found.min,
       maxPoints: found.max,
     };
@@ -188,8 +183,8 @@ function setIdentity(profile, levelInfo) {
   const pct = Math.max(0, Math.min(100, Math.round(((points - min) / (max - min)) * 100)));
 
   progressFill.style.width = `${pct}%`;
-progressText.textContent = `${points} / ${max} XP`;
-progressPercent.textContent = ''; // intentionally blank
+  progressText.textContent = `${points} pts`;
+  progressPercent.textContent = `${pct}% complete`;
 }
 
 /**
@@ -197,27 +192,6 @@ progressPercent.textContent = ''; // intentionally blank
  * Uses category='practice', points=5, status='approved', isPractice=true, source='student'
  */
 async function insertPracticeLogForDate(userId, isoDate) {
-  // DEMO MODE: store in localStorage.demoLogs, never call Supabase
-  if (DEMO_MODE) {
-    const logs = demoGetLogs();
-    const already = logs.find(l => (l.userId || l.user_id) === userId && l.date === isoDate && l.category === 'practice');
-    if (already) return { ok: false, reason: 'already_logged' };
-
-    logs.push({
-      id: `demo-${Date.now()}`,
-      userId,
-      date: isoDate,
-      category: 'practice',
-      points: 5,
-      status: 'approved',
-      note: 'Practice',
-      source: 'student',
-    });
-    demoSaveLogs(logs);
-    return { ok: true };
-  }
-
-  // PRODUCTION: Supabase
   // Check for existing practice entry that day
   const { data: existing, error: existErr } = await supabase
     .from('logs')
@@ -253,27 +227,7 @@ async function insertPracticeLogForDate(userId, isoDate) {
   return { ok: true };
 }
 
-
 async function recalcUserPointsAndLevel(userId) {
-  // DEMO MODE: compute from demoLogs and update localStorage.loggedInUser
-  if (DEMO_MODE) {
-    const total = demoComputePointsForUser(userId);
-    const level = demoLevelFromPoints(total);
-
-    try {
-      const raw = localStorage.getItem('loggedInUser');
-      const u = raw ? JSON.parse(raw) : null;
-      if (u && (u.id === userId || u.userId === userId)) {
-        u.points = total;
-        u.level = level;
-        localStorage.setItem('loggedInUser', JSON.stringify(u));
-      }
-    } catch (e) {}
-
-    return;
-  }
-
-  // PRODUCTION: Supabase
   // Sum approved points
   const { data: logs, error } = await supabase
     .from('logs')
@@ -302,7 +256,6 @@ async function recalcUserPointsAndLevel(userId) {
   await supabase.from('users').update({ points: total, level }).eq('id', userId);
 }
 
-
 function toast(msg) {
   // Lightweight, no dependencies
   const t = document.createElement('div');
@@ -330,52 +283,7 @@ function wireNavChips() {
 }
 
 async function maybeShowWelcomeBackModal(userId) {
-  // DEMO MODE: use demoLogs to find most recent log date
-  if (DEMO_MODE) {
-    const logs = demoGetLogs()
-      .filter(l => (l.userId || l.user_id) === userId)
-      .sort((a, b) => String(b.date).localeCompare(String(a.date)));
-
-    if (!logs.length) return;
-
-    const lastDate = new Date(logs[0].date + 'T00:00:00');
-    const now = new Date();
-    const days = daysBetween(lastDate, now);
-    if (days < 7) return;
-
-    const overlay = qs('welcomeBackOverlay');
-    const logPractice = qs('modalLogPractice');
-    const logOther = qs('modalLogOther');
-    const notNow = qs('modalNotNow');
-
-    overlay.style.display = 'flex';
-
-    notNow.addEventListener('click', () => { overlay.style.display = 'none'; });
-    logOther.addEventListener('click', () => {
-      overlay.style.display = 'none';
-      document.querySelector('.home-actions')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    });
-    logPractice.addEventListener('click', async () => {
-      overlay.style.display = 'none';
-      const iso = todayISO();
-      const res = await insertPracticeLogForDate(userId, iso);
-      if (res.ok) {
-        await recalcUserPointsAndLevel(userId);
-        toast('Practice logged ✅');
-        const profile = await getCurrentUserProfile();
-        const levelInfo = await getLevelInfo(profile.level);
-        setIdentity(profile, levelInfo);
-      } else if (res.reason === 'already_logged') {
-        toast('Already logged practice today.');
-      } else {
-        toast('Could not log practice. Try again.');
-      }
-    });
-
-    return;
-  }
-
-  // PRODUCTION: Supabase — Look at most recent log date
+  // Look at most recent log date
   const { data, error } = await supabase
     .from('logs')
     .select('date')
@@ -423,7 +331,6 @@ async function maybeShowWelcomeBackModal(userId) {
   });
 }
 
-
 async function wirePracticeButtons(profile) {
   const quickPracticeBtn = qs('quickPracticeBtn');
   const logPastPracticeBtn = qs('logPastPracticeBtn');
@@ -454,28 +361,11 @@ async function wirePracticeButtons(profile) {
 }
 
 async function maybeShowTeacherGoal(profile) {
+  // If you later add a tasks table, this will light up automatically.
+  // For now it stays hidden unless the query succeeds and returns active tasks.
   const chip = qs('teacherGoalChip');
   if (!chip) return;
 
-  // DEMO MODE: show chip if localStorage.demoTeacherGoal exists + is assigned/active
-  if (DEMO_MODE) {
-    try {
-      const raw = localStorage.getItem('demoTeacherGoal');
-      const goal = raw ? JSON.parse(raw) : null;
-      if (goal && ['assigned', 'active'].includes(String(goal.status || 'assigned'))) {
-        chip.style.display = 'inline-flex';
-        chip.addEventListener('click', () => {
-          // For now, send them to My Points where tasks/goals will live
-          const url = new URL('my-points.html', window.location.href);
-          url.searchParams.set('tab', 'tasks');
-          window.location.href = url.toString();
-        });
-      }
-    } catch (e) {}
-    return;
-  }
-
-  // PRODUCTION: If you later add a tasks table, this will light up automatically.
   try {
     const { data, error } = await supabase
       .from('tasks')
@@ -497,7 +387,6 @@ async function maybeShowTeacherGoal(profile) {
   }
 }
 
-
 async function init() {
   const profile = await getCurrentUserProfile();
   if (!profile) {
@@ -513,7 +402,7 @@ async function init() {
   if (levelInfo) setIdentity(profile, levelInfo);
 
   wireNavChips();
-  try { await wirePracticeButtons(profile); } catch (e) { console.error('wirePracticeButtons failed:', e); }
+  await wirePracticeButtons(profile);
   await maybeShowWelcomeBackModal(profile.id);
   await maybeShowTeacherGoal(profile);
 }
