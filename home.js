@@ -33,7 +33,14 @@ async function loadLevel(level) {
 
 function renderIdentity(profile, level) {
   qs('welcomeText').textContent = `Welcome, ${profile.first_name || 'Student'}!`;
-  qs('avatarImg').src = profile.avatar_url || 'images/icons/default.png';
+const avatarImg = document.getElementById("avatarImg");
+const url = user?.avatarUrl;
+
+if (avatarImg) {
+  avatarImg.src = (typeof url === "string" && url.trim())
+    ? url
+    : "images/icons/default.png";
+}
   qs('levelBadgeImg').src = level.badge_url;
 
   const pct = Math.min(
