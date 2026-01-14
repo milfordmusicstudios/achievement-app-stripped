@@ -41,6 +41,7 @@ export const supabase = createClient(finalConfig.url, finalConfig.anonKey, {
     autoRefreshToken: true,
   },
 });
+window.supabase = supabase;
 
 console.log(`[Supabase] client initialized (env=${env})`, supabase);
 
