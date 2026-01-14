@@ -21,7 +21,7 @@ async function loadLevel(level) {
   const { data, error } = await supabase
     .from('levels')
     .select('*')
-    .eq('level', level)
+.eq('id', 1)
     .single();
 
   if (error) {
