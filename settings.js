@@ -221,6 +221,61 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('lastName').value  = user.lastName  || '';
   document.getElementById('newEmail').value  = user.email     || '';
   document.getElementById('avatarImage').src = user.avatarUrl || 'images/logos/default.png';
+  // ----- Avatar click → file picker + upload -----
+  const avatarImgEl = document.getElementById('avatarImage');
+  const avatarInputEl = document.getElementById('avatarInput');
+
+  if (avatarImgEl && avatarInputEl) {
+    avatarImgEl.addEventListener('click', () => avatarInputEl.click());
+
+    avatarInputEl.addEventListener('change', async () => {
+      try {
+        const file = avatarInputEl.files?.[0];
+        if (!file) return;
+
+        // Make a predictable path per user (overwrite on update)
+        const ext = (file.name.split('.').pop() || 'png').toLowerCase();
+        const filePath = `${user.id}.${ext}`;
+
+        // Upload (upsert overwrites existing)
+        const { error: upErr } = await supabase
+          .storage
+          .from('avatars')
+          .upload(filePath, file, { upsert: true, contentType: file.type });
+
+        if (upErr) throw upErr;
+
+        // Public URL (bucket is public)
+        const { data: pub } = supabase
+          .storage
+          .from('avatars')
+          .getPublicUrl(filePath);
+
+        const publicUrl = pub?.publicUrl;
+        if (!publicUrl) throw new Error('Failed to generate public avatar URL');
+
+        // Save to users table + localStorage
+        const { error: dbErr } = await supabase
+          .from('users')
+          .update({ avatarUrl: publicUrl })
+          .eq('id', user.id);
+
+        if (dbErr) throw dbErr;
+
+        user.avatarUrl = publicUrl;
+        localStorage.setItem('loggedInUser', JSON.stringify(user));
+        avatarImgEl.src = publicUrl;
+
+        alert('Avatar updated!');
+      } catch (err) {
+        console.error('[Avatar] upload failed:', err);
+        alert('Avatar upload failed: ' + (err?.message || err));
+      } finally {
+        // allow re-selecting same file
+        avatarInputEl.value = '';
+      }
+    });
+  }
 
   // determine if viewing own account for creds guard
   const { data: authData } = await supabase.auth.getUser();
