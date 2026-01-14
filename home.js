@@ -41,7 +41,7 @@ if (avatarImg) {
     ? url
     : "images/icons/default.png";
 }
-  qs('levelBadgeImg').src = level.badge_url;
+qs('levelBadgeImg').src = level.badge;
 
   const pct = Math.min(
     100,
