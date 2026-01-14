@@ -131,11 +131,18 @@ if (teachersAvailable && teacherIds.length === 0) {
     submitBtn.disabled = true;
 
     try {
-      // ✅ Step 1: Sign Up Auth User
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({ email, password });
-      if (signUpError) {
-        throw new Error(signUpError.message);
-      }
+const { data: signUpData, error: signUpError } =
+  await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      emailRedirectTo: `${window.location.origin}/login.html`
+    }
+  });
+
+if (signUpError) {
+  throw new Error(signUpError.message);
+}
 
       const userId = signUpData.user?.id;
       if (!userId) {
