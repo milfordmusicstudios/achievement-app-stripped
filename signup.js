@@ -141,7 +141,8 @@ const { data: signUpData, error: signUpError } =
   });
 
 if (signUpError) {
-  throw new Error(signUpError.message);
+  console.error("SIGNUP ERROR OBJECT:", signUpError);
+  throw signUpError;
 }
 
       const userId = signUpData.user?.id;
