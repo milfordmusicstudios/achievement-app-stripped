@@ -34,7 +34,7 @@ async function loadLevel(level) {
 function renderIdentity(profile, level) {
   qs('welcomeText').textContent = `Welcome, ${profile.first_name || 'Student'}!`;
 const avatarImg = document.getElementById("avatarImg");
-const url = user?.avatarUrl;
+const url = profile?.avatarUrl;
 
 if (avatarImg) {
   avatarImg.src = (typeof url === "string" && url.trim())
