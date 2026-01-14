@@ -3,7 +3,10 @@ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 
 // APP_ENV must be set in config.js before this file loads.
 // Allowed: "dev" | "prod" | "demo"
-const env = (window.APP_ENV || "dev").toLowerCase();
+const env = (
+  window.APP_ENV ||
+  (location.hostname.includes("vercel.app") ? "dev" : "prod")
+).toLowerCase();
 
 const SUPABASE_CONFIG = {
   dev: {
@@ -46,7 +49,10 @@ function renderEnvBadge() {
   if (!el) return;
 
   // You likely already have something like ENV or APP_ENV
-  const env = (window.ENV || window.APP_ENV || "prod").toLowerCase();
+const env = (
+  window.APP_ENV ||
+  (location.hostname.includes("vercel.app") ? "dev" : "prod")
+).toLowerCase();
 
   el.textContent = `ENV: ${env.toUpperCase()}`;
 

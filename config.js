@@ -20,6 +20,11 @@ const BASE_UPLOAD = "https://achievement-backend-a693.onrender.com";
     window.APP_ENV = "dev";
     return;
   }
+// Any Vercel deployment (preview/dev) should use DEV
+if (host.endsWith("vercel.app")) {
+  window.APP_ENV = "dev";
+  return;
+}
 
   // Default to prod
   window.APP_ENV = "prod";
