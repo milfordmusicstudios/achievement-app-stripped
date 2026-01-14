@@ -18,18 +18,18 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ✅ Load Teachers into Multi-Select (supports roles as array or string)
-  async function loadTeachers() {
-    const { data: teachers, error } = await supabase
-      .from("users")
-      .select("id, firstName, lastName, roles");
+async function loadTeachers() {
+  const { data: teachers, error } = await supabase
+    .from("users")
+    .select('id, "firstName", "lastName", roles');
 
-    if (error) {
-      console.error("Error loading teachers:", error);
-      return;
-    }
+  if (error) {
+    console.error("Error loading teachers:", error);
+    return;
+  }
 
-    const teacherSelect = document.getElementById("teacherIds");
-    teacherSelect.innerHTML = "";
+  const teacherSelect = document.getElementById("teacherIds");
+  teacherSelect.innerHTML = "";
 
     const isTeacherish = (roles) => {
       if (!roles) return false;
@@ -142,40 +142,13 @@ if (teachersAvailable && teacherIds.length === 0) {
         throw new Error("Signup failed. Try again.");
       }
 
-      // ✅ Step 2: Upload Avatar (if provided)
-      let avatarUrl = null;
-      const avatarFile = document.getElementById('avatarInput').files[0];
-      if (avatarFile) {
-        const fileName = `${userId}-${Date.now()}-${avatarFile.name.replace(/\s+/g, "_")}`;
-        const { error: uploadError } = await supabase.storage.from("avatars").upload(fileName, avatarFile, { upsert: true });
-        if (!uploadError) {
-          const { data: publicUrl } = supabase.storage.from("avatars").getPublicUrl(fileName);
-          avatarUrl = publicUrl.publicUrl;
-        } else {
-          console.warn("Avatar upload failed:", uploadError.message);
-        }
-      }
 
-      // ✅ Step 3: Insert into Custom Users Table
-      const { error: insertError } = await supabase.from('users').insert([{
-        id: userId,
-        firstName,
-        lastName,
-        email,
-        instrument: instruments,   // array
-        teacherIds,                // array of IDs
-        avatarUrl,
-        roles: ['student'],
-        points: 0
-      }]);
 
-      if (insertError) {
-        throw new Error(insertError.message);
-      }
+alert("Check your email to confirm your account, then log in.");
+window.location.href = "login.html";
+return;
 
-      alert("Signup successful! You may now log in.");
-      window.location.href = 'login.html';
-    } catch (err) {
+} catch (err) {
       console.error("Signup error:", err);
       errorDisplay.textContent = err.message || "Something went wrong. Please try again.";
       errorDisplay.style.display = 'block';
