@@ -68,3 +68,4 @@ const env = (
 }
 
 document.addEventListener("DOMContentLoaded", renderEnvBadge);
+window.supabase = supabase; // DEV ONLY – expose for console testing
