@@ -62,6 +62,8 @@ console.log("DEBUG: Login success, user id:", userId);
 const pendingEmail = (localStorage.getItem("pendingChildrenEmail") || "").toLowerCase();
 const pendingRaw = localStorage.getItem("pendingChildren");
 const pendingChildren = pendingRaw ? JSON.parse(pendingRaw) : [];
+console.log("FINALIZE: pendingChildren =", pendingChildren);
+
 
 const authEmail = (sessionData.session.user.email || "").toLowerCase();
 const shouldFinalize = pendingChildren.length > 0 && pendingEmail === authEmail;
