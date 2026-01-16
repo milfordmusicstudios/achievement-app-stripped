@@ -15,12 +15,15 @@
 
       <div class="identity-row">
         <div class="identity-avatar">
-<img
-  id="avatarImg"
-  src="images/icons/default.png"
-  alt="Avatar"
-  onerror="this.onerror=null; this.src='images/icons/default.png';"
-/>
+          <button id="avatarSwitcher" class="avatar-button" type="button" aria-haspopup="menu" aria-expanded="false">
+            <img
+              id="avatarImg"
+              src="images/icons/default.png"
+              alt="Avatar"
+              onerror="this.onerror=null; this.src='images/icons/default.png';"
+            />
+          </button>
+          <div id="avatarMenu" class="avatar-menu" role="menu" hidden></div>
         </div>
 
         <div class="identity-level">

@@ -113,6 +113,21 @@ a.big-fun-btn:focus-visible {
 }
 
 /* Avatar */
+.identity-avatar {
+  position: relative;
+}
+
+.avatar-button {
+  background: none;
+  border: 0;
+  padding: 0;
+  border-radius: 18px;
+  cursor: pointer;
+}
+.avatar-button.no-switch {
+  cursor: default;
+}
+
 .identity-avatar img,
 #avatarImg {
   width: 110px;
@@ -122,6 +137,50 @@ a.big-fun-btn:focus-visible {
   border: 4px solid rgba(255,255,255,0.88);
   box-shadow: 0 10px 22px rgba(0,0,0,0.18);
   background: rgba(255,255,255,0.55);
+}
+
+.avatar-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 200px;
+  background: rgba(255,255,255,0.96);
+  border: 2px solid rgba(11,79,138,0.2);
+  border-radius: 14px;
+  box-shadow: 0 10px 24px rgba(0,0,0,0.16);
+  padding: 6px;
+  display: grid;
+  gap: 6px;
+  z-index: 20;
+}
+.avatar-menu[hidden] {
+  display: none;
+}
+.avatar-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid rgba(11,79,138,0.15);
+  font-weight: 700;
+  color: #0B4F8A;
+  text-align: left;
+}
+.avatar-menu-item img {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: rgba(255,255,255,0.6);
+  border: 2px solid rgba(255,255,255,0.8);
+}
+.avatar-menu-item.is-active {
+  background: rgba(18,121,200,0.12);
+  border-color: rgba(18,121,200,0.35);
 }
 
 /* Level badge */
@@ -424,6 +483,7 @@ a.big-fun-btn:focus-visible {
   .identity-row { justify-content: center; gap: 10px; }
   .identity-avatar img, #avatarImg { width: 96px; height: 96px; }
   .identity-level img { width: 120px; height: 120px; }
+  .avatar-menu { min-width: 180px; }
 
   .progress-card { padding: 12px 12px; border-radius: 18px; }
   .progress-title { font-size: 20px; }
