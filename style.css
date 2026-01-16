@@ -887,3 +887,76 @@ img {
   height: auto;
   display: block;
 }
+/* =========================================================
+   SETTINGS PAGE OVERRIDES (wins against global conflicts)
+   Put this at the VERY BOTTOM of style.css
+   ========================================================= */
+
+body.settings-page main.app{
+  /* Stop auth-page flex rules from affecting settings */
+  display: block !important;
+
+  /* Center and constrain settings content */
+  width: 100% !important;
+  max-width: 560px !important;
+  margin: 0 auto !important;
+  padding: 22px 16px 34px !important;
+}
+
+/* Make the settings card feel like PROD */
+body.settings-page .form-card,
+body.settings-page .settings-form{
+  width: 100% !important;
+  max-width: 560px !important;
+  margin: 0 auto !important;
+  background: rgba(255,255,255,0.92) !important;
+  border-radius: 18px !important;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.12) !important;
+  padding: 18px 16px !important;
+}
+
+/* Title spacing (fixes the “floating left” feel) */
+body.settings-page h2,
+body.settings-page h3{
+  text-align: center !important;
+  margin: 12px 0 16px !important;
+}
+
+/* Inputs: consistent width and calmer spacing */
+body.settings-page input,
+body.settings-page select{
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 auto 12px !important;
+  border-radius: 12px !important;
+}
+
+/* Buttons: keep them aligned + consistent */
+body.settings-page .button-row,
+body.settings-page .settings-buttons{
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 12px !important;
+  width: 100% !important;
+  margin-top: 14px !important;
+}
+
+body.settings-page .button-row button,
+body.settings-page .settings-buttons button,
+body.settings-page .blue-button{
+  width: 100% !important;
+}
+
+/* Stack buttons on narrow screens */
+@media (max-width: 520px){
+  body.settings-page .button-row,
+  body.settings-page .settings-buttons{
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Keep avatar area centered */
+body.settings-page #avatarImg,
+body.settings-page .avatar img{
+  margin: 0 auto !important;
+}

@@ -1,0 +1,108 @@
+/* =========================
+   Achievement App — Layout System (DEV)
+   Goal: stable centering + predictable spacing
+   ========================= */
+
+/* Base reset */
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  font-family: "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
+  color: #0b2b3f;
+}
+
+/* Design tokens (can evolve) */
+:root{
+  --page-max: 980px;          /* global content width */
+  --gutter: 16px;             /* side padding */
+  --radius: 16px;
+  --card: #ffffff;
+  --card-border: rgba(0,0,0,.08);
+  --shadow: 0 10px 30px rgba(0,0,0,.10);
+  --text: #0b2b3f;
+  --muted: rgba(11,43,63,.65);
+  --blue: #3399e8;
+}
+
+/* Background behavior (works whether you use body background or a bg <img>) */
+body {
+  background-color: #f6fbff;
+}
+
+/* ENV badge should never affect layout */
+.env-badge{
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 9999;
+}
+
+/* ---------- App Shell ---------- */
+/* Wrap every page’s <main class="app"> content inside .app-shell for consistency */
+.app-shell{
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;   /* center horizontally */
+  padding: 24px var(--gutter);
+}
+
+/* Standard centered page container */
+.page{
+  width: 100%;
+  max-width: var(--page-max);
+}
+
+/* Optional card container (Settings, forms, etc.) */
+.card{
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 22px;
+}
+
+/* Headings */
+.h1, h1 { margin: 0 0 14px; color: var(--text); }
+.h2, h2 { margin: 0 0 12px; color: var(--text); }
+.subtle { color: var(--muted); }
+
+/* ---------- Layout utilities ---------- */
+.stack{ display: flex; flex-direction: column; gap: 14px; }
+.row{ display: flex; gap: 14px; align-items: center; }
+.row.wrap{ flex-wrap: wrap; }
+.center{ display:flex; justify-content:center; align-items:center; }
+.space-between{ display:flex; justify-content:space-between; align-items:center; }
+
+.grid2{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.grid3{
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+.grid4{
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+
+@media (max-width: 820px){
+  :root{ --page-max: 560px; }
+  .grid4{ grid-template-columns: 1fr 1fr; }
+  .grid3{ grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 520px){
+  .grid2{ grid-template-columns: 1fr; }
+  .grid4{ grid-template-columns: 1fr; }
+  .grid3{ grid-template-columns: 1fr; }
+  .app-shell{ padding: 18px var(--gutter); }
+  .card{ padding: 18px; }
+}
+
+/* Prevent horizontal “mystery drift” */
+img, svg, canvas, video { max-width: 100%; height: auto; }
+.page, .card, main, section { min-width: 0; }
