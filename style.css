@@ -41,25 +41,24 @@ html, body {
 ================================ */
 body.app-bg {
   min-height: 100vh;
+  position: relative;
+  background: none;
+}
+
+body.app-bg::before {
+  content: "";
+  position: fixed;
+  inset: 0;
   background-size: cover;
   background-repeat: no-repeat;
   background-position: center top;
-  background-attachment: fixed; /* desktop; mobile may ignore */
+  z-index: -1;
 }
 
 /* Background variants */
-body.bg-yellow { background-image: url("images/background/yellow.png"); }
-body.bg-teal   { background-image: url("images/background/teal.png"); }
-body.bg-blue   { background-image: url("images/background/blue.png"); }
-
-/* ===============================
-   APP WRAPPER
-================================ */
-main.app {
-  width: 100%;
-  margin: 0 auto;
-  padding: 0;
-}
+body.bg-yellow::before { background-image: url("images/background/yellow.png"); }
+body.bg-teal::before   { background-image: url("images/background/teal.png"); }
+body.bg-blue::before   { background-image: url("images/background/blue.png"); }
 
 /* ===============================
    BUTTONS (Shared)
@@ -269,8 +268,7 @@ a.big-fun-btn:focus-visible {
 .chip-teacher { border-style: dashed; }
 
 /* helper note (non-placeholder feel) */
-.helper-text,
-.pending-note {
+.helper-text {
   background: rgba(255,255,255,0.75);
   border: 2px dashed rgba(18,121,200,0.35);
   border-radius: 16px;
@@ -322,8 +320,7 @@ a.big-fun-btn:focus-visible {
   50%      { filter: drop-shadow(0 14px 28px rgba(255,200,0,0.60)); }
 }
 
-.badge-helper-text,
-.badge-caption {
+.badge-helper-text {
   font-size: 16px;
   font-weight: 750;
   color: rgba(11,79,138,0.85);
@@ -446,7 +443,7 @@ a.big-fun-btn:focus-visible {
   .chip { font-size: 16px; padding: 12px; border-radius: 18px; }
 
   #recentBadgeImg { width: 150px; height: 150px; }
-  .badge-helper-text, .badge-caption { font-size: 15px; }
+  .badge-helper-text { font-size: 15px; }
 
   .home-nav { flex-direction: column; gap: 10px; }
   .nav-btn { max-width: none; }
@@ -512,7 +509,7 @@ main.app {
 .auth-container .logo {
   max-width: 180px;
   height: auto;
-  margin: 0 auto 16px;
+  margin: 0 auto 10px;
   display: block;
 }
 
@@ -560,9 +557,6 @@ main.app {
   font-size: 0.85rem;
   padding: 12px 0;
   opacity: 0.75;
-}
-.auth-container .logo {
-  margin-bottom: 10px;
 }
 .pw-field {
   width: 100%;
@@ -712,11 +706,6 @@ main.app header {
   object-fit: contain;
 }
 
-/* Prevent images from ever blowing up layouts */
-img {
-  max-width: 100%;
-  height: auto;
-}
 /* ================================
    MY POINTS – LAYOUT CONTAINMENT
    ================================ */
@@ -737,12 +726,6 @@ img {
   text-align: center;
   color: #00477d;
   margin: 16px 0;
-}
-
-/* Level badge safety */
-#levelBadge {
-  width: 80px;
-  height: auto;
 }
 
 /* Badges + Challenges row */
@@ -904,17 +887,6 @@ body.settings-page main.app{
 }
 
 /* Make the settings card feel like PROD */
-body.settings-page .form-card,
-body.settings-page .settings-form{
-  width: 100% !important;
-  max-width: 560px !important;
-  margin: 0 auto !important;
-  background: rgba(255,255,255,0.92) !important;
-  border-radius: 18px !important;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.12) !important;
-  padding: 18px 16px !important;
-}
-
 /* Title spacing (fixes the “floating left” feel) */
 body.settings-page h2,
 body.settings-page h3{
@@ -933,7 +905,7 @@ body.settings-page select{
 
 /* Buttons: keep them aligned + consistent */
 body.settings-page .button-row,
-body.settings-page .settings-buttons{
+body.settings-page .button-row{
   display: grid !important;
   grid-template-columns: 1fr 1fr !important;
   gap: 12px !important;
@@ -942,15 +914,13 @@ body.settings-page .settings-buttons{
 }
 
 body.settings-page .button-row button,
-body.settings-page .settings-buttons button,
 body.settings-page .blue-button{
   width: 100% !important;
 }
 
 /* Stack buttons on narrow screens */
 @media (max-width: 520px){
-  body.settings-page .button-row,
-  body.settings-page .settings-buttons{
+  body.settings-page .button-row{
     grid-template-columns: 1fr !important;
   }
 }
@@ -967,12 +937,6 @@ body.settings-page .avatar img{
 body.settings-page h2{
   color: #00477d !important;              /* readable dark blue */
   text-shadow: 0 2px 8px rgba(255,255,255,0.85) !important;
-}
-
-/* Make the card slightly more opaque so text reads clean */
-body.settings-page .form-card,
-body.settings-page .settings-form{
-  background: rgba(255,255,255,0.96) !important;
 }
 
 /* Bigger, more tappable buttons */
@@ -1018,14 +982,12 @@ body.settings-page input[type="checkbox"]:not(:has(+ label)){
 
 body.settings-page .form-card,
 body.settings-page .settings-form {
-  background: rgba(255, 255, 255, 0.78) !important;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-
-  border: 2px solid rgba(255, 255, 255, 0.6);
-  border-radius: 24px;
-
-  box-shadow:
-    0 12px 30px rgba(0, 0, 0, 0.12),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  width: 100% !important;
+  max-width: 560px !important;
+  margin: 0 auto !important;
+  padding: 18px 16px !important;
+  background: rgba(255,255,255,0.72) !important;
+  border: 4px solid rgba(11,79,138,0.18) !important;
+  border-radius: 20px !important;
+  box-shadow: 0 10px 24px rgba(0,0,0,0.16) !important;
 }
