@@ -221,8 +221,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
   if (!user || !activeRole) {
     alert('You must be logged in.');
-    window.location.href = 'index.html';
-    return;
+window.location.replace("./login.html");
+return;
   }
 
   // hydrate fields
