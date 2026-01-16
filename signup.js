@@ -189,7 +189,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const parentFirst = pending[0]?.firstName || "";
       const parentLast  = pending[0]?.lastName || "";
 
-await supabase.auth.signUp({
+const { data, error: signUpError } = await supabase.auth.signUp({
   email,
   password,
   options: {
@@ -197,7 +197,7 @@ await supabase.auth.signUp({
   },
 });
 
-      if (signUpError) throw signUpError;
+if (signUpError) throw signUpError;
 
       alert("Check your email to confirm your account, then log in.");
       window.location.href = "login.html";
