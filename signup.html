@@ -22,10 +22,13 @@
     #teacherIds { min-height: 120px; }
     .helper { font-size: .9rem; color: #00477d; }
     .req { color:#c00; margin-left:4px; }
+    .student-block { margin-top: 16px; }
+    .student-block h3 { margin: 10px 0; }
+    .remove-student-btn { width: 100%; margin-top: 10px; }
   </style>
 </head>
 <body class="white-page">
-<div id="envBadge" class="env-badge" style="display:none;"></div>
+  <div id="envBadge" class="env-badge" style="display:none;"></div>
 
   <main class="app">
     <img src="images/logos/logo.png" alt="App Logo" class="logo" />
@@ -39,38 +42,52 @@
           <input type="file" id="avatarInput" accept="image/*" />
         </div>
 
-        <!-- Name -->
-        <div class="form-row">
-          <input type="text" id="firstName" placeholder="First Name" required />
-        </div>
-        <div class="form-row">
-          <input type="text" id="lastName" placeholder="Last Name" required />
+        <!-- Parent Email/Password + Students Container -->
+        <div id="studentsContainer">
+
+          <!-- Student #1 (IDs stay exactly the same) -->
+          <div class="student-block" data-student-index="1">
+            <h3>Student #1</h3>
+
+            <!-- Name -->
+            <div class="form-row">
+              <input type="text" id="firstName" placeholder="First Name" required />
+            </div>
+            <div class="form-row">
+              <input type="text" id="lastName" placeholder="Last Name" required />
+            </div>
+
+            <!-- Email / Password -->
+            <div class="form-row">
+              <input type="email" id="signupEmail" placeholder="Email" required />
+            </div>
+            <div class="form-row">
+              <input type="password" id="signupPassword" placeholder="Password" required />
+            </div>
+
+            <!-- Instrument(s) -->
+            <div class="form-row">
+              <label for="instrument" class="helper">
+                Instrument(s)<span class="req">*</span> — comma separated for multiple (e.g., Piano, Voice)
+              </label>
+              <input id="instrument" placeholder="Instrument(s)" required />
+            </div>
+
+            <!-- Teacher(s) multi-select -->
+            <div class="form-row">
+              <label for="teacherIds" class="helper">
+                Select your teacher(s)<span class="req">*</span>
+              </label>
+              <select id="teacherIds" multiple></select>
+              <small class="helper">Tip: Hold Ctrl/Cmd to select multiple teachers.</small>
+            </div>
+          </div>
         </div>
 
-        <!-- Email / Password -->
-        <div class="form-row">
-          <input type="email" id="signupEmail" placeholder="Email" required />
-        </div>
-        <div class="form-row">
-          <input type="password" id="signupPassword" placeholder="Password" required />
-        </div>
-
-        <!-- Instrument(s) -->
-        <div class="form-row">
-          <label for="instrument" class="helper">
-            Instrument(s)<span class="req">*</span> — comma separated for multiple (e.g., Piano, Voice)
-          </label>
-          <input id="instrument" placeholder="Instrument(s)" required />
-        </div>
-
-        <!-- Teacher(s) multi-select -->
-        <div class="form-row">
-          <label for="teacherIds" class="helper">
-            Select your teacher(s)<span class="req">*</span>
-          </label>
-          <select id="teacherIds" multiple></select>
-          <small class="helper">Tip: Hold Ctrl/Cmd to select multiple teachers.</small>
-        </div>
+        <!-- Add Another Student -->
+        <button type="button" id="addStudentBtn" class="blue-button" style="margin-top:12px;">
+          Add another student
+        </button>
 
         <!-- Buttons -->
         <div class="button-row">
@@ -86,9 +103,83 @@
     </div>
   </main>
 
+  <!-- Template for additional students -->
+  <template id="studentBlockTemplate">
+    <div class="student-block" data-student-index="__N__">
+      <h3>Student #__N__ (optional)</h3>
+
+      <div class="form-row">
+        <label for="firstName__N__" class="helper">First Name</label>
+        <input id="firstName__N__" type="text" placeholder="First name">
+      </div>
+
+      <div class="form-row">
+        <label for="lastName__N__" class="helper">Last Name</label>
+        <input id="lastName__N__" type="text" placeholder="Last name">
+      </div>
+
+      <div class="form-row">
+        <label for="instrument__N__" class="helper">
+          Instrument(s)<span class="req">*</span> — comma separated for multiple
+        </label>
+        <input id="instrument__N__" type="text" placeholder="Piano, Voice">
+      </div>
+
+      <div class="form-row">
+        <label for="teacherIds__N__" class="helper">
+          Select teacher(s)<span class="req">*</span>
+        </label>
+        <select id="teacherIds__N__" multiple></select>
+        <small class="helper">Tip: Hold Ctrl/Cmd to select multiple teachers.</small>
+      </div>
+
+      <button type="button" class="blue-button remove-student-btn">
+        Remove this student
+      </button>
+    </div>
+  </template>
+
   <!-- Scripts -->
   <script src="config.js"></script>
-<script type="module" src="supabaseClient.js"></script>
+  <script type="module" src="supabaseClient.js"></script>
   <script type="module" src="signup.js"></script>
+
+  <!-- Minimal UI behavior for adding/removing student blocks -->
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const addBtn = document.getElementById("addStudentBtn");
+      const container = document.getElementById("studentsContainer");
+      const tpl = document.getElementById("studentBlockTemplate");
+
+      if (!addBtn || !container || !tpl) return;
+
+      addBtn.addEventListener("click", () => {
+        const nextN = container.querySelectorAll(".student-block").length + 1;
+
+        const html = tpl.innerHTML.replaceAll("__N__", String(nextN));
+        const wrapper = document.createElement("div");
+        wrapper.innerHTML = html.trim();
+
+        const block = wrapper.firstElementChild;
+        container.appendChild(block);
+
+        // Remove handler
+        const removeBtn = block.querySelector(".remove-student-btn");
+        if (removeBtn) {
+          removeBtn.addEventListener("click", () => {
+            block.remove();
+            // Re-label headers in order (nice-to-have)
+            const blocks = container.querySelectorAll(".student-block");
+            blocks.forEach((b, i) => {
+              const n = i + 1;
+              const h = b.querySelector("h3");
+              if (h) h.textContent = (n === 1) ? "Student #1" : `Student #${n} (optional)`;
+            });
+          });
+        }
+      });
+    });
+  </script>
+
 </body>
 </html>
