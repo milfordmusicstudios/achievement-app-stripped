@@ -132,13 +132,47 @@ if (teachersAvailable && teacherIds.length === 0) {
 
     try {
 const { data: signUpData, error: signUpError } =
-  await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-emailRedirectTo: `${window.location.origin}/login.html`
-    }
-  });
+function collectStudent(prefix="") {
+  const firstName = document.getElementById(`firstName${prefix}`).value.trim();
+  const lastName  = document.getElementById(`lastName${prefix}`).value.trim();
+  const instrumentRaw = document.getElementById(`instrument${prefix}`).value;
+  const instruments = parseInstruments(instrumentRaw);
+
+  const teacherSelect = document.getElementById(`teacherIds${prefix}`);
+  const teacherIds = teacherSelect
+    ? Array.from(teacherSelect.selectedOptions).map(o => o.value)
+    : [];
+
+  // Consider a student “filled out” only if they have a name
+  if (!firstName && !lastName) return null;
+
+  return { firstName, lastName, instruments, teacherIds };
+}
+
+const student1 = collectStudent("");
+const student2 = collectStudent("2");
+
+if (!student1) {
+  errorDisplay.textContent = "Please enter Student #1 first and last name.";
+  errorDisplay.style.display = "block";
+  submitBtn.disabled = false;
+  return;
+}
+
+const pending = [student1, student2].filter(Boolean);
+
+// Save drafts locally to finalize after email confirm + login
+localStorage.setItem("pendingChildren", JSON.stringify(pending));
+localStorage.setItem("pendingChildrenEmail", email);
+
+await supabase.auth.signUp({
+  email,
+  password,
+  options: {
+    emailRedirectTo: `${window.location.origin}/login.html`,
+    data: { firstName, lastName } // parent metadata if you want
+  }
+});
 
 if (signUpError) {
   console.error("SIGNUP ERROR OBJECT:", signUpError);

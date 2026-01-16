@@ -17,28 +17,35 @@ function capitalize(str) { return str ? str.charAt(0).toUpperCase() + str.slice(
 
 // ---------- related users (parent/children/siblings) ----------
 async function fetchRelatedUsers(user) {
-  const userIdStr = normalizeUUID(user.id);
-  const parentIdStr = normalizeUUID(user.parent_uuid);
-  let sameGroupUsers = [];
+  // Option A: loggedInUser may be a student profile.
+  // Always anchor “family” to the AUTH login id when available.
+  const { data: authData } = await supabase.auth.getUser();
+  const authUser = authData?.user || null;
 
-  const { data: children } = await supabase.from('users').select('*').eq('parent_uuid', userIdStr);
-  if (children?.length) {
-    sameGroupUsers = children;
-  } else if (parentIdStr) {
-    const { data: siblings } = await supabase.from('users').select('*').eq('parent_uuid', parentIdStr);
-    if (siblings?.length) sameGroupUsers = siblings.filter(u => normalizeUUID(u.id) !== userIdStr);
+  const currentId = normalizeUUID(user?.id);
+  const anchorParentId = normalizeUUID(authUser?.id) || normalizeUUID(user?.parent_uuid) || currentId;
+
+  const { data: family, error } = await supabase
+    .from('users')
+    .select('*')
+    .eq('parent_uuid', anchorParentId);
+
+  if (error) {
+    console.error('[Settings] fetchRelatedUsers failed:', error);
+    return [];
   }
-  return sameGroupUsers;
+
+  // Return everyone linked to this parent_uuid, excluding the currently selected profile
+  return (family || []).filter(u => normalizeUUID(u.id) !== currentId);
 }
 
 // ---------- UI: switchers ----------
-// REPLACE your existing promptUserSwitch() with this:
-function promptUserSwitch() {
+async function promptUserSwitch() {
   const current = JSON.parse(localStorage.getItem('loggedInUser')) || {};
-  const allUsers = JSON.parse(localStorage.getItem('allUsers')) || [];
+  let allUsers = JSON.parse(localStorage.getItem('allUsers')) || [];
 
   // Must have at least one *other* profile to switch to
-  const others = allUsers.filter(u => u.id !== current.id);
+  const others = allUsers.filter(u => String(u.id) !== String(current.id));
   if (others.length === 0) {
     alert('No other profiles are linked to this login yet.');
     return;
@@ -55,18 +62,20 @@ function promptUserSwitch() {
     const rolesText = Array.isArray(u.roles) ? u.roles.join(', ') : (u.role || '');
     btn.textContent = `${u.firstName ?? ''} ${u.lastName ?? ''} (${rolesText})`.trim();
     btn.onclick = async () => {
+      // Option A: loggedInUser is the selected STUDENT profile
       localStorage.setItem('loggedInUser', JSON.stringify(u));
-      // keep your existing "highest role" logic if present
+
+      // keep your existing "highest role" logic
       const priority = { admin:3, teacher:2, student:1, parent:0 };
       const roles = Array.isArray(u.roles) ? u.roles : (u.role ? [u.role] : []);
       const highest = roles.slice().sort((a,b)=>(priority[b?.toLowerCase()]??-1)-(priority[a?.toLowerCase()]??-1))[0] || 'student';
       localStorage.setItem('activeRole', highest);
 
       try {
-        // if you have this util, it's okay to call; otherwise it just fails silently
         const m = await import('./utils.js').catch(()=>null);
         if (m?.recalculateUserPoints) await m.recalculateUserPoints(u.id);
       } catch {}
+
       window.location.href = 'index.html';
     };
     li.appendChild(btn);
@@ -282,13 +291,32 @@ document.addEventListener('DOMContentLoaded', async () => {
   const authUser = authData?.user || null;
   applyCredsGuard(!!(authUser && authUser.id === user.id));
 
-  // build related users list for switcher
-  let updatedAllUsers = JSON.parse(localStorage.getItem('allUsers')) || [];
-  if (!updatedAllUsers.some(u => u.id === user.id)) updatedAllUsers.push(user);
-  const relatedUsers = await fetchRelatedUsers(user);
-  relatedUsers.forEach(ru => { if (!updatedAllUsers.some(u => u.id === ru.id)) updatedAllUsers.push(ru); });
-  updatedAllUsers = updatedAllUsers.filter((v, i, a) => a.findIndex(t => t.id === v.id) === i);
-  localStorage.setItem('allUsers', JSON.stringify(updatedAllUsers));
+// build linked users list for switcher (Option A)
+let updatedAllUsers = JSON.parse(localStorage.getItem('allUsers')) || [];
+if (!updatedAllUsers.some(u => String(u.id) === String(user.id))) updatedAllUsers.push(user);
+
+// IMPORTANT: use the AUTH login id (parent) to fetch children
+const { data: authData2 } = await supabase.auth.getUser();
+const authUser2 = authData2?.user || null;
+
+if (authUser2?.id) {
+  const { data: kids, error: kidsErr } = await supabase
+    .from('users')
+    .select('*')
+    .eq('parent_uuid', authUser2.id);
+
+  if (kidsErr) {
+    console.error('[Settings] Failed to load children:', kidsErr);
+  } else {
+    (kids || []).forEach(k => {
+      if (!updatedAllUsers.some(u => String(u.id) === String(k.id))) updatedAllUsers.push(k);
+    });
+  }
+}
+
+// de-dupe
+updatedAllUsers = updatedAllUsers.filter((v, i, a) => a.findIndex(t => String(t.id) === String(v.id)) === i);
+localStorage.setItem('allUsers', JSON.stringify(updatedAllUsers));
 
   // show/hide switch buttons
   document.getElementById('switchUserBtn').style.display = (updatedAllUsers.length > 1) ? 'inline-block' : 'none';

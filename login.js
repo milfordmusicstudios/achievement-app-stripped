@@ -71,6 +71,40 @@ const { data: userData, error: fetchError } = await supabase
       errorDisplay.textContent = 'Error fetching user profile.';
       return;
     }
+// --- FINALIZE PENDING CHILDREN (signup with multiple students) ---
+const pendingEmail = (localStorage.getItem("pendingChildrenEmail") || "").toLowerCase();
+const pendingRaw = localStorage.getItem("pendingChildren");
+const pendingChildren = pendingRaw ? JSON.parse(pendingRaw) : [];
+
+const authEmail = (sessionData.session.user.email || "").toLowerCase();
+const shouldFinalize = pendingChildren.length > 0 && pendingEmail === authEmail;
+
+if (shouldFinalize) {
+  console.log("[Finalize] Creating child profiles:", pendingChildren.length);
+
+  const parentId = sessionData.session.user.id;
+
+  const rows = pendingChildren.map(c => ({
+    firstName: c.firstName,
+    lastName: c.lastName,
+    roles: ["student"],
+    parent_uuid: parentId,
+    instrument: (c.instruments || []).join(", "),
+    teacherIds: c.teacherIds || []
+  }));
+
+  const { error: insertErr } = await supabase
+    .from("users")
+    .insert(rows);
+
+  if (insertErr) {
+    console.error("[Finalize] Failed to insert children:", insertErr);
+  } else {
+    console.log("[Finalize] Child profiles created");
+    localStorage.removeItem("pendingChildren");
+    localStorage.removeItem("pendingChildrenEmail");
+  }
+}
 
     // ✅ Normalize roles
     if (typeof userData.roles === "string") {
