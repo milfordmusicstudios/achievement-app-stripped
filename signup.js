@@ -189,14 +189,13 @@ document.addEventListener("DOMContentLoaded", () => {
       const parentFirst = pending[0]?.firstName || "";
       const parentLast  = pending[0]?.lastName || "";
 
-      const { error: signUpError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/login.html`,
-          data: { firstName: parentFirst, lastName: parentLast }
-        }
-      });
+await supabase.auth.signUp({
+  email,
+  password,
+  options: {
+    emailRedirectTo: `${window.location.origin}/auth-callback.html`,
+  },
+});
 
       if (signUpError) throw signUpError;
 
