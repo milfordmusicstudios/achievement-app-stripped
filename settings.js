@@ -242,22 +242,28 @@ return;
         const file = avatarInputEl.files?.[0];
         if (!file) return;
 
-        // Make a predictable path per user (overwrite on update)
-        const ext = (file.name.split('.').pop() || 'png').toLowerCase();
-        const filePath = `${user.id}.${ext}`;
+        const { data: authData } = await supabase.auth.getUser();
+        const authUser = authData?.user || null;
+        if (!authUser?.id) throw new Error('Auth user not available for avatar upload');
+
+        const bucketName = 'avatars';
+        const filePath = `${authUser.id}/avatar.png`;
 
         // Upload (upsert overwrites existing)
         const { error: upErr } = await supabase
           .storage
-          .from('avatars')
+          .from(bucketName)
           .upload(filePath, file, { upsert: true, contentType: file.type });
 
-        if (upErr) throw upErr;
+        if (upErr) {
+          console.error('[Avatar] upload error', { bucketName, filePath, error: upErr });
+          throw upErr;
+        }
 
         // Public URL (bucket is public)
         const { data: pub } = supabase
           .storage
-          .from('avatars')
+          .from(bucketName)
           .getPublicUrl(filePath);
 
         const publicUrl = pub?.publicUrl;
@@ -267,9 +273,12 @@ return;
         const { error: dbErr } = await supabase
           .from('users')
           .update({ avatarUrl: publicUrl })
-          .eq('id', user.id);
+          .eq('id', authUser.id);
 
-        if (dbErr) throw dbErr;
+        if (dbErr) {
+          console.error('[Avatar] update error', { bucketName, filePath, error: dbErr });
+          throw dbErr;
+        }
 
         user.avatarUrl = publicUrl;
         localStorage.setItem('loggedInUser', JSON.stringify(user));
