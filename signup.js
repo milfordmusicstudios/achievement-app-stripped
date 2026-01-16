@@ -136,7 +136,7 @@ const { data: signUpData, error: signUpError } =
     email,
     password,
     options: {
-      emailRedirectTo: "achievement-awards-3v87ynioj-lisas-projects-30a7d5cd.vercel.app"
+emailRedirectTo: `${window.location.origin}/login.html`
     }
   });
 

@@ -46,13 +46,23 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    console.log("DEBUG: Login success, user id:", data.user.id);
+// ✅ Hydrate session before any RLS-protected table reads
+const { data: sessionData, error: sessionErr } = await supabase.auth.getSession();
+if (sessionErr || !sessionData?.session?.user) {
+  console.error("DEBUG: Session hydration failed", sessionErr);
+  errorDisplay.style.display = 'block';
+  errorDisplay.textContent = 'Session not ready. Please try again.';
+  return;
+}
 
-    const { data: userData, error: fetchError } = await supabase
-      .from('users')
-      .select('id, firstName, lastName, email, roles, parent_uuid, avatarUrl, teacherIds, instrument')
-      .eq('id', data.user.id)
-      .single();
+const userId = sessionData.session.user.id;
+console.log("DEBUG: Login success, user id:", userId);
+
+const { data: userData, error: fetchError } = await supabase
+  .from('users')
+  .select('id, firstName, lastName, email, roles, parent_uuid, avatarUrl, teacherIds, instrument')
+  .eq('id', userId)
+  .single();
 
     console.log("DEBUG: User fetch result", userData, fetchError);
 

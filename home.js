@@ -7,7 +7,7 @@ async function loadProfile(userId) {
   const { data, error } = await supabase
     .from('users')
     .select('*')
-    .eq('id', userId)
+.eq('id', level)
     .single();
 
   if (error) {
@@ -32,7 +32,7 @@ async function loadLevel(level) {
 }
 
 function renderIdentity(profile, level) {
-  qs('welcomeText').textContent = `Welcome, ${profile.first_name || 'Student'}!`;
+qs('welcomeText').textContent = `Welcome, ${profile.firstName || 'Student'}!`;
 const avatarImg = document.getElementById("avatarImg");
 const url = profile?.avatarUrl;
 
@@ -46,9 +46,9 @@ qs('levelBadgeImg').src = level.badge;
   const pct = Math.min(
     100,
     Math.round(
-      ((profile.points - level.min_points) /
-        (level.max_points - level.min_points)) *
-        100
+((profile.points - level.minPoints) /
+  (level.maxPoints - level.minPoints)) *
+  100
     )
   );
 
