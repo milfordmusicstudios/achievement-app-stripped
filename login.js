@@ -1,11 +1,11 @@
 // login.js
 import { supabase } from "./supabaseClient.js";
 
-window.selectStudent = function(studentId, parentData) {
-  console.log("DEBUG: Student selected", studentId);
-  localStorage.setItem('activeStudentId', studentId);
-  localStorage.setItem('loggedInUser', JSON.stringify(parentData));
-  document.getElementById('studentSelectOverlay').style.display = 'none';
+window.selectStudent = function(student) {
+  console.log("DEBUG: Student selected", student?.id);
+  localStorage.setItem('loggedInUser', JSON.stringify(student));
+  localStorage.setItem('activeStudentId', student.id);
+  document.getElementById('studentSelectOverlay')?.style && (document.getElementById('studentSelectOverlay').style.display = 'none');
   window.location.href = 'index.html';
 };
 
@@ -58,19 +58,6 @@ if (sessionErr || !sessionData?.session?.user) {
 const userId = sessionData.session.user.id;
 console.log("DEBUG: Login success, user id:", userId);
 
-const { data: userData, error: fetchError } = await supabase
-  .from('users')
-  .select('id, firstName, lastName, email, roles, parent_uuid, avatarUrl, teacherIds, instrument')
-  .eq('id', userId)
-  .single();
-
-    console.log("DEBUG: User fetch result", userData, fetchError);
-
-    if (fetchError || !userData) {
-      errorDisplay.style.display = 'block';
-      errorDisplay.textContent = 'Error fetching user profile.';
-      return;
-    }
 // --- FINALIZE PENDING CHILDREN (signup with multiple students) ---
 const pendingEmail = (localStorage.getItem("pendingChildrenEmail") || "").toLowerCase();
 const pendingRaw = localStorage.getItem("pendingChildren");
@@ -79,67 +66,60 @@ const pendingChildren = pendingRaw ? JSON.parse(pendingRaw) : [];
 const authEmail = (sessionData.session.user.email || "").toLowerCase();
 const shouldFinalize = pendingChildren.length > 0 && pendingEmail === authEmail;
 
-if (shouldFinalize) {
-  console.log("[Finalize] Creating child profiles:", pendingChildren.length);
+let kids = [];
 
-  const parentId = sessionData.session.user.id;
+if (shouldFinalize) {
+  const parentId = userId;
 
   const rows = pendingChildren.map(c => ({
     firstName: c.firstName,
     lastName: c.lastName,
     roles: ["student"],
     parent_uuid: parentId,
-    instrument: (c.instruments || []).join(", "),
-    teacherIds: c.teacherIds || []
+    instrument: c.instruments,
+    teacherIds: c.teacherIds,
+    points: 0,
+    level: 1,
+    active: true,
+    showonleaderboard: true
   }));
 
-  const { error: insertErr } = await supabase
-    .from("users")
-    .insert(rows);
-
+  const { error: insertErr } = await supabase.from("users").insert(rows);
   if (insertErr) {
-    console.error("[Finalize] Failed to insert children:", insertErr);
-  } else {
-    console.log("[Finalize] Child profiles created");
-    localStorage.removeItem("pendingChildren");
-    localStorage.removeItem("pendingChildrenEmail");
+    console.error("[Finalize] insert failed", insertErr);
+    errorDisplay.textContent = "Failed to create student profiles.";
+    errorDisplay.style.display = "block";
+    return;
   }
+
+  localStorage.removeItem("pendingChildren");
+  localStorage.removeItem("pendingChildrenEmail");
 }
 
-    // ✅ Normalize roles
-    if (typeof userData.roles === "string") {
-      try { userData.roles = JSON.parse(userData.roles); } 
-      catch { userData.roles = userData.roles.split(",").map(r => r.trim()); }
-    } else if (!Array.isArray(userData.roles)) {
-      userData.roles = userData.roles ? [userData.roles] : [];
-    }
+// 🔑 ALWAYS fetch students by parent_uuid
+const { data: children, error: kidsErr } = await supabase
+  .from("users")
+  .select("*")
+  .eq("parent_uuid", userId)
+  .order("created_at", { ascending: true });
 
-    if ((!userData.roles || userData.roles.length === 0) && userData.email === "lisarachelle85@gmail.com") {
-      console.warn("Roles missing, applying fallback for admin.");
-      userData.roles = ["teacher", "admin"];
-    }
+if (kidsErr || !children?.length) {
+  console.error("[Login] kids fetch failed:", kidsErr);
+  errorDisplay.textContent = "No students found for this account.";
+  errorDisplay.style.display = "block";
+  return;
+}
 
-    console.log("DEBUG: Normalized roles", userData.roles);
+// Success: store student + redirect
+localStorage.setItem("loggedInUser", JSON.stringify(children[0]));
+localStorage.setItem("allUsers", JSON.stringify(children));
+localStorage.setItem("activeRole", "student");
+window.location.href = "index.html";
+return;
 
-    // ✅ Save user and determine role
-    localStorage.setItem('loggedInUser', JSON.stringify(userData));
-    const normalizedRoles = (userData.roles || ['student']).map(r => r.toLowerCase());
-    const defaultRole = normalizedRoles.includes('admin') ? 'admin' :
-                        normalizedRoles.includes('teacher') ? 'teacher' :
-                        normalizedRoles.includes('parent') ? 'parent' : 'student';
-    localStorage.setItem('activeRole', defaultRole);
+  }); // end submit
+});   // end DOMContentLoaded
 
-    // ✅ Redirect based on role
-    if (normalizedRoles.includes('parent')) {
-      console.log("DEBUG: Parent role detected – redirecting directly to settings");
-      sessionStorage.setItem("forceUserSwitch", "true");
-      window.location.href = 'settings.html';  // ✅ relative path avoids 404 on Vercel
-    } else {
-      console.log("DEBUG: Redirecting to home");
-      window.location.href = 'index.html';
-    }
-  });
-});
 /* === Append-only: flat 2D password toggle for Login === */
 (function () {
   function svgEyeOpen() {

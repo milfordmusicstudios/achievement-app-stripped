@@ -3,15 +3,15 @@ import { supabase } from './supabaseClient.js';
 const qs = id => document.getElementById(id);
 
 
-async function loadLevel(level) {
+async function loadLevel(levelId) {
   const { data, error } = await supabase
-    .from('levels')
-    .select('*')
-.eq('id', level)
+    .from("levels")
+    .select("*")
+    .eq("id", levelId)
     .single();
 
   if (error) {
-    console.error('Failed to load level', error);
+    console.error("Failed to load level", error);
     return null;
   }
   return data;
@@ -59,12 +59,9 @@ async function init() {
     return;
   }
 
-  const profile = JSON.parse(raw);
-
-  const level = await loadLevel(profile.level || 1);
-  if (!level) return;
-
-  renderIdentity(profile, level);
+const profile = JSON.parse(raw);
+const levelRow = await loadLevel(profile.level || 1);
+renderIdentity(profile, levelRow);
 }
 
 document.addEventListener('DOMContentLoaded', init);
