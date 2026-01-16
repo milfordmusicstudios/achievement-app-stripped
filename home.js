@@ -1,27 +1,13 @@
 import { supabase } from './supabaseClient.js';
-import { requireAuth } from './auth.js';
 
 const qs = id => document.getElementById(id);
 
-async function loadProfile(userId) {
-  const { data, error } = await supabase
-    .from('users')
-    .select('*')
-.eq('id', level)
-    .single();
-
-  if (error) {
-    console.error('Failed to load profile', error);
-    return null;
-  }
-  return data;
-}
 
 async function loadLevel(level) {
   const { data, error } = await supabase
     .from('levels')
     .select('*')
-.eq('id', 1)
+.eq('id', level)
     .single();
 
   if (error) {
@@ -58,12 +44,22 @@ qs('levelBadgeImg').src = level.badge;
 }
 
 async function init() {
-  // 🔒 Centralized auth gate
-  const user = await requireAuth();
-  if (!user) return;
+  // 🔒 Hard auth gate
+  const { data: sessionData } = await supabase.auth.getSession();
+  if (!sessionData?.session) {
+    window.location.href = "login.html";
+    return;
+  }
 
-  const profile = await loadProfile(user.id);
-  if (!profile) return;
+  // 🔁 Active student must already be selected
+  const raw = localStorage.getItem("loggedInUser");
+  if (!raw) {
+    // Logged in parent, but no student selected yet
+    window.location.href = "settings.html";
+    return;
+  }
+
+  const profile = JSON.parse(raw);
 
   const level = await loadLevel(profile.level || 1);
   if (!level) return;
