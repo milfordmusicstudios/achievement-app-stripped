@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Welcome | Achievement App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="white-page">
+  <div id="envBadge" class="env-badge" style="display:none;"></div>
+
+  <main class="app">
+    <h2>Welcome</h2>
+    <p style="text-align:center;">You’re not connected to a studio yet.</p>
+
+    <div class="auth-actions" style="flex-direction: column;">
+      <button class="blue-button" type="button" onclick="location.href='create-studio.html'">Create a Studio</button>
+      <button class="blue-button" type="button" onclick="location.href='accept-invite.html'">Join with Invite</button>
+    </div>
+
+    <div style="text-align:center; margin-top: 14px;">
+      <button id="logoutBtn" class="blue-button" type="button" style="background:#999;">Log out</button>
+    </div>
+  </main>
+
+  <script type="module" src="welcome.js"></script>
+</body>
+</html>

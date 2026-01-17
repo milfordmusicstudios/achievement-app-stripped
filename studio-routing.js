@@ -25,8 +25,8 @@ export async function ensureStudioContextAndRoute(options = {}) {
   console.log("[StudioRoute] memberships count", list.length);
 
   if (list.length === 0) {
-    const target = "settings.html";
-    console.log("[StudioRoute] redirect target", target, "(placeholder)");
+    const target = "welcome.html";
+    console.log("[StudioRoute] redirect target", target);
     if (!isCurrentPage(target)) window.location.href = target;
     return { redirected: true, target };
   }
