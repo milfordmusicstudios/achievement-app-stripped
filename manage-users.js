@@ -1,6 +1,6 @@
 import { supabase } from "./supabaseClient.js";
 import { ensureStudioContextAndRoute } from "./studio-routing.js";
-import { requireRole } from "./utils.js";
+import { requireStudioRoles } from "./utils.js";
 
 let allUsers = [];
 let currentPage = 1;
@@ -13,8 +13,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   const routeResult = await ensureStudioContextAndRoute({ redirectHome: false });
   if (routeResult?.redirected) return;
 
-  const authz = await requireRole(["admin"], { message: "Access denied. Admins only." });
-  console.log(`[AuthZ] page=manage-users required=admin roles=${(authz.roles || []).join(",")}`);
+  const authz = await requireStudioRoles(["admin"]);
+  console.log("[AuthZ]", { page: "manage-users", requiredRoles: ["admin"], roles: authz.roles, studioId: authz.studioId });
   if (!authz.ok) return;
 
   await fetchUsers();
