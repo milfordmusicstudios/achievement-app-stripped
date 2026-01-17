@@ -56,11 +56,11 @@ async function validateInvite(token) {
     .select("id, studio_id, role_hint, invited_email, status, expires_at")
     .eq("token", token)
     .eq("status", "pending")
-    .single();
+    .maybeSingle();
 
   if (error || !invite) {
-    setText(statusEl, "Invite not found or already used.");
-    showError("This invite is not valid.");
+    setText(statusEl, "Invite not found, expired, or already used.");
+    showError("We could not find a valid invite for this token.");
     clearPendingInvite();
     return;
   }
