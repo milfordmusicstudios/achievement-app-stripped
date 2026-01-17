@@ -1,4 +1,5 @@
 import { supabase } from "./supabaseClient.js";
+import { finalizePostAuth } from "./studio-routing.js";
 
 (async function () {
   try {
@@ -11,7 +12,12 @@ import { supabase } from "./supabaseClient.js";
     const { data: sessionData, error: sessionErr } = await supabase.auth.getSession();
     if (sessionErr) console.error("getSession error:", sessionErr);
 
-    // After confirm, go to login so login.js can finalize pendingChildren
+    if (sessionData?.session?.user) {
+      await finalizePostAuth();
+      return;
+    }
+
+    // After confirm without a session, go to login
     window.location.replace("./login.html");
   } catch (e) {
     console.error("auth callback fatal:", e);

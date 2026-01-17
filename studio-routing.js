@@ -1,4 +1,5 @@
 import { supabase } from "./supabaseClient.js";
+import { ensureUserRow } from "./utils.js";
 
 function isCurrentPage(target) {
   const path = window.location.pathname || "";
@@ -57,4 +58,17 @@ export async function ensureStudioContextAndRoute(options = {}) {
   localStorage.setItem("activeStudioRoles", JSON.stringify(activeMembership?.roles || []));
   console.log("[StudioRoute] chosen studio_id", activeMembership?.studio_id || activeStudioId);
   return { redirected: false, target: null };
+}
+
+export async function finalizePostAuth(options = {}) {
+  const { redirectHome = true, ensureUser = true, storeProfile = true } = options;
+  let ensured = null;
+  if (ensureUser) {
+    ensured = await ensureUserRow();
+    if (storeProfile && ensured) {
+      localStorage.setItem("loggedInUser", JSON.stringify(ensured));
+    }
+  }
+  const routeResult = await ensureStudioContextAndRoute({ redirectHome });
+  return { ensured, routeResult };
 }

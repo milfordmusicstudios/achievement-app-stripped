@@ -1,6 +1,6 @@
 // login.js
 import { supabase } from "./supabaseClient.js";
-import { ensureStudioContextAndRoute } from "./studio-routing.js";
+import { finalizePostAuth } from "./studio-routing.js";
 import { ensureUserRow } from "./utils.js";
 
 async function createStudioStudents(students, parentId, studioId) {
@@ -124,7 +124,7 @@ if (shouldFinalize) {
   localStorage.removeItem("pendingChildrenEmail");
 }
 
-await ensureStudioContextAndRoute();
+await finalizePostAuth({ ensureUser: false, storeProfile: false });
 console.log("[Login] routed");
 return;
 
