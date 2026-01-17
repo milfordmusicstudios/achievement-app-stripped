@@ -13,7 +13,7 @@
     <h2>Join a Studio</h2>
 
     <section class="settings-form" style="max-width:520px; margin: 0 auto 20px;">
-      <h3>Join with Invite</h3>
+      <h3 id="inviteHeading">Join with Invite</h3>
 
       <label for="inviteToken">Invite Token</label>
       <input id="inviteToken" type="text" placeholder="Paste your invite token" />
@@ -22,13 +22,47 @@
       <p id="inviteDetails" style="margin-top:6px;"></p>
       <p id="inviteError" style="color:#c62828; display:none; margin-top:10px;"></p>
 
-      <div class="button-row" style="margin-top:14px;">
+      <div id="validateRow" class="button-row" style="margin-top:14px; display:none;">
         <button id="validateInviteBtn" type="button" class="blue-button">Validate Invite</button>
       </div>
+    </section>
 
-      <div class="button-row" style="margin-top:14px;">
-        <button id="loginBtn" type="button" class="blue-button" disabled>Log in</button>
-        <button id="signupBtn" type="button" class="blue-button" disabled>Create account</button>
+    <section id="authPanels" class="settings-form" style="max-width:520px; margin: 0 auto 20px; display:none;">
+      <h3 id="inviteWelcome">Welcome to this studio</h3>
+      <p id="invitePrompt">You have been invited to join this studio. Please log in or create an account below.</p>
+
+      <div style="display:grid; gap:16px;">
+        <form id="loginFormInline" class="settings-form" style="padding:0;">
+          <h4>Log in</h4>
+          <label for="loginEmailInline">Email</label>
+          <input id="loginEmailInline" type="email" autocomplete="email" />
+
+          <label for="loginPasswordInline">Password</label>
+          <input id="loginPasswordInline" type="password" autocomplete="current-password" />
+
+          <p id="loginErrorInline" style="color:#c62828; display:none; margin-top:10px;"></p>
+          <p id="loginSuccessInline" style="color:#0b7a3a; display:none; margin-top:10px;"></p>
+
+          <div class="button-row" style="margin-top:14px;">
+            <button type="submit" class="blue-button">Log in</button>
+          </div>
+        </form>
+
+        <form id="signupFormInline" class="settings-form" style="padding:0;">
+          <h4>Create account</h4>
+          <label for="signupEmailInline">Email</label>
+          <input id="signupEmailInline" type="email" autocomplete="email" />
+
+          <label for="signupPasswordInline">Password</label>
+          <input id="signupPasswordInline" type="password" autocomplete="new-password" />
+
+          <p id="signupErrorInline" style="color:#c62828; display:none; margin-top:10px;"></p>
+          <p id="signupSuccessInline" style="color:#0b7a3a; display:none; margin-top:10px;"></p>
+
+          <div class="button-row" style="margin-top:14px;">
+            <button type="submit" class="blue-button">Create account</button>
+          </div>
+        </form>
       </div>
     </section>
 
