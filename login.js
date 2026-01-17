@@ -1,5 +1,6 @@
 // login.js
 import { supabase } from "./supabaseClient.js";
+import { ensureStudioContextAndRoute } from "./studio-routing.js";
 
 window.selectStudent = function(student) {
   console.log("DEBUG: Student selected", student?.id);
@@ -116,7 +117,7 @@ if (kidsErr || !children?.length) {
 localStorage.setItem("loggedInUser", JSON.stringify(children[0]));
 localStorage.setItem("allUsers", JSON.stringify(children));
 localStorage.setItem("activeRole", "student");
-window.location.href = "index.html";
+await ensureStudioContextAndRoute();
 return;
 
   }); // end submit

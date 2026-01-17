@@ -1,4 +1,5 @@
 import { supabase } from "./supabaseClient.js";
+import { ensureStudioContextAndRoute } from "./studio-routing.js";
 
 let allUsers = [];
 let currentPage = 1;
@@ -8,6 +9,9 @@ let sortColumn = "lastName";     // ✅ Default sort column
 let sortDirection = 1;           // ✅ Ascending by default
 
 document.addEventListener("DOMContentLoaded", async () => {
+  const routeResult = await ensureStudioContextAndRoute({ redirectHome: false });
+  if (routeResult?.redirected) return;
+
   const user = JSON.parse(localStorage.getItem("loggedInUser"));
   if (!user || !user.roles?.includes("admin")) {
     alert("Access denied. Admins only.");

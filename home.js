@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient.js';
+import { ensureStudioContextAndRoute } from './studio-routing.js';
 
 const qs = id => document.getElementById(id);
 const safeParse = value => {
@@ -199,6 +200,10 @@ async function init() {
     window.location.href = "login.html";
     return;
   }
+
+  const routeResult = await ensureStudioContextAndRoute({ redirectHome: false });
+  if (routeResult?.redirected) return;
+
 
   // 🔁 Active student must already be selected
   const raw = localStorage.getItem("loggedInUser");

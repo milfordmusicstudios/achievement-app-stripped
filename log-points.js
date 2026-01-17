@@ -1,8 +1,12 @@
 import { supabase } from "./supabaseClient.js";
 import { recalculateUserPoints } from './utils.js';
+import { ensureStudioContextAndRoute } from "./studio-routing.js";
 
 
 document.addEventListener("DOMContentLoaded", async () => {
+  const routeResult = await ensureStudioContextAndRoute({ redirectHome: false });
+  if (routeResult?.redirected) return;
+
   const user = JSON.parse(localStorage.getItem("loggedInUser"));
   const activeRole = localStorage.getItem("activeRole");
 
