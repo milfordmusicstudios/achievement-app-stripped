@@ -1,5 +1,40 @@
 import { supabase } from "./supabaseClient.js";
 
+export async function ensureUserRow() {
+  const { data: authData } = await supabase.auth.getUser();
+  const authUser = authData?.user || null;
+  if (!authUser?.id) return null;
+
+  const payload = {
+    id: authUser.id,
+    email: authUser.email,
+    active: true
+  };
+
+  const { error: upsertError } = await supabase
+    .from("users")
+    .upsert(payload, { onConflict: "id" });
+
+  if (upsertError) {
+    console.error("[UserRow] upsert failed:", upsertError);
+    return null;
+  }
+
+  const { data: row, error: selectError } = await supabase
+    .from("users")
+    .select("*")
+    .eq("id", authUser.id)
+    .single();
+
+  if (selectError) {
+    console.error("[UserRow] select failed:", selectError);
+    return null;
+  }
+
+  console.log("[UserRow] ensured id/email", authUser.id, authUser.email);
+  return row || null;
+}
+
 // ✅ Helper: Popup for level-up event
 function showLevelUpPopup(userName, newLevelName) {
   console.log("[DEBUG] Showing Level-Up popup for:", userName, newLevelName);

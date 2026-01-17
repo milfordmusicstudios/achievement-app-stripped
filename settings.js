@@ -1,6 +1,6 @@
 // settings.js — patched to fix password/email updates with switched profiles
 import { supabase } from "./supabaseClient.js";
-import { recalculateUserPoints } from './utils.js';
+import { recalculateUserPoints, ensureUserRow } from './utils.js';
 
 // ---------- helpers ----------
 function getHighestRole(roles) {
@@ -213,12 +213,19 @@ async function saveSettings() {
 
 // ---------- init ----------
 document.addEventListener('DOMContentLoaded', async () => {
-  const user = JSON.parse(localStorage.getItem('loggedInUser'));
+  let user = JSON.parse(localStorage.getItem('loggedInUser'));
   let activeRole = localStorage.getItem('activeRole');
   if (!activeRole && user?.roles) {
     activeRole = getHighestRole(user.roles);
     localStorage.setItem('activeRole', activeRole);
   }
+
+  const ensured = await ensureUserRow();
+  if (ensured && (!user || String(user.id) === String(ensured.id))) {
+    user = { ...ensured, ...(user || {}) };
+    localStorage.setItem('loggedInUser', JSON.stringify(user));
+  }
+
   if (!user || !activeRole) {
     alert('You must be logged in.');
 window.location.replace("./login.html");

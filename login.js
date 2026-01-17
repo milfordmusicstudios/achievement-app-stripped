@@ -1,6 +1,7 @@
 // login.js
 import { supabase } from "./supabaseClient.js";
 import { ensureStudioContextAndRoute } from "./studio-routing.js";
+import { ensureUserRow } from "./utils.js";
 
 window.selectStudent = function(student) {
   console.log("DEBUG: Student selected", student?.id);
@@ -55,6 +56,8 @@ if (sessionErr || !sessionData?.session?.user) {
   errorDisplay.textContent = 'Session not ready. Please try again.';
   return;
 }
+
+await ensureUserRow();
 
 const userId = sessionData.session.user.id;
 console.log("DEBUG: Login success, user id:", userId);
