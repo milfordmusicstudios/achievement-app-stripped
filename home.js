@@ -359,7 +359,6 @@ async function loadCategoriesForStudio(studioId) {
   const { data, error } = await supabase
     .from('categories')
     .select('id, name')
-    .eq('studio_id', studioId)
     .order('id', { ascending: true });
   if (error || !Array.isArray(data)) return { data: [], error };
   return { data, error: null };
