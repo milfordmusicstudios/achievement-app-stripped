@@ -3,6 +3,37 @@ import { supabase } from "./supabaseClient.js";
 import { ensureStudioContextAndRoute } from "./studio-routing.js";
 import { ensureUserRow } from "./utils.js";
 
+async function createStudioStudents(students, parentId, studioId) {
+  if (!crypto?.randomUUID) {
+    throw new Error("Browser does not support UUID generation.");
+  }
+  if (!studioId) {
+    throw new Error("Missing activeStudioId for student creation.");
+  }
+
+  const rows = students.map(c => {
+    const id = crypto.randomUUID();
+    console.log("[PersonCreate] created new id", id);
+    return {
+      id,
+      firstName: c.firstName,
+      lastName: c.lastName,
+      roles: ["student"],
+      parent_uuid: parentId,
+      instrument: c.instruments,
+      teacherIds: c.teacherIds,
+      points: 0,
+      level: 1,
+      active: true,
+      studio_id: studioId,
+      showonleaderboard: true
+    };
+  });
+
+  const { error: insertErr } = await supabase.from("users").insert(rows);
+  if (insertErr) throw insertErr;
+}
+
 window.selectStudent = function(student) {
   console.log("DEBUG: Student selected", student?.id);
   localStorage.setItem('loggedInUser', JSON.stringify(student));
@@ -75,25 +106,20 @@ const shouldFinalize = pendingChildren.length > 0 && pendingEmail === authEmail;
 let kids = [];
 
 if (shouldFinalize) {
-  const parentId = userId;
+  let studioId = localStorage.getItem("activeStudioId");
+  if (!studioId) {
+    const { data: memberships } = await supabase
+      .from("studio_members")
+      .select("studio_id")
+      .eq("user_id", userId);
+    if (memberships?.length === 1) studioId = memberships[0].studio_id;
+  }
 
-  const rows = pendingChildren.map(c => ({
-    firstName: c.firstName,
-    lastName: c.lastName,
-    roles: ["student"],
-    parent_uuid: parentId,
-    instrument: c.instruments,
-    teacherIds: c.teacherIds,
-    points: 0,
-    level: 1,
-    active: true,
-    showonleaderboard: true
-  }));
-
-  const { error: insertErr } = await supabase.from("users").insert(rows);
-  if (insertErr) {
-    console.error("[Finalize] insert failed", insertErr);
-    errorDisplay.textContent = "Failed to create student profiles.";
+  try {
+    await createStudioStudents(pendingChildren, userId, studioId);
+  } catch (err) {
+    console.error("[Finalize] student create failed", err);
+    errorDisplay.textContent = "Student creation failed.";
     errorDisplay.style.display = "block";
     return;
   }

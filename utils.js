@@ -1,5 +1,10 @@
 import { supabase } from "./supabaseClient.js";
 
+export async function getAuthUserId() {
+  const { data: authData } = await supabase.auth.getUser();
+  return authData?.user?.id || null;
+}
+
 export async function ensureUserRow() {
   const { data: authData } = await supabase.auth.getUser();
   const authUser = authData?.user || null;

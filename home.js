@@ -1,6 +1,6 @@
 import { supabase } from './supabaseClient.js';
 import { ensureStudioContextAndRoute } from './studio-routing.js';
-import { ensureUserRow } from './utils.js';
+import { ensureUserRow, getAuthUserId } from './utils.js';
 
 const qs = id => document.getElementById(id);
 const safeParse = value => {
@@ -200,6 +200,21 @@ async function init() {
   if (!sessionData?.session) {
     window.location.href = "login.html";
     return;
+  }
+
+  const authUserId = await getAuthUserId();
+  console.log('[Identity] authUserId', authUserId);
+  if (authUserId) {
+    const { data: authProfile, error: authErr } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', authUserId)
+      .single();
+    if (!authErr && authProfile) {
+      console.log('[Identity] loaded profile id', authProfile.id);
+      const name = authProfile.firstName || 'Student';
+      qs('welcomeText').textContent = `Welcome, ${name}!`;
+    }
   }
 
   await ensureUserRow();

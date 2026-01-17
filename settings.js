@@ -1,6 +1,6 @@
 // settings.js — patched to fix password/email updates with switched profiles
 import { supabase } from "./supabaseClient.js";
-import { recalculateUserPoints, ensureUserRow } from './utils.js';
+import { recalculateUserPoints, ensureUserRow, getAuthUserId } from './utils.js';
 
 // ---------- helpers ----------
 function getHighestRole(roles) {
@@ -135,7 +135,25 @@ function applyCredsGuard(isOwn) {
 
 // ---------- save ----------
 async function saveSettings() {
-  const profile = JSON.parse(localStorage.getItem('loggedInUser')) || {};
+  const authUserId = await getAuthUserId();
+  if (!authUserId) {
+    alert('You must be logged in.');
+    return;
+  }
+
+  const { data: authProfile, error: authProfileErr } = await supabase
+    .from('users')
+    .select('*')
+    .eq('id', authUserId)
+    .single();
+
+  if (authProfileErr || !authProfile) {
+    console.error('[Settings] failed to load auth profile', authProfileErr);
+    alert('Failed to load account profile.');
+    return;
+  }
+
+  const profile = authProfile;
   const { data: authData } = await supabase.auth.getUser();
   const authUser = authData?.user || null;
   const isEditingOwnAccount = !!(authUser && authUser.id === profile.id);
@@ -213,7 +231,29 @@ async function saveSettings() {
 
 // ---------- init ----------
 document.addEventListener('DOMContentLoaded', async () => {
-  let user = JSON.parse(localStorage.getItem('loggedInUser'));
+  const authUserId = await getAuthUserId();
+  console.log('[Identity] authUserId', authUserId);
+  if (!authUserId) {
+    alert('You must be logged in.');
+    window.location.replace("./login.html");
+    return;
+  }
+
+  const { data: authProfile, error: authProfileErr } = await supabase
+    .from('users')
+    .select('*')
+    .eq('id', authUserId)
+    .single();
+
+  if (authProfileErr || !authProfile) {
+    console.error('[Settings] failed to load auth profile', authProfileErr);
+    alert('Failed to load account profile.');
+    window.location.replace("./login.html");
+    return;
+  }
+
+  console.log('[Identity] loaded profile id', authProfile.id);
+  let user = authProfile;
   let activeRole = localStorage.getItem('activeRole');
   if (!activeRole && user?.roles) {
     activeRole = getHighestRole(user.roles);
@@ -221,9 +261,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   const ensured = await ensureUserRow();
-  if (ensured && (!user || String(user.id) === String(ensured.id))) {
-    user = { ...ensured, ...(user || {}) };
-    localStorage.setItem('loggedInUser', JSON.stringify(user));
+  if (ensured && String(ensured.id) === String(user.id)) {
+    user = { ...user, ...ensured };
   }
 
   if (!user || !activeRole) {
