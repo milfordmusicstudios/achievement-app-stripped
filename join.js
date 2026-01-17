@@ -51,12 +51,8 @@ async function validateInvite(token) {
     return;
   }
 
-  const { data: invite, error } = await supabase
-    .from("invites")
-    .select("id, studio_id, role_hint, invited_email, status, expires_at")
-    .eq("token", token)
-    .eq("status", "pending")
-    .maybeSingle();
+  const { data, error } = await supabase.rpc("validate_invite_token", { p_token: token });
+  const invite = Array.isArray(data) ? data[0] : data;
 
   if (error || !invite) {
     setText(statusEl, "Invite not found, expired, or already used.");
@@ -72,14 +68,6 @@ async function validateInvite(token) {
     return;
   }
 
-  const expiresAt = invite.expires_at ? new Date(invite.expires_at) : null;
-  if (expiresAt && expiresAt <= new Date()) {
-    setText(statusEl, "Invite has expired.");
-    showError("This invite has expired.");
-    clearPendingInvite();
-    return;
-  }
-
   localStorage.setItem("pendingInviteToken", token);
   localStorage.setItem("pendingInviteStudioId", invite.studio_id);
   if (invite.invited_email) {
@@ -90,14 +78,8 @@ async function validateInvite(token) {
   }
 
   let studioName = "";
-  const { data: studioRow, error: studioErr } = await supabase
-    .from("studios")
-    .select("name, slug")
-    .eq("id", invite.studio_id)
-    .single();
-
-  if (!studioErr && studioRow?.name) {
-    studioName = studioRow.slug ? `${studioRow.name} (${studioRow.slug})` : studioRow.name;
+  if (invite.studio_name) {
+    studioName = invite.studio_slug ? `${invite.studio_name} (${invite.studio_slug})` : invite.studio_name;
   }
 
   setText(statusEl, "Invite validated.");
