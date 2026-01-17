@@ -13,6 +13,7 @@
     <section class="home-identity">
       <h1 id="welcomeText" class="home-welcome">Welcome!</h1>
       <div id="studioNameLine" class="home-studio">Studio: —</div>
+      <div id="staffQuickLogMount"></div>
 
       <div class="identity-row">
         <div class="identity-avatar">
@@ -45,37 +46,6 @@
       </div>
 
     </section>
-
-    <section class="home-staff staff-only" aria-label="Staff quick log">
-      <div class="action-title">Quick Log</div>
-      <form id="staffQuickLogForm" class="staff-card">
-        <label for="staffCategory">Category</label>
-        <select id="staffCategory" required></select>
-
-        <label for="staffStudents">Students</label>
-        <select id="staffStudents" multiple required></select>
-
-        <label for="staffDate">Dates</label>
-        <div class="date-row">
-          <input id="staffDate" type="date" />
-          <button id="addDateBtn" type="button" class="blue-button">Add date</button>
-        </div>
-        <div id="dateChips" class="date-chips"></div>
-
-        <label for="staffPoints">Points</label>
-        <input id="staffPoints" type="number" min="0" required />
-
-        <label for="staffNotes">Notes</label>
-        <input id="staffNotes" type="text" />
-
-        <p id="staffQuickLogMsg" class="staff-msg" style="display:none;"></p>
-
-        <div class="button-row" style="margin-top:10px;">
-          <button type="submit" class="blue-button">Submit</button>
-        </div>
-      </form>
-    </section>
-
     <!-- Action hub -->
     <section class="home-actions student-only" aria-label="Log your progress">
       <button id="quickPracticeBtn" class="action-primary">

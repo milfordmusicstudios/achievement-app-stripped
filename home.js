@@ -277,6 +277,7 @@ async function init() {
     }
 
     if (isStaff) {
+      renderStaffQuickLogShell();
       await initStaffQuickLog({
         authUserId,
         studioId: activeStudioId,
@@ -312,27 +313,68 @@ initAvatarSwitcher(availableUsers);
 
 document.addEventListener('DOMContentLoaded', init);
 
+function renderStaffQuickLogShell() {
+  const mount = document.getElementById('staffQuickLogMount');
+  if (!mount) return;
+  mount.innerHTML = `
+    <section class="home-staff staff-only" aria-label="Staff quick log">
+      <div class="action-title">Quick Log</div>
+      <form id="staffQuickLogForm" class="staff-card">
+        <label for="staffCategory">Category</label>
+        <select id="staffCategory" required disabled>
+          <option value="">Loading...</option>
+        </select>
+
+        <label for="staffStudents">Students</label>
+        <select id="staffStudents" multiple required disabled>
+          <option value="">Loading...</option>
+        </select>
+
+        <label for="staffDate">Dates</label>
+        <div class="date-row">
+          <input id="staffDate" type="date" />
+          <button id="addDateBtn" type="button" class="blue-button">Add date</button>
+        </div>
+        <div id="dateChips" class="date-chips"></div>
+
+        <label for="staffPoints">Points</label>
+        <input id="staffPoints" type="number" min="0" required />
+
+        <label for="staffNotes">Notes</label>
+        <input id="staffNotes" type="text" />
+
+        <div id="staffQuickLogError" class="staff-msg" style="display:none;"></div>
+        <p id="staffQuickLogMsg" class="staff-msg" style="display:none;"></p>
+
+        <div class="button-row" style="margin-top:10px;">
+          <button id="staffQuickLogSubmit" type="submit" class="blue-button" disabled>Submit</button>
+        </div>
+      </form>
+    </section>
+  `;
+}
+
 async function loadCategoriesForStudio(studioId) {
-  if (!studioId) return [];
+  if (!studioId) return { data: [], error: new Error('Missing studio id') };
   const { data, error } = await supabase
     .from('categories')
-    .select('name')
+    .select('id, name')
     .eq('studio_id', studioId)
     .order('id', { ascending: true });
-  if (error || !Array.isArray(data)) return [];
-  return data;
+  if (error || !Array.isArray(data)) return { data: [], error };
+  return { data, error: null };
 }
 
 async function loadStudentsForStudio(studioId) {
-  if (!studioId) return [];
+  if (!studioId) return { data: [], error: new Error('Missing studio id') };
   const { data, error } = await supabase
     .from('users')
-    .select('id, firstName, lastName, roles, active')
+    .select('id, firstName, lastName, email')
     .eq('studio_id', studioId)
     .eq('active', true)
     .contains('roles', ['student']);
-  if (error || !Array.isArray(data)) return [];
-  return data;
+  if (error || !Array.isArray(data)) return { data: [], error };
+  return { data, error: null };
 }
 
 function addDateChip(container, dateValue) {
@@ -393,8 +435,21 @@ async function initStaffQuickLog({ authUserId, studioId, roles }) {
   const pointsInput = document.getElementById('staffPoints');
   const notesInput = document.getElementById('staffNotes');
   const msgEl = document.getElementById('staffQuickLogMsg');
+  const errorEl = document.getElementById('staffQuickLogError');
+  const submitBtn = document.getElementById('staffQuickLogSubmit');
 
-  const categories = await loadCategoriesForStudio(studioId);
+  const setError = (message) => {
+    if (!errorEl) return;
+    errorEl.textContent = message;
+    errorEl.style.display = 'block';
+    errorEl.style.color = '#c62828';
+  };
+
+  const { data: categories, error: catErr } = await loadCategoriesForStudio(studioId);
+  if (catErr?.message) {
+    setError(catErr.message);
+  }
+
   if (categorySelect) {
     if (!categories.length) {
       categorySelect.innerHTML = '<option value="">No categories yet</option>';
@@ -411,17 +466,30 @@ async function initStaffQuickLog({ authUserId, studioId, roles }) {
     }
   }
 
-  const students = await loadStudentsForStudio(studioId);
-  if (studentSelect) {
-    studentSelect.innerHTML = '';
-    students.forEach(s => {
-      const opt = document.createElement('option');
-      opt.value = s.id;
-      const name = `${s.firstName || ''} ${s.lastName || ''}`.trim() || 'Student';
-      opt.textContent = name;
-      studentSelect.appendChild(opt);
-    });
+  const { data: students, error: studentErr } = await loadStudentsForStudio(studioId);
+  if (studentErr?.message) {
+    setError(studentErr.message);
   }
+
+  if (studentSelect) {
+    if (!students.length) {
+      studentSelect.innerHTML = '<option value="">No students found</option>';
+      studentSelect.disabled = true;
+    } else {
+      studentSelect.disabled = false;
+      studentSelect.innerHTML = '';
+      students.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s.id;
+        const name = `${s.firstName || ''} ${s.lastName || ''}`.trim() || 'Student';
+        opt.textContent = name;
+        studentSelect.appendChild(opt);
+      });
+    }
+  }
+
+  const canSubmit = !catErr && !studentErr && categories.length > 0 && students.length > 0;
+  if (submitBtn) submitBtn.disabled = !canSubmit;
 
   if (addDateBtn && dateInput && dateChips) {
     addDateBtn.addEventListener('click', () => {
