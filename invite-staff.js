@@ -1,4 +1,5 @@
 import { supabase } from "./supabaseClient.js";
+import { requireStudioRoles } from "./utils.js";
 
 function toIsoPlusDays(days) {
   const d = new Date();
@@ -6,38 +7,8 @@ function toIsoPlusDays(days) {
   return d.toISOString();
 }
 
-function getActiveStudioRoles() {
-  try {
-    const raw = localStorage.getItem("activeStudioRoles");
-    const roles = JSON.parse(raw || "[]");
-    return Array.isArray(roles) ? roles : [];
-  } catch {
-    return [];
-  }
-}
-
 function normalizeEmail(value) {
   return String(value || "").trim().toLowerCase();
-}
-
-async function ensureAdmin(authUserId, studioId) {
-  const cachedRoles = getActiveStudioRoles();
-  if (cachedRoles.includes("admin")) return true;
-
-  const { data, error } = await supabase
-    .from("studio_members")
-    .select("roles")
-    .eq("user_id", authUserId)
-    .eq("studio_id", studioId)
-    .single();
-
-  if (error) {
-    console.error("[InviteStaff] admin check failed", error);
-    return false;
-  }
-
-  const roles = Array.isArray(data?.roles) ? data.roles : [];
-  return roles.includes("admin");
 }
 
 async function loadPendingInvites(studioId) {
@@ -64,6 +35,7 @@ async function loadPendingInvites(studioId) {
   }
 
   data.forEach(invite => {
+    const inviteLink = `${window.location.origin}/join.html?token=${invite.token}`;
     const row = document.createElement("div");
     row.style.padding = "10px";
     row.style.background = "#fff";
@@ -73,9 +45,38 @@ async function loadPendingInvites(studioId) {
       <div><b>${invite.invited_email}</b> (${invite.role_hint || "role"})</div>
       <div style="font-size:12px; color:#555;">Expires: ${invite.expires_at ? new Date(invite.expires_at).toLocaleString() : "n/a"}</div>
       <div style="font-size:12px; margin-top:6px;">
-        <a href="accept-invite.html?token=${invite.token}">accept-invite.html?token=${invite.token}</a>
+        <a href="${inviteLink}">${inviteLink}</a>
+      </div>
+      <div class="button-row" style="margin-top:10px;">
+        <button type="button" class="blue-button copy-link-btn">Copy link</button>
+        <button type="button" class="blue-button revoke-btn" style="background:#999;">Revoke</button>
       </div>
     `;
+    const copyBtn = row.querySelector(".copy-link-btn");
+    if (copyBtn) {
+      copyBtn.addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(inviteLink);
+        } catch (err) {
+          console.error("[InviteStaff] copy failed", err);
+        }
+      });
+    }
+    const revokeBtn = row.querySelector(".revoke-btn");
+    if (revokeBtn) {
+      revokeBtn.addEventListener("click", async () => {
+        const { error: revokeErr } = await supabase
+          .from("invites")
+          .update({ status: "revoked" })
+          .eq("id", invite.id);
+        if (revokeErr) {
+          console.error("[InviteStaff] revoke failed", revokeErr);
+          return;
+        }
+        console.log("[InviteStaff] revoked invite", invite.id);
+        await loadPendingInvites(studioId);
+      });
+    }
     container.appendChild(row);
   });
 }
@@ -105,11 +106,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   console.log("[InviteStaff] studio id", studioId);
 
-  const isAdmin = await ensureAdmin(authUser.id, studioId);
-  if (!isAdmin) {
-    window.location.href = "index.html";
-    return;
-  }
+  const authz = await requireStudioRoles(["admin"]);
+  console.log("[AuthZ]", { page: "invite-staff", requiredRoles: ["admin"], roles: authz.roles, studioId: authz.studioId });
+  if (!authz.ok) return;
 
   await loadPendingInvites(studioId);
 
@@ -146,7 +145,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
 
       const token = crypto.randomUUID();
-      const expiresAt = toIsoPlusDays(7);
+      const expiresAt = toIsoPlusDays(14);
 
       if (errorEl) errorEl.style.display = "none";
       if (successEl) successEl.style.display = "none";
@@ -173,7 +172,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
 
       console.log("[InviteStaff] inserted invite id", data?.id);
-      const link = `accept-invite.html?token=${token}`;
+      const link = `${window.location.origin}/join.html?token=${token}`;
       if (linkInput) linkInput.value = link;
       if (linkBox) linkBox.style.display = "block";
       if (successEl) {
