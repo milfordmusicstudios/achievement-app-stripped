@@ -217,6 +217,29 @@ async function init() {
     }
   }
 
+  const activeStudioId = localStorage.getItem("activeStudioId");
+  console.log('[Home] activeStudioId', activeStudioId);
+  if (authUserId && activeStudioId) {
+    const { data: studioMember, error: studioErr } = await supabase
+      .from('studio_members')
+      .select('roles')
+      .eq('user_id', authUserId)
+      .eq('studio_id', activeStudioId)
+      .single();
+
+    const studioRoles = Array.isArray(studioMember?.roles) ? studioMember.roles : [];
+    const isAdminOrTeacher = studioRoles.includes('admin') || studioRoles.includes('teacher');
+    console.log('[Home] studio roles', studioRoles);
+    console.log('[Home] isAdminOrTeacher', isAdminOrTeacher);
+
+    document.querySelectorAll('.student-only').forEach(el => {
+      el.style.display = isAdminOrTeacher ? 'none' : '';
+    });
+    document.querySelectorAll('.admin-only').forEach(el => {
+      el.style.display = isAdminOrTeacher ? '' : 'none';
+    });
+  }
+
   await ensureUserRow();
 
   const routeResult = await ensureStudioContextAndRoute({ redirectHome: false });

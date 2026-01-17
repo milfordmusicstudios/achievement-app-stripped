@@ -112,6 +112,17 @@ a.big-fun-btn:focus-visible {
   gap: 14px;
 }
 
+.admin-only {
+  display: none;
+}
+
+.admin-mode {
+  margin-top: 10px;
+  text-align: center;
+  font-weight: 800;
+  color: #0B4F8A;
+}
+
 /* Avatar */
 .identity-avatar {
   position: relative;

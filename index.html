@@ -26,12 +26,12 @@
           <div id="avatarMenu" class="avatar-menu" role="menu" hidden></div>
         </div>
 
-        <div class="identity-level">
+        <div class="identity-level student-only">
           <img id="levelBadgeImg" src="images/levelBadges/level1.png" alt="Level badge" />
         </div>
       </div>
 
-      <div class="identity-progress">
+      <div class="identity-progress student-only">
         <div class="progress-card">
           <div class="progress-title">Level Progress</div>
           <div class="progress-container">
@@ -41,6 +41,8 @@
           <div id="progressPercent" class="progress-percent">0% complete</div>
         </div>
       </div>
+
+      <div id="adminMode" class="admin-mode admin-only">Admin Mode</div>
     </section>
 
     <!-- Action hub -->
@@ -99,6 +101,12 @@
     <section class="home-nav">
       <a class="nav-btn" href="my-points.html">My Points</a>
       <a class="nav-btn" href="settings.html">Settings</a>
+    </section>
+
+    <section id="adminNav" class="home-nav admin-only">
+      <a class="nav-btn" href="invite-staff.html">Invite Staff</a>
+      <a class="nav-btn" href="review-logs.html">Review Logs</a>
+      <a class="nav-btn" href="manage-users.html">Manage Users</a>
     </section>
   </main>
 
