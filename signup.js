@@ -64,6 +64,19 @@ document.addEventListener("DOMContentLoaded", () => {
   const emailInput = document.getElementById("signupEmail");
   const cancelBtn = document.getElementById("cancelBtn");
   const submitBtn = document.getElementById("submitBtn");
+  const hasPendingInvite = Boolean(localStorage.getItem("pendingInviteToken"));
+  const studentsContainer = document.getElementById("studentsContainer");
+  const addStudentBtn = document.getElementById("addStudentBtn");
+
+  if (hasPendingInvite) {
+    if (studentsContainer) {
+      studentsContainer.style.display = "none";
+      studentsContainer.querySelectorAll("input, select").forEach(el => {
+        el.required = false;
+      });
+    }
+    if (addStudentBtn) addStudentBtn.style.display = "none";
+  }
 
   // Prefill email if provided in query
   const params = new URLSearchParams(window.location.search);
@@ -139,50 +152,53 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // Build pending children from ALL student blocks
-    const blocks = Array.from(document.querySelectorAll("#studentsContainer .student-block"));
     const pending = [];
 
     try {
-      blocks.forEach((block, idx) => {
-        const n = idx + 1;
-        const suffix = (n === 1) ? "" : String(n);
+      if (!hasPendingInvite) {
+        const blocks = Array.from(document.querySelectorAll("#studentsContainer .student-block"));
+        blocks.forEach((block, idx) => {
+          const n = idx + 1;
+          const suffix = (n === 1) ? "" : String(n);
 
-        const firstName = (document.getElementById(`firstName${suffix}`)?.value || "").trim();
-        const lastName  = (document.getElementById(`lastName${suffix}`)?.value || "").trim();
-        const rawInst   = (document.getElementById(`instrument${suffix}`)?.value || "");
-        const instruments = parseInstruments(rawInst);
+          const firstName = (document.getElementById(`firstName${suffix}`)?.value || "").trim();
+          const lastName  = (document.getElementById(`lastName${suffix}`)?.value || "").trim();
+          const rawInst   = (document.getElementById(`instrument${suffix}`)?.value || "");
+          const instruments = parseInstruments(rawInst);
 
-        const teacherSel = document.getElementById(`teacherIds${suffix}`);
-        const teacherIds = Array.from(teacherSel?.selectedOptions || []).map(o => o.value);
+          const teacherSel = document.getElementById(`teacherIds${suffix}`);
+          const teacherIds = Array.from(teacherSel?.selectedOptions || []).map(o => o.value);
 
-        // Optional students: ignore completely if no name entered
-        if (n > 1 && !firstName && !lastName) return;
+          // Optional students: ignore completely if no name entered
+          if (n > 1 && !firstName && !lastName) return;
 
-        // Validate student
-        if (!firstName || !lastName) {
-          throw new Error(`Student #${n} must have both first and last name.`);
+          // Validate student
+          if (!firstName || !lastName) {
+            throw new Error(`Student #${n} must have both first and last name.`);
+          }
+          if (instruments.length === 0) {
+            throw new Error(`Please enter at least one instrument for Student #${n}.`);
+          }
+          if (teachersAvailable && teacherIds.length === 0) {
+            throw new Error(`Please select at least one teacher for Student #${n}.`);
+          }
+
+          pending.push({ firstName, lastName, instruments, teacherIds });
+        });
+
+        if (pending.length === 0) {
+          throw new Error("Please enter at least one student.");
         }
-        if (instruments.length === 0) {
-          throw new Error(`Please enter at least one instrument for Student #${n}.`);
-        }
-        if (teachersAvailable && teacherIds.length === 0) {
-          throw new Error(`Please select at least one teacher for Student #${n}.`);
-        }
-
-        pending.push({ firstName, lastName, instruments, teacherIds });
-      });
-
-      if (pending.length === 0) {
-        throw new Error("Please enter at least one student.");
       }
 
       // Prevent double-submit
       submitBtn.disabled = true;
 
       // Save drafts locally to finalize after email confirm + login
-      localStorage.setItem("pendingChildren", JSON.stringify(pending));
-      localStorage.setItem("pendingChildrenEmail", email);
+      if (pending.length > 0) {
+        localStorage.setItem("pendingChildren", JSON.stringify(pending));
+        localStorage.setItem("pendingChildrenEmail", email);
+      }
 
       // Signup ONCE (parent auth)
       // Parent name metadata: use Student #1 name for now

@@ -4,192 +4,136 @@ function qs(id) {
   return document.getElementById(id);
 }
 
-function showMessage(el, message, isError) {
+function setText(el, text) {
   if (!el) return;
-  el.textContent = message;
-  el.style.display = "block";
-  el.style.color = isError ? "#c62828" : "#0b7a3a";
+  el.textContent = text;
 }
 
-async function getAuthUser() {
-  const { data: authData } = await supabase.auth.getUser();
-  return authData?.user || null;
-}
-
-async function loadStudios() {
-  const select = qs("studioSelect");
-  if (!select) return;
-  select.innerHTML = "";
-
-  const { data, error } = await supabase
-    .from("studios")
-    .select("id, name, slug")
-    .order("name", { ascending: true });
-
-  if (error) {
-    showMessage(qs("requestError"), error.message || "Failed to load studios.", true);
-    return;
-  }
-
-  if (!data?.length) {
-    const opt = document.createElement("option");
-    opt.value = "";
-    opt.textContent = "No studios found";
-    select.appendChild(opt);
-    select.disabled = true;
-    return;
-  }
-
-  data.forEach(studio => {
-    const opt = document.createElement("option");
-    opt.value = studio.id;
-    opt.textContent = studio.slug ? `${studio.name} (${studio.slug})` : studio.name;
-    select.appendChild(opt);
-  });
-  select.disabled = false;
-}
-
-async function joinWithInvite(authUser) {
-  const tokenInput = qs("inviteToken");
+function showError(message) {
   const errorEl = qs("inviteError");
-  const successEl = qs("inviteSuccess");
-  if (!tokenInput) return;
+  if (!errorEl) return;
+  errorEl.textContent = message;
+  errorEl.style.display = "block";
+}
 
-  if (errorEl) errorEl.style.display = "none";
-  if (successEl) successEl.style.display = "none";
+function clearError() {
+  const errorEl = qs("inviteError");
+  if (!errorEl) return;
+  errorEl.textContent = "";
+  errorEl.style.display = "none";
+}
 
-  const token = (tokenInput.value || "").trim();
+function setAuthButtonsEnabled(enabled) {
+  const loginBtn = qs("loginBtn");
+  const signupBtn = qs("signupBtn");
+  if (loginBtn) loginBtn.disabled = !enabled;
+  if (signupBtn) signupBtn.disabled = !enabled;
+}
+
+function clearPendingInvite() {
+  localStorage.removeItem("pendingInviteToken");
+  localStorage.removeItem("pendingInviteStudioId");
+  localStorage.removeItem("pendingInviteEmail");
+  localStorage.removeItem("pendingInviteRoleHint");
+}
+
+async function validateInvite(token) {
+  clearError();
+  setAuthButtonsEnabled(false);
+
+  const statusEl = qs("inviteStatus");
+  const detailsEl = qs("inviteDetails");
+  setText(statusEl, "Checking invite...");
+  setText(detailsEl, "");
+
   if (!token) {
-    showMessage(errorEl, "Please enter an invite token.", true);
+    setText(statusEl, "Paste an invite token to continue.");
     return;
   }
 
   const { data: invite, error } = await supabase
     .from("invites")
-    .select("id, studio_id, role_hint, status, expires_at")
+    .select("id, studio_id, role_hint, invited_email, status, expires_at")
     .eq("token", token)
     .eq("status", "pending")
     .single();
 
   if (error || !invite) {
-    showMessage(errorEl, "Invite not found or already used.", true);
+    setText(statusEl, "Invite not found or already used.");
+    showError("This invite is not valid.");
+    clearPendingInvite();
     return;
   }
 
   if (!invite.studio_id || !invite.role_hint) {
-    showMessage(errorEl, "Invite is missing studio or role details.", true);
+    setText(statusEl, "Invite is missing studio or role details.");
+    showError("This invite is incomplete.");
+    clearPendingInvite();
     return;
   }
 
-  const now = new Date();
   const expiresAt = invite.expires_at ? new Date(invite.expires_at) : null;
-  if (expiresAt && expiresAt <= now) {
-    showMessage(errorEl, "Invite has expired.", true);
+  if (expiresAt && expiresAt <= new Date()) {
+    setText(statusEl, "Invite has expired.");
+    showError("This invite has expired.");
+    clearPendingInvite();
     return;
   }
 
-  const roles = [invite.role_hint];
-  const { error: memberErr } = await supabase.from("studio_members").insert([
-    {
-      studio_id: invite.studio_id,
-      user_id: authUser.id,
-      roles,
-      created_by: authUser.id
-    }
-  ]);
-
-  if (memberErr) {
-    showMessage(errorEl, memberErr.message || "Failed to join studio.", true);
-    return;
+  localStorage.setItem("pendingInviteToken", token);
+  localStorage.setItem("pendingInviteStudioId", invite.studio_id);
+  if (invite.invited_email) {
+    localStorage.setItem("pendingInviteEmail", invite.invited_email);
+  }
+  if (invite.role_hint) {
+    localStorage.setItem("pendingInviteRoleHint", invite.role_hint);
   }
 
-  const { error: inviteErr } = await supabase
-    .from("invites")
-    .update({
-      status: "accepted",
-      accepted_by: authUser.id,
-      accepted_at: new Date().toISOString()
-    })
-    .eq("id", invite.id);
+  let studioName = "";
+  const { data: studioRow, error: studioErr } = await supabase
+    .from("studios")
+    .select("name, slug")
+    .eq("id", invite.studio_id)
+    .single();
 
-  if (inviteErr) {
-    showMessage(errorEl, inviteErr.message || "Joined studio, but invite update failed.", true);
-    return;
+  if (!studioErr && studioRow?.name) {
+    studioName = studioRow.slug ? `${studioRow.name} (${studioRow.slug})` : studioRow.name;
   }
 
-  localStorage.setItem("activeStudioId", invite.studio_id);
-  localStorage.setItem("activeStudioRoles", JSON.stringify(roles));
-  showMessage(successEl, "Joined studio successfully.", false);
-  window.location.href = "index.html";
-}
-
-async function requestAccess(authUser) {
-  const studioSelect = qs("studioSelect");
-  const noteInput = qs("requestNote");
-  const errorEl = qs("requestError");
-  const successEl = qs("requestSuccess");
-  if (!studioSelect) return;
-
-  if (errorEl) errorEl.style.display = "none";
-  if (successEl) successEl.style.display = "none";
-
-  const studioId = studioSelect.value;
-  if (!studioId) {
-    showMessage(errorEl, "Please select a studio.", true);
-    return;
+  setText(statusEl, "Invite validated.");
+  if (studioName) {
+    setText(detailsEl, `You are invited to ${studioName}.`);
   }
-
-  const note = (noteInput?.value || "").trim();
-  const email = authUser.email || "";
-  const message = note
-    ? `Access request from ${email}: ${note}`
-    : `Access request from ${email}.`;
-
-  const { error } = await supabase.from("notifications").insert([
-    {
-      studio_id: studioId,
-      type: "access_request",
-      from_user_id: authUser.id,
-      message,
-      status: "unread"
-    }
-  ]);
-
-  if (error) {
-    showMessage(errorEl, error.message || "Failed to send request.", true);
-    return;
-  }
-
-  showMessage(successEl, "Request sent. A studio admin will review it.", false);
-  if (noteInput) noteInput.value = "";
+  setAuthButtonsEnabled(true);
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
-  const authUser = await getAuthUser();
-  if (!authUser?.id) {
-    window.location.href = "login.html";
-    return;
-  }
-
   const tokenInput = qs("inviteToken");
   const urlToken = new URLSearchParams(window.location.search).get("token");
   if (tokenInput && urlToken) {
     tokenInput.value = urlToken;
+    await validateInvite(urlToken);
   }
 
-  await loadStudios();
-
-  const joinBtn = qs("joinBtn");
-  if (joinBtn) {
-    joinBtn.addEventListener("click", async () => {
-      await joinWithInvite(authUser);
+  const validateBtn = qs("validateBtn");
+  if (validateBtn) {
+    validateBtn.addEventListener("click", async () => {
+      const token = (tokenInput?.value || "").trim();
+      await validateInvite(token);
     });
   }
 
-  const requestBtn = qs("requestBtn");
-  if (requestBtn) {
-    requestBtn.addEventListener("click", async () => {
-      await requestAccess(authUser);
+  const loginBtn = qs("loginBtn");
+  if (loginBtn) {
+    loginBtn.addEventListener("click", () => {
+      window.location.href = "login.html";
+    });
+  }
+
+  const signupBtn = qs("signupBtn");
+  if (signupBtn) {
+    signupBtn.addEventListener("click", () => {
+      window.location.href = "signup.html";
     });
   }
 

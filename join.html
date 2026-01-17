@@ -14,30 +14,21 @@
 
     <section class="settings-form" style="max-width:520px; margin: 0 auto 20px;">
       <h3>Join with Invite</h3>
+
       <label for="inviteToken">Invite Token</label>
       <input id="inviteToken" type="text" placeholder="Paste your invite token" />
+
+      <p id="inviteStatus" style="margin-top:10px;">Paste an invite token to continue.</p>
+      <p id="inviteDetails" style="margin-top:6px;"></p>
       <p id="inviteError" style="color:#c62828; display:none; margin-top:10px;"></p>
-      <p id="inviteSuccess" style="color:#0b7a3a; display:none; margin-top:10px;"></p>
+
       <div class="button-row" style="margin-top:14px;">
-        <button id="joinBtn" type="button" class="blue-button">Join Studio</button>
+        <button id="validateBtn" type="button" class="blue-button">Validate Invite</button>
       </div>
-    </section>
-
-    <section class="settings-form" style="max-width:520px; margin: 0 auto;">
-      <h3>Request Access</h3>
-      <p>If you did not receive an invite, request access from your studio.</p>
-
-      <label for="studioSelect">Studio</label>
-      <select id="studioSelect"></select>
-
-      <label for="requestNote">Note (optional)</label>
-      <input id="requestNote" type="text" placeholder="Your note to the studio admin" />
-
-      <p id="requestError" style="color:#c62828; display:none; margin-top:10px;"></p>
-      <p id="requestSuccess" style="color:#0b7a3a; display:none; margin-top:10px;"></p>
 
       <div class="button-row" style="margin-top:14px;">
-        <button id="requestBtn" type="button" class="blue-button">Request Access</button>
+        <button id="loginBtn" type="button" class="blue-button" disabled>Log in</button>
+        <button id="signupBtn" type="button" class="blue-button" disabled>Create account</button>
       </div>
     </section>
 
