@@ -182,15 +182,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
         return;
       }
-      const pendingToken = localStorage.getItem("pendingInviteToken") || "";
-      const redirectTo = pendingToken
-        ? `${window.location.origin}/auth-callback.html?token=${encodeURIComponent(pendingToken)}`
-        : `${window.location.origin}/auth-callback.html`;
       const { error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: redirectTo,
+          emailRedirectTo: "https://achievement-awards-dev.vercel.app/auth-callback.html",
         },
       });
       if (error) {
