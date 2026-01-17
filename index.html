@@ -12,6 +12,7 @@
     <!-- Identity first -->
     <section class="home-identity">
       <h1 id="welcomeText" class="home-welcome">Welcome!</h1>
+      <div id="studioNameLine" class="home-studio">Studio: —</div>
 
       <div class="identity-row">
         <div class="identity-avatar">
@@ -42,11 +43,17 @@
         </div>
       </div>
 
-      <div id="adminMode" class="admin-mode admin-only">Admin Mode</div>
+    </section>
+
+    <section class="home-staff staff-only" aria-label="Staff tools">
+      <div class="action-title">Log points for students</div>
+      <div class="staff-actions">
+        <a class="nav-btn" href="log-points.html">Log Points</a>
+      </div>
     </section>
 
     <!-- Action hub -->
-    <section class="home-actions" aria-label="Log your progress">
+    <section class="home-actions student-only" aria-label="Log your progress">
       <button id="quickPracticeBtn" class="action-primary">
         ✅ <span>Practice Today</span> <span class="muted">(+5 XP)</span>
       </button>
@@ -93,7 +100,7 @@
     </section>
 
     <!-- Fun button -->
-    <section class="home-fun">
+    <section class="home-fun student-only">
       <a class="big-fun-btn" href="leaderboard.html">✨ Leaderboard</a>
     </section>
 
@@ -103,10 +110,15 @@
       <a class="nav-btn" href="settings.html">Settings</a>
     </section>
 
-    <section id="adminNav" class="home-nav admin-only">
-      <a class="nav-btn" href="invite-staff.html">Invite Staff</a>
+    <section class="home-nav staff-only">
       <a class="nav-btn" href="review-logs.html">Review Logs</a>
+      <a class="nav-btn" href="leaderboard.html">Leaderboard</a>
+    </section>
+
+    <section class="home-nav admin-only">
       <a class="nav-btn" href="manage-users.html">Manage Users</a>
+      <a class="nav-btn" href="invite-staff.html">Invite Staff</a>
+      <a class="nav-btn" href="studio-settings.html">Studio Settings</a>
     </section>
   </main>
 

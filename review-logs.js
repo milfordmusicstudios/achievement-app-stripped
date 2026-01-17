@@ -1,5 +1,5 @@
 import { supabase } from "./supabaseClient.js";
-import { recalculateUserPoints } from './utils.js';
+import { recalculateUserPoints, requireRole } from './utils.js';
 import { ensureStudioContextAndRoute } from "./studio-routing.js";
 
 const categoryOptions = ["practice", "participation", "performance", "personal", "proficiency"];
@@ -10,14 +10,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   const routeResult = await ensureStudioContextAndRoute({ redirectHome: false });
   if (routeResult?.redirected) return;
 
-  const user = JSON.parse(localStorage.getItem("loggedInUser"));
-  const activeRole = localStorage.getItem("activeRole");
-
-  if (!user || !["admin", "teacher"].includes(activeRole)) {
-    alert("You are not authorized to view this page.");
-    window.location.href = "index.html";
-    return;
-  }
+  const authz = await requireRole(["admin", "teacher"], { message: "You are not authorized to view this page." });
+  console.log(`[AuthZ] page=review-logs required=admin|teacher roles=${(authz.roles || []).join(",")}`);
+  if (!authz.ok) return;
 
   const logsTableBody = document.getElementById("logsTableBody");
   const categorySummary = document.getElementById("categorySummary");

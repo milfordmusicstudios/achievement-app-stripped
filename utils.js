@@ -5,6 +5,108 @@ export async function getAuthUserId() {
   return authData?.user?.id || null;
 }
 
+export async function getStudioRolesForActiveStudio() {
+  const { data: authData } = await supabase.auth.getUser();
+  const authUser = authData?.user || null;
+  if (!authUser?.id) return [];
+
+  let activeStudioId = localStorage.getItem("activeStudioId");
+  if (!activeStudioId) {
+    const { data: memberships } = await supabase
+      .from("studio_members")
+      .select("studio_id")
+      .eq("user_id", authUser.id);
+    if (memberships?.length === 1) {
+      activeStudioId = memberships[0].studio_id;
+      localStorage.setItem("activeStudioId", activeStudioId);
+    }
+  }
+
+  if (!activeStudioId) return [];
+
+  const { data: member, error } = await supabase
+    .from("studio_members")
+    .select("roles")
+    .eq("user_id", authUser.id)
+    .eq("studio_id", activeStudioId)
+    .single();
+
+  if (error) {
+    console.error("[AuthZ] studio role lookup failed", error);
+    return [];
+  }
+
+  const roles = Array.isArray(member?.roles) ? member.roles : [];
+  localStorage.setItem("activeStudioRoles", JSON.stringify(roles));
+  return roles;
+}
+
+export async function requireRole(requiredRoles, options = {}) {
+  const roles = await getStudioRolesForActiveStudio();
+  const required = Array.isArray(requiredRoles) ? requiredRoles : [requiredRoles];
+  const ok = required.some(r => roles.includes(r));
+  const studioId = localStorage.getItem("activeStudioId");
+
+  if (!ok) {
+    const msg = options?.message || "Access denied. Admins only.";
+    alert(msg);
+    window.location.href = "index.html";
+  }
+
+  return { ok, roles, studioId };
+}
+
+export async function getActiveStudioIdForUser(authUserId) {
+  let activeStudioId = localStorage.getItem("activeStudioId");
+  if (!activeStudioId && authUserId) {
+    const { data: memberships } = await supabase
+      .from("studio_members")
+      .select("studio_id")
+      .eq("user_id", authUserId);
+    if (memberships?.length === 1) {
+      activeStudioId = memberships[0].studio_id;
+      localStorage.setItem("activeStudioId", activeStudioId);
+    }
+  }
+  return activeStudioId || null;
+}
+
+export async function getStudioRoles(authUserId, studioId) {
+  if (!authUserId || !studioId) return [];
+  const { data: member, error } = await supabase
+    .from("studio_members")
+    .select("roles")
+    .eq("user_id", authUserId)
+    .eq("studio_id", studioId)
+    .single();
+
+  if (error) {
+    console.error("[AuthZ] studio role lookup failed", error);
+    return [];
+  }
+
+  const roles = Array.isArray(member?.roles) ? member.roles : [];
+  localStorage.setItem("activeStudioRoles", JSON.stringify(roles));
+  return roles;
+}
+
+export async function requireStudioRoles(requiredRoles, redirectTo = "index.html") {
+  const { data: authData } = await supabase.auth.getUser();
+  const authUserId = authData?.user?.id || null;
+  const studioId = await getActiveStudioIdForUser(authUserId);
+  const roles = await getStudioRoles(authUserId, studioId);
+  const required = Array.isArray(requiredRoles) ? requiredRoles : [requiredRoles];
+  const ok = required.some(r => roles.includes(r));
+
+  if (!ok) {
+    alert("Access denied.");
+    window.location.href = redirectTo;
+    return { ok: false, roles, studioId };
+  }
+
+  return { ok: true, roles, studioId };
+}
+
 export async function ensureUserRow() {
   const { data: authData } = await supabase.auth.getUser();
   const authUser = authData?.user || null;

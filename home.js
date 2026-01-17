@@ -220,23 +220,39 @@ async function init() {
   const activeStudioId = localStorage.getItem("activeStudioId");
   console.log('[Home] activeStudioId', activeStudioId);
   if (authUserId && activeStudioId) {
-    const { data: studioMember, error: studioErr } = await supabase
-      .from('studio_members')
-      .select('roles')
-      .eq('user_id', authUserId)
-      .eq('studio_id', activeStudioId)
-      .single();
+    const [{ data: studioMember }, { data: studioRow }] = await Promise.all([
+      supabase
+        .from('studio_members')
+        .select('roles')
+        .eq('user_id', authUserId)
+        .eq('studio_id', activeStudioId)
+        .single(),
+      supabase
+        .from('studios')
+        .select('name')
+        .eq('id', activeStudioId)
+        .single()
+    ]);
 
     const studioRoles = Array.isArray(studioMember?.roles) ? studioMember.roles : [];
-    const isAdminOrTeacher = studioRoles.includes('admin') || studioRoles.includes('teacher');
+    const isStaff = studioRoles.includes('admin') || studioRoles.includes('teacher');
+    const isAdmin = studioRoles.includes('admin');
     console.log('[Home] studio roles', studioRoles);
-    console.log('[Home] isAdminOrTeacher', isAdminOrTeacher);
+    console.log('[Home] isAdminOrTeacher', isStaff);
+
+    const studioNameLine = document.getElementById('studioNameLine');
+    if (studioNameLine) {
+      studioNameLine.textContent = `Studio: ${studioRow?.name || '—'}`;
+    }
 
     document.querySelectorAll('.student-only').forEach(el => {
-      el.style.display = isAdminOrTeacher ? 'none' : '';
+      el.style.display = isStaff ? 'none' : '';
+    });
+    document.querySelectorAll('.staff-only').forEach(el => {
+      el.style.display = isStaff ? '' : 'none';
     });
     document.querySelectorAll('.admin-only').forEach(el => {
-      el.style.display = isAdminOrTeacher ? '' : 'none';
+      el.style.display = isAdmin ? '' : 'none';
     });
   }
 

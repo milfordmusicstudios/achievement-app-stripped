@@ -116,6 +116,23 @@ a.big-fun-btn:focus-visible {
   display: none;
 }
 
+.staff-only {
+  display: none;
+}
+
+.home-studio {
+  text-align: center;
+  font-weight: 700;
+  color: rgba(11,79,138,0.85);
+  margin: 2px 0 8px;
+}
+
+.staff-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 8px;
+}
+
 .admin-mode {
   margin-top: 10px;
   text-align: center;
