@@ -88,10 +88,15 @@ if (sessionErr || !sessionData?.session?.user) {
   return;
 }
 
-await ensureUserRow();
+const authUser = sessionData.session.user;
+const userId = authUser.id;
+console.log("[Login] authUserId/email", authUser.id, authUser.email);
 
-const userId = sessionData.session.user.id;
-console.log("DEBUG: Login success, user id:", userId);
+const ensured = await ensureUserRow();
+if (ensured) {
+  localStorage.setItem("loggedInUser", JSON.stringify(ensured));
+}
+console.log("[Login] post-auth ok", { userId, email: authUser.email });
 
 // --- FINALIZE PENDING CHILDREN (signup with multiple students) ---
 const pendingEmail = (localStorage.getItem("pendingChildrenEmail") || "").toLowerCase();
@@ -103,19 +108,10 @@ console.log("FINALIZE: pendingChildren =", pendingChildren);
 const authEmail = (sessionData.session.user.email || "").toLowerCase();
 const shouldFinalize = pendingChildren.length > 0 && pendingEmail === authEmail;
 
-let kids = [];
 
 if (shouldFinalize) {
-  let studioId = localStorage.getItem("activeStudioId");
-  if (!studioId) {
-    const { data: memberships } = await supabase
-      .from("studio_members")
-      .select("studio_id")
-      .eq("user_id", userId);
-    if (memberships?.length === 1) studioId = memberships[0].studio_id;
-  }
-
   try {
+    const studioId = localStorage.getItem("activeStudioId");
     await createStudioStudents(pendingChildren, userId, studioId);
   } catch (err) {
     console.error("[Finalize] student create failed", err);
@@ -128,25 +124,8 @@ if (shouldFinalize) {
   localStorage.removeItem("pendingChildrenEmail");
 }
 
-// 🔑 ALWAYS fetch students by parent_uuid
-const { data: children, error: kidsErr } = await supabase
-  .from("users")
-  .select("*")
-  .eq("parent_uuid", userId)
-  .order("created_at", { ascending: true });
-
-if (kidsErr || !children?.length) {
-  console.error("[Login] kids fetch failed:", kidsErr);
-  errorDisplay.textContent = "No students found for this account.";
-  errorDisplay.style.display = "block";
-  return;
-}
-
-// Success: store student + redirect
-localStorage.setItem("loggedInUser", JSON.stringify(children[0]));
-localStorage.setItem("allUsers", JSON.stringify(children));
-localStorage.setItem("activeRole", "student");
 await ensureStudioContextAndRoute();
+console.log("[Login] routed");
 return;
 
   }); // end submit
@@ -201,3 +180,5 @@ return;
     addPwToggle(document.getElementById('loginPassword'));
   });
 })();
+
+

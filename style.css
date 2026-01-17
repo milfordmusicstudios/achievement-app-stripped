@@ -133,6 +133,86 @@ a.big-fun-btn:focus-visible {
   margin-top: 8px;
 }
 
+.staff-card {
+  background: rgba(255,255,255,0.85);
+  border-radius: 16px;
+  padding: 12px 14px;
+  border: 2px solid rgba(11,79,138,0.18);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+}
+
+.staff-card label {
+  display: block;
+  font-weight: 700;
+  color: #0B4F8A;
+  margin: 8px 0 4px;
+}
+
+.staff-card select,
+.staff-card input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(11,79,138,0.2);
+  font-size: 14px;
+}
+
+.date-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.date-row input {
+  flex: 1;
+}
+.date-row .blue-button {
+  padding: 8px 12px;
+  font-size: 14px;
+}
+
+.date-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.date-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(18,121,200,0.12);
+  color: #0B4F8A;
+  font-weight: 700;
+  font-size: 12px;
+  border: 1px solid rgba(18,121,200,0.3);
+}
+.date-chip button {
+  background: none;
+  border: none;
+  font-weight: 900;
+  cursor: pointer;
+  color: #0B4F8A;
+}
+
+.staff-msg {
+  margin-top: 8px;
+  font-weight: 700;
+}
+
+.role-badge {
+  margin-left: auto;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  color: #0B4F8A;
+  background: rgba(255,255,255,0.85);
+  border: 2px solid rgba(11,79,138,0.22);
+}
+
 .admin-mode {
   margin-top: 10px;
   text-align: center;

@@ -254,6 +254,35 @@ async function init() {
     document.querySelectorAll('.admin-only').forEach(el => {
       el.style.display = isAdmin ? '' : 'none';
     });
+
+    const roleBadge = document.getElementById('roleBadge');
+    if (roleBadge) {
+      if (isAdmin) {
+        roleBadge.textContent = "ADMIN";
+        roleBadge.style.display = "";
+      } else if (studioRoles.includes('teacher')) {
+        roleBadge.textContent = "TEACHER";
+        roleBadge.style.display = "";
+      } else {
+        roleBadge.textContent = "";
+        roleBadge.style.display = "none";
+      }
+    }
+
+    const hideMyPoints = isStaff;
+    console.log('[UI] hideMyPoints', hideMyPoints);
+    const myPointsLink = document.getElementById('myPointsLink');
+    if (myPointsLink) {
+      myPointsLink.style.display = hideMyPoints ? 'none' : '';
+    }
+
+    if (isStaff) {
+      await initStaffQuickLog({
+        authUserId,
+        studioId: activeStudioId,
+        roles: studioRoles
+      });
+    }
   }
 
   await ensureUserRow();
@@ -282,3 +311,182 @@ initAvatarSwitcher(availableUsers);
 }
 
 document.addEventListener('DOMContentLoaded', init);
+
+async function loadCategoriesForStudio(studioId) {
+  let rows = [];
+  if (studioId) {
+    const { data, error } = await supabase
+      .from('categories')
+      .select('name')
+      .eq('studio_id', studioId)
+      .order('id', { ascending: true });
+    if (!error && Array.isArray(data) && data.length) rows = data;
+  }
+  if (!rows.length) {
+    const { data, error } = await supabase
+      .from('categories')
+      .select('name')
+      .order('id', { ascending: true });
+    if (!error && Array.isArray(data) && data.length) rows = data;
+  }
+  if (!rows.length) {
+    rows = [
+      { name: 'practice' },
+      { name: 'participation' },
+      { name: 'performance' },
+      { name: 'personal' },
+      { name: 'proficiency' }
+    ];
+  }
+  return rows;
+}
+
+async function loadStudentsForStudio(studioId) {
+  if (!studioId) return [];
+  const { data, error } = await supabase
+    .from('users')
+    .select('id, firstName, lastName, roles')
+    .eq('studio_id', studioId);
+  if (error || !Array.isArray(data)) return [];
+  return data.filter(u => Array.isArray(u.roles) && u.roles.includes('student'));
+}
+
+function addDateChip(container, dateValue) {
+  const existing = Array.from(container.querySelectorAll('[data-date]'))
+    .some(el => el.dataset.date === dateValue);
+  if (existing) return;
+
+  const chip = document.createElement('span');
+  chip.className = 'date-chip';
+  chip.dataset.date = dateValue;
+  chip.textContent = dateValue;
+
+  const removeBtn = document.createElement('button');
+  removeBtn.type = 'button';
+  removeBtn.textContent = '×';
+  removeBtn.addEventListener('click', () => chip.remove());
+
+  chip.appendChild(removeBtn);
+  container.appendChild(chip);
+}
+
+function getSelectedDates(container) {
+  return Array.from(container.querySelectorAll('[data-date]'))
+    .map(el => el.dataset.date)
+    .filter(Boolean);
+}
+
+async function insertLogsWithApproval(rows, includeApprovalFields) {
+  const payload = includeApprovalFields
+    ? rows.map(r => ({
+        ...r,
+        approved_by: r.created_by,
+        approved_at: new Date().toISOString()
+      }))
+    : rows;
+
+  const { error } = await supabase.from('logs').insert(payload);
+  if (!error) return { ok: true };
+
+  const msg = String(error.message || '');
+  if (includeApprovalFields && (msg.includes('approved_by') || msg.includes('approved_at'))) {
+    const { error: retryErr } = await supabase.from('logs').insert(rows);
+    if (retryErr) return { ok: false, error: retryErr };
+    return { ok: true };
+  }
+  return { ok: false, error };
+}
+
+async function initStaffQuickLog({ authUserId, studioId, roles }) {
+  const form = document.getElementById('staffQuickLogForm');
+  if (!form) return;
+
+  const categorySelect = document.getElementById('staffCategory');
+  const studentSelect = document.getElementById('staffStudents');
+  const dateInput = document.getElementById('staffDate');
+  const addDateBtn = document.getElementById('addDateBtn');
+  const dateChips = document.getElementById('dateChips');
+  const pointsInput = document.getElementById('staffPoints');
+  const notesInput = document.getElementById('staffNotes');
+  const msgEl = document.getElementById('staffQuickLogMsg');
+
+  const categories = await loadCategoriesForStudio(studioId);
+  if (categorySelect) {
+    categorySelect.innerHTML = '<option value="">Select category</option>';
+    categories.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.name;
+      opt.textContent = c.name;
+      categorySelect.appendChild(opt);
+    });
+  }
+
+  const students = await loadStudentsForStudio(studioId);
+  if (studentSelect) {
+    studentSelect.innerHTML = '';
+    students.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s.id;
+      const name = `${s.firstName || ''} ${s.lastName || ''}`.trim() || 'Student';
+      opt.textContent = name;
+      studentSelect.appendChild(opt);
+    });
+  }
+
+  if (addDateBtn && dateInput && dateChips) {
+    addDateBtn.addEventListener('click', () => {
+      if (!dateInput.value) return;
+      addDateChip(dateChips, dateInput.value);
+      dateInput.value = '';
+    });
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!categorySelect || !studentSelect || !pointsInput || !dateChips) return;
+
+    const category = categorySelect.value;
+    const points = Number(pointsInput.value);
+    const notes = notesInput?.value?.trim() || '';
+    const dates = getSelectedDates(dateChips);
+    const studentIds = Array.from(studentSelect.selectedOptions).map(o => o.value);
+
+    if (!category || !studentIds.length || !dates.length || !Number.isFinite(points)) return;
+
+    const isStaff = roles.includes('admin') || roles.includes('teacher');
+    const status = isStaff ? 'approved' : 'pending';
+    const baseRows = [];
+    studentIds.forEach(studentId => {
+      dates.forEach(date => {
+        baseRows.push({
+          userId: studentId,
+          date,
+          category,
+          points,
+          notes,
+          status,
+          created_by: authUserId,
+          studio_id: studioId
+        });
+      });
+    });
+
+    const includeApproval = isStaff;
+    const result = await insertLogsWithApproval(baseRows, includeApproval);
+    if (!result.ok) {
+      console.error('[QuickLog] insert failed', result.error);
+      if (msgEl) {
+        msgEl.textContent = 'Failed to submit logs.';
+        msgEl.style.display = 'block';
+        msgEl.style.color = '#c62828';
+      }
+      return;
+    }
+
+    if (msgEl) {
+      msgEl.textContent = `Submitted ${baseRows.length} logs.`;
+      msgEl.style.display = 'block';
+      msgEl.style.color = '#0b7a3a';
+    }
+  });
+}
