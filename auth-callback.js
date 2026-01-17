@@ -3,6 +3,11 @@ import { finalizePostAuth } from "./studio-routing.js";
 
 (async function () {
   try {
+    const urlToken = new URLSearchParams(window.location.search).get("token");
+    if (urlToken) {
+      localStorage.setItem("pendingInviteToken", urlToken);
+    }
+
     // If your confirm-email link uses PKCE "code", this converts it into a session.
     if (typeof supabase.auth.exchangeCodeForSession === "function") {
       const { error } = await supabase.auth.exchangeCodeForSession(window.location.href);
