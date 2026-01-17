@@ -1,5 +1,7 @@
 import { supabase } from "./supabaseClient.js";
 
+console.log("[Join] join.js loaded");
+
 function qs(id) {
   return document.getElementById(id);
 }
@@ -43,13 +45,14 @@ async function validateInvite(token) {
 
   const statusEl = qs("inviteStatus");
   const detailsEl = qs("inviteDetails");
-  setText(statusEl, "Checking invite...");
+  setText(statusEl, "Validating...");
   setText(detailsEl, "");
 
   if (!token) {
     setText(statusEl, "Paste an invite token to continue.");
     return;
   }
+  console.log("[Join] validating token", token);
 
   const { data, error } = await supabase.rpc("validate_invite_token", { p_token: token });
   const invite = Array.isArray(data) ? data[0] : data;
@@ -97,9 +100,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     await validateInvite(urlToken);
   }
 
-  const validateBtn = qs("validateBtn");
+  const validateBtn = qs("validateInviteBtn");
   if (validateBtn) {
-    validateBtn.addEventListener("click", async () => {
+    validateBtn.addEventListener("click", async (event) => {
+      event.preventDefault();
       const token = (tokenInput?.value || "").trim();
       await validateInvite(token);
     });
