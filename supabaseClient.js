@@ -40,6 +40,11 @@ export const supabase = createClient(finalConfig.url, finalConfig.anonKey, {
     persistSession: true,
     autoRefreshToken: true,
   },
+  global: {
+    headers: {
+      apikey: finalConfig.anonKey,
+    },
+  },
 });
 window.supabase = supabase;
 
