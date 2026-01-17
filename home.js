@@ -313,42 +313,26 @@ initAvatarSwitcher(availableUsers);
 document.addEventListener('DOMContentLoaded', init);
 
 async function loadCategoriesForStudio(studioId) {
-  let rows = [];
-  if (studioId) {
-    const { data, error } = await supabase
-      .from('categories')
-      .select('name')
-      .eq('studio_id', studioId)
-      .order('id', { ascending: true });
-    if (!error && Array.isArray(data) && data.length) rows = data;
-  }
-  if (!rows.length) {
-    const { data, error } = await supabase
-      .from('categories')
-      .select('name')
-      .order('id', { ascending: true });
-    if (!error && Array.isArray(data) && data.length) rows = data;
-  }
-  if (!rows.length) {
-    rows = [
-      { name: 'practice' },
-      { name: 'participation' },
-      { name: 'performance' },
-      { name: 'personal' },
-      { name: 'proficiency' }
-    ];
-  }
-  return rows;
+  if (!studioId) return [];
+  const { data, error } = await supabase
+    .from('categories')
+    .select('name')
+    .eq('studio_id', studioId)
+    .order('id', { ascending: true });
+  if (error || !Array.isArray(data)) return [];
+  return data;
 }
 
 async function loadStudentsForStudio(studioId) {
   if (!studioId) return [];
   const { data, error } = await supabase
     .from('users')
-    .select('id, firstName, lastName, roles')
-    .eq('studio_id', studioId);
+    .select('id, firstName, lastName, roles, active')
+    .eq('studio_id', studioId)
+    .eq('active', true)
+    .contains('roles', ['student']);
   if (error || !Array.isArray(data)) return [];
-  return data.filter(u => Array.isArray(u.roles) && u.roles.includes('student'));
+  return data;
 }
 
 function addDateChip(container, dateValue) {
@@ -363,7 +347,7 @@ function addDateChip(container, dateValue) {
 
   const removeBtn = document.createElement('button');
   removeBtn.type = 'button';
-  removeBtn.textContent = '×';
+  removeBtn.textContent = 'x';
   removeBtn.addEventListener('click', () => chip.remove());
 
   chip.appendChild(removeBtn);
@@ -412,13 +396,19 @@ async function initStaffQuickLog({ authUserId, studioId, roles }) {
 
   const categories = await loadCategoriesForStudio(studioId);
   if (categorySelect) {
-    categorySelect.innerHTML = '<option value="">Select category</option>';
-    categories.forEach(c => {
-      const opt = document.createElement('option');
-      opt.value = c.name;
-      opt.textContent = c.name;
-      categorySelect.appendChild(opt);
-    });
+    if (!categories.length) {
+      categorySelect.innerHTML = '<option value="">No categories yet</option>';
+      categorySelect.disabled = true;
+    } else {
+      categorySelect.disabled = false;
+      categorySelect.innerHTML = '<option value="">Select category</option>';
+      categories.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.name;
+        opt.textContent = c.name;
+        categorySelect.appendChild(opt);
+      });
+    }
   }
 
   const students = await loadStudentsForStudio(studioId);
@@ -484,7 +474,7 @@ async function initStaffQuickLog({ authUserId, studioId, roles }) {
     }
 
     if (msgEl) {
-      msgEl.textContent = `Submitted ${baseRows.length} logs.`;
+      msgEl.textContent = `Logged ${baseRows.length} entries`;
       msgEl.style.display = 'block';
       msgEl.style.color = '#0b7a3a';
     }
