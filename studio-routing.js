@@ -93,13 +93,11 @@ export async function acceptPendingInviteIfAny() {
     return { accepted: false, reason: "rpc-failed" };
   }
   if (!data?.ok) {
-    if (data?.error === "email_mismatch") {
-      alert("Invite email does not match this account.");
-    }
-    if (data?.error === "invite_expired") {
-      alert("Invite has expired.");
-    }
-    return { accepted: false, reason: data?.error || "rpc-not-ok" };
+    const reason = data?.error || "rpc-not-ok";
+    console.warn("[Invite] accept_invite not ok:", reason);
+    if (reason === "email_mismatch") alert("Invite email does not match this account.");
+    if (reason === "invite_expired") alert("Invite has expired.");
+    return { accepted: false, reason };
   }
 
   localStorage.setItem("activeStudioId", data.studio_id);
