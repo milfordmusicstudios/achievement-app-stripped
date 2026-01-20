@@ -41,9 +41,20 @@
             Sign Up
           </button>
         </div>
+        <button id="forgotPasswordBtn" type="button" style="margin-top:10px; background:none; border:none; color:#0b4f8a; text-decoration:underline; cursor:pointer;">Forgot password?</button>
       </form>
 
       <p id="loginError" class="auth-error" style="display:none;"></p>
+
+      <div id="resetPanel" style="display:none; margin-top:16px; padding:12px; border:1px solid rgba(11,79,138,0.18); border-radius:12px;">
+        <div style="font-weight:600; margin-bottom:8px;">Reset Password</div>
+        <input id="resetEmail" type="email" placeholder="Email" />
+        <div class="auth-actions">
+          <button id="sendResetBtn" type="button" class="blue-button">Send reset email</button>
+          <button id="cancelResetBtn" type="button" class="blue-button">Cancel</button>
+        </div>
+        <div id="resetStatus" class="auth-error" style="display:none;"></div>
+      </div>
 
     </div>
   </main>

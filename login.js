@@ -54,6 +54,62 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const form = document.getElementById('loginForm');
   const errorDisplay = document.getElementById('loginError');
+  const forgotBtn = document.getElementById('forgotPasswordBtn');
+  const resetPanel = document.getElementById('resetPanel');
+  const resetEmailInput = document.getElementById('resetEmail');
+  const sendResetBtn = document.getElementById('sendResetBtn');
+  const cancelResetBtn = document.getElementById('cancelResetBtn');
+  const resetStatus = document.getElementById('resetStatus');
+
+  const showResetStatus = (message, isError = false) => {
+    if (!resetStatus) return;
+    resetStatus.textContent = message || '';
+    resetStatus.style.display = message ? 'block' : 'none';
+    resetStatus.style.color = isError ? '#c62828' : '#0b7a3a';
+  };
+
+  if (forgotBtn && resetPanel) {
+    forgotBtn.addEventListener('click', () => {
+      resetPanel.style.display = 'block';
+      const emailValue = document.getElementById('loginEmail')?.value?.trim() || '';
+      if (resetEmailInput) resetEmailInput.value = emailValue;
+      showResetStatus('');
+    });
+  }
+
+  if (cancelResetBtn && resetPanel) {
+    cancelResetBtn.addEventListener('click', () => {
+      resetPanel.style.display = 'none';
+      showResetStatus('');
+    });
+  }
+
+  if (sendResetBtn) {
+    sendResetBtn.addEventListener('click', async () => {
+      const email = resetEmailInput?.value?.trim().toLowerCase() || '';
+      if (!email) {
+        showResetStatus('Please enter your email address.', true);
+        return;
+      }
+
+      sendResetBtn.disabled = true;
+      showResetStatus('');
+      try {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${location.origin}/auth-callback.html`
+        });
+        if (error) {
+          showResetStatus(error.message || 'Failed to send reset email.', true);
+        } else {
+          showResetStatus('Check your email for a reset link.');
+        }
+      } catch (err) {
+        showResetStatus(err?.message || 'Failed to send reset email.', true);
+      } finally {
+        sendResetBtn.disabled = false;
+      }
+    });
+  }
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
