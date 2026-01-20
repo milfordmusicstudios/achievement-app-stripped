@@ -42,7 +42,15 @@
           <input type="file" id="avatarInput" accept="image/*" />
         </div>
 
-        <!-- Parent Email/Password + Students Container -->
+        <!-- Parent Email/Password -->
+        <div class="form-row">
+          <input type="email" id="signupEmail" name="signupEmail" placeholder="Email" required />
+        </div>
+        <div class="form-row">
+          <input type="password" id="signupPassword" name="signupPassword" placeholder="Password" required />
+        </div>
+
+        <!-- Students Container -->
         <div id="studentsContainer">
 
           <!-- Student #1 (IDs stay exactly the same) -->
@@ -55,14 +63,6 @@
             </div>
             <div class="form-row">
               <input type="text" id="lastName" placeholder="Last Name" required />
-            </div>
-
-            <!-- Email / Password -->
-            <div class="form-row">
-              <input type="email" id="signupEmail" placeholder="Email" required />
-            </div>
-            <div class="form-row">
-              <input type="password" id="signupPassword" placeholder="Password" required />
             </div>
 
             <!-- Instrument(s) -->

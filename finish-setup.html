@@ -14,40 +14,86 @@
     <div class="auth-container">
       <img src="images/logos/logo.png" alt="App Logo" class="logo" />
       <h2>Finish Setup</h2>
-      <p style="margin-top:6px;">Confirm your details to complete your account.</p>
+      <p style="margin-top:6px;">Complete your account to join your studio.</p>
 
-      <form id="finishSetupForm">
-        <input
-          type="text"
-          id="firstName"
-          placeholder="First Name"
-          required
-        />
-        <input
-          type="text"
-          id="lastName"
-          placeholder="Last Name"
-          required
-        />
+      <form id="finishSetupForm" class="settings-form" style="max-width:520px;">
+        <h3 style="margin-top:0;">Adult / Parent Info</h3>
+        <input type="text" id="adultFirstName" placeholder="First Name" required />
+        <input type="text" id="adultLastName" placeholder="Last Name" required />
 
-        <div class="auth-actions">
-          <button type="submit" class="blue-button">Save</button>
-          <button type="button" id="logoutBtn" class="blue-button" style="background:#999;">Logout</button>
+        <div style="margin:10px 0;">
+          <label style="display:block; margin-bottom:6px;">Account Type</label>
+          <label style="display:block; margin-bottom:6px;">
+            <input type="radio" name="accountType" value="adult" />
+            Adult (no students linked yet)
+          </label>
+          <label style="display:block;">
+            <input type="radio" name="accountType" value="parent" checked />
+            Parent/Guardian (I want to add students now)
+          </label>
         </div>
+
+        <section id="studentsSection" style="margin-top:14px;">
+          <h3 style="margin:0 0 6px 0;">Add Students</h3>
+          <p style="margin:0 0 10px 0;">Add one or more students now (you can add more later).</p>
+          <div id="studentsList"></div>
+          <button type="button" id="addStudentBtn" class="blue-button" style="margin-top:10px;">
+            Add another student
+          </button>
+        </section>
+
+        <div class="button-row" style="margin-top:14px;">
+          <button type="submit" class="blue-button" id="completeSetupBtn">Complete Setup</button>
+          <button type="button" id="skipBtn" class="blue-button" style="background:#999;">Skip for now</button>
+        </div>
+
+        <button type="button" id="logoutBtn" class="blue-button" style="margin-top:10px; background:#999;">Logout</button>
+
+        <p id="finishSetupError" style="color:#c62828; display:none; margin-top:10px;"></p>
+        <p id="finishSetupMsg" style="color:#0b7a3a; display:none; margin-top:10px;"></p>
       </form>
-
-      <p id="finishSetupError" class="auth-error" style="display:none;"></p>
-
-      <div class="settings-form" style="opacity:0.6; margin-top:16px;">
-        <h3 style="margin:0 0 6px 0;">Link Students</h3>
-        <p style="margin:0;">Coming next: link students to this account.</p>
-      </div>
     </div>
   </main>
 
   <footer class="auth-footer">
     &copy; 2025 Milford Music Studios Achievement App
   </footer>
+
+  <template id="studentRowTemplate">
+    <div class="student-block" style="border:1px solid rgba(11,79,138,0.18); border-radius:12px; padding:10px; margin-bottom:10px;">
+      <div class="form-row">
+        <input type="text" class="student-first" placeholder="Student First Name" required />
+      </div>
+      <div class="form-row">
+        <input type="text" class="student-last" placeholder="Student Last Name" required />
+      </div>
+      <div class="form-row">
+        <select class="student-grade">
+          <option value="">Grade (optional)</option>
+          <option value="K">K</option>
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5">5</option>
+          <option value="6">6</option>
+          <option value="7">7</option>
+          <option value="8">8</option>
+          <option value="9">9</option>
+          <option value="10">10</option>
+          <option value="11">11</option>
+          <option value="12">12</option>
+          <option value="Adult">Adult</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <input type="text" class="student-instrument" placeholder="Instrument (optional)" />
+      </div>
+      <button type="button" class="blue-button remove-student-btn" style="background:#999;">
+        Remove student
+      </button>
+    </div>
+  </template>
 
   <script type="module" src="./finish-setup.js"></script>
 </body>
