@@ -35,6 +35,14 @@ function clearMessages() {
   }
 }
 
+function safeParseJSON(value, fallback) {
+  try {
+    return JSON.parse(value);
+  } catch {
+    return fallback;
+  }
+}
+
 function parseInstruments(raw) {
   return (raw || "")
     .split(",")
@@ -61,6 +69,13 @@ function collectStudentRows() {
     const instrumentRaw = (row.querySelector(".student-instrument")?.value || "").trim();
     return { row, firstName, lastName, grade, instrumentRaw };
   });
+}
+
+function normalizeRoles(raw) {
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw.map(r => String(r).toLowerCase());
+  if (typeof raw === "string") return raw.split(",").map(r => r.trim().toLowerCase()).filter(Boolean);
+  return [];
 }
 
 function addStudentRow(initial = {}) {
@@ -209,10 +224,26 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
+    const accountType = getAccountType();
+    const storedRoles = safeParseJSON(localStorage.getItem("activeStudioRoles"), []);
+    const studioRoles = normalizeRoles(storedRoles);
+    const preservedStaffRoles = studioRoles.filter(r => r === "teacher" || r === "admin");
+    const desiredRoles = Array.from(new Set([
+      ...(accountType === "parent" || accountType === "adult" ? ["parent"] : []),
+      ...preservedStaffRoles
+    ]));
+
+    // Idempotent profile upsert prevents duplicate parent rows for the same auth user.
     const { error: updateErr } = await supabase
       .from("users")
-      .update({ firstName, lastName })
-      .eq("id", authUser.id);
+      .upsert({
+        id: authUser.id,
+        email: authUser.email,
+        firstName,
+        lastName,
+        roles: desiredRoles,
+        active: true
+      }, { onConflict: "id" });
 
     if (updateErr) {
       console.error("[FinishSetup] profile save failed", updateErr);
@@ -222,8 +253,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
     console.log("[FinishSetup] profile saved");
 
-    const accountType = getAccountType();
     if (accountType === "parent") {
+      // Prevent accidental parent→student duplication: only create rows for explicitly entered students.
       const rows = collectStudentRows();
       const activeRows = rows.filter(r => r.firstName || r.lastName || r.grade || r.instrumentRaw);
       const studentPayload = [];
@@ -241,6 +272,9 @@ document.addEventListener("DOMContentLoaded", async () => {
           if (submitBtn) submitBtn.disabled = false;
           return;
         }
+
+        // Only create linked students when explicit student info is provided.
+        if (!hasFirst || !hasLast) continue;
 
         studentPayload.push({
           id: crypto.randomUUID(),
@@ -311,7 +345,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     const firstName = (firstNameInput?.value || "").trim();
     const lastName = (lastNameInput?.value || "").trim();
     if (firstName && lastName) {
-      await supabase.from("users").update({ firstName, lastName }).eq("id", authUser.id);
+      await supabase.from("users").upsert({
+        id: authUser.id,
+        email: authUser.email,
+        firstName,
+        lastName,
+        roles: ["parent"],
+        active: true
+      }, { onConflict: "id" });
       console.log("[FinishSetup] profile saved");
     }
     window.location.href = "index.html";
