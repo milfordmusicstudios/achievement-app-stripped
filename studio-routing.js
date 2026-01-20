@@ -12,7 +12,7 @@ export async function ensureStudioContextAndRoute(options = {}) {
   const authUser = authData?.user || null;
   if (!authUser?.id) return { redirected: false, reason: "no-auth" };
 
-  const { data: memberships, error } = await supabase
+  let { data: memberships, error } = await supabase
     .from("studio_members")
     .select("studio_id, roles")
     .eq("user_id", authUser.id);
@@ -22,8 +22,27 @@ export async function ensureStudioContextAndRoute(options = {}) {
     return { redirected: false, reason: "query-error" };
   }
 
-  const list = memberships || [];
+  let list = memberships || [];
   console.log("[StudioRoute] memberships count", list.length);
+
+  if (list.length === 0) {
+    if (!sessionStorage.getItem("invite_accept_attempted")) {
+      console.log("[StudioRoute] memberships=0; trying acceptPendingInviteIfAny() before redirect");
+      sessionStorage.setItem("invite_accept_attempted", "1");
+      const inviteResult = await acceptPendingInviteIfAny();
+      if (inviteResult?.accepted) {
+        const retry = await supabase
+          .from("studio_members")
+          .select("studio_id, roles")
+          .eq("user_id", authUser.id);
+        if (!retry.error) {
+          memberships = retry.data;
+          list = memberships || [];
+          console.log("[StudioRoute] memberships count", list.length);
+        }
+      }
+    }
+  }
 
   if (list.length === 0) {
     const target = "welcome.html";
@@ -68,70 +87,29 @@ export async function acceptPendingInviteIfAny() {
   const authUser = authData?.user || null;
   if (!authUser?.id) return { accepted: false, reason: "no-auth" };
 
-  const { data: invite, error } = await supabase
-    .from("invites")
-    .select("id, studio_id, role_hint, invited_email, status, expires_at")
-    .eq("token", token)
-    .eq("status", "pending")
-    .single();
-
-  if (error || !invite) {
-    console.error("[Invite] lookup failed", error);
-    return { accepted: false, reason: "not-found" };
+  const { data, error } = await supabase.rpc("accept_invite", { p_token: token });
+  if (error) {
+    console.error("[Invite] accept_invite failed", error);
+    return { accepted: false, reason: "rpc-failed" };
   }
-
-  if (!invite.studio_id) return { accepted: false, reason: "missing-studio" };
-
-  const inviteEmail = String(invite.invited_email || "").toLowerCase();
-  const authEmail = String(authUser.email || "").toLowerCase();
-  if (!inviteEmail || inviteEmail !== authEmail) {
-    alert("Invite email does not match this account.");
-    return { accepted: false, reason: "email-mismatch" };
-  }
-
-  const expiresAt = invite.expires_at ? new Date(invite.expires_at) : null;
-  if (expiresAt && expiresAt <= new Date()) {
-    alert("Invite has expired.");
-    return { accepted: false, reason: "expired" };
-  }
-
-  const roles = [invite.role_hint || "student"];
-  const { error: memberErr } = await supabase.from("studio_members").insert([
-    {
-      studio_id: invite.studio_id,
-      user_id: authUser.id,
-      roles,
-      created_by: authUser.id
+  if (!data?.ok) {
+    if (data?.error === "email_mismatch") {
+      alert("Invite email does not match this account.");
     }
-  ]);
-
-  if (memberErr) {
-    console.error("[Invite] membership insert failed", memberErr);
-    return { accepted: false, reason: "membership-failed" };
+    if (data?.error === "invite_expired") {
+      alert("Invite has expired.");
+    }
+    return { accepted: false, reason: data?.error || "rpc-not-ok" };
   }
 
-  const { error: inviteErr } = await supabase
-    .from("invites")
-    .update({
-      status: "accepted",
-      accepted_by: authUser.id,
-      accepted_at: new Date().toISOString()
-    })
-    .eq("id", invite.id);
-
-  if (inviteErr) {
-    console.error("[Invite] update failed", inviteErr);
-    return { accepted: false, reason: "invite-update-failed" };
-  }
-
-  localStorage.setItem("activeStudioId", invite.studio_id);
-  localStorage.setItem("activeStudioRoles", JSON.stringify(roles));
+  localStorage.setItem("activeStudioId", data.studio_id);
+  localStorage.setItem("activeStudioRoles", JSON.stringify(data.roles || []));
   localStorage.removeItem("pendingInviteToken");
   localStorage.removeItem("pendingInviteStudioId");
   localStorage.removeItem("pendingInviteEmail");
   localStorage.removeItem("pendingInviteRoleHint");
 
-  return { accepted: true, studioId: invite.studio_id, roles };
+  return { accepted: true, studioId: data.studio_id, roles: data.roles || [] };
 }
 
 export async function finalizePostAuth(options = {}) {

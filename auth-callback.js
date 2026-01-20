@@ -4,9 +4,15 @@ import { finalizePostAuth } from "./studio-routing.js";
 (async function () {
   try {
     const urlToken = new URLSearchParams(window.location.search).get("token");
+    let tokenSource = "none";
     if (urlToken) {
       localStorage.setItem("pendingInviteToken", urlToken);
+      tokenSource = "url";
+    } else {
+      const storedToken = localStorage.getItem("pendingInviteToken");
+      if (storedToken) tokenSource = "storage";
     }
+    console.log(`[AuthCallback] invite token source: ${tokenSource}`);
 
     // If your confirm-email link uses PKCE "code", this converts it into a session.
     if (typeof supabase.auth.exchangeCodeForSession === "function") {
@@ -18,7 +24,9 @@ import { finalizePostAuth } from "./studio-routing.js";
     if (sessionErr) console.error("getSession error:", sessionErr);
 
     if (sessionData?.session?.user) {
-      await finalizePostAuth();
+      const result = await finalizePostAuth({ redirectHome: true });
+      if (result?.inviteResult?.accepted || result?.routeResult?.redirected) return;
+      window.location.href = "./welcome.html";
       return;
     }
 

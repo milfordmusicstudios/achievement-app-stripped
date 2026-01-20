@@ -35,7 +35,7 @@ async function loadPendingInvites(studioId) {
   }
 
   data.forEach(invite => {
-    const inviteLink = `${window.location.origin}/join.html?token=${invite.token}`;
+    const inviteLink = `${window.location.origin}/auth-callback.html?token=${invite.token}`;
     const row = document.createElement("div");
     row.style.padding = "10px";
     row.style.background = "#fff";
@@ -136,52 +136,46 @@ document.addEventListener("DOMContentLoaded", async () => {
       const role = roleInput.value;
       if (!email || !role) return;
 
-      if (!crypto?.randomUUID) {
-        if (errorEl) {
-          errorEl.textContent = "Browser does not support invite token generation.";
-          errorEl.style.display = "block";
-        }
-        return;
-      }
-
-      const token = crypto.randomUUID();
-      const expiresAt = toIsoPlusDays(14);
-
       if (errorEl) errorEl.style.display = "none";
       if (successEl) successEl.style.display = "none";
 
-      const { data, error } = await supabase.from("invites").insert([{
-        studio_id: studioId,
-        type: "studio_member",
-        invited_email: email,
-        role_hint: role,
-        token,
-        status: "pending",
-        created_by: authUser.id,
-        created_at: new Date().toISOString(),
-        expires_at: expiresAt
-      }]).select("id").single();
+      const response = await fetch("/api/invite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          studio_id: studioId,
+          role_hint: role
+        })
+      });
 
-      if (error) {
-        console.error("[InviteStaff] insert failed", error);
+      let payload = null;
+      try {
+        payload = await response.json();
+      } catch {}
+
+      if (!response.ok) {
+        const message = payload?.error || "Failed to send invite.";
+        console.error("[InviteStaff] invite failed", message);
         if (errorEl) {
-          errorEl.textContent = error.message || "Failed to create invite.";
+          errorEl.textContent = message;
           errorEl.style.display = "block";
         }
         return;
       }
 
-      console.log("[InviteStaff] inserted invite id", data?.id);
-      const link = `${window.location.origin}/join.html?token=${token}`;
-      if (linkInput) linkInput.value = link;
-      if (linkBox) linkBox.style.display = "block";
       if (successEl) {
-        successEl.textContent = "Invite created.";
+        successEl.textContent = "Invite email sent.";
         successEl.style.display = "block";
       }
 
       emailInput.value = "";
       roleInput.value = "";
+
+      if (linkBox) {
+        linkBox.style.display = "block";
+        linkBox.textContent = "Invite email sent. (Optional) You can also copy a manual join link from the Pending Invites list.";
+      }
 
       await loadPendingInvites(studioId);
     });
