@@ -60,6 +60,7 @@ module.exports = async (req, res) => {
   const inviteRow = {
     token,
     studio_id: studioId,
+    type: "studio_member",
     role_hint: roleHint || "student",
     invited_email: email,
     status: "pending",
