@@ -204,7 +204,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       const studentPayload = [];
 
       for (const entry of activeRows) {
-        if (!entry.firstName || !entry.lastName) {
+        const hasFirst = Boolean(entry.firstName);
+        const hasLast = Boolean(entry.lastName);
+        if (hasFirst !== hasLast) {
           showError("Each student must have first and last name.");
           return;
         }
