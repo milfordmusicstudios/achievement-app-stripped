@@ -45,10 +45,14 @@ export async function ensureStudioContextAndRoute(options = {}) {
   }
 
   if (list.length === 0) {
-    const target = "welcome.html";
-    console.log("[StudioRoute] redirect target", target);
+    if (localStorage.getItem("pendingInviteToken")) {
+      console.log("[StudioRoute] no memberships but pending invite token; deferring navigation");
+      return { redirected: false, target: null, reason: "pending-invite" };
+    }
+    const target = "login.html";
+    console.log("[StudioRoute] no memberships; redirect target", target);
     if (!isCurrentPage(target)) window.location.href = target;
-    return { redirected: true, target };
+    return { redirected: true, target, reason: "no-membership" };
   }
 
   if (list.length === 1) {
