@@ -9,49 +9,10 @@
 <body class="app-bg bg-yellow">
 <div id="envBadge" class="env-badge" style="display:none;"></div>
   <main class="home-wrap">
-    <section id="quick-log-card" class="card" style="display:none;">
-      <h2>Quick Log</h2>
-
-      <label>
-        Category
-        <select id="qlCategory"></select>
-      </label>
-
-      <label>
-        Points
-        <input id="qlPoints" type="number" min="1" value="1" />
-      </label>
-
-      <label>
-        Add date
-        <input id="qlDateInput" type="date" />
-        <button type="button" id="qlAddDateBtn">Add</button>
-      </label>
-
-      <div id="qlDates"></div>
-
-      <label>
-        Students
-        <input id="qlStudentSearch" placeholder="Search students..." />
-        <div id="qlStudents"></div>
-      </label>
-
-      <label>
-        Notes
-        <textarea id="qlNote"></textarea>
-      </label>
-
-      <button id="qlSubmitBtn">Submit</button>
-      <button id="qlClearBtn">Clear</button>
-
-      <div id="qlStatus"></div>
-    </section>
-
     <!-- Identity first -->
     <section class="home-identity">
       <h1 id="welcomeText" class="home-welcome">Welcome!</h1>
-      <div id="studioNameLine" class="home-studio">Studio: —</div>
-      <div id="staffQuickLogMount"></div>
+      <div id="studioNameLine" class="home-studio">Studio: -</div>
 
       <div class="identity-row">
         <div class="identity-avatar">
@@ -84,6 +45,7 @@
       </div>
 
     </section>
+    <div id="staffQuickLogMount"></div>
     <!-- Action hub -->
     <section class="home-actions student-only" aria-label="Log your progress">
       <button id="quickPracticeBtn" class="action-primary">
