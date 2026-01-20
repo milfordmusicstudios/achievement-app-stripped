@@ -91,5 +91,5 @@ module.exports = async (req, res) => {
     return res.status(500).json({ ok: false, error: emailErr.message || "Invite email failed" });
   }
 
-  return res.status(200).json({ ok: true });
+  return res.status(200).json({ ok: true, token, studio_id: studioId, email });
 };

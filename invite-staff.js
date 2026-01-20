@@ -165,6 +165,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         return;
       }
 
+      console.log("[InviteStaff] server token", payload?.token);
       if (successEl) {
         successEl.textContent = "Invite email sent.";
         successEl.style.display = "block";
@@ -173,9 +174,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       emailInput.value = "";
       roleInput.value = "";
 
-      if (linkBox) {
-        linkBox.style.display = "block";
-        linkBox.textContent = "Invite email sent. (Optional) You can also copy a manual join link from the Pending Invites list.";
+      if (linkBox) linkBox.style.display = "block";
+      if (linkInput && payload?.token) {
+        linkInput.value = `${window.location.origin}/auth-callback.html?token=${payload.token}`;
       }
 
       await loadPendingInvites(studioId);
