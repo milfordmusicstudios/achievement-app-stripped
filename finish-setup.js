@@ -96,6 +96,13 @@ function disableForm(disabled) {
 
 document.addEventListener("DOMContentLoaded", async () => {
   clearMessages();
+  const urlToken = new URLSearchParams(location.search).get("token");
+  console.log("[FinishSetup] urlToken present?", Boolean(urlToken));
+  if (urlToken) {
+    localStorage.setItem("pendingInviteToken", urlToken);
+  }
+  const storedToken = localStorage.getItem("pendingInviteToken");
+  console.log("[FinishSetup] pendingInviteToken length", storedToken ? storedToken.length : 0);
   const { data: sessionData, error: sessionErr } = await supabase.auth.getSession();
   if (sessionErr || !sessionData?.session?.user) {
     window.location.href = "login.html";
@@ -104,10 +111,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   console.log("[FinishSetup] session ok");
 
   const authUser = sessionData.session.user;
-  const pendingToken = localStorage.getItem("pendingInviteToken");
+  const pendingToken = storedToken;
 
   if (pendingToken) {
     const { data, error } = await supabase.rpc("accept_invite", { p_token: pendingToken });
+    console.log("[FinishSetup] accept_invite result", { data, error });
     if (error) {
       console.error("[FinishSetup] accept_invite failed", error);
       showError("We could not accept the invite. Please log out and try again.");
