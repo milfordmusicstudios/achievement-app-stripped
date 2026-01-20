@@ -41,12 +41,16 @@ module.exports = async (req, res) => {
   const email = body?.email ? String(body.email).trim().toLowerCase() : "";
   const studioId = body?.studio_id ? String(body.studio_id).trim() : "";
   const roleHint = body?.role_hint ? String(body.role_hint).trim() : "student";
+  const createdBy = body?.created_by ? String(body.created_by).trim() : "";
 
   if (!email) {
     return res.status(400).json({ ok: false, error: "Missing email" });
   }
   if (!studioId) {
     return res.status(400).json({ ok: false, error: "Missing studio_id" });
+  }
+  if (!createdBy) {
+    return res.status(400).json({ ok: false, error: "Missing created_by" });
   }
 
   const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
@@ -63,6 +67,7 @@ module.exports = async (req, res) => {
     type: "studio_member",
     role_hint: roleHint || "student",
     invited_email: email,
+    created_by: createdBy,
     status: "pending",
     created_at: now.toISOString(),
     expires_at: expiresAt.toISOString()

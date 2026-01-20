@@ -145,7 +145,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         body: JSON.stringify({
           email,
           studio_id: studioId,
-          role_hint: role
+          role_hint: role,
+          created_by: authUser.id
         })
       });
 
