@@ -120,6 +120,22 @@ a.big-fun-btn:focus-visible {
   display: none;
 }
 
+.student-only {
+  display: block;
+}
+
+body.is-staff .staff-only {
+  display: block;
+}
+
+body.is-staff .student-only {
+  display: none;
+}
+
+body.is-admin .admin-only {
+  display: block;
+}
+
 .home-studio {
   text-align: center;
   font-weight: 700;

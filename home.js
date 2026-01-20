@@ -237,6 +237,8 @@ async function init() {
     const studioRoles = Array.isArray(studioMember?.roles) ? studioMember.roles : [];
     const isStaff = studioRoles.includes('admin') || studioRoles.includes('teacher');
     const isAdmin = studioRoles.includes('admin');
+    if (isStaff) document.body.classList.add('is-staff');
+    if (isAdmin) document.body.classList.add('is-admin');
     console.log('[Home] studio roles', studioRoles);
     console.log('[Home] isAdminOrTeacher', isStaff);
 
