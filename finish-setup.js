@@ -19,6 +19,7 @@ function showMessage(message) {
 function clearMessages() {
   const errorEl = document.getElementById("finishSetupError");
   const msgEl = document.getElementById("finishSetupMsg");
+  const passwordStatus = document.getElementById("passwordStatus");
   if (errorEl) {
     errorEl.textContent = "";
     errorEl.style.display = "none";
@@ -26,6 +27,11 @@ function clearMessages() {
   if (msgEl) {
     msgEl.textContent = "";
     msgEl.style.display = "none";
+  }
+  if (passwordStatus) {
+    passwordStatus.textContent = "";
+    passwordStatus.style.display = "none";
+    passwordStatus.style.color = "";
   }
 }
 
@@ -105,7 +111,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   console.log("[FinishSetup] pendingInviteToken length", storedToken ? storedToken.length : 0);
   const { data: sessionData, error: sessionErr } = await supabase.auth.getSession();
   if (sessionErr || !sessionData?.session?.user) {
-    window.location.href = "login.html";
+    const errorEl = document.getElementById("finishSetupError");
+    if (errorEl) {
+      errorEl.innerHTML = 'Not logged in. <a href="login.html">Go to login</a>.';
+      errorEl.style.display = "block";
+    }
+    disableForm(true);
     return;
   }
   console.log("[FinishSetup] session ok");
@@ -173,15 +184,28 @@ document.addEventListener("DOMContentLoaded", async () => {
   const form = document.getElementById("finishSetupForm");
   const skipBtn = document.getElementById("skipBtn");
   const logoutBtn = document.getElementById("logoutBtn");
+  const passwordInput = document.getElementById("newPassword");
+  const confirmInput = document.getElementById("confirmPassword");
+  const passwordStatus = document.getElementById("passwordStatus");
+  const submitBtn = document.getElementById("completeSetupBtn");
+
+  const showPasswordStatus = (message, isError = false) => {
+    if (!passwordStatus) return;
+    passwordStatus.textContent = message || "";
+    passwordStatus.style.display = message ? "block" : "none";
+    passwordStatus.style.color = isError ? "#c62828" : "#0b7a3a";
+  };
 
   form?.addEventListener("submit", async (e) => {
     e.preventDefault();
     clearMessages();
+    if (submitBtn) submitBtn.disabled = true;
 
     const firstName = (firstNameInput?.value || "").trim();
     const lastName = (lastNameInput?.value || "").trim();
     if (!firstName || !lastName) {
       showError("First and last name are required.");
+      if (submitBtn) submitBtn.disabled = false;
       return;
     }
 
@@ -193,6 +217,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (updateErr) {
       console.error("[FinishSetup] profile save failed", updateErr);
       showError(updateErr.message || "Failed to save profile.");
+      if (submitBtn) submitBtn.disabled = false;
       return;
     }
     console.log("[FinishSetup] profile saved");
@@ -208,10 +233,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         const hasLast = Boolean(entry.lastName);
         if (hasFirst !== hasLast) {
           showError("Each student must have first and last name.");
+          if (submitBtn) submitBtn.disabled = false;
           return;
         }
         if (!crypto?.randomUUID) {
           showError("Browser does not support student creation.");
+          if (submitBtn) submitBtn.disabled = false;
           return;
         }
 
@@ -237,6 +264,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (insertErr) {
           console.error("[FinishSetup] student insert failed", insertErr);
           showError(insertErr.message || "Failed to create students.");
+          if (submitBtn) submitBtn.disabled = false;
           return;
         }
         console.log("[FinishSetup] students created", studentPayload.length);
@@ -248,6 +276,33 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (refreshed) {
       localStorage.setItem("loggedInUser", JSON.stringify(refreshed));
     }
+
+    const newPassword = (passwordInput?.value || "").trim();
+    const confirmPassword = (confirmInput?.value || "").trim();
+    if (newPassword) {
+      if (newPassword.length < 8) {
+        showPasswordStatus("Password must be at least 8 characters.", true);
+        if (submitBtn) submitBtn.disabled = false;
+        return;
+      }
+      if (newPassword !== confirmPassword) {
+        showPasswordStatus("Passwords do not match.", true);
+        if (submitBtn) submitBtn.disabled = false;
+        return;
+      }
+
+      const { error: pwErr } = await supabase.auth.updateUser({ password: newPassword });
+      if (pwErr) {
+        showPasswordStatus(pwErr.message || "Failed to save password.", true);
+        if (submitBtn) submitBtn.disabled = false;
+        return;
+      }
+      showPasswordStatus("Password saved.");
+      if (passwordInput) passwordInput.value = "";
+      if (confirmInput) confirmInput.value = "";
+    }
+
+    if (submitBtn) submitBtn.disabled = false;
     window.location.href = "index.html";
   });
 

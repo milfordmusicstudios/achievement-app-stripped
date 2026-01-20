@@ -42,6 +42,14 @@
           </button>
         </section>
 
+        <section style="margin-top:18px;">
+          <h3 style="margin:0 0 6px 0;">Create a password (so you can log in without a magic link)</h3>
+          <input id="newPassword" type="password" placeholder="New Password" />
+          <input id="confirmPassword" type="password" placeholder="Confirm Password" />
+          <div style="font-size:12px; color:#555; margin-top:4px;">Minimum 8 characters recommended.</div>
+          <div id="passwordStatus" style="display:none; margin-top:8px;"></div>
+        </section>
+
         <div class="button-row" style="margin-top:14px;">
           <button type="submit" class="blue-button" id="completeSetupBtn">Complete Setup</button>
           <button type="button" id="skipBtn" class="blue-button" style="background:#999;">Skip for now</button>
