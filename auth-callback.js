@@ -24,9 +24,23 @@ import { finalizePostAuth } from "./studio-routing.js";
     if (sessionErr) console.error("getSession error:", sessionErr);
 
     if (sessionData?.session?.user) {
-      const result = await finalizePostAuth({ redirectHome: true });
-      if (result?.inviteResult?.accepted || result?.routeResult?.redirected) return;
-      window.location.href = "./welcome.html";
+      const result = await finalizePostAuth({ redirectHome: false });
+      const inviteAccepted = result?.inviteResult?.accepted === true;
+      const ensured = result?.ensured || null;
+      const missingName = !ensured?.firstName || !ensured?.lastName;
+      const hasMembership = Boolean(localStorage.getItem("activeStudioId"));
+
+      if (inviteAccepted || (hasMembership && missingName)) {
+        window.location.href = "./finish-setup.html";
+        return;
+      }
+
+      if (hasMembership) {
+        window.location.href = "./index.html";
+        return;
+      }
+
+      window.location.href = "./login.html";
       return;
     }
 

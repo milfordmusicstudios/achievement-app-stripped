@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Finish Setup | Achievement App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body class="white-page">
+  <div id="envBadge" class="env-badge" style="display:none;"></div>
+
+  <main class="app">
+    <div class="auth-container">
+      <img src="images/logos/logo.png" alt="App Logo" class="logo" />
+      <h2>Finish Setup</h2>
+      <p style="margin-top:6px;">Confirm your details to complete your account.</p>
+
+      <form id="finishSetupForm">
+        <input
+          type="text"
+          id="firstName"
+          placeholder="First Name"
+          required
+        />
+        <input
+          type="text"
+          id="lastName"
+          placeholder="Last Name"
+          required
+        />
+
+        <div class="auth-actions">
+          <button type="submit" class="blue-button">Save</button>
+          <button type="button" id="logoutBtn" class="blue-button" style="background:#999;">Logout</button>
+        </div>
+      </form>
+
+      <p id="finishSetupError" class="auth-error" style="display:none;"></p>
+
+      <div class="settings-form" style="opacity:0.6; margin-top:16px;">
+        <h3 style="margin:0 0 6px 0;">Link Students</h3>
+        <p style="margin:0;">Coming next: link students to this account.</p>
+      </div>
+    </div>
+  </main>
+
+  <footer class="auth-footer">
+    &copy; 2025 Milford Music Studios Achievement App
+  </footer>
+
+  <script type="module" src="./finish-setup.js"></script>
+</body>
+</html>
