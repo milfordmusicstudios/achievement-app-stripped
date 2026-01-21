@@ -147,6 +147,7 @@ a.big-fun-btn:focus-visible {
   justify-self: end;
   display: flex;
   align-items: center;
+  justify-content: flex-end;
 }
 
 .home-header__left img,
@@ -170,8 +171,14 @@ a.big-fun-btn:focus-visible {
 }
 
 .home-header__right .role-badge {
-  width: var(--home-id-size);
-  height: var(--home-id-size);
+  width: 110px;
+  height: auto;
+}
+
+.home-role-badge {
+  width: 110px;
+  height: auto;
+  display: block;
 }
 
 .admin-only {
@@ -202,7 +209,7 @@ body.is-admin .admin-only {
 body.mode-staff .home-header { padding-top: 12px; padding-bottom: 6px; }
 body.mode-staff .home-header__center { gap: 6px; }
 body.mode-staff #welcomeText { margin: 2px 0; }
-body.mode-staff #quickLogCard { margin-top: 8px; }
+body.mode-staff #staffQuickLogForm { margin-top: 8px; }
 body.mode-staff .studio-logo { max-width: 110px; width: 110px; }
 
 .staff-actions {
@@ -296,28 +303,23 @@ body.mode-staff .studio-logo { max-width: 110px; width: 110px; }
   box-sizing: border-box;
 }
 
-body.is-staff #quickLogCard .staff-card {
-  border: 2px solid rgba(255, 210, 70, 0.9);
+body.mode-staff #staffQuickLogForm.staff-card {
+  border: 3px solid #f5d84a;
+  box-shadow: 0 10px 26px rgba(245, 216, 74, 0.25);
 }
 
-body.is-staff #quickLogCard button[type="submit"] {
-  background: linear-gradient(180deg, #FFD65A, #FFB300);
-  color: #083a66;
-  border: 2px solid rgba(255,255,255,0.85);
-  font-weight: 800;
-  box-shadow: 0 10px 22px rgba(0,0,0,0.15);
-  padding: 8px 12px;
-  font-size: 14px;
+body.mode-staff #staffQuickLogForm .button-row button[type="submit"].blue-button {
+  padding: 10px 16px;
+  border-radius: 14px;
+  font-weight: 700;
+  font-size: 16px;
+  background: #f5d84a;
+  color: #00385f;
+  border: 2px solid #e3c63c;
 }
 
-body.is-staff #quickLogCard button[type="submit"]:hover {
-  transform: translateY(-1px);
-  filter: brightness(1.02);
-}
-
-body.is-staff #quickLogCard #qlSubmit {
-  background: linear-gradient(135deg, #ffd15c, #f6b83a);
-  color: #3a2a00;
+body.mode-staff #staffQuickLogForm .button-row button[type="submit"].blue-button:hover {
+  filter: brightness(0.98);
 }
 
 .role-badge-text {
