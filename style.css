@@ -37,7 +37,7 @@ html, body {
 }
 
 :root {
-  --home-id-size: 120px;
+  --home-id-size: 96px;
 }
 
 /* ===============================
@@ -106,12 +106,12 @@ a.big-fun-btn:focus-visible {
   font-size: 40px;
   font-weight: 900;
   color: #0B4F8A;
-  margin: 8px 0 6px;
+  margin: 4px 0 4px;
 }
 
 .studio-logo {
-  max-width: 100px;
-  width: 100px;
+  max-width: 96px;
+  width: 96px;
   height: auto;
   display: block;
   margin: 0 auto;
@@ -121,16 +121,16 @@ a.big-fun-btn:focus-visible {
 
 .home-header {
   text-align: center;
-  margin-top: 6px;
-  margin-bottom: 8px;
+  margin-top: 4px;
+  margin-bottom: 6px;
 }
 
 .home-header-grid {
   display: grid;
-  grid-template-columns: 160px 1fr 160px;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: 16px;
-  width: min(1100px, 92vw);
+  width: min(1200px, 92vw);
   margin: 0 auto;
 }
 
@@ -145,7 +145,7 @@ a.big-fun-btn:focus-visible {
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 6px;
+  gap: 4px;
 }
 
 .home-right {
@@ -159,8 +159,8 @@ a.big-fun-btn:focus-visible {
 .home-left #avatarImg,
 .home-left #userAvatar,
 .home-left .profile-avatar {
-  width: 130px;
-  height: 130px;
+  width: var(--home-id-size);
+  height: var(--home-id-size);
   object-fit: cover;
   border-radius: 18px;
 }
@@ -169,14 +169,14 @@ a.big-fun-btn:focus-visible {
 .home-right #levelBadge,
 .home-right #levelBadgeImg,
 .home-right img[src*="levelBadges"] {
-  width: 130px;
-  height: 130px;
+  width: var(--home-id-size);
+  height: var(--home-id-size);
   object-fit: contain;
 }
 
 .home-right .role-badge {
-  width: 130px;
-  height: 130px;
+  width: var(--home-id-size);
+  height: var(--home-id-size);
 }
 
 .admin-only {
@@ -295,11 +295,16 @@ body.mode-staff .studio-logo { max-width: 120px; width: 120px; }
   width: var(--home-id-size);
   height: var(--home-id-size);
   object-fit: contain;
-  padding: 10px;
+  padding: 0;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.30);
-  border: 2px solid rgba(255, 255, 255, 0.55);
+  background: transparent;
+  border: none;
   box-sizing: border-box;
+}
+
+body.is-staff #quickLogCard #qlSubmit {
+  background: linear-gradient(135deg, #ffd15c, #f6b83a);
+  color: #3a2a00;
 }
 
 .role-badge-text {
