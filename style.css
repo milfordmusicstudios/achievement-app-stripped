@@ -102,7 +102,24 @@ a.big-fun-btn:focus-visible {
   font-size: 40px;
   font-weight: 900;
   color: #0B4F8A;
-  margin: 12px 0 10px;
+  margin: 8px 0 6px;
+}
+
+.home-identity {
+  margin-bottom: 8px;
+}
+
+.studio-logo-wrap {
+  display: flex;
+  justify-content: center;
+  margin: 6px 0 10px;
+}
+
+.studio-logo {
+  max-width: 280px;
+  width: 55vw;
+  height: auto;
+  object-fit: contain;
 }
 
 .identity-row {
@@ -134,13 +151,6 @@ body.is-staff .student-only {
 
 body.is-admin .admin-only {
   display: block;
-}
-
-.home-studio {
-  text-align: center;
-  font-weight: 700;
-  color: rgba(11,79,138,0.85);
-  margin: 2px 0 8px;
 }
 
 .staff-actions {
@@ -217,16 +227,24 @@ body.is-admin .admin-only {
   font-weight: 700;
 }
 
-.role-badge {
+.role-badge-wrap {
   margin-left: auto;
-  padding: 6px 10px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.6px;
-  color: #0B4F8A;
-  background: rgba(255,255,255,0.85);
-  border: 2px solid rgba(11,79,138,0.22);
+  display: flex;
+  align-items: center;
+}
+
+.role-badge {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+}
+
+.role-badge-text {
+  display: none !important;
+}
+
+body.is-admin #roleBadgeTeacher {
+  display: none;
 }
 
 .admin-mode {

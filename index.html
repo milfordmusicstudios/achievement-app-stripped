@@ -12,7 +12,9 @@
     <!-- Identity first -->
     <section class="home-identity">
       <h1 id="welcomeText" class="home-welcome">Welcome!</h1>
-      <div id="studioNameLine" class="home-studio">Studio: -</div>
+      <div class="studio-logo-wrap">
+        <img class="studio-logo" src="images/logos/logo.png" alt="Studio Logo">
+      </div>
 
       <div class="identity-row">
         <div class="identity-avatar">
@@ -30,7 +32,11 @@
         <div class="identity-level student-only">
           <img id="levelBadgeImg" src="images/levelBadges/level1.png" alt="Level badge" />
         </div>
-        <div id="roleBadge" class="role-badge staff-only"></div>
+        <div class="role-badge-wrap">
+          <span id="roleBadge" class="role-badge-text" aria-hidden="true"></span>
+          <img id="roleBadgeAdmin" class="role-badge admin-only" src="images/levelBadges/admin.png" alt="Admin">
+          <img id="roleBadgeTeacher" class="role-badge staff-only" src="images/levelBadges/teacher.png" alt="Teacher">
+        </div>
       </div>
 
       <div class="identity-progress student-only">
