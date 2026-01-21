@@ -11,14 +11,8 @@
   <main class="home-wrap">
     <!-- Identity first -->
     <header id="homeHeader" class="home-header">
-      <div class="logo-center">
-        <img class="studio-logo" src="images/logos/logo.png" alt="Studio Logo">
-      </div>
-
-      <h1 id="welcomeText" class="home-welcome">Welcome!</h1>
-
-      <div class="identity-row">
-        <div class="identity-left">
+      <div class="home-header-grid">
+        <div class="home-left">
           <div class="identity-avatar">
             <button id="avatarSwitcher" class="avatar-button" type="button" aria-haspopup="menu" aria-expanded="false">
               <img
@@ -32,7 +26,12 @@
           </div>
         </div>
 
-        <div class="identity-right">
+        <div class="home-center">
+          <img class="studio-logo" src="images/logos/logo.png" alt="Studio Logo">
+          <h1 id="welcomeText" class="home-welcome">Welcome!</h1>
+        </div>
+
+        <div class="home-right">
           <div class="identity-level student-only">
             <img id="levelBadgeImg" src="images/levelBadges/level1.png" alt="Level badge" />
           </div>
@@ -57,7 +56,6 @@
     </div>
     <div id="staffQuickLogMount"></div>
     <section id="quickLogCard" style="display:none;">
-      <div class="action-title">Add Points</div>
       <form id="quickLogForm" class="staff-card">
         <label for="qlStudent">Student</label>
         <select id="qlStudent" required>
