@@ -6,8 +6,8 @@
    ========================================================= */
 .env-badge{
   position: fixed;
-  top: 10px;
-  left: 10px;
+  top: 12px;
+  left: 12px;
   z-index: 9999;
   padding: 6px 10px;
   border-radius: 10px;
@@ -206,11 +206,16 @@ body.is-admin .admin-only {
 }
 
 /* Staff-only compact header spacing */
-body.mode-staff .home-header { padding-top: 12px; padding-bottom: 6px; }
-body.mode-staff .home-header__center { gap: 6px; }
-body.mode-staff #welcomeText { margin: 2px 0; }
-body.mode-staff #staffQuickLogForm { margin-top: 8px; }
-body.mode-staff .studio-logo { max-width: 110px; width: 110px; }
+body.is-staff .home-header,
+body.is-admin .home-header { padding-top: 12px; padding-bottom: 6px; }
+body.is-staff .home-header__center,
+body.is-admin .home-header__center { gap: 6px; }
+body.is-staff #welcomeText,
+body.is-admin #welcomeText { margin: 2px 0; }
+body.is-staff #staffQuickLogForm,
+body.is-admin #staffQuickLogForm { margin-top: 8px; }
+body.is-staff .studio-logo,
+body.is-admin .studio-logo { max-width: 110px; width: 110px; }
 
 .staff-actions {
   display: flex;
@@ -286,6 +291,19 @@ body.mode-staff .studio-logo { max-width: 110px; width: 110px; }
   font-weight: 700;
 }
 
+.staff-card-title{
+  width: calc(100% + 28px);
+  margin: -12px -14px 10px -14px;
+  padding: 10px 14px;
+  border-radius: 14px 14px 10px 10px;
+  background: linear-gradient(135deg,#ffe36b,#ffd15c);
+  color: #2b1e00;
+  font-weight: 900;
+  letter-spacing: .2px;
+  text-align: center;
+  border-bottom: 2px solid rgba(255,255,255,.8);
+}
+
 .role-badge-wrap {
   margin-left: auto;
   display: flex;
@@ -303,23 +321,36 @@ body.mode-staff .studio-logo { max-width: 110px; width: 110px; }
   box-sizing: border-box;
 }
 
-body.mode-staff #staffQuickLogForm.staff-card {
+body.is-staff #staffQuickLogForm.staff-card,
+body.is-admin #staffQuickLogForm.staff-card {
   border: 3px solid #f5d84a;
-  box-shadow: 0 10px 26px rgba(245, 216, 74, 0.25);
+  box-shadow: 0 12px 28px rgba(245,216,74,.25);
 }
 
-body.mode-staff #staffQuickLogForm .button-row button[type="submit"].blue-button {
+body.is-staff #staffQuickLogSubmit.staff-submit,
+body.is-admin #staffQuickLogSubmit.staff-submit {
   padding: 10px 16px;
-  border-radius: 14px;
-  font-weight: 700;
   font-size: 16px;
-  background: #f5d84a;
-  color: #00385f;
-  border: 2px solid #e3c63c;
+  border-radius: 14px;
+  font-weight: 900;
+  background: linear-gradient(180deg,#FFD65A,#FFB300);
+  color: #083a66;
+  border: 2px solid rgba(255,255,255,0.85);
+  box-shadow: 0 10px 22px rgba(0,0,0,0.15);
 }
 
-body.mode-staff #staffQuickLogForm .button-row button[type="submit"].blue-button:hover {
-  filter: brightness(0.98);
+body.is-staff #staffQuickLogSubmit.staff-submit:hover,
+body.is-admin #staffQuickLogSubmit.staff-submit:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.02);
+}
+
+body.is-staff #addDateBtn.blue-button,
+body.is-admin #addDateBtn.blue-button {
+  padding: 10px 16px;
+  font-size: 16px;
+  border-radius: 14px;
+  font-weight: 800;
 }
 
 .role-badge-text {
