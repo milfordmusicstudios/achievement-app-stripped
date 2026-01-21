@@ -305,15 +305,34 @@ async function init() {
 const profile = JSON.parse(raw);
 currentProfile = profile;
 
-const levelRow = await loadLevel(profile.level || 1);
-renderIdentity(profile, levelRow);
+  const levelRow = await loadLevel(profile.level || 1);
+  renderIdentity(profile, levelRow);
 
-const parentId = sessionData?.session?.user?.id;
-availableUsers = await loadAvailableUsers(parentId, profile);
-initAvatarSwitcher(availableUsers);
+  const parentId = sessionData?.session?.user?.id;
+  availableUsers = await loadAvailableUsers(parentId, profile);
+  initAvatarSwitcher(availableUsers);
+  initStudentLogButtons();
 }
 
 document.addEventListener('DOMContentLoaded', init);
+
+function initStudentLogButtons() {
+  const targets = [
+    { id: 'quickPracticeBtn', href: 'my-points.html' },
+    { id: 'logPastPracticeBtn', href: 'my-points.html' },
+    { id: 'modalLogPractice', href: 'my-points.html' },
+    { id: 'modalLogOther', href: 'my-points.html' }
+  ];
+
+  targets.forEach(({ id, href }) => {
+    const btn = qs(id);
+    if (!btn) return;
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      window.location.href = href;
+    });
+  });
+}
 
 function renderStaffQuickLogShell() {
   const mount = document.getElementById('staffQuickLogMount');

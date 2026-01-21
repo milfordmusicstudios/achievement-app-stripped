@@ -1616,6 +1616,13 @@ body.review-logs-page .pagination-row select.blue-button {
   line-height: 1.1;
 }
 
+body.review-logs-page .btn-rect {
+  padding: 10px 16px;
+  min-height: 42px;
+  border-radius: 12px;
+  font-size: 15px;
+}
+
 @media (max-width: 900px) {
   body.review-logs-page .summary-strip {
     grid-template-columns: repeat(2, minmax(0, 1fr));
