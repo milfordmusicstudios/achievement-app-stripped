@@ -855,24 +855,75 @@ body.student-home-page .date-grid {
   gap: 6px;
 }
 
-body.student-home-page .date-cell {
-  padding: 8px 6px;
+body.student-home-page .calendar {
+  display: grid;
+  gap: 8px;
+}
+
+body.student-home-page .calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+body.student-home-page .calendar-title {
+  font-weight: 900;
+  color: #0B4F8A;
+}
+
+body.student-home-page .calendar-nav {
+  background: rgba(11,79,138,0.12);
+  border: 0;
   border-radius: 10px;
-  border: 1px solid rgba(11,79,138,0.2);
-  background: rgba(255,255,255,0.8);
-  font-size: 12px;
-  font-weight: 700;
+  padding: 6px 12px;
+  font-weight: 900;
   cursor: pointer;
 }
 
-body.student-home-page .date-cell.selected {
+body.student-home-page .calendar-nav:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+body.student-home-page .calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+  text-align: center;
+  font-weight: 800;
+  color: #0B4F8A;
+  font-size: 12px;
+}
+
+body.student-home-page .calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+
+body.student-home-page .calendar-day {
+  padding: 10px 0;
+  border-radius: 12px;
+  border: 1px solid rgba(11,79,138,0.2);
+  background: rgba(255,255,255,0.85);
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+body.student-home-page .calendar-day.selected {
   background: #FFE34A;
   border-color: rgba(8,58,99,0.22);
 }
 
-body.student-home-page .date-cell.disabled {
-  opacity: 0.4;
+body.student-home-page .calendar-day.disabled {
+  opacity: 0.35;
   cursor: not-allowed;
+}
+
+body.student-home-page .calendar-day.outside {
+  opacity: 0.25;
 }
 
 body.student-home-page .points-readonly {

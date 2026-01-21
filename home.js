@@ -457,10 +457,29 @@ function buildCategoryHeader(category, label) {
 }
 
 async function insertLogs(rows, { approved }) {
-  const { error } = await supabase.from("logs").insert(rows);
+  const { data: sessionData } = await supabase.auth.getSession();
+  const authUserId = sessionData?.session?.user?.id || null;
+  if (!authUserId) {
+    showToast("Please log in again.");
+    return false;
+  }
+
+  const studioId = localStorage.getItem("activeStudioId") || null;
+  const payload = rows.map(row => ({
+    ...row,
+    created_by: row.created_by || authUserId,
+    ...(studioId ? { studio_id: studioId } : {})
+  }));
+
+  const { error } = await supabase.from("logs").insert(payload);
   if (error) {
     console.error("Failed to save log:", error);
-    showToast("Couldn't save log. Try again.");
+    const message = String(error.message || "");
+    if (message.toLowerCase().includes("row-level security")) {
+      showToast("Please log in again.");
+    } else {
+      showToast("Couldn't save log. Try again.");
+    }
     return false;
   }
   if (approved && rows.length > 0) {
@@ -534,6 +553,7 @@ async function openPastPracticeModal(userId) {
 
   const existingDates = new Set((existing || []).map(row => row.date));
 
+  const selectedDates = new Set();
   openStudentModal({
     title: "Log Past Practice",
     submitLabel: "Log Practice",
@@ -541,7 +561,17 @@ async function openPastPracticeModal(userId) {
       ${buildCategoryHeader("practice", "Practice")}
       <div class="modal-field">
         <label>Select dates (last 30 days)</label>
-        <div id="practiceDateGrid" class="date-grid"></div>
+        <div class="calendar">
+          <div class="calendar-header">
+            <button id="calPrev" class="calendar-nav" type="button">‹</button>
+            <div id="calMonthLabel" class="calendar-title"></div>
+            <button id="calNext" class="calendar-nav" type="button">›</button>
+          </div>
+          <div class="calendar-weekdays">
+            <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+          </div>
+          <div id="practiceCalendar" class="calendar-grid"></div>
+        </div>
       </div>
       <div class="modal-field">
         <label>Points</label>
@@ -555,9 +585,7 @@ async function openPastPracticeModal(userId) {
     `,
     onSubmit: async () => {
       const notes = qs("practiceNotes")?.value?.trim() || "";
-      const selected = Array.from(document.querySelectorAll(".date-cell.selected"))
-        .map(el => el.dataset.date)
-        .filter(Boolean);
+      const selected = Array.from(selectedDates);
       if (!selected.length) {
         showToast("Select at least one date.");
         return;
@@ -582,28 +610,97 @@ async function openPastPracticeModal(userId) {
     }
   });
 
-  const grid = qs("practiceDateGrid");
-  if (!grid) return;
-  grid.innerHTML = "";
-  for (let i = 0; i < 30; i++) {
-    const date = new Date(start);
-    date.setDate(start.getDate() + i);
-    const dateStr = date.toISOString().split("T")[0];
-    const cell = document.createElement("button");
-    cell.type = "button";
-    cell.className = "date-cell";
-    cell.dataset.date = dateStr;
-    cell.textContent = dateStr.slice(5);
-    if (existingDates.has(dateStr)) {
-      cell.classList.add("disabled");
-      cell.disabled = true;
-    } else {
-      cell.addEventListener("click", () => {
-        cell.classList.toggle("selected");
-      });
+  const calendarEl = qs("practiceCalendar");
+  const monthLabel = qs("calMonthLabel");
+  const prevBtn = qs("calPrev");
+  const nextBtn = qs("calNext");
+  if (!calendarEl || !monthLabel || !prevBtn || !nextBtn) return;
+
+  const monthNames = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ];
+
+  const view = {
+    year: today.getFullYear(),
+    month: today.getMonth()
+  };
+
+  const startRange = new Date(startStr);
+  startRange.setHours(0, 0, 0, 0);
+  const endRange = new Date(todayStr);
+  endRange.setHours(23, 59, 59, 999);
+
+  const clampToRange = (date) => date >= startRange && date <= endRange;
+
+  const renderCalendar = () => {
+    calendarEl.innerHTML = "";
+    const firstDay = new Date(view.year, view.month, 1);
+    const startDay = firstDay.getDay();
+    const gridStart = new Date(view.year, view.month, 1 - startDay);
+    monthLabel.textContent = `${monthNames[view.month]} ${view.year}`;
+
+    const monthStart = new Date(view.year, view.month, 1);
+    const monthEnd = new Date(view.year, view.month + 1, 0);
+    prevBtn.disabled = monthStart <= startRange;
+    nextBtn.disabled = monthEnd >= endRange;
+
+    for (let i = 0; i < 42; i++) {
+      const cellDate = new Date(gridStart);
+      cellDate.setDate(gridStart.getDate() + i);
+      const dateStr = cellDate.toISOString().split("T")[0];
+      const inMonth = cellDate.getMonth() === view.month;
+      const inRange = clampToRange(cellDate);
+
+      const cell = document.createElement("button");
+      cell.type = "button";
+      cell.className = "calendar-day";
+      cell.dataset.date = dateStr;
+      cell.textContent = String(cellDate.getDate());
+
+      if (!inMonth) cell.classList.add("outside");
+      if (!inRange || existingDates.has(dateStr)) {
+        cell.classList.add("disabled");
+        cell.disabled = true;
+      } else {
+        cell.addEventListener("click", () => {
+          if (selectedDates.has(dateStr)) {
+            selectedDates.delete(dateStr);
+            cell.classList.remove("selected");
+          } else {
+            selectedDates.add(dateStr);
+            cell.classList.add("selected");
+          }
+        });
+      }
+
+      if (selectedDates.has(dateStr)) {
+        cell.classList.add("selected");
+      }
+
+      calendarEl.appendChild(cell);
     }
-    grid.appendChild(cell);
-  }
+  };
+
+  prevBtn.addEventListener("click", () => {
+    const prevMonth = new Date(view.year, view.month - 1, 1);
+    if (prevMonth >= startRange) {
+      view.year = prevMonth.getFullYear();
+      view.month = prevMonth.getMonth();
+      renderCalendar();
+    }
+  });
+
+  nextBtn.addEventListener("click", () => {
+    const nextMonth = new Date(view.year, view.month + 1, 1);
+    if (nextMonth <= endRange) {
+      view.year = nextMonth.getFullYear();
+      view.month = nextMonth.getMonth();
+      renderCalendar();
+    }
+  });
+
+  renderCalendar();
 }
 
 async function openChipModal(button, userId) {
