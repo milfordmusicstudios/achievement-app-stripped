@@ -120,61 +120,56 @@ a.big-fun-btn:focus-visible {
 }
 
 .home-header {
-  text-align: center;
-  margin-top: 4px;
-  margin-bottom: 6px;
-}
-
-.home-header-grid {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: 16px;
-  width: min(1200px, 92vw);
+  max-width: 1200px;
+  width: min(1200px, calc(100% - 48px));
   margin: 0 auto;
-}
-
-.home-left {
-  display: flex;
+  display: grid;
+  grid-template-columns: 140px 1fr 140px;
   align-items: center;
-  justify-content: flex-start;
+  column-gap: 16px;
+  padding-top: 18px;
+  padding-bottom: 8px;
 }
 
-.home-center {
+.home-header__center {
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 4px;
+  gap: 10px;
 }
 
-.home-right {
+.home-header__left {
+  justify-self: start;
+}
+
+.home-header__right {
+  justify-self: end;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
 }
 
-.home-left img,
-.home-left .avatar,
-.home-left #avatarImg,
-.home-left #userAvatar,
-.home-left .profile-avatar {
+.home-header__left img,
+.home-header__left .avatar,
+.home-header__left #avatarImg,
+.home-header__left #userAvatar,
+.home-header__left .profile-avatar {
   width: var(--home-id-size);
   height: var(--home-id-size);
   object-fit: cover;
   border-radius: 18px;
 }
 
-.home-right .level-badge,
-.home-right #levelBadge,
-.home-right #levelBadgeImg,
-.home-right img[src*="levelBadges"] {
+.home-header__right .level-badge,
+.home-header__right #levelBadge,
+.home-header__right #levelBadgeImg,
+.home-header__right img[src*="levelBadges"] {
   width: var(--home-id-size);
   height: var(--home-id-size);
   object-fit: contain;
 }
 
-.home-right .role-badge {
+.home-header__right .role-badge {
   width: var(--home-id-size);
   height: var(--home-id-size);
 }
@@ -204,12 +199,11 @@ body.is-admin .admin-only {
 }
 
 /* Staff-only compact header spacing */
-body.mode-staff .home-header { margin-top: 4px; margin-bottom: 6px; }
-body.mode-staff .home-center { gap: 4px; }
-body.mode-staff #welcomeText { margin: 4px 0; }
-body.mode-staff .home-header-grid { margin-bottom: 2px; }
-body.mode-staff #quickLogCard { margin-top: 4px; }
-body.mode-staff .studio-logo { max-width: 120px; width: 120px; }
+body.mode-staff .home-header { padding-top: 12px; padding-bottom: 6px; }
+body.mode-staff .home-header__center { gap: 6px; }
+body.mode-staff #welcomeText { margin: 2px 0; }
+body.mode-staff #quickLogCard { margin-top: 8px; }
+body.mode-staff .studio-logo { max-width: 110px; width: 110px; }
 
 .staff-actions {
   display: flex;
@@ -300,6 +294,23 @@ body.mode-staff .studio-logo { max-width: 120px; width: 120px; }
   background: transparent;
   border: none;
   box-sizing: border-box;
+}
+
+body.is-staff #quickLogCard .staff-card {
+  border-left: 8px solid rgba(255, 210, 70, 0.9);
+}
+
+body.is-staff #quickLogCard button[type="submit"] {
+  background: linear-gradient(180deg, #FFD65A, #FFB300);
+  color: #083a66;
+  border: 2px solid rgba(255,255,255,0.85);
+  font-weight: 800;
+  box-shadow: 0 10px 22px rgba(0,0,0,0.15);
+}
+
+body.is-staff #quickLogCard button[type="submit"]:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.02);
 }
 
 body.is-staff #quickLogCard #qlSubmit {
