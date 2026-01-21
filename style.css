@@ -234,9 +234,14 @@ body.is-admin .admin-only {
 }
 
 .role-badge {
-  width: 64px;
-  height: 64px;
+  width: 60px;
+  height: 60px;
   object-fit: contain;
+  padding: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.35);
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  box-sizing: border-box;
 }
 
 .role-badge-text {
