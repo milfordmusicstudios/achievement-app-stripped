@@ -297,7 +297,7 @@ body.mode-staff .studio-logo { max-width: 110px; width: 110px; }
 }
 
 body.is-staff #quickLogCard .staff-card {
-  border-left: 8px solid rgba(255, 210, 70, 0.9);
+  border: 2px solid rgba(255, 210, 70, 0.9);
 }
 
 body.is-staff #quickLogCard button[type="submit"] {
@@ -306,6 +306,8 @@ body.is-staff #quickLogCard button[type="submit"] {
   border: 2px solid rgba(255,255,255,0.85);
   font-weight: 800;
   box-shadow: 0 10px 22px rgba(0,0,0,0.15);
+  padding: 8px 12px;
+  font-size: 14px;
 }
 
 body.is-staff #quickLogCard button[type="submit"]:hover {
