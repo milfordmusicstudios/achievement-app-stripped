@@ -30,6 +30,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const categorySummary = document.getElementById("categorySummary");
   const searchInput = document.getElementById("searchInput");
   const statusFilter = document.getElementById("statusFilter");
+  const bulkActionBar = document.getElementById("bulkActionBar");
 
   let logs = [];
   let users = [];
@@ -154,41 +155,42 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   function renderCategorySummary(list) {
-    categorySummary.innerHTML = "";
-    const icons = {
-      practice: "images/categories/practice.png",
-      participation: "images/categories/participation.png",
-      performance: "images/categories/performance.png",
-      personal: "images/categories/personal.png",
-      proficiency: "images/categories/proficiency.png",
-      total: "images/categories/allCategories.png"
-    };
+    if (!categorySummary) return;
+    const pendingCount = list.filter(l => String(l.status || "").toLowerCase() === "pending").length;
+    const approvedTodayCount = list.filter(l => {
+      const status = String(l.status || "").toLowerCase();
+      if (status !== "approved") return false;
+      if (!l.date) return false;
+      const logDate = new Date(l.date);
+      const now = new Date();
+      return logDate.toDateString() === now.toDateString();
+    }).length;
+    const needsInfoCount = list.filter(l => String(l.status || "").toLowerCase() === "needs info").length;
+    const rejectedCount = list.filter(l => String(l.status || "").toLowerCase() === "rejected").length;
 
-    const categories = ["practice", "participation", "performance", "personal", "proficiency"];
-    const totals = {};
-    list.forEach(l => {
-      const cat = l.category?.toLowerCase();
-      if (!totals[cat]) totals[cat] = { points: 0, logs: 0 };
-      totals[cat].points += l.points || 0;
-      totals[cat].logs++;
-    });
+    let reviewLabel = null;
+    let reviewCount = 0;
+    if (needsInfoCount > 0) {
+      reviewLabel = "Needs Info";
+      reviewCount = needsInfoCount;
+    } else if (rejectedCount > 0) {
+      reviewLabel = "Rejected";
+      reviewCount = rejectedCount;
+    }
 
-    categories.forEach(cat => {
-      const c = totals[cat] || { points: 0, logs: 0 };
-      categorySummary.innerHTML += `
-        <div class="category-card">
-          <img src="${icons[cat]}" alt="${cat}">
-          <h3>${c.points} pts</h3>
-          <p>${c.logs} logs</p>
-        </div>`;
-    });
+    const cards = [
+      { label: "Pending Logs", value: pendingCount },
+      { label: "Approved Today", value: approvedTodayCount },
+      reviewLabel ? { label: reviewLabel, value: reviewCount } : null,
+      { label: "Total Logs", value: list.length }
+    ].filter(Boolean);
 
-    categorySummary.innerHTML += `
-      <div class="category-card total-card">
-        <img src="${icons.total}" alt="Total">
-        <h3>${list.reduce((sum, l) => sum + (l.points || 0), 0)} pts</h3>
-        <p>${list.length} logs</p>
-      </div>`;
+    categorySummary.innerHTML = cards.map(card => `
+      <div class="summary-card">
+        <div class="summary-label">${card.label}</div>
+        <div class="summary-value">${card.value}</div>
+      </div>
+    `).join("");
   }
 
   function renderLogsTable(list) {
@@ -226,6 +228,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     document.getElementById("selectAll").checked = false;
     applyEditListeners();
+    updateBulkActionBarVisibility();
+  }
+
+  function updateBulkActionBarVisibility() {
+    if (!bulkActionBar) return;
+    const selectedCount = document.querySelectorAll("#logsTableBody .select-log:checked").length;
+    bulkActionBar.style.display = selectedCount > 0 ? "flex" : "none";
   }
 
   function applyEditListeners() {
@@ -304,6 +313,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       renderLogsTable(filteredLogs);
       renderCategorySummary(filteredLogs);
+      updateBulkActionBarVisibility();
       alert("✅ Selected logs deleted successfully.");
     } catch (err) {
       console.error("Delete logs failed:", err);
@@ -317,6 +327,13 @@ document.getElementById("selectAll").addEventListener("change", (e) => {
   document.querySelectorAll("#logsTableBody .select-log").forEach(cb => {
     cb.checked = isChecked;
   });
+  updateBulkActionBarVisibility();
+});
+
+logsTableBody.addEventListener("change", (e) => {
+  if (e.target.classList.contains("select-log")) {
+    updateBulkActionBarVisibility();
+  }
 });
 
 // === Notifications Tab Integration ===

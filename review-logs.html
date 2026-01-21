@@ -4,57 +4,53 @@
   <meta charset="UTF-8">
   <title>Review Logs | Achievement App</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=20260121-1">
   <script type="module" src="review-logs.js" defer></script>
 </head>
-<body class="tall-background">
+<body class="tall-background review-logs-page">
 <div id="envBadge" class="env-badge" style="display:none;"></div>
 
   <main class="app">
 
-    <!-- ✅ Top Bar -->
-    <header id="pageHeader">
+    <header id="pageHeader" class="review-header">
       <button class="blue-button" onclick="window.location.href='index.html'">Home</button>
-      <h2>Review Logs</h2>
+      <h2 class="review-title">Review Points</h2>
+      <div class="review-role-badge">STAFF</div>
     </header>
-<!-- Notifications toggle -->
-<div style="text-align:center; margin-bottom:15px;">
-  <button id="showLogsBtn" class="blue-button">Show Logs</button>
-  <button id="showNotificationsBtn" class="blue-button">Show Notifications</button>
-</div>
 
-<!-- Notifications Section -->
-<div id="notificationsSection" style="display:none; padding:20px;"></div>
+    <section id="categorySummary" class="summary-strip"></section>
 
-    <!-- ✅ Category Summary -->
-    <section id="categorySummary"></section>
-
-    <!-- ✅ Action Bar -->
-    <div id="actionBar">
-      <input id="searchInput" type="text" placeholder="Search logs...">
-      <select id="statusFilter" class="blue-button">
-        <option value="">All Statuses</option>
-        <option value="pending">Pending</option>
-        <option value="approved">Approved</option>
-        <option value="rejected">Rejected</option>
-        <option value="needs info">Needs Info</option>
-      </select>
-      <button id="quickAddBtn" class="blue-button">Quick Add</button>
-      <button id="bulkApproveBtn" class="blue-button">Approve Selected</button>
-      <button id="deleteSelectedBtn" class="blue-button" style="background:#d9534f;">Delete Selected</button>
+    <div class="filter-toolbar">
+      <div class="filter-left">
+        <input id="searchInput" type="text" placeholder="Search logs...">
+        <select id="statusFilter" class="blue-button">
+          <option value="">All Statuses</option>
+          <option value="pending">Pending</option>
+          <option value="approved">Approved</option>
+          <option value="rejected">Rejected</option>
+          <option value="needs info">Needs Info</option>
+        </select>
+      </div>
+      <div class="filter-right">
+        <div class="view-toggle">
+          <button id="showLogsBtn" class="blue-button">Logs</button>
+          <button id="showNotificationsBtn" class="blue-button">Notifications</button>
+        </div>
+        <button id="quickAddBtn" class="blue-button">Quick Add</button>
+      </div>
     </div>
 
-    <!-- ✅ Bulk Approve Panel -->
-    <div id="bulkApprovePanel" style="display:none; text-align:center; margin-bottom:10px;">
+    <div id="notificationsSection" class="notifications-panel" style="display:none;"></div>
+
+    <div id="bulkApprovePanel" class="bulk-approve-panel" style="display:none;">
       <label>Points to assign:
-        <input type="number" id="bulkPoints" style="width:80px;">
+        <input type="number" id="bulkPoints">
       </label>
       <button id="confirmBulkApprove" class="blue-button">Confirm</button>
       <button id="cancelBulkApprove" class="blue-button" style="background:#999;">Cancel</button>
     </div>
 
-    <!-- ✅ Scrollable Table -->
-    <div id="logsWrapper">
+    <div id="logsWrapper" class="logs-table-wrap">
       <table id="logsHeaderTable">
         <thead>
           <tr>
@@ -74,53 +70,59 @@
       </table>
     </div>
 
-    <!-- ✅ Pagination -->
-    <div id="paginationControls">
-      <button id="prevPageBtn" class="blue-button">Prev</button>
-      <span id="pageInfo"></span>
-      <button id="nextPageBtn" class="blue-button">Next</button>
-      <select id="logsPerPage" class="blue-button">
-        <option value="25">25</option>
-        <option value="50" selected>50</option>
-        <option value="100">100</option>
-      </select>
-    </div>
-<!-- ✅ Quick Add Modal -->
-<div id="quickAddModal" class="modal" style="display:none;
-  position:fixed; top:0; left:0; width:100%; height:100%;
-  background:rgba(0,0,0,0.6); z-index:10000; justify-content:center; align-items:center;">
-  <div class="modal-content" style="background:white; padding:20px; border-radius:10px; width:90%; max-width:500px;">
-    <h3 style="text-align:center; color:#00477d;">Quick Add Points</h3>
-    <div style="max-height:400px; overflow-y:auto; margin-bottom:10px;">
-      <label><b>Select Students:</b></label>
-      <div id="quickAddStudentsList" style="display:flex; flex-direction:column; gap:5px; margin:10px 0;"></div>
+    <div id="bulkActionBar" class="bulk-action-bar" style="display:none;">
+      <button id="bulkApproveBtn" class="blue-button">Approve Selected</button>
+      <button id="deleteSelectedBtn" class="blue-button" style="background:#d9534f;">Delete Selected</button>
     </div>
 
-    <label><b>Category:</b></label>
-    <select id="quickAddCategory" class="white-input" style="width:100%; margin-bottom:10px;">
-      <option value="">Select category</option>
-      <option value="practice">Practice</option>
-      <option value="participation">Participation</option>
-      <option value="performance">Performance</option>
-      <option value="personal">Personal</option>
-      <option value="proficiency">Proficiency</option>
-    </select>
-
-    <label><b>Date:</b></label>
-    <input type="date" id="quickAddDate" class="white-input" style="width:100%; margin-bottom:10px;" />
-
-    <label><b>Points:</b></label>
-    <input type="number" id="quickAddPoints" class="white-input" placeholder="Enter points" style="width:100%; margin-bottom:10px;" />
-
-    <label><b>Notes:</b></label>
-    <textarea id="quickAddNotes" class="white-input" placeholder="Optional note" style="width:100%; margin-bottom:15px;"></textarea>
-
-    <div style="display:flex; justify-content:center; gap:15px;">
-      <button id="quickAddSubmit" class="blue-button">Submit</button>
-      <button id="quickAddCancel" class="blue-button" style="background:#999;">Cancel</button>
+    <div id="paginationControls" class="pagination-row">
+      <div class="pager-controls">
+        <button id="prevPageBtn" class="blue-button">Prev</button>
+        <span id="pageInfo"></span>
+        <button id="nextPageBtn" class="blue-button">Next</button>
+        <select id="logsPerPage" class="blue-button">
+          <option value="25">25</option>
+          <option value="50" selected>50</option>
+          <option value="100">100</option>
+        </select>
+      </div>
     </div>
-  </div>
-</div>
+
+    <div id="quickAddModal" class="modal" style="display:none;
+      position:fixed; top:0; left:0; width:100%; height:100%;
+      background:rgba(0,0,0,0.6); z-index:10000; justify-content:center; align-items:center;">
+      <div class="modal-content" style="background:white; padding:20px; border-radius:10px; width:90%; max-width:500px;">
+        <h3 style="text-align:center; color:#00477d;">Quick Add Points</h3>
+        <div style="max-height:400px; overflow-y:auto; margin-bottom:10px;">
+          <label><b>Select Students:</b></label>
+          <div id="quickAddStudentsList" style="display:flex; flex-direction:column; gap:5px; margin:10px 0;"></div>
+        </div>
+
+        <label><b>Category:</b></label>
+        <select id="quickAddCategory" class="white-input" style="width:100%; margin-bottom:10px;">
+          <option value="">Select category</option>
+          <option value="practice">Practice</option>
+          <option value="participation">Participation</option>
+          <option value="performance">Performance</option>
+          <option value="personal">Personal</option>
+          <option value="proficiency">Proficiency</option>
+        </select>
+
+        <label><b>Date:</b></label>
+        <input type="date" id="quickAddDate" class="white-input" style="width:100%; margin-bottom:10px;" />
+
+        <label><b>Points:</b></label>
+        <input type="number" id="quickAddPoints" class="white-input" placeholder="Enter points" style="width:100%; margin-bottom:10px;" />
+
+        <label><b>Notes:</b></label>
+        <textarea id="quickAddNotes" class="white-input" placeholder="Optional note" style="width:100%; margin-bottom:15px;"></textarea>
+
+        <div style="display:flex; justify-content:center; gap:15px;">
+          <button id="quickAddSubmit" class="blue-button">Submit</button>
+          <button id="quickAddCancel" class="blue-button" style="background:#999;">Cancel</button>
+        </div>
+      </div>
+    </div>
 
   </main>
 </body>
