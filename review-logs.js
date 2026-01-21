@@ -10,9 +10,21 @@ document.addEventListener("DOMContentLoaded", async () => {
   const routeResult = await ensureStudioContextAndRoute({ redirectHome: false });
   if (routeResult?.redirected) return;
 
+  const user = JSON.parse(localStorage.getItem("loggedInUser") || "null");
+  if (!user?.id) {
+    window.location.href = "login.html";
+    return;
+  }
+
   const authz = await requireStudioRoles(["admin", "teacher"]);
   console.log("[AuthZ]", { page: "review-logs", requiredRoles: ["admin", "teacher"], roles: authz.roles, studioId: authz.studioId });
   if (!authz.ok) return;
+  let activeRole = null;
+  if (authz.roles?.includes("admin")) {
+    activeRole = "admin";
+  } else if (authz.roles?.includes("teacher")) {
+    activeRole = "teacher";
+  }
 
   const logsTableBody = document.getElementById("logsTableBody");
   const categorySummary = document.getElementById("categorySummary");
