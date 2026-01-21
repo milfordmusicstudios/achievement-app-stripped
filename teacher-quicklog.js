@@ -1,23 +1,17 @@
 (() => {
-  const card = document.getElementById("quick-log-card");
+  const card = document.getElementById("quickLogCard");
+  const form = document.getElementById("quickLogForm");
+  const studentSelect = document.getElementById("qlStudent");
   const categorySelect = document.getElementById("qlCategory");
+  const dateInput = document.getElementById("qlDate");
   const pointsInput = document.getElementById("qlPoints");
-  const dateInput = document.getElementById("qlDateInput");
-  const addDateBtn = document.getElementById("qlAddDateBtn");
-  const datesContainer = document.getElementById("qlDates");
-  const studentSearch = document.getElementById("qlStudentSearch");
-  const studentsContainer = document.getElementById("qlStudents");
-  const noteInput = document.getElementById("qlNote");
-  const submitBtn = document.getElementById("qlSubmitBtn");
-  const clearBtn = document.getElementById("qlClearBtn");
+  const notesInput = document.getElementById("qlNotes");
   const statusEl = document.getElementById("qlStatus");
+  const submitBtn = document.getElementById("qlSubmit");
 
-  const selectedDates = new Set();
-  let studentsCache = [];
   let studioId = null;
-  let currentUser = null;
-  const createClient = window.supabase?.createClient;
-  let supabase = null;
+  let currentUserId = null;
+  const supabase = window.supabase;
 
   function setStatus(message, isError = false) {
     if (!statusEl) return;
@@ -25,306 +19,188 @@
     statusEl.style.color = isError ? "#c62828" : "#0b7a3a";
   }
 
-  function getMeta(name) {
-    return document.querySelector(`meta[name="${name}"]`)?.content || "";
-  }
-
-  function parseRoles(raw) {
-    if (Array.isArray(raw)) return raw.map(r => String(r).toLowerCase());
-    if (typeof raw === "string") {
-      return raw.split(",").map(r => r.trim().toLowerCase()).filter(Boolean);
+  function parseRoles(profile) {
+    const roleSet = new Set();
+    if (profile && typeof profile.role === "string") {
+      roleSet.add(profile.role.toLowerCase());
     }
-    return [];
-  }
-
-  function renderStudents(list) {
-    if (!studentsContainer) return;
-    studentsContainer.innerHTML = "";
-    if (!list.length) {
-      studentsContainer.textContent = "No students found.";
-      return;
+    if (Array.isArray(profile?.roles)) {
+      profile.roles.forEach(role => roleSet.add(String(role).toLowerCase()));
+    } else if (typeof profile?.roles === "string") {
+      profile.roles
+        .split(",")
+        .map(role => role.trim().toLowerCase())
+        .filter(Boolean)
+        .forEach(role => roleSet.add(role));
     }
-    list.forEach(student => {
-      const label = document.createElement("label");
-      label.style.display = "flex";
-      label.style.alignItems = "center";
-      label.style.gap = "8px";
-      label.style.marginBottom = "6px";
-      const cb = document.createElement("input");
-      cb.type = "checkbox";
-      cb.value = student.id;
-      const name = `${student.lastName || student.last_name || ""}, ${student.firstName || student.first_name || ""}`
-        .replace(/^,\s*/, "")
-        .trim() || "Student";
-      const span = document.createElement("span");
-      span.textContent = name;
-      label.appendChild(cb);
-      label.appendChild(span);
-      studentsContainer.appendChild(label);
-    });
+    return Array.from(roleSet);
   }
 
-  function filterStudents() {
-    const term = (studentSearch?.value || "").trim().toLowerCase();
-    if (!term) {
-      renderStudents(studentsCache);
-      return;
-    }
-    const filtered = studentsCache.filter(s => {
-      const full = `${s.firstName || s.first_name || ""} ${s.lastName || s.last_name || ""}`.toLowerCase();
-      return full.includes(term);
-    });
-    renderStudents(filtered);
+  function isTeacherOrAdmin(profile) {
+    const roles = parseRoles(profile);
+    return roles.includes("teacher") || roles.includes("admin");
   }
 
-  function addDate(value) {
-    if (!value || selectedDates.has(value)) return;
-    selectedDates.add(value);
-    const chip = document.createElement("span");
-    chip.style.display = "inline-flex";
-    chip.style.alignItems = "center";
-    chip.style.gap = "6px";
-    chip.style.padding = "6px 10px";
-    chip.style.border = "1px solid rgba(11,79,138,0.18)";
-    chip.style.borderRadius = "999px";
-    chip.style.marginRight = "6px";
-    chip.textContent = value;
-    const remove = document.createElement("button");
-    remove.type = "button";
-    remove.textContent = "x";
-    remove.style.border = "none";
-    remove.style.background = "transparent";
-    remove.style.cursor = "pointer";
-    remove.addEventListener("click", () => {
-      selectedDates.delete(value);
-      chip.remove();
-    });
-    chip.appendChild(remove);
-    datesContainer?.appendChild(chip);
+  function isStudent(profile) {
+    const roles = parseRoles(profile);
+    return roles.includes("student");
   }
 
-  function clearSelections() {
-    selectedDates.clear();
-    if (datesContainer) datesContainer.innerHTML = "";
-    if (studentsContainer) {
-      studentsContainer.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-        cb.checked = false;
-      });
-    }
-    if (noteInput) noteInput.value = "";
-    setStatus("");
+  function defaultDate() {
+    if (!dateInput) return;
+    dateInput.value = new Date().toISOString().split("T")[0];
   }
 
   async function loadCategories() {
     if (!categorySelect) return;
-    categorySelect.innerHTML = '<option value="">Select category...</option>';
-    let { data, error } = await supabase
-      .from("categories")
-      .select("id, name, sort_order")
-      .order("sort_order", { ascending: true })
-      .order("name", { ascending: true });
+    categorySelect.innerHTML = '<option value="">Select category</option>';
 
-    if (error) {
-      ({ data, error } = await supabase
-        .from("categories")
-        .select("id, name")
-        .order("name", { ascending: true }));
+    let query = supabase
+      .from("categories")
+      .select("id, name")
+      .order("name", { ascending: true });
+    if (studioId) {
+      query = query.eq("studio_id", studioId);
     }
 
+    const { data, error } = await query;
     if (error) {
-      setStatus(error.message || "Failed to load categories.", true);
+      setStatus("Could not load categories.", true);
+      console.error("Quick log categories error:", error);
       return;
     }
 
     (data || []).forEach(cat => {
       const opt = document.createElement("option");
-      opt.value = cat.id;
+      opt.value = cat.name;
+      opt.dataset.id = cat.id;
       opt.textContent = cat.name;
       categorySelect.appendChild(opt);
     });
   }
 
   async function loadStudents() {
-    if (!studioId) return;
-    const base = supabase
+    if (!studentSelect) return;
+    studentSelect.innerHTML = '<option value="">Select a student</option>';
+
+    let query = supabase
       .from("users")
-      .select("id, firstName, lastName, first_name, last_name, roles, studio_id")
-      .eq("studio_id", studioId);
-
-    let { data, error } = await base
-      .contains("roles", ["student"])
-      .order("last_name", { ascending: true })
-      .order("first_name", { ascending: true });
-
-    if (error || !data?.length) {
-      ({ data, error } = await base
-        .ilike("roles", "%student%")
-        .order("last_name", { ascending: true })
-        .order("first_name", { ascending: true }));
+      .select("id, firstName, lastName, email, role, roles, studio_id");
+    if (studioId) {
+      query = query.eq("studio_id", studioId);
     }
+
+    const { data, error } = await query;
+    if (error) {
+      setStatus("Could not load students.", true);
+      console.error("Quick log students error:", error);
+      return;
+    }
+
+    const students = (data || []).filter(isStudent);
+    students.sort((a, b) => {
+      const aName = `${a.lastName || ""} ${a.firstName || ""}`.trim().toLowerCase();
+      const bName = `${b.lastName || ""} ${b.firstName || ""}`.trim().toLowerCase();
+      return aName.localeCompare(bName);
+    });
+
+    students.forEach(student => {
+      const opt = document.createElement("option");
+      opt.value = student.id;
+      const name = `${student.firstName || ""} ${student.lastName || ""}`.trim();
+      opt.textContent = name || student.email || student.id;
+      studentSelect.appendChild(opt);
+    });
+  }
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+    setStatus("");
+
+    const studentId = studentSelect?.value || "";
+    const category = categorySelect?.value || "";
+    const date = dateInput?.value || "";
+    const points = Number(pointsInput?.value);
+    const notes = (notesInput?.value || "").trim();
+
+    if (!studentId || !category || !date) {
+      setStatus("Please complete all required fields.", true);
+      return;
+    }
+    if (!Number.isInteger(points) || points < 1) {
+      setStatus("Points must be 1 or more.", true);
+      return;
+    }
+
+    if (submitBtn) submitBtn.disabled = true;
+
+    const payload = {
+      userId: studentId,
+      date,
+      category,
+      points,
+      notes: notes || null,
+      status: "approved",
+      created_by: currentUserId
+    };
+    if (studioId) {
+      payload.studio_id = studioId;
+    }
+
+    const { error } = await supabase.from("logs").insert([payload]);
+    if (submitBtn) submitBtn.disabled = false;
 
     if (error) {
-      setStatus(error.message || "Failed to load students.", true);
+      console.error("Quick log insert error:", error);
+      setStatus("Couldn't save log. Check console.", true);
       return;
     }
 
-    studentsCache = data || [];
-    studentsCache.sort((a, b) => {
-      const aLast = (a.lastName || a.last_name || "").toLowerCase();
-      const bLast = (b.lastName || b.last_name || "").toLowerCase();
-      if (aLast !== bLast) return aLast.localeCompare(bLast);
-      const aFirst = (a.firstName || a.first_name || "").toLowerCase();
-      const bFirst = (b.firstName || b.first_name || "").toLowerCase();
-      return aFirst.localeCompare(bFirst);
-    });
-    renderStudents(studentsCache);
-  }
-
-  function buildRows(studentField, dateField) {
-    const categoryId = categorySelect?.value || "";
-    const points = Number(pointsInput?.value);
-    const note = (noteInput?.value || "").trim();
-    const selectedStudents = Array.from(
-      studentsContainer?.querySelectorAll('input[type="checkbox"]:checked') || []
-    ).map(cb => cb.value);
-
-    const rows = [];
-    selectedStudents.forEach(studentId => {
-      selectedDates.forEach(dateValue => {
-        const row = {
-          studio_id: studioId,
-          teacher_id: currentUser.id,
-          category_id: categoryId,
-          points,
-          note
-        };
-        row[studentField] = studentId;
-        if (dateField === "logged_at") {
-          row[dateField] = new Date(`${dateValue}T12:00:00`).toISOString();
-        } else {
-          row[dateField] = dateValue;
-        }
-        rows.push(row);
-      });
-    });
-    return rows;
-  }
-
-  async function insertWithFallback() {
-    const attempts = [
-      { studentField: "student_id", dateField: "log_date" },
-      { studentField: "user_id", dateField: "log_date" },
-      { studentField: "student_id", dateField: "logged_at" },
-      { studentField: "user_id", dateField: "logged_at" }
-    ];
-
-    let lastError = null;
-    for (const attempt of attempts) {
-      const rows = buildRows(attempt.studentField, attempt.dateField);
-      const { error } = await supabase.from("logs").insert(rows);
-      if (!error) return { ok: true, count: rows.length };
-      lastError = error;
-      const msg = String(error.message || "");
-      if (msg.includes("log_date") || msg.includes("logged_at") || msg.includes("student_id") || msg.includes("user_id")) {
-        continue;
-      }
-      break;
-    }
-    return { ok: false, error: lastError };
-  }
-
-  async function handleSubmit() {
-    setStatus("");
-    const categoryId = categorySelect?.value || "";
-    const points = Number(pointsInput?.value);
-    const selectedStudents = Array.from(
-      studentsContainer?.querySelectorAll('input[type="checkbox"]:checked') || []
-    ).map(cb => cb.value);
-
-    if (!categoryId) return setStatus("Select a category.", true);
-    if (!Number.isInteger(points) || points <= 0) return setStatus("Points must be a positive integer.", true);
-    if (!selectedStudents.length) return setStatus("Select at least one student.", true);
-    if (!selectedDates.size) return setStatus("Add at least one date.", true);
-
-    submitBtn.disabled = true;
-    const result = await insertWithFallback();
-    submitBtn.disabled = false;
-
-    if (!result.ok) {
-      setStatus(result.error?.message || "Failed to submit logs.", true);
-      return;
-    }
-
-    setStatus(`Logged ${result.count} entries.`);
-    clearSelections();
+    setStatus("Logged. ✅");
+    if (pointsInput) pointsInput.value = "";
+    if (notesInput) notesInput.value = "";
   }
 
   async function init() {
-    if (!card) return;
-    const url = window.SUPABASE_URL || getMeta("supabase-url");
-    const key = window.SUPABASE_ANON_KEY || getMeta("supabase-anon-key");
-
-    if (window.supabase?.auth) {
-      supabase = window.supabase;
-    } else {
-      if (!url || !key) {
-        setStatus("Supabase config missing.", true);
-        return;
-      }
-
-      if (!createClient) {
-        setStatus("Supabase client unavailable.", true);
-        return;
-      }
-
-      supabase = createClient(url, key);
-    }
+    if (!card || !supabase?.auth) return;
 
     const { data: sessionData, error: sessionErr } = await supabase.auth.getSession();
     const session = sessionData?.session || null;
-    if (sessionErr || !session) {
-      card.style.display = "none";
-      setStatus("Not logged in", true);
-      return;
+    if (sessionErr || !session) return;
+
+    currentUserId = session.user.id;
+    const activeStudioId = localStorage.getItem("activeStudioId") || null;
+
+    let isStaff = false;
+    if (activeStudioId) {
+      const { data: studioMember } = await supabase
+        .from("studio_members")
+        .select("roles")
+        .eq("user_id", currentUserId)
+        .eq("studio_id", activeStudioId)
+        .single();
+      const roles = Array.isArray(studioMember?.roles) ? studioMember.roles : [];
+      isStaff = roles.includes("admin") || roles.includes("teacher");
+      studioId = activeStudioId;
     }
 
-    const { data: profile, error: profileErr } = await supabase
-      .from("users")
-      .select("*")
-      .eq("id", session.user.id)
-      .single();
-    if (profileErr || !profile) {
-      setStatus(profileErr?.message || "Failed to load profile.", true);
-      return;
+    if (!isStaff) {
+      const { data: profile } = await supabase
+        .from("users")
+        .select("id, role, roles, studio_id, studioId")
+        .eq("id", currentUserId)
+        .single();
+      if (!profile || !isTeacherOrAdmin(profile)) return;
+      studioId = activeStudioId || profile.studio_id || profile.studioId || null;
     }
 
-    currentUser = profile;
-    const roles = parseRoles(profile.roles);
-    if (!roles.includes("teacher") && !roles.includes("admin")) {
-      card.style.display = "none";
-      return;
-    }
-
-    studioId = profile.studio_id;
-    if (!studioId) {
-      setStatus("Missing studio id.", true);
-      return;
-    }
-
-    card.style.display = "";
+    card.style.display = "block";
+    defaultDate();
     await loadCategories();
     await loadStudents();
 
-    studentSearch?.addEventListener("input", filterStudents);
-    addDateBtn?.addEventListener("click", () => {
-      addDate(dateInput?.value);
-      if (dateInput) dateInput.value = "";
-    });
-    submitBtn?.addEventListener("click", handleSubmit);
-    clearBtn?.addEventListener("click", clearSelections);
+    form?.addEventListener("submit", handleSubmit);
   }
 
-  window.addEventListener("load", () => {
-    init();
-  });
+  window.addEventListener("load", init);
 })();
