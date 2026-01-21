@@ -26,6 +26,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     activeRole = "teacher";
   }
 
+  const roleBadge = document.getElementById("reviewRoleBadge");
+  if (roleBadge) {
+    roleBadge.textContent = activeRole === "admin" ? "ADMIN" : "TEACHER";
+  }
+
   const logsTableBody = document.getElementById("logsTableBody");
   const categorySummary = document.getElementById("categorySummary");
   const searchInput = document.getElementById("searchInput");
@@ -185,12 +190,20 @@ document.addEventListener("DOMContentLoaded", async () => {
       { label: "Total Logs", value: list.length }
     ].filter(Boolean);
 
-    categorySummary.innerHTML = cards.map(card => `
-      <div class="summary-card">
+    categorySummary.innerHTML = cards.map(card => {
+      const key = card.label.toLowerCase();
+      let extraClass = "";
+      if (key.includes("pending")) extraClass = "pending";
+      else if (key.includes("approved")) extraClass = "approved";
+      else if (key.includes("total")) extraClass = "total";
+      else extraClass = "review";
+      return `
+      <div class="summary-card ${extraClass}">
         <div class="summary-label">${card.label}</div>
         <div class="summary-value">${card.value}</div>
       </div>
-    `).join("");
+    `;
+    }).join("");
   }
 
   function renderLogsTable(list) {
@@ -216,7 +229,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         <td><input type="number" class="edit-input" data-id="${log.id}" data-field="points" value="${log.points ?? 0}"></td>
         <td><textarea class="edit-input" data-id="${log.id}" data-field="notes">${log.notes || ""}</textarea></td>
         <td>
-          <select class="edit-input" data-id="${log.id}" data-field="status">
+          <select class="edit-input status-select status-pill" data-id="${log.id}" data-field="status" data-status="${String(log.status || "pending").toLowerCase()}">
             <option value="pending" ${log.status === "pending" ? "selected" : ""}>Pending</option>
             <option value="approved" ${log.status === "approved" ? "selected" : ""}>Approved</option>
             <option value="rejected" ${log.status === "rejected" ? "selected" : ""}>Rejected</option>
@@ -260,6 +273,11 @@ document.addEventListener("DOMContentLoaded", async () => {
           alert("Failed to update log.");
           console.error(error);
           return;
+        }
+
+        if (field === "status" && e.target instanceof HTMLSelectElement) {
+          const statusValue = String(value || "").toLowerCase();
+          e.target.dataset.status = statusValue;
         }
         console.log(`[DEBUG] Updated log ${logId}: ${field} = ${value}`);
 

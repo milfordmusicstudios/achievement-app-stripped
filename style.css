@@ -1318,6 +1318,10 @@ body.review-logs-page main.app {
   width: min(1200px, calc(100% - 48px));
   margin: 0 auto;
   padding: 16px 20px 32px;
+  background: rgba(255,255,255,0.72);
+  border-radius: 24px;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.12);
+  overflow: visible;
 }
 
 body.my-points-page main.app {
@@ -1369,6 +1373,52 @@ body.review-logs-page .summary-card {
   border: 4px solid rgba(11,79,138,0.18);
   box-shadow: 0 8px 20px rgba(0,0,0,0.12);
   text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+body.review-logs-page .summary-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 6px;
+  background: rgba(11,79,138,0.2);
+}
+
+body.review-logs-page .summary-card.pending {
+  background: rgba(255,214,107,0.22);
+  border-color: rgba(255,196,59,0.55);
+}
+
+body.review-logs-page .summary-card.pending::before {
+  background: rgba(255,196,59,0.9);
+}
+
+body.review-logs-page .summary-card.approved {
+  background: rgba(148,214,165,0.2);
+  border-color: rgba(67,163,95,0.5);
+}
+
+body.review-logs-page .summary-card.approved::before {
+  background: rgba(67,163,95,0.9);
+}
+
+body.review-logs-page .summary-card.review {
+  background: rgba(255,190,190,0.2);
+  border-color: rgba(208,79,79,0.45);
+}
+
+body.review-logs-page .summary-card.review::before {
+  background: rgba(208,79,79,0.9);
+}
+
+body.review-logs-page .summary-card.total {
+  background: rgba(126,193,255,0.2);
+  border-color: rgba(18,121,200,0.5);
+}
+
+body.review-logs-page .summary-card.total::before {
+  background: rgba(18,121,200,0.9);
 }
 
 body.review-logs-page .summary-card h4,
@@ -1501,6 +1551,30 @@ body.review-logs-page #logsTable input.edit-input {
   border: 1px solid rgba(11,79,138,0.2);
 }
 
+body.review-logs-page #logsTable select.status-pill {
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-weight: 800;
+  color: #083A63;
+  border: 2px solid rgba(11,79,138,0.2);
+}
+
+body.review-logs-page #logsTable select.status-pill[data-status="approved"] {
+  background: rgba(148,214,165,0.3);
+  border-color: rgba(67,163,95,0.6);
+}
+
+body.review-logs-page #logsTable select.status-pill[data-status="pending"] {
+  background: rgba(255,214,107,0.3);
+  border-color: rgba(255,196,59,0.7);
+}
+
+body.review-logs-page #logsTable select.status-pill[data-status="rejected"],
+body.review-logs-page #logsTable select.status-pill[data-status="needs info"] {
+  background: rgba(255,190,190,0.3);
+  border-color: rgba(208,79,79,0.6);
+}
+
 body.review-logs-page .bulk-action-bar {
   position: sticky;
   bottom: 12px;
@@ -1520,6 +1594,7 @@ body.review-logs-page .pagination-row {
   display: flex;
   justify-content: flex-end;
   margin-top: 12px;
+  overflow: visible;
 }
 
 body.review-logs-page .pagination-row .pager-controls {
@@ -1530,6 +1605,15 @@ body.review-logs-page .pagination-row .pager-controls {
   border-radius: 14px;
   padding: 8px 10px;
   border: 2px solid rgba(11,79,138,0.18);
+  overflow: visible;
+}
+
+body.review-logs-page .pagination-row .blue-button,
+body.review-logs-page .pagination-row select.blue-button {
+  padding: 8px 14px;
+  min-height: 36px;
+  border-radius: 6px;
+  line-height: 1.1;
 }
 
 @media (max-width: 900px) {
