@@ -320,7 +320,7 @@ function renderStaffQuickLogShell() {
   if (!mount) return;
   mount.innerHTML = `
     <section class="home-staff staff-only" aria-label="Staff quick log">
-      <div class="action-title">Quick Log</div>
+      <div class="action-title">Add Points</div>
       <form id="staffQuickLogForm" class="staff-card">
         <label for="staffCategory">Category</label>
         <select id="staffCategory" required disabled>

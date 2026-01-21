@@ -243,6 +243,14 @@ body.is-staff #quickLogCard {
   margin-top: 6px;
 }
 
+/* Staff-only compact header spacing */
+body.mode-staff .home-header { margin-top: 4px; margin-bottom: 6px; }
+body.mode-staff .logo-center { margin-top: 2px; margin-bottom: 2px; }
+body.mode-staff #welcomeText { margin: 4px 0; }
+body.mode-staff .identity-row { padding-top: 4px; }
+body.mode-staff #quickLogCard { margin-top: 4px; }
+body.mode-staff .studio-logo { max-width: 120px; width: 120px; }
+
 .staff-actions {
   display: flex;
   justify-content: center;
