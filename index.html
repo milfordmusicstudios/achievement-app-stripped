@@ -17,25 +17,29 @@
       </div>
 
       <div class="identity-row">
-        <div class="identity-avatar">
-          <button id="avatarSwitcher" class="avatar-button" type="button" aria-haspopup="menu" aria-expanded="false">
-            <img
-              id="avatarImg"
-              src="images/icons/default.png"
-              alt="Avatar"
-              onerror="this.onerror=null; this.src='images/icons/default.png';"
-            />
-          </button>
-          <div id="avatarMenu" class="avatar-menu" role="menu" hidden></div>
-        </div>
+        <div class="home-id-left">
+          <div class="identity-avatar">
+            <button id="avatarSwitcher" class="avatar-button" type="button" aria-haspopup="menu" aria-expanded="false">
+              <img
+                id="avatarImg"
+                src="images/icons/default.png"
+                alt="Avatar"
+                onerror="this.onerror=null; this.src='images/icons/default.png';"
+              />
+            </button>
+            <div id="avatarMenu" class="avatar-menu" role="menu" hidden></div>
+          </div>
 
-        <div class="identity-level student-only">
-          <img id="levelBadgeImg" src="images/levelBadges/level1.png" alt="Level badge" />
+          <div class="identity-level student-only">
+            <img id="levelBadgeImg" src="images/levelBadges/level1.png" alt="Level badge" />
+          </div>
         </div>
-        <div class="role-badge-wrap">
-          <span id="roleBadge" class="role-badge-text" aria-hidden="true"></span>
-          <img id="roleBadgeAdmin" class="role-badge admin-only" src="images/levelBadges/admin.png" alt="Admin">
-          <img id="roleBadgeTeacher" class="role-badge staff-only" src="images/levelBadges/teacher.png" alt="Teacher">
+        <div class="home-id-right">
+          <div class="role-badge-wrap">
+            <span id="roleBadge" class="role-badge-text" aria-hidden="true"></span>
+            <img id="roleBadgeAdmin" class="role-badge admin-only" src="images/levelBadges/admin.png" alt="Admin">
+            <img id="roleBadgeTeacher" class="role-badge staff-only" src="images/levelBadges/teacher.png" alt="Teacher">
+          </div>
         </div>
       </div>
 

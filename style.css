@@ -36,6 +36,11 @@ html, body {
   background: #f6f8fb;
 }
 
+:root {
+  --home-id-size: 120px;
+  --home-logo-max: 180px;
+}
+
 /* ===============================
    BACKGROUNDS (Home)
 ================================ */
@@ -106,7 +111,8 @@ a.big-fun-btn:focus-visible {
 }
 
 .home-identity {
-  margin-bottom: 8px;
+  margin-top: 8px;
+  margin-bottom: 6px;
 }
 
 .studio-logo-wrap {
@@ -116,10 +122,13 @@ a.big-fun-btn:focus-visible {
 }
 
 .studio-logo {
-  max-width: 280px;
-  width: 55vw;
+  max-width: var(--home-logo-max);
+  width: min(var(--home-logo-max), 55vw);
   height: auto;
+  display: block;
+  margin: 6px auto 0;
   object-fit: contain;
+  opacity: 0.92;
 }
 
 .identity-row {
@@ -127,6 +136,41 @@ a.big-fun-btn:focus-visible {
   justify-content: space-between;
   align-items: center;
   gap: 14px;
+}
+
+.home-id-left,
+.home-id-right {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.home-id-left {
+  justify-content: flex-start;
+}
+
+.home-id-right {
+  justify-content: flex-end;
+}
+
+.home-id-left img,
+.home-id-left .avatar,
+.home-id-left #avatarImg,
+.home-id-left #userAvatar,
+.home-id-left .profile-avatar {
+  width: var(--home-id-size);
+  height: var(--home-id-size);
+  object-fit: cover;
+  border-radius: 18px;
+}
+
+.home-id-left .level-badge,
+.home-id-left #levelBadge,
+.home-id-left #levelBadgeImg,
+.home-id-left img[src*="levelBadges"] {
+  width: var(--home-id-size);
+  height: var(--home-id-size);
+  object-fit: contain;
 }
 
 .admin-only {
@@ -234,13 +278,13 @@ body.is-admin .admin-only {
 }
 
 .role-badge {
-  width: 60px;
-  height: 60px;
+  width: var(--home-id-size);
+  height: var(--home-id-size);
   object-fit: contain;
-  padding: 6px;
+  padding: 10px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.35);
-  border: 2px solid rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.30);
+  border: 2px solid rgba(255, 255, 255, 0.55);
   box-sizing: border-box;
 }
 
