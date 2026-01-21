@@ -38,7 +38,6 @@ html, body {
 
 :root {
   --home-id-size: 120px;
-  --home-logo-max: 180px;
 }
 
 /* ===============================
@@ -110,78 +109,65 @@ a.big-fun-btn:focus-visible {
   margin: 8px 0 6px;
 }
 
-.home-identity {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: 16px;
-  margin-top: 6px;
-  margin-bottom: 6px;
-}
-
-.studio-logo-wrap {
-  display: flex;
-  justify-content: center;
-  margin: 6px 0 10px;
-}
-
 .studio-logo {
-  max-width: 150px;
-  width: min(150px, 45vw);
+  max-width: 180px;
+  width: min(180px, 60vw);
   height: auto;
   display: block;
   margin: 0 auto;
   object-fit: contain;
-  opacity: 0.9;
+  opacity: 0.95;
 }
 
-.home-id-left,
-.home-id-right {
+.home-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  margin-bottom: 10px;
+}
+
+.home-header-logo {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.home-header-title {
+  margin: 0;
+}
+
+.home-header-row {
+  width: min(1100px, 92vw);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.home-header-left,
+.home-header-right {
   display: flex;
   align-items: center;
   gap: 18px;
 }
 
-.home-id-left {
-  justify-content: flex-start;
-}
-
-.home-id-center {
-  text-align: center;
-}
-
-.home-id-right {
-  justify-content: flex-end;
-}
-
-.home-id-center:empty {
-  display: none;
-}
-
-.home-id-left img,
-.home-id-left .avatar,
-.home-id-left #avatarImg,
-.home-id-left #userAvatar,
-.home-id-left .profile-avatar {
+.home-header-left img,
+.home-header-left .avatar,
+.home-header-left #avatarImg,
+.home-header-left #userAvatar,
+.home-header-left .profile-avatar {
   width: var(--home-id-size);
   height: var(--home-id-size);
   object-fit: cover;
   border-radius: 18px;
 }
 
-.home-id-left .level-badge,
-.home-id-left #levelBadge,
-.home-id-left #levelBadgeImg,
-.home-id-left img[src*="levelBadges"] {
-  width: var(--home-id-size);
-  height: var(--home-id-size);
-  object-fit: contain;
-}
-
-.home-id-right .level-badge,
-.home-id-right #levelBadge,
-.home-id-right #levelBadgeImg,
-.home-id-right img[src*="levelBadges"] {
+.home-header-right .level-badge,
+.home-header-right #levelBadge,
+.home-header-right #levelBadgeImg,
+.home-header-right img[src*="levelBadges"] {
   width: var(--home-id-size);
   height: var(--home-id-size);
   object-fit: contain;
@@ -310,13 +296,6 @@ body.is-admin #roleBadgeTeacher {
   display: none;
 }
 
-.home-id-center {
-  display: none;
-}
-
-body.is-staff .home-id-center {
-  display: block;
-}
 
 .admin-mode {
   margin-top: 10px;
