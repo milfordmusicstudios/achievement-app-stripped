@@ -99,7 +99,7 @@ a.big-fun-btn:focus-visible {
 .home-wrap {
   max-width: 980px;
   margin: 0 auto;
-  padding: 18px 16px 28px;
+  padding: 12px 16px 28px;
 }
 
 .home-welcome {
@@ -111,7 +111,11 @@ a.big-fun-btn:focus-visible {
 }
 
 .home-identity {
-  margin-top: 8px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 16px;
+  margin-top: 6px;
   margin-bottom: 6px;
 }
 
@@ -122,20 +126,13 @@ a.big-fun-btn:focus-visible {
 }
 
 .studio-logo {
-  max-width: var(--home-logo-max);
-  width: min(var(--home-logo-max), 55vw);
+  max-width: 150px;
+  width: min(150px, 45vw);
   height: auto;
   display: block;
-  margin: 6px auto 0;
+  margin: 0 auto;
   object-fit: contain;
-  opacity: 0.92;
-}
-
-.identity-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 14px;
+  opacity: 0.9;
 }
 
 .home-id-left,
@@ -149,8 +146,16 @@ a.big-fun-btn:focus-visible {
   justify-content: flex-start;
 }
 
+.home-id-center {
+  text-align: center;
+}
+
 .home-id-right {
   justify-content: flex-end;
+}
+
+.home-id-center:empty {
+  display: none;
 }
 
 .home-id-left img,
@@ -168,6 +173,15 @@ a.big-fun-btn:focus-visible {
 .home-id-left #levelBadge,
 .home-id-left #levelBadgeImg,
 .home-id-left img[src*="levelBadges"] {
+  width: var(--home-id-size);
+  height: var(--home-id-size);
+  object-fit: contain;
+}
+
+.home-id-right .level-badge,
+.home-id-right #levelBadge,
+.home-id-right #levelBadgeImg,
+.home-id-right img[src*="levelBadges"] {
   width: var(--home-id-size);
   height: var(--home-id-size);
   object-fit: contain;
@@ -294,6 +308,14 @@ body.is-admin .admin-only {
 
 body.is-admin #roleBadgeTeacher {
   display: none;
+}
+
+.home-id-center {
+  display: none;
+}
+
+body.is-staff .home-id-center {
+  display: block;
 }
 
 .admin-mode {

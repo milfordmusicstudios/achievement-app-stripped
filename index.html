@@ -10,51 +10,50 @@
 <div id="envBadge" class="env-badge" style="display:none;"></div>
   <main class="home-wrap">
     <!-- Identity first -->
+    <h1 id="welcomeText" class="home-welcome">Welcome!</h1>
     <section class="home-identity">
-      <h1 id="welcomeText" class="home-welcome">Welcome!</h1>
-      <div class="studio-logo-wrap">
-        <img class="studio-logo" src="images/logos/logo.png" alt="Studio Logo">
-      </div>
-
-      <div class="identity-row">
-        <div class="home-id-left">
-          <div class="identity-avatar">
-            <button id="avatarSwitcher" class="avatar-button" type="button" aria-haspopup="menu" aria-expanded="false">
-              <img
-                id="avatarImg"
-                src="images/icons/default.png"
-                alt="Avatar"
-                onerror="this.onerror=null; this.src='images/icons/default.png';"
-              />
-            </button>
-            <div id="avatarMenu" class="avatar-menu" role="menu" hidden></div>
-          </div>
-
-          <div class="identity-level student-only">
-            <img id="levelBadgeImg" src="images/levelBadges/level1.png" alt="Level badge" />
-          </div>
-        </div>
-        <div class="home-id-right">
-          <div class="role-badge-wrap">
-            <span id="roleBadge" class="role-badge-text" aria-hidden="true"></span>
-            <img id="roleBadgeAdmin" class="role-badge admin-only" src="images/levelBadges/admin.png" alt="Admin">
-            <img id="roleBadgeTeacher" class="role-badge staff-only" src="images/levelBadges/teacher.png" alt="Teacher">
-          </div>
+      <div class="home-id-left">
+        <div class="identity-avatar">
+          <button id="avatarSwitcher" class="avatar-button" type="button" aria-haspopup="menu" aria-expanded="false">
+            <img
+              id="avatarImg"
+              src="images/icons/default.png"
+              alt="Avatar"
+              onerror="this.onerror=null; this.src='images/icons/default.png';"
+            />
+          </button>
+          <div id="avatarMenu" class="avatar-menu" role="menu" hidden></div>
         </div>
       </div>
 
-      <div class="identity-progress student-only">
-        <div class="progress-card">
-          <div class="progress-title">Level Progress</div>
-          <div class="progress-container">
-            <div id="progressFill" class="progress-fill"></div>
-            <div id="progressText" class="progress-text">0 pts</div>
-          </div>
-          <div id="progressPercent" class="progress-percent">0% complete</div>
+      <div class="home-id-center">
+        <div class="studio-logo-wrap">
+          <img class="studio-logo" src="images/logos/logo.png" alt="Studio Logo">
         </div>
       </div>
 
+      <div class="home-id-right">
+        <div class="identity-level student-only">
+          <img id="levelBadgeImg" src="images/levelBadges/level1.png" alt="Level badge" />
+        </div>
+        <div class="role-badge-wrap">
+          <span id="roleBadge" class="role-badge-text" aria-hidden="true"></span>
+          <img id="roleBadgeAdmin" class="role-badge admin-only" src="images/levelBadges/admin.png" alt="Admin">
+          <img id="roleBadgeTeacher" class="role-badge staff-only" src="images/levelBadges/teacher.png" alt="Teacher">
+        </div>
+      </div>
     </section>
+
+    <div class="identity-progress student-only">
+      <div class="progress-card">
+        <div class="progress-title">Level Progress</div>
+        <div class="progress-container">
+          <div id="progressFill" class="progress-fill"></div>
+          <div id="progressText" class="progress-text">0 pts</div>
+        </div>
+        <div id="progressPercent" class="progress-percent">0% complete</div>
+      </div>
+    </div>
     <div id="staffQuickLogMount"></div>
     <section id="quickLogCard" style="display:none;">
       <div class="action-title">Add Points</div>
