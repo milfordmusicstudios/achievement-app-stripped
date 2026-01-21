@@ -306,8 +306,8 @@ body.is-admin .admin-only {
 body.is-staff #staffQuickLogForm.staff-card,
 body.is-admin #staffQuickLogForm.staff-card {
   border: 4px solid rgba(11,79,138,0.18) !important;
-  box-shadow: 0 0 0 3px rgba(255, 220, 90, 0.9);
-  border-radius: 22px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+  border-radius: 16px;
 }
 
 body.is-staff #staffQuickLogSubmit.staff-submit,
@@ -336,10 +336,10 @@ body.is-admin #addDateBtn.blue-button {
 
 body.is-staff .ql-category-pop,
 body.is-admin .ql-category-pop {
-  background: #ffe56b;
+  background: #FFE34A;
   border-radius: 16px;
   padding: 14px;
-  border: 2px solid rgba(11,79,138,0.18);
+  border: 4px solid rgba(11,79,138,0.18);
   margin-bottom: 10px;
 }
 
@@ -353,15 +353,6 @@ body.is-admin .ql-category-pop select {
   background: #ffffff;
 }
 
-.nav-btn--leaderboard{
-  max-width: 720px;
-  flex: 0 1 720px;
-  padding: 18px 22px;
-  border-radius: 30px;
-  font-size: 26px;
-  font-weight: 900;
-  text-align: center;
-}
 
 .role-badge-text {
   display: none !important;
