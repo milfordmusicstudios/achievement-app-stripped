@@ -496,13 +496,27 @@ body.is-admin #roleBadgeTeacher {
 }
 
 .progress-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
   height: 100%;
   width: 0%;
   background: #c9f767;
   transition: width 420ms cubic-bezier(.2,.9,.2,1);
+  z-index: 1;
   box-shadow:
     0 0 0 2px rgba(255,255,255,0.35) inset,
     0 10px 18px rgba(0,0,0,0.12);
+}
+
+.progress-fill-pending {
+  position: absolute;
+  inset: 0;
+  width: 0%;
+  height: 100%;
+  background: rgba(201, 247, 103, 0.45);
+  transition: width 420ms cubic-bezier(.2,.9,.2,1);
+  z-index: 2;
 }
 
 .progress-text {
@@ -516,6 +530,7 @@ body.is-admin #roleBadgeTeacher {
   color: #0B4F8A;
   letter-spacing: 0.3px;
   text-shadow: 0 1px 0 rgba(255,255,255,0.7);
+  z-index: 3;
 }
 
 /* percent line intentionally off (we show xp / nextlevelxp instead) */
@@ -730,6 +745,146 @@ body.is-admin #roleBadgeTeacher {
   z-index: 9999;
 }
 .toast.show { opacity: 1; }
+
+/* ===============================
+   STUDENT HOME LOG MODALS
+================================ */
+body.student-home-page .student-log-modal {
+  width: min(560px, 92vw);
+  max-width: 560px;
+  text-align: left;
+}
+
+body.student-home-page .modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+body.student-home-page .modal-title {
+  font-size: 20px;
+  font-weight: 900;
+  color: #0B4F8A;
+}
+
+body.student-home-page .modal-close {
+  background: rgba(11,79,138,0.1);
+  border: 0;
+  border-radius: 10px;
+  padding: 4px 10px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+body.student-home-page .modal-body {
+  display: grid;
+  gap: 10px;
+}
+
+body.student-home-page .modal-field {
+  display: grid;
+  gap: 6px;
+}
+
+body.student-home-page .modal-field label {
+  font-weight: 800;
+  color: #0B4F8A;
+}
+
+body.student-home-page .modal-field input,
+body.student-home-page .modal-field select,
+body.student-home-page .modal-field textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(11,79,138,0.2);
+}
+
+body.student-home-page .modal-field textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+
+body.student-home-page .modal-category {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.7);
+  border: 2px solid rgba(11,79,138,0.18);
+}
+
+body.student-home-page .modal-category img {
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
+}
+
+body.student-home-page .modal-category-label {
+  font-weight: 900;
+  color: #0B4F8A;
+}
+
+body.student-home-page .modal-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+body.student-home-page .modal-actions .blue-button {
+  flex: 1;
+  min-height: 44px;
+}
+
+body.student-home-page .status-note {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0B4F8A;
+  background: rgba(255,255,255,0.6);
+  border: 2px dashed rgba(18,121,200,0.35);
+  border-radius: 12px;
+  padding: 8px 10px;
+}
+
+body.student-home-page .date-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+
+body.student-home-page .date-cell {
+  padding: 8px 6px;
+  border-radius: 10px;
+  border: 1px solid rgba(11,79,138,0.2);
+  background: rgba(255,255,255,0.8);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+body.student-home-page .date-cell.selected {
+  background: #FFE34A;
+  border-color: rgba(8,58,99,0.22);
+}
+
+body.student-home-page .date-cell.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+body.student-home-page .points-readonly {
+  background: rgba(245,245,245,0.9);
+  color: #0B4F8A;
+}
+
+body.student-home-page .action-primary[disabled],
+body.student-home-page .action-secondary[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
 
 /* ===============================
    RESPONSIVE

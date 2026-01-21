@@ -1,6 +1,6 @@
 import { supabase } from './supabaseClient.js';
 import { ensureStudioContextAndRoute } from './studio-routing.js';
-import { ensureUserRow, getAuthUserId } from './utils.js';
+import { ensureUserRow, getAuthUserId, recalculateUserPoints } from './utils.js';
 
 const qs = id => document.getElementById(id);
 const safeParse = value => {
@@ -13,6 +13,10 @@ const safeParse = value => {
 
 let currentProfile = null;
 let availableUsers = [];
+let pendingPointsTotal = 0;
+let currentLevelRow = null;
+let isStaffUser = false;
+let practiceLoggedToday = false;
 
 
 async function loadLevel(levelId) {
@@ -153,6 +157,11 @@ async function switchUser(user) {
   currentProfile = user;
 
   await refreshHomeForUser(user);
+  currentLevelRow = await loadLevel(user.level || 1);
+  await loadPendingPoints(user.id);
+  updatePendingProgressFill();
+  practiceLoggedToday = await checkPracticeLoggedToday(user.id);
+  setPracticeButtonState(qs("quickPracticeBtn"), practiceLoggedToday);
   renderAvatarMenu(availableUsers, user.id);
   closeAvatarMenu();
 }
@@ -237,6 +246,7 @@ async function init() {
     const studioRoles = Array.isArray(studioMember?.roles) ? studioMember.roles : [];
     const isStaff = studioRoles.includes('admin') || studioRoles.includes('teacher');
     const isAdmin = studioRoles.includes('admin');
+    isStaffUser = isStaff;
     if (isStaff) document.body.classList.add('is-staff');
     if (isAdmin) document.body.classList.add('is-admin');
     console.log('[Home] studio roles', studioRoles);
@@ -309,29 +319,521 @@ currentProfile = profile;
   renderIdentity(profile, levelRow);
 
   const parentId = sessionData?.session?.user?.id;
-  availableUsers = await loadAvailableUsers(parentId, profile);
-  initAvatarSwitcher(availableUsers);
-  initStudentLogButtons();
+availableUsers = await loadAvailableUsers(parentId, profile);
+initAvatarSwitcher(availableUsers);
+currentLevelRow = levelRow;
+await loadPendingPoints(profile.id);
+updatePendingProgressFill();
+if (!isStaffUser) {
+  await initStudentLogActions(profile.id);
+}
 }
 
 document.addEventListener('DOMContentLoaded', init);
 
-function initStudentLogButtons() {
-  const targets = [
-    { id: 'quickPracticeBtn', href: 'my-points.html' },
-    { id: 'logPastPracticeBtn', href: 'my-points.html' },
-    { id: 'modalLogPractice', href: 'my-points.html' },
-    { id: 'modalLogOther', href: 'my-points.html' }
-  ];
+function getTodayString() {
+  return new Date().toISOString().split("T")[0];
+}
 
-  targets.forEach(({ id, href }) => {
-    const btn = qs(id);
-    if (!btn) return;
-    btn.addEventListener('click', (e) => {
+function showToast(message) {
+  const toast = qs("toast");
+  if (!toast) return;
+  toast.textContent = message;
+  toast.classList.add("show");
+  clearTimeout(toast._hideTimer);
+  toast._hideTimer = setTimeout(() => {
+    toast.classList.remove("show");
+  }, 2200);
+}
+
+function closeStudentModal() {
+  const overlay = qs("studentLogModalOverlay");
+  if (overlay) overlay.style.display = "none";
+}
+
+function openStudentModal({ title, bodyHtml, submitLabel, onSubmit }) {
+  const overlay = qs("studentLogModalOverlay");
+  const titleEl = qs("studentLogModalTitle");
+  const bodyEl = qs("studentLogModalBody");
+  const submitBtn = qs("studentLogModalSubmit");
+  const cancelBtn = qs("studentLogModalCancel");
+  const closeBtn = qs("studentLogModalClose");
+  if (!overlay || !titleEl || !bodyEl || !submitBtn || !cancelBtn || !closeBtn) return;
+
+  titleEl.textContent = title;
+  bodyEl.innerHTML = bodyHtml;
+  submitBtn.textContent = submitLabel || "Submit";
+  submitBtn.onclick = async (e) => {
+    e.preventDefault();
+    await onSubmit();
+  };
+  cancelBtn.onclick = (e) => {
+    e.preventDefault();
+    closeStudentModal();
+  };
+  closeBtn.onclick = (e) => {
+    e.preventDefault();
+    closeStudentModal();
+  };
+  overlay.onclick = (e) => {
+    if (e.target === overlay) closeStudentModal();
+  };
+  overlay.style.display = "flex";
+}
+
+function setPracticeButtonState(button, logged) {
+  if (!button) return;
+  if (logged) {
+    button.disabled = true;
+    button.innerHTML = "✅ <span>You already logged today&apos;s practice</span>";
+  } else {
+    button.disabled = false;
+    button.innerHTML = "✅ <span>Log Today&apos;s Practice</span> <span class=\"muted\">(+5 XP)</span>";
+  }
+}
+
+async function checkPracticeLoggedToday(userId) {
+  const today = getTodayString();
+  const { data, error } = await supabase
+    .from("logs")
+    .select("id")
+    .eq("userId", userId)
+    .eq("category", "practice")
+    .eq("date", today)
+    .limit(1);
+  if (error) {
+    console.error("Failed to check practice logs", error);
+    return false;
+  }
+  return Array.isArray(data) && data.length > 0;
+}
+
+async function applyApprovedRecalc(userId) {
+  const result = await recalculateUserPoints(userId);
+  if (!result || !currentProfile || currentProfile.id !== userId) return;
+  currentProfile.points = result.totalPoints;
+  currentProfile.level = result.currentLevel?.id || currentProfile.level;
+  localStorage.setItem("loggedInUser", JSON.stringify(currentProfile));
+  currentLevelRow = await loadLevel(currentProfile.level || 1);
+  if (currentLevelRow) renderIdentity(currentProfile, currentLevelRow);
+  updatePendingProgressFill();
+}
+
+async function loadPendingPoints(userId) {
+  const { data, error } = await supabase
+    .from("logs")
+    .select("points")
+    .eq("userId", userId)
+    .eq("status", "pending");
+  if (error) {
+    console.error("Failed to load pending logs", error);
+    pendingPointsTotal = 0;
+    return;
+  }
+  pendingPointsTotal = (data || []).reduce((sum, log) => sum + (log.points || 0), 0);
+}
+
+function updatePendingProgressFill() {
+  const pendingEl = qs("progressFillPending");
+  if (!pendingEl || !currentProfile || !currentLevelRow) return;
+  const range = Math.max(1, currentLevelRow.maxPoints - currentLevelRow.minPoints);
+  const approvedPct = Math.min(100, Math.round(((currentProfile.points - currentLevelRow.minPoints) / range) * 100));
+  const pendingPct = Math.max(0, Math.round((pendingPointsTotal / range) * 100));
+  const combined = Math.min(100, approvedPct + pendingPct);
+  pendingEl.style.width = `${combined}%`;
+}
+
+function buildCategoryHeader(category, label) {
+  const safeCategory = String(category || "").toLowerCase();
+  const imgSrc = safeCategory ? `images/categories/${safeCategory}.png` : "images/categories/allCategories.png";
+  return `
+    <div class="modal-category">
+      <img src="${imgSrc}" alt="${label}">
+      <div class="modal-category-text">
+        <div class="modal-category-label">${label}</div>
+      </div>
+    </div>
+  `;
+}
+
+async function insertLogs(rows, { approved }) {
+  const { error } = await supabase.from("logs").insert(rows);
+  if (error) {
+    console.error("Failed to save log:", error);
+    showToast("Couldn't save log. Try again.");
+    return false;
+  }
+  if (approved && rows.length > 0) {
+    await applyApprovedRecalc(rows[0].userId);
+  } else if (!approved) {
+    pendingPointsTotal += rows.reduce((sum, row) => sum + (row.points || 0), 0);
+    updatePendingProgressFill();
+  }
+  return true;
+}
+
+async function initStudentLogActions(userId) {
+  const practiceBtn = qs("quickPracticeBtn");
+  if (practiceBtn) {
+    practiceLoggedToday = await checkPracticeLoggedToday(userId);
+    setPracticeButtonState(practiceBtn, practiceLoggedToday);
+    practiceBtn.addEventListener("click", async (e) => {
       e.preventDefault();
-      window.location.href = href;
+      if (practiceLoggedToday) {
+        showToast("You already logged today's practice.");
+        return;
+      }
+      const today = getTodayString();
+      const ok = await insertLogs([{
+        userId,
+        category: "practice",
+        notes: "",
+        date: today,
+        points: 5,
+        status: "approved"
+      }], { approved: true });
+      if (ok) {
+        practiceLoggedToday = true;
+        setPracticeButtonState(practiceBtn, true);
+        showToast("✅ Practice logged (+5)");
+      }
+    });
+  }
+
+  const pastPracticeBtn = qs("logPastPracticeBtn");
+  if (pastPracticeBtn) {
+    pastPracticeBtn.addEventListener("click", async (e) => {
+      e.preventDefault();
+      await openPastPracticeModal(userId);
+    });
+  }
+
+  document.querySelectorAll(".action-grid .chip").forEach((btn) => {
+    btn.addEventListener("click", async (e) => {
+      e.preventDefault();
+      await openChipModal(btn, userId);
     });
   });
+}
+
+async function openPastPracticeModal(userId) {
+  const today = new Date();
+  const todayStr = getTodayString();
+  const start = new Date();
+  start.setDate(today.getDate() - 29);
+  const startStr = start.toISOString().split("T")[0];
+
+  const { data: existing, error } = await supabase
+    .from("logs")
+    .select("date")
+    .eq("userId", userId)
+    .eq("category", "practice")
+    .gte("date", startStr)
+    .lte("date", todayStr);
+  if (error) console.error("Failed to load practice dates", error);
+
+  const existingDates = new Set((existing || []).map(row => row.date));
+
+  openStudentModal({
+    title: "Log Past Practice",
+    submitLabel: "Log Practice",
+    bodyHtml: `
+      ${buildCategoryHeader("practice", "Practice")}
+      <div class="modal-field">
+        <label>Select dates (last 30 days)</label>
+        <div id="practiceDateGrid" class="date-grid"></div>
+      </div>
+      <div class="modal-field">
+        <label>Points</label>
+        <input class="points-readonly" type="text" value="5 points per day" disabled>
+      </div>
+      <div class="modal-field">
+        <label>Notes (optional)</label>
+        <textarea id="practiceNotes" placeholder="Optional note"></textarea>
+      </div>
+      <div class="status-note">Approved</div>
+    `,
+    onSubmit: async () => {
+      const notes = qs("practiceNotes")?.value?.trim() || "";
+      const selected = Array.from(document.querySelectorAll(".date-cell.selected"))
+        .map(el => el.dataset.date)
+        .filter(Boolean);
+      if (!selected.length) {
+        showToast("Select at least one date.");
+        return;
+      }
+      const rows = selected.map(date => ({
+        userId,
+        category: "practice",
+        notes,
+        date,
+        points: 5,
+        status: "approved"
+      }));
+      const ok = await insertLogs(rows, { approved: true });
+      if (ok) {
+        showToast(`✅ Logged ${selected.length} practice day(s)`);
+        if (selected.includes(todayStr)) {
+          practiceLoggedToday = true;
+          setPracticeButtonState(qs("quickPracticeBtn"), true);
+        }
+        closeStudentModal();
+      }
+    }
+  });
+
+  const grid = qs("practiceDateGrid");
+  if (!grid) return;
+  grid.innerHTML = "";
+  for (let i = 0; i < 30; i++) {
+    const date = new Date(start);
+    date.setDate(start.getDate() + i);
+    const dateStr = date.toISOString().split("T")[0];
+    const cell = document.createElement("button");
+    cell.type = "button";
+    cell.className = "date-cell";
+    cell.dataset.date = dateStr;
+    cell.textContent = dateStr.slice(5);
+    if (existingDates.has(dateStr)) {
+      cell.classList.add("disabled");
+      cell.disabled = true;
+    } else {
+      cell.addEventListener("click", () => {
+        cell.classList.toggle("selected");
+      });
+    }
+    grid.appendChild(cell);
+  }
+}
+
+async function openChipModal(button, userId) {
+  const logType = button.dataset.logType || "fixed";
+  const category = button.dataset.category || "";
+  const label = button.dataset.hint || button.textContent.trim();
+  const points = Number(button.dataset.points || 0);
+  const notesRequired = button.dataset.notesRequired === "true";
+
+  if (logType === "outside-performance") {
+    const hasRecent = await hasOutsidePerformanceThisMonth(userId);
+    if (hasRecent) {
+      showToast("You already logged an outside performance this month.");
+      return;
+    }
+  }
+
+  if (logType === "festival") {
+    openFestivalModal({ userId, category, label });
+    return;
+  }
+
+  if (logType === "memorization") {
+    openMemorizationModal({ userId, category, label });
+    return;
+  }
+
+  const isDiscretionary = logType === "discretionary";
+  openFixedModal({
+    userId,
+    category,
+    label,
+    points,
+    notesRequired,
+    notePrefix: logType === "outside-performance" ? "Outside Performance: " : "",
+    statusText: "Pending approval",
+    submitLabel: "Submit",
+    statusValue: "pending",
+    pointsHint: isDiscretionary ? "5 (teacher may adjust)" : null
+  });
+}
+
+async function hasOutsidePerformanceThisMonth(userId) {
+  const today = new Date();
+  const start = new Date();
+  start.setDate(today.getDate() - 30);
+  const startStr = start.toISOString().split("T")[0];
+  const { data, error } = await supabase
+    .from("logs")
+    .select("id")
+    .eq("userId", userId)
+    .eq("category", "performance")
+    .gte("date", startStr)
+    .ilike("notes", "Outside Performance%");
+  if (error) {
+    console.error("Failed outside performance check", error);
+    return false;
+  }
+  return Array.isArray(data) && data.length > 0;
+}
+
+function openFixedModal({ userId, category, label, points, notesRequired, notePrefix, statusText, submitLabel, statusValue, pointsHint }) {
+  const safePoints = Number.isFinite(points) && points > 0 ? points : 5;
+  const pointsLabel = pointsHint || safePoints;
+  openStudentModal({
+    title: label,
+    submitLabel,
+    bodyHtml: `
+      ${buildCategoryHeader(category, label)}
+      <div class="modal-field">
+        <label>Date</label>
+        <input id="logDateInput" type="date" value="${getTodayString()}">
+      </div>
+      <div class="modal-field">
+        <label>Points</label>
+        <input id="logPointsInput" class="points-readonly" type="text" value="${pointsLabel}" disabled>
+      </div>
+      <div class="modal-field">
+        <label>Notes${notesRequired ? " (required)" : " (optional)"}</label>
+        <textarea id="logNotesInput" placeholder="Add a note"></textarea>
+      </div>
+      <div class="status-note">${statusText}</div>
+    `,
+    onSubmit: async () => {
+      const date = qs("logDateInput")?.value;
+      const notesValue = qs("logNotesInput")?.value?.trim() || "";
+      if (!date) {
+        showToast("Select a date.");
+        return;
+      }
+      if (notesRequired && !notesValue) {
+        showToast("Please add a note.");
+        return;
+      }
+      const notes = `${notePrefix || ""}${notesValue}`.trim();
+      const ok = await insertLogs([{
+        userId,
+        category,
+        notes,
+        date,
+        points: safePoints,
+        status: statusValue
+      }], { approved: statusValue === "approved" });
+      if (ok) {
+        showToast("Log submitted.");
+        closeStudentModal();
+      }
+    }
+  });
+}
+
+function openFestivalModal({ userId, category, label }) {
+  openStudentModal({
+    title: label,
+    submitLabel: "Submit",
+    bodyHtml: `
+      ${buildCategoryHeader(category, label)}
+      <div class="modal-field">
+        <label>Date</label>
+        <input id="festivalDateInput" type="date" value="${getTodayString()}">
+      </div>
+      <div class="modal-field">
+        <label>Rating</label>
+        <select id="festivalRating">
+          <option value="superior">Superior (200)</option>
+          <option value="excellent">Excellent (150)</option>
+          <option value="other">Other (100)</option>
+        </select>
+      </div>
+      <div class="modal-field">
+        <label>Points</label>
+        <input id="festivalPoints" class="points-readonly" type="text" value="200" disabled>
+      </div>
+      <div class="modal-field">
+        <label>Notes (optional)</label>
+        <textarea id="festivalNotes" placeholder="Add a note"></textarea>
+      </div>
+      <div class="status-note">Pending approval</div>
+    `,
+    onSubmit: async () => {
+      const date = qs("festivalDateInput")?.value;
+      const rating = qs("festivalRating")?.value;
+      const notes = qs("festivalNotes")?.value?.trim() || "";
+      if (!date) {
+        showToast("Select a date.");
+        return;
+      }
+      const pointsMap = { superior: 200, excellent: 150, other: 100 };
+      const points = pointsMap[rating] || 100;
+      const ok = await insertLogs([{
+        userId,
+        category,
+        notes,
+        date,
+        points,
+        status: "pending"
+      }], { approved: false });
+      if (ok) {
+        showToast("Log submitted.");
+        closeStudentModal();
+      }
+    }
+  });
+
+  const ratingSelect = qs("festivalRating");
+  const pointsInput = qs("festivalPoints");
+  if (ratingSelect && pointsInput) {
+    ratingSelect.addEventListener("change", () => {
+      const pointsMap = { superior: 200, excellent: 150, other: 100 };
+      pointsInput.value = pointsMap[ratingSelect.value] || 100;
+    });
+  }
+}
+
+function openMemorizationModal({ userId, category, label }) {
+  openStudentModal({
+    title: label,
+    submitLabel: "Submit",
+    bodyHtml: `
+      ${buildCategoryHeader(category, label)}
+      <div class="modal-field">
+        <label>Date</label>
+        <input id="memorizationDateInput" type="date" value="${getTodayString()}">
+      </div>
+      <div class="modal-field">
+        <label>Measures</label>
+        <input id="memorizationMeasures" type="number" min="1" value="1">
+      </div>
+      <div class="modal-field">
+        <label>Points</label>
+        <input id="memorizationPoints" class="points-readonly" type="text" value="2" disabled>
+      </div>
+      <div class="modal-field">
+        <label>Notes (optional)</label>
+        <textarea id="memorizationNotes" placeholder="Add a note"></textarea>
+      </div>
+      <div class="status-note">Pending approval</div>
+    `,
+    onSubmit: async () => {
+      const date = qs("memorizationDateInput")?.value;
+      const measures = parseInt(qs("memorizationMeasures")?.value, 10);
+      const notes = qs("memorizationNotes")?.value?.trim() || "";
+      if (!date || !Number.isFinite(measures) || measures < 1) {
+        showToast("Enter a measures count.");
+        return;
+      }
+      const points = measures * 2;
+      const ok = await insertLogs([{
+        userId,
+        category,
+        notes,
+        date,
+        points,
+        status: "pending"
+      }], { approved: false });
+      if (ok) {
+        showToast("Log submitted.");
+        closeStudentModal();
+      }
+    }
+  });
+
+  const measuresInput = qs("memorizationMeasures");
+  const pointsInput = qs("memorizationPoints");
+  if (measuresInput && pointsInput) {
+    measuresInput.addEventListener("input", () => {
+      const value = parseInt(measuresInput.value, 10);
+      pointsInput.value = Number.isFinite(value) && value > 0 ? String(value * 2) : "0";
+    });
+  }
 }
 
 function renderStaffQuickLogShell() {

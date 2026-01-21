@@ -6,7 +6,7 @@
   <title>Achievement Awards - Home</title>
   <link rel="stylesheet" href="style.css" />
 </head>
-<body class="app-bg bg-yellow">
+<body class="app-bg bg-yellow student-home-page">
 <div id="envBadge" class="env-badge" style="display:none;"></div>
   <main class="home-wrap">
     <!-- Identity first -->
@@ -47,6 +47,7 @@
         <div class="progress-title">Level Progress</div>
         <div class="progress-container">
           <div id="progressFill" class="progress-fill"></div>
+          <div id="progressFillPending" class="progress-fill-pending"></div>
           <div id="progressText" class="progress-text">0 pts</div>
         </div>
         <div id="progressPercent" class="progress-percent">0% complete</div>
@@ -84,27 +85,28 @@
     <!-- Action hub -->
     <section class="home-actions student-only" aria-label="Log your progress">
       <button id="quickPracticeBtn" class="action-primary">
-        ✅ <span>Practice Today</span> <span class="muted">(+5 XP)</span>
+        ✅ <span>Log Today&apos;s Practice</span> <span class="muted">(+5 XP)</span>
       </button>
 
       <button id="logPastPracticeBtn" class="action-secondary">
-        🗓️ <span>Log past practice</span> <span class="muted">(last 7 days)</span>
+        🗓️ <span>Log Past Practice</span> <span class="muted">(last 30 days)</span>
       </button>
 
       <div class="action-title">Did you do any of these?</div>
 
       <div class="action-grid">
-        <button class="chip" data-category="proficiency" data-hint="Finish a book">📘 Finish a book</button>
-        <button class="chip" data-category="participation" data-hint="Group class">👥 Group class</button>
-        <button class="chip" data-category="performance" data-hint="Performance">🎤 Performance</button>
-        <button class="chip" data-category="participation" data-hint="Competition">🏅 Competition</button>
-        <button class="chip" data-category="proficiency" data-hint="Festival rating">🏆 Festival rating</button>
-        <button class="chip" data-category="proficiency" data-hint="Memorization">🧠 Memorization</button>
-        <button class="chip" data-category="proficiency" data-hint="Theory/Technique test">📝 Theory/Technique test</button>
-        <button class="chip" data-category="personal" data-hint="Personal goal">🎯 Personal goal</button>
+        <button class="chip" data-log-type="fixed" data-points="50" data-category="proficiency" data-hint="Finish a book">📘 Finish a book</button>
+        <button class="chip" data-log-type="fixed" data-points="50" data-category="participation" data-hint="Group class">👥 Group class</button>
+        <button class="chip" data-log-type="fixed" data-points="100" data-category="performance" data-hint="Milford performance">🎤 Milford performance</button>
+        <button class="chip" data-log-type="outside-performance" data-points="25" data-notes-required="true" data-category="performance" data-hint="Outside Performance">🎬 Outside Performance</button>
+        <button class="chip" data-log-type="fixed" data-points="100" data-category="participation" data-hint="Competition">🏅 Competition</button>
+        <button class="chip" data-log-type="festival" data-category="proficiency" data-hint="Festival rating">🏆 Festival rating</button>
+        <button class="chip" data-log-type="memorization" data-category="proficiency" data-hint="Memorization">🧠 Memorization</button>
+        <button class="chip" data-log-type="fixed" data-points="50" data-category="proficiency" data-hint="Theory/Technique test">📝 Theory/Technique test</button>
+        <button class="chip" data-log-type="discretionary" data-points="5" data-notes-required="true" data-category="personal" data-hint="Personal goal">🎯 Personal goal</button>
 
         <!-- Teacher goal (only shown if teacher/admin has assigned something active) -->
-        <button id="teacherGoalChip" class="chip chip-teacher" data-category="personal" data-hint="Teacher goal" style="display:none;">
+        <button id="teacherGoalChip" class="chip chip-teacher" data-log-type="discretionary" data-points="5" data-notes-required="true" data-category="personal" data-hint="Teacher goal" style="display:none;">
           ⭐ Teacher goal
         </button>
       </div>
@@ -168,6 +170,22 @@
       <button id="modalNotNow" class="modal-link">Not now</button>
     </div>
   </div>
+
+  <div id="studentLogModalOverlay" class="modal-overlay" style="display:none;">
+    <div class="modal student-log-modal">
+      <div class="modal-header">
+        <div class="modal-title" id="studentLogModalTitle">Log</div>
+        <button id="studentLogModalClose" class="modal-close" type="button">✕</button>
+      </div>
+      <div id="studentLogModalBody" class="modal-body"></div>
+      <div class="modal-actions">
+        <button id="studentLogModalSubmit" class="blue-button">Submit</button>
+        <button id="studentLogModalCancel" class="blue-button">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
 <script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
