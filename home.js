@@ -321,11 +321,12 @@ function renderStaffQuickLogShell() {
   mount.innerHTML = `
     <section class="home-staff staff-only" aria-label="Staff quick log">
       <form id="staffQuickLogForm" class="staff-card">
-        <div class="staff-card-title">Add Points</div>
-        <label for="staffCategory">Category</label>
-        <select id="staffCategory" required disabled>
-          <option value="">Loading...</option>
-        </select>
+        <div class="ql-category-pop">
+          <label for="staffCategory">Category</label>
+          <select id="staffCategory" required disabled>
+            <option value="">Loading...</option>
+          </select>
+        </div>
 
         <label for="staffStudents">Students</label>
         <select id="staffStudents" multiple required disabled>
