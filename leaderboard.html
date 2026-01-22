@@ -10,16 +10,15 @@
 <div id="envBadge" class="env-badge" style="display:none;"></div>
 
   <main class="app">
-
-    <!-- 🔹 Header row with home button and title -->
-<div class="leaderboard-header">
-  <button type="button" class="blue-button" onclick="window.location.href='index.html'">Home</button>
-  <h2 class="leaderboard-title">Leaderboard</h2>
-  <div class="leaderboard-header-spacer"></div>
-</div>
-<div id="leaderboardCount" class="leaderboard-count"></div>
-    <!-- 🔹 Scrollable leaderboard -->
-<div class="leaderboard-scroll-wrapper">
+    <div class="page-header">
+      <a class="blue-button home-button" href="index.html">Home</a>
+      <div class="page-header-center">
+        <h2 class="page-title">Leaderboard</h2>
+        <div id="leaderboardCount" class="page-subtitle"></div>
+      </div>
+      <div class="page-header-spacer"></div>
+    </div>
+    <div class="leaderboard-scroll-wrapper">
       <div class="level-bars" id="leaderboardContainer">
         <div id="leaderboardBars"></div>
       </div>

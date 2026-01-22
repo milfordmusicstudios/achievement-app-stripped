@@ -2,6 +2,82 @@ import { supabase } from "./supabaseClient.js";
 import { getViewerContext, recalculateUserPoints } from './utils.js';
 import { ensureStudioContextAndRoute } from "./studio-routing.js";
 
+function getLastToastLevel(userId) {
+  const raw = localStorage.getItem(`aa:lastLevelToast:${userId}`);
+  const value = parseInt(raw, 10);
+  return Number.isFinite(value) ? value : null;
+}
+
+function setLastToastLevel(userId, level) {
+  if (!Number.isFinite(level)) return;
+  localStorage.setItem(`aa:lastLevelToast:${userId}`, String(level));
+}
+
+function showToast(message) {
+  const toast = document.getElementById("toast");
+  if (!toast) return;
+  toast.textContent = message;
+  toast.classList.add("show");
+  clearTimeout(toast._hideTimer);
+  toast._hideTimer = setTimeout(() => {
+    toast.classList.remove("show");
+  }, 2200);
+}
+
+async function createLevelUpNotifications({ studioId, studentUserId, studentName, level }) {
+  if (!studentUserId || !level) return;
+  try {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const viewerId = sessionData?.session?.user?.id || null;
+
+    const { data: members, error: memberErr } = await supabase
+      .from("studio_members")
+      .select("user_id, roles")
+      .eq("studio_id", studioId)
+      .or("roles.cs.{admin},roles.cs.{teacher}");
+
+    if (memberErr) console.warn("[My Points] staff lookup failed", memberErr);
+
+    const staffIds = Array.from(new Set((members || []).map(m => m.user_id).filter(Boolean)));
+    const recipients = [studentUserId, ...staffIds];
+    const message = `${studentName} reached Level ${level}.`;
+    const base = {
+      title: "Level Up!",
+      message,
+      type: "level_up",
+      studio_id: studioId || null,
+      created_by: viewerId
+    };
+
+    const extendedPayload = recipients.map(userId => ({
+      userId,
+      ...base
+    }));
+
+    let insertError = null;
+    const { error: extErr } = await supabase.from("notifications").insert(extendedPayload);
+    if (extErr) {
+      insertError = extErr;
+      const msg = String(extErr.message || "");
+      if (msg.toLowerCase().includes("column") || msg.toLowerCase().includes("does not exist")) {
+        const fallbackPayload = recipients.map(userId => ({
+          userId,
+          message
+        }));
+        const { error: fallbackErr } = await supabase.from("notifications").insert(fallbackPayload);
+        if (fallbackErr) insertError = fallbackErr;
+        else insertError = null;
+      }
+    }
+
+    if (insertError) {
+      console.warn("[My Points] level-up notification insert failed", insertError);
+    }
+  } catch (err) {
+    console.warn("[My Points] level-up notifications error", err);
+  }
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
   console.log("[DEBUG] My Points: Script loaded");
 
@@ -76,8 +152,26 @@ document.addEventListener("DOMContentLoaded", async () => {
       .eq("id", userId)
       .single();
     const firstName = profileRow?.firstName || "";
+    const studentName = `${profileRow?.firstName || ""} ${profileRow?.lastName || ""}`.trim() || "Student";
     if (pointsTitle) {
       pointsTitle.textContent = firstName ? `${firstName}'s Points` : "My Points";
+    }
+
+    const currentLevelNumber = Number(currentLevel?.id || currentLevel?.name);
+    const storedLevel = getLastToastLevel(userId);
+    if (Number.isFinite(currentLevelNumber)) {
+      if (storedLevel === null) {
+        setLastToastLevel(userId, currentLevelNumber);
+      } else if (currentLevelNumber > storedLevel) {
+        showToast(`🎉 You reached Level ${currentLevelNumber}!`);
+        setLastToastLevel(userId, currentLevelNumber);
+        await createLevelUpNotifications({
+          studioId: viewerContext.studioId || localStorage.getItem("activeStudioId"),
+          studentUserId: userId,
+          studentName,
+          level: currentLevelNumber
+        });
+      }
     }
 
     allLogs = (logs || []).slice().sort((a, b) => new Date(b.date) - new Date(a.date));

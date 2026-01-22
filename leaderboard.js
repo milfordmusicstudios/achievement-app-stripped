@@ -1,5 +1,6 @@
 import { supabase } from "./supabaseClient.js";
 import { ensureStudioContextAndRoute } from "./studio-routing.js";
+import { getActiveProfileId } from "./active-profile.js";
 
 const OFFSETS = [0, 14, -14, 28, -28];
 const PAD_X = 28;
@@ -61,7 +62,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     const totals = await fetchTotals(activeStudioId, students.map(s => s.id));
     if (countEl) countEl.textContent = `Showing ${students.length} students`;
 
-    const placements = buildPlacements(students, totals, levels);
+    const activeStudentId = getActiveProfileId()
+      || JSON.parse(localStorage.getItem("loggedInUser") || "null")?.id
+      || null;
+    const placements = buildPlacements(students, totals, levels, activeStudentId);
     renderAvatars(placements);
 
     const reposition = debounce(() => positionAvatars(placements), 150);
@@ -166,7 +170,7 @@ async function fetchTotals(studioId, userIds) {
   return totals;
 }
 
-function buildPlacements(students, totals, levels) {
+function buildPlacements(students, totals, levels, activeStudentId) {
   const placements = [];
   const perLevelCount = {};
 
@@ -188,7 +192,8 @@ function buildPlacements(students, totals, levels) {
       total,
       levelId: level.id,
       ratio,
-      offset
+      offset,
+      isSelf: activeStudentId && String(student.id) === String(activeStudentId)
     });
   });
 
@@ -201,7 +206,7 @@ function renderAvatars(placements) {
     if (!bar) return;
 
     const avatar = document.createElement("img");
-    avatar.className = "lb-avatar leaderboard-avatar";
+    avatar.className = `lb-avatar leaderboard-avatar${p.isSelf ? " is-self" : ""}`;
     avatar.src = p.student.avatarUrl || "images/icons/default.png";
     const fullName = `${p.student.firstName ?? ""} ${p.student.lastName ?? ""}`.trim() || "Student";
     avatar.alt = fullName;
