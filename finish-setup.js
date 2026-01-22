@@ -67,6 +67,7 @@ function parseRoles(roles) {
 let teacherOptionData = [];
 let inviteContext = null;
 let isStaffInvite = false;
+let teacherListMessage = "";
 
 function applyTeacherOptionsToSelect(selectEl) {
   if (!selectEl) return;
@@ -75,7 +76,7 @@ function applyTeacherOptionsToSelect(selectEl) {
     selectEl.disabled = true;
     const opt = document.createElement("option");
     opt.value = "";
-    opt.textContent = "No teachers found for this studio. Ask an admin to add teachers.";
+    opt.textContent = teacherListMessage || "No teachers found for this studio. Ask an admin to add teachers.";
     selectEl.appendChild(opt);
     return;
   }
@@ -101,7 +102,7 @@ async function loadTeachersForStudio(studioId) {
   console.log("[FinishSetup] studioId for teacher load", studioId);
   const { data, error } = await supabase
     .from("users")
-    .select('id, "firstName", "lastName"')
+    .select('id, "firstName", "lastName", roles')
     .eq("studio_id", studioId)
     .contains("roles", ["teacher"])
     .order("lastName", { ascending: true })
@@ -109,6 +110,7 @@ async function loadTeachersForStudio(studioId) {
 
   if (error) {
     console.error("[FinishSetup] teacher load error", error);
+    teacherListMessage = "No teachers found for this studio. Ask an admin to add teachers.";
     teacherOptionData = [];
     return;
   }
@@ -118,6 +120,20 @@ async function loadTeachersForStudio(studioId) {
     id: t.id,
     label: (`${t.firstName ?? ""} ${t.lastName ?? ""}`.trim() || t.id)
   }));
+
+  if ((data || []).length === 0) {
+    const { data: anyUsers, error: anyErr } = await supabase
+      .from("users")
+      .select("id")
+      .eq("studio_id", studioId)
+      .limit(1);
+    console.log("[FinishSetup] RLS probe anyUsers length", (anyUsers || []).length, anyErr);
+    if (!anyErr && (!anyUsers || anyUsers.length === 0)) {
+      teacherListMessage = "No teachers found (or access is blocked by security rules). Ask an admin to run the teacher-list RLS policy.";
+    } else {
+      teacherListMessage = "No teachers found for this studio. Ask an admin to add teachers.";
+    }
+  }
 }
 
 async function resolveInviteContext(token) {
@@ -263,6 +279,31 @@ document.addEventListener("DOMContentLoaded", async () => {
     localStorage.removeItem("pendingInviteEmail");
     localStorage.removeItem("pendingInviteRoleHint");
     console.log("[FinishSetup] invite accepted ok");
+
+    const ensureStudioMembership = async (studioId) => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const uid = sessionData?.session?.user?.id;
+      if (!uid) return;
+
+      const payload = {
+        studio_id: studioId,
+        user_id: uid,
+        roles: ["parent"],
+        created_by: uid
+      };
+
+      const { error } = await supabase
+        .from("studio_members")
+        .upsert(payload, { onConflict: "studio_id,user_id" });
+
+      if (error) {
+        console.warn("[FinishSetup] ensureStudioMembership failed", error);
+      } else {
+        console.log("[FinishSetup] ensureStudioMembership ok");
+      }
+    };
+
+    await ensureStudioMembership(contextResult.studioId);
   } else {
     showError("Missing invite token. Please check your invite link.");
     disableForm(true);
