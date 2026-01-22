@@ -3,14 +3,16 @@ import { getViewerContext, recalculateUserPoints } from './utils.js';
 import { ensureStudioContextAndRoute } from "./studio-routing.js";
 
 function getLastToastLevel(userId) {
-  const raw = localStorage.getItem(`aa:lastLevelToast:${userId}`);
+  const key = `aa:lastLevelToast:${String(userId)}`;
+  const raw = localStorage.getItem(key);
   const value = parseInt(raw, 10);
   return Number.isFinite(value) ? value : null;
 }
 
 function setLastToastLevel(userId, level) {
   if (!Number.isFinite(level)) return;
-  localStorage.setItem(`aa:lastLevelToast:${userId}`, String(level));
+  const key = `aa:lastLevelToast:${String(userId)}`;
+  localStorage.setItem(key, String(level));
 }
 
 function showToast(message) {
