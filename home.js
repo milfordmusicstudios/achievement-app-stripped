@@ -1225,17 +1225,22 @@ function renderStaffQuickLogShell() {
           <option value="">Loading...</option>
         </select>
 
-        <label>Dates (last 30 days)</label>
-        <div class="calendar">
-          <div class="calendar-header">
-            <button id="staffCalPrev" class="calendar-nav" type="button">‹</button>
-            <div id="staffCalMonthLabel" class="calendar-title"></div>
-            <button id="staffCalNext" class="calendar-nav" type="button">›</button>
+        <label>Dates</label>
+        <button id="staffCalendarToggle" class="blue-button staff-calendar-toggle" type="button">
+          Select dates
+        </button>
+        <div id="staffCalendarPanel" class="staff-calendar-panel" hidden>
+          <div class="calendar">
+            <div class="calendar-header">
+              <button id="staffCalPrev" class="calendar-nav" type="button">‹</button>
+              <div id="staffCalMonthLabel" class="calendar-title"></div>
+              <button id="staffCalNext" class="calendar-nav" type="button">›</button>
+            </div>
+            <div class="calendar-weekdays">
+              <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+            </div>
+            <div id="staffCalendar" class="calendar-grid"></div>
           </div>
-          <div class="calendar-weekdays">
-            <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
-          </div>
-          <div id="staffCalendar" class="calendar-grid"></div>
         </div>
 
         <label for="staffPoints">Points</label>
@@ -1333,6 +1338,8 @@ async function initStaffQuickLog({ authUserId, studioId, roles }) {
   const monthLabel = document.getElementById('staffCalMonthLabel');
   const prevBtn = document.getElementById('staffCalPrev');
   const nextBtn = document.getElementById('staffCalNext');
+  const calendarToggle = document.getElementById('staffCalendarToggle');
+  const calendarPanel = document.getElementById('staffCalendarPanel');
   const pointsInput = document.getElementById('staffPoints');
   const notesInput = document.getElementById('staffNotes');
   const msgEl = document.getElementById('staffQuickLogMsg');
@@ -1349,14 +1356,17 @@ async function initStaffQuickLog({ authUserId, studioId, roles }) {
 
   const today = new Date();
   const todayStr = getTodayString();
-  const start = new Date();
-  start.setDate(today.getDate() - 29);
-  const startStr = getLocalDateString(start);
   const monthNames = [
     "January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"
   ];
   const view = { year: today.getFullYear(), month: today.getMonth() };
+
+  const updateStaffCalendarToggle = () => {
+    if (!calendarToggle) return;
+    const count = selectedDates.size;
+    calendarToggle.textContent = count ? `Dates (${count} selected)` : "Select dates";
+  };
 
   const renderStaffCalendar = () => {
     if (!calendarEl || !monthLabel || !prevBtn || !nextBtn) return;
@@ -1367,14 +1377,12 @@ async function initStaffQuickLog({ authUserId, studioId, roles }) {
     const gridStart = new Date(view.year, view.month, 1 - startDay);
     monthLabel.textContent = `${monthNames[view.month]} ${view.year}`;
 
-    const startRange = new Date(startStr);
-    startRange.setHours(0, 0, 0, 0);
     const endRange = new Date(todayStr);
     endRange.setHours(23, 59, 59, 999);
 
     const monthStart = new Date(view.year, view.month, 1);
     const monthEnd = new Date(view.year, view.month + 1, 0);
-    prevBtn.disabled = monthStart <= startRange;
+    prevBtn.disabled = false;
     nextBtn.disabled = monthEnd >= endRange;
 
     for (let i = 0; i < 42; i++) {
@@ -1382,7 +1390,7 @@ async function initStaffQuickLog({ authUserId, studioId, roles }) {
       cellDate.setDate(gridStart.getDate() + i);
       const dateStr = getLocalDateString(cellDate);
       const inMonth = cellDate.getMonth() === view.month;
-      const inRange = cellDate >= startRange && cellDate <= endRange;
+      const inRange = cellDate <= endRange;
 
       const cell = document.createElement("button");
       cell.type = "button";
@@ -1403,6 +1411,7 @@ async function initStaffQuickLog({ authUserId, studioId, roles }) {
             selectedDates.add(dateStr);
             cell.classList.add("selected");
           }
+          updateStaffCalendarToggle();
         });
       }
 
@@ -1417,11 +1426,9 @@ async function initStaffQuickLog({ authUserId, studioId, roles }) {
   if (prevBtn && nextBtn) {
     prevBtn.addEventListener("click", () => {
       const prevMonth = new Date(view.year, view.month - 1, 1);
-      if (prevMonth >= new Date(startStr)) {
-        view.year = prevMonth.getFullYear();
-        view.month = prevMonth.getMonth();
-        renderStaffCalendar();
-      }
+      view.year = prevMonth.getFullYear();
+      view.month = prevMonth.getMonth();
+      renderStaffCalendar();
     });
 
     nextBtn.addEventListener("click", () => {
@@ -1430,6 +1437,17 @@ async function initStaffQuickLog({ authUserId, studioId, roles }) {
         view.year = nextMonth.getFullYear();
         view.month = nextMonth.getMonth();
         renderStaffCalendar();
+      }
+    });
+  }
+
+  if (calendarToggle && calendarPanel) {
+    calendarToggle.addEventListener("click", () => {
+      const isOpen = !calendarPanel.hasAttribute("hidden");
+      if (isOpen) {
+        calendarPanel.setAttribute("hidden", "");
+      } else {
+        calendarPanel.removeAttribute("hidden");
       }
     });
   }
@@ -1481,6 +1499,7 @@ async function initStaffQuickLog({ authUserId, studioId, roles }) {
   if (submitBtn) submitBtn.disabled = !canSubmit;
 
   renderStaffCalendar();
+  updateStaffCalendarToggle();
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();

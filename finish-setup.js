@@ -65,6 +65,8 @@ function parseRoles(roles) {
 }
 
 let teacherOptionData = [];
+let inviteContext = null;
+let isStaffInvite = false;
 
 function applyTeacherOptionsToSelect(selectEl) {
   if (!selectEl) return;
@@ -73,7 +75,7 @@ function applyTeacherOptionsToSelect(selectEl) {
     selectEl.disabled = true;
     const opt = document.createElement("option");
     opt.value = "";
-    opt.textContent = "No teachers available";
+    opt.textContent = "No teachers found for this studio. Ask an admin to add teachers.";
     selectEl.appendChild(opt);
     return;
   }
@@ -96,10 +98,11 @@ function setTeacherError(row, message) {
 }
 
 async function loadTeachersForStudio(studioId) {
-  const { data: users, error } = await supabase
-    .from("users")
-    .select("id, firstName, lastName, roles")
-    .eq("studio_id", studioId);
+  const { data: rows, error } = await supabase
+    .from("studio_members")
+    .select("user_id, roles, users(id, firstName, lastName)")
+    .eq("studio_id", studioId)
+    .or("roles.cs.{teacher},roles.cs.{admin}");
 
   if (error) {
     console.error("[FinishSetup] teacher load failed", error);
@@ -107,11 +110,9 @@ async function loadTeachersForStudio(studioId) {
     return;
   }
 
-  const teachers = (users || [])
-    .filter(u => {
-      const roles = parseRoles(u.roles);
-      return roles.includes("teacher") || roles.includes("admin");
-    })
+  const teachers = (rows || [])
+    .map(r => r.users)
+    .filter(Boolean)
     .sort(
       (a, b) =>
         (a.lastName || "").localeCompare(b.lastName || "") ||
@@ -122,6 +123,27 @@ async function loadTeachersForStudio(studioId) {
     id: t.id,
     label: (`${t.firstName ?? ""} ${t.lastName ?? ""}`.trim() || "Unnamed Teacher")
   }));
+
+  console.log("[setup] invite studioId", studioId);
+  console.log("[setup] teacher results", teachers.length, teachers);
+}
+
+async function resolveInviteContext(token) {
+  if (!token) return null;
+  const { data, error } = await supabase.rpc("accept_invite", { p_token: token });
+  console.log("[FinishSetup] accept_invite result", { data, error });
+  if (error || !data?.ok) {
+    return { ok: false, error: error?.message || data?.error || "Invite not accepted" };
+  }
+  const storedHint = localStorage.getItem("pendingInviteRoleHint");
+  const roleHint = data?.role_hint || data?.role || storedHint || null;
+  const roles = normalizeRoles(data?.roles || roleHint);
+  return {
+    ok: true,
+    studioId: data.studio_id,
+    invitedRole: roleHint,
+    roles
+  };
 }
 
 function getAccountType() {
@@ -174,6 +196,10 @@ function addStudentRow(initial = {}) {
   if (gradeInput) gradeInput.value = initial.grade || "";
   if (instrumentInput) instrumentInput.value = initial.instrument || "";
   if (teacherSelect) {
+    if (isStaffInvite) {
+      const wrap = block.querySelector(".teacher-select-wrap");
+      if (wrap) wrap.style.display = "none";
+    }
     applyTeacherOptionsToSelect(teacherSelect);
     const selectedIds = Array.isArray(initial.teacherIds) ? initial.teacherIds.map(String) : [];
     selectedIds.forEach(id => {
@@ -224,36 +250,34 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const authUser = sessionData.session.user;
   const pendingToken = storedToken;
+  let inviteRoles = [];
 
   if (pendingToken) {
-    const { data, error } = await supabase.rpc("accept_invite", { p_token: pendingToken });
-    console.log("[FinishSetup] accept_invite result", { data, error });
-    if (error) {
-      console.error("[FinishSetup] accept_invite failed", error);
-      showError("We could not accept the invite. Please log out and try again.");
-      disableForm(true);
-      return;
-    }
-    if (!data?.ok) {
-      console.warn("[FinishSetup] invite not ok", data?.error);
+    const contextResult = await resolveInviteContext(pendingToken);
+    if (!contextResult?.ok) {
+      console.warn("[FinishSetup] invite not ok", contextResult?.error);
       showError("Invite could not be accepted. Please log out and try again.");
       disableForm(true);
       return;
     }
 
-    localStorage.setItem("activeStudioId", data.studio_id);
-    localStorage.setItem("activeStudioRoles", JSON.stringify(data.roles || []));
+    inviteContext = contextResult;
+    inviteRoles = contextResult.roles || [];
+    isStaffInvite = inviteRoles.includes("teacher") || inviteRoles.includes("admin");
+    localStorage.setItem("activeStudioId", contextResult.studioId);
+    localStorage.setItem("activeStudioRoles", JSON.stringify(inviteRoles));
     localStorage.removeItem("pendingInviteToken");
     localStorage.removeItem("pendingInviteStudioId");
     localStorage.removeItem("pendingInviteEmail");
     localStorage.removeItem("pendingInviteRoleHint");
     console.log("[FinishSetup] invite accepted ok");
   } else {
-    const routeResult = await ensureStudioContextAndRoute({ redirectHome: false });
-    if (routeResult?.redirected) return;
+    showError("Missing invite token. Please check your invite link.");
+    disableForm(true);
+    return;
   }
 
-  const activeStudioId = localStorage.getItem("activeStudioId");
+  const activeStudioId = inviteContext?.studioId || localStorage.getItem("activeStudioId");
   if (!activeStudioId) {
     window.location.href = "select-studio.html";
     return;
@@ -272,9 +296,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (firstNameInput) firstNameInput.value = profile.firstName || "";
   if (lastNameInput) lastNameInput.value = profile.lastName || "";
 
-  const storedRoles = safeParseJSON(localStorage.getItem("activeStudioRoles"), []);
-  const studioRoles = normalizeRoles(storedRoles);
-
   document.querySelectorAll('input[name="accountType"]').forEach(radio => {
     radio.addEventListener("change", () => {
       setStudentsVisible(getAccountType() === "parent");
@@ -289,8 +310,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   const selfTeacherSection = document.getElementById("selfTeacherSection");
   const selfTeacherSelect = document.getElementById("selfTeacherIds");
   const selfTeacherError = document.getElementById("selfTeacherError");
-  const isStudentRole = studioRoles.includes("student");
-  const isStaffRole = studioRoles.includes("teacher") || studioRoles.includes("admin");
+  const isStudentRole = inviteRoles.includes("student");
+  const isStaffRole = inviteRoles.includes("teacher") || inviteRoles.includes("admin");
   if (selfTeacherSection && selfTeacherSelect && isStudentRole && !isStaffRole) {
     selfTeacherSection.style.display = "";
     applyTeacherOptionsToSelect(selfTeacherSelect);
@@ -331,17 +352,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     const accountType = getAccountType();
-    const preservedStaffRoles = studioRoles.filter(r => r === "teacher" || r === "admin");
+    const preservedStaffRoles = inviteRoles.filter(r => r === "teacher" || r === "admin");
+    const inviteHasPrimaryRole = inviteRoles.some(r => r === "student" || r === "teacher" || r === "admin" || r === "parent");
+    const parentRole = (!inviteHasPrimaryRole && (accountType === "parent" || accountType === "adult")) ? ["parent"] : [];
     const desiredRoles = Array.from(new Set([
-      ...(accountType === "parent" || accountType === "adult" ? ["parent"] : []),
-      ...preservedStaffRoles,
-      ...(studioRoles.includes("student") ? ["student"] : [])
+      ...inviteRoles,
+      ...parentRole,
+      ...preservedStaffRoles
     ]));
 
     const selfTeacherSelect = document.getElementById("selfTeacherIds");
     const selfTeacherError = document.getElementById("selfTeacherError");
     const selfTeacherIds = Array.from(selfTeacherSelect?.selectedOptions || []).map(o => o.value);
-    if (desiredRoles.includes("student") && !(studioRoles.includes("teacher") || studioRoles.includes("admin"))) {
+    if (desiredRoles.includes("student") && !(inviteRoles.includes("teacher") || inviteRoles.includes("admin"))) {
       if (teacherOptionData.length === 0 || selfTeacherIds.length === 0) {
         if (selfTeacherError) {
           selfTeacherError.textContent = "Please select your teacher.";
@@ -396,17 +419,19 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         // Only create linked students when explicit student info is provided.
         if (!hasFirst || !hasLast) continue;
-        if (teacherOptionData.length === 0) {
-          setTeacherError(entry.row, "Please select your teacher.");
-          showError("Please select your teacher.");
-          if (submitBtn) submitBtn.disabled = false;
-          return;
-        }
-        if (!entry.teacherIds.length) {
-          setTeacherError(entry.row, "Please select your teacher.");
-          showError("Please select your teacher.");
-          if (submitBtn) submitBtn.disabled = false;
-          return;
+        if (!isStaffInvite) {
+          if (teacherOptionData.length === 0) {
+            setTeacherError(entry.row, "Please select your teacher.");
+            showError("Please select your teacher.");
+            if (submitBtn) submitBtn.disabled = false;
+            return;
+          }
+          if (!entry.teacherIds.length) {
+            setTeacherError(entry.row, "Please select your teacher.");
+            showError("Please select your teacher.");
+            if (submitBtn) submitBtn.disabled = false;
+            return;
+          }
         }
 
         studentPayload.push({

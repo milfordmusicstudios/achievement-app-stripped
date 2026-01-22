@@ -336,11 +336,11 @@ body.is-admin #addDateBtn.blue-button {
 
 body.is-staff .ql-category-pop,
 body.is-admin .ql-category-pop {
-  background: #FFE34A;
-  border-radius: 16px;
-  padding: 14px;
-  border: 3px solid rgba(8,58,99,0.22);
-  margin-bottom: 10px;
+  background: transparent;
+  border-radius: 12px;
+  padding: 6px 0;
+  border: none;
+  margin-bottom: 8px;
 }
 
 body.is-staff .ql-category-pop label,
@@ -351,6 +351,50 @@ body.is-admin .ql-category-pop label {
 body.is-staff .ql-category-pop select,
 body.is-admin .ql-category-pop select {
   background: #ffffff;
+}
+
+body.is-staff .staff-calendar-toggle,
+body.is-admin .staff-calendar-toggle {
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 14px;
+  border-radius: 12px;
+}
+
+body.is-staff .staff-calendar-panel,
+body.is-admin .staff-calendar-panel {
+  margin-top: 8px;
+  padding: 8px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.9);
+  border: 2px solid rgba(11,79,138,0.18);
+}
+
+body.is-staff .staff-calendar-panel .calendar,
+body.is-admin .staff-calendar-panel .calendar {
+  gap: 6px;
+}
+
+body.is-staff .staff-calendar-panel .calendar-header,
+body.is-admin .staff-calendar-panel .calendar-header {
+  gap: 6px;
+}
+
+body.is-staff .staff-calendar-panel .calendar-title,
+body.is-admin .staff-calendar-panel .calendar-title {
+  font-size: 14px;
+}
+
+body.is-staff .staff-calendar-panel .calendar-weekdays,
+body.is-admin .staff-calendar-panel .calendar-weekdays {
+  font-size: 11px;
+}
+
+body.is-staff .staff-calendar-panel .calendar-day,
+body.is-admin .staff-calendar-panel .calendar-day {
+  padding: 6px 0;
+  font-size: 12px;
+  border-radius: 10px;
 }
 
 
