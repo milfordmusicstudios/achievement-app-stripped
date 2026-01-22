@@ -99,45 +99,25 @@ function setTeacherError(row, message) {
 
 async function loadTeachersForStudio(studioId) {
   console.log("[FinishSetup] studioId for teacher load", studioId);
-  const { data: memberRows, error: memberErr } = await supabase
-    .from("studio_members")
-    .select("user_id, roles")
-    .eq("studio_id", studioId)
-    .or("roles.cs.{teacher},roles.cs.{admin}");
-
-  if (memberErr) {
-    console.error("[FinishSetup] teacher load failed", memberErr);
-    teacherOptionData = [];
-    return;
-  }
-
-  const teacherIds = Array.from(new Set((memberRows || []).map(r => r.user_id).filter(Boolean)));
-  if (teacherIds.length === 0) {
-    teacherOptionData = [];
-    console.log("[FinishSetup] teachers found", 0);
-    return;
-  }
-
-  const { data: users, error: userErr } = await supabase
+  const { data, error } = await supabase
     .from("users")
-    .select("id, firstName, lastName")
-    .in("id", teacherIds)
+    .select('id, "firstName", "lastName"')
+    .eq("studio_id", studioId)
+    .contains("roles", ["teacher"])
     .order("lastName", { ascending: true })
     .order("firstName", { ascending: true });
 
-  if (userErr) {
-    console.error("[FinishSetup] teacher user lookup failed", userErr);
+  if (error) {
+    console.error("[FinishSetup] teacher load error", error);
     teacherOptionData = [];
     return;
   }
 
-  const teachers = (users || []).map(t => ({
+  console.log("[FinishSetup] teachers found", (data || []).length, data);
+  teacherOptionData = (data || []).map(t => ({
     id: t.id,
-    label: (`${t.firstName ?? ""} ${t.lastName ?? ""}`.trim() || "Unnamed Teacher")
+    label: (`${t.firstName ?? ""} ${t.lastName ?? ""}`.trim() || t.id)
   }));
-
-  teacherOptionData = teachers;
-  console.log("[FinishSetup] teachers found", teachers.length);
 }
 
 async function resolveInviteContext(token) {
