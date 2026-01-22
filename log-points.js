@@ -112,7 +112,8 @@ categorySelect.addEventListener("change", () => {
   if ((activeRole === "admin" || activeRole === "teacher") && studentSelect) {
     const { data: students, error: stuErr } = await supabase
       .from("users")
-      .select("id, firstName, lastName, roles, teacherIds");
+      .select("id, firstName, lastName, roles, teacherIds")
+      .is("deactivated_at", null);
 
     if (stuErr) {
       console.error("Supabase error loading students:", stuErr.message);

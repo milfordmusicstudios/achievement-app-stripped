@@ -76,8 +76,9 @@ async function requireReauth() {
   return true;
 }
 
-async function loadLinkedStudents(parentId, studioId) {
+async function loadLinkedStudents(parentId, studioId, options = {}) {
   if (!parentId) return [];
+  const includeInactive = options.includeInactive !== false;
   let query = supabase
     .from("parent_student_links")
     .select("student_id")
@@ -102,7 +103,8 @@ async function loadLinkedStudents(parentId, studioId) {
     console.error("[Settings] linked students fetch failed", studentErr);
     return [];
   }
-  return Array.isArray(students) ? students : [];
+  const list = Array.isArray(students) ? students : [];
+  return includeInactive ? list : list.filter(s => !s.deactivated_at);
 }
 
 async function renderLinkedStudents(parentId, studioId) {
@@ -134,74 +136,132 @@ async function renderLinkedStudents(parentId, studioId) {
     const isActive = !student.deactivated_at;
     const isCurrent = String(student.id) === String(activeProfileId);
     const name = `${student.firstName ?? ""} ${student.lastName ?? ""}`.trim() || "Student";
-    const card = document.createElement("div");
-    card.className = "linked-student-card";
+    const avatarUrl = student.avatarUrl || "images/icons/default.png";
 
-    card.innerHTML = `
-      <div>
-        <div class="linked-student-name">
-          ${name}
-          ${isCurrent ? "<span class=\"linked-student-tag\">CURRENT</span>" : ""}
-          ${isActive ? "<span class=\"linked-student-tag\">ACTIVE</span>" : "<span class=\"linked-student-tag\">INACTIVE</span>"}
+    const row = document.createElement("div");
+    row.className = `family-student-row${isActive ? "" : " is-inactive"}${isCurrent ? " is-current" : ""}`;
+    row.dataset.studentId = student.id;
+    row.innerHTML = `
+      <div class="family-student-avatar">
+        <img src="${avatarUrl}" alt="${name}">
+      </div>
+      <div class="family-student-info">
+        <div class="family-student-name">${name}</div>
+        <div class="family-student-actions">
+          <button class="blue-button btn-rect" data-action="change-avatar" data-id="${student.id}">Change avatar</button>
+          <input class="student-avatar-input" data-id="${student.id}" type="file" accept="image/*" style="display:none;">
         </div>
-        <div class="linked-student-meta">${isActive ? "Active profile" : "Inactive profile"}</div>
       </div>
-      <div class="linked-student-actions">
-        <button class="blue-button" data-action="set-active" data-id="${student.id}" ${isActive ? "" : "disabled"}>
-          ${isCurrent ? "Current" : "Make Current"}
-        </button>
-        <button class="blue-button" data-action="toggle-active" data-id="${student.id}">
-          ${isActive ? "Deactivate" : "Activate"}
-        </button>
-      </div>
+      <button class="status-toggle${isActive ? "" : " is-inactive"}" data-action="toggle-active" data-id="${student.id}" aria-pressed="${isActive}">
+        <span>Active</span>
+        <span>Inactive</span>
+      </button>
     `;
 
-    list.appendChild(card);
+    list.appendChild(row);
   });
 
-  list.querySelectorAll("button[data-action]").forEach(btn => {
-    btn.addEventListener("click", async () => {
-      const action = btn.dataset.action;
+  list.querySelectorAll("button[data-action=\"toggle-active\"]").forEach(btn => {
+    btn.addEventListener("click", async (e) => {
+      e.stopPropagation();
       const studentId = btn.dataset.id;
       if (!studentId) return;
 
       const ok = await requireReauth();
       if (!ok) return;
 
-      if (action === "set-active") {
-        setActiveProfileId(studentId);
+      const target = students.find(s => String(s.id) === String(studentId));
+      const isActive = target && !target.deactivated_at;
+      const nextValue = isActive ? new Date().toISOString() : null;
+      const { error } = await supabase
+        .from("users")
+        .update({ deactivated_at: nextValue })
+        .eq("id", studentId);
+      if (error) {
+        console.error("[Settings] failed to update student status", error);
+        alert("Failed to update student status.");
+        return;
+      }
+
+      if (isActive && String(studentId) === String(getActiveProfileId())) {
+        const refresh = await loadLinkedStudents(parentId, studioId);
+        const nextActive = refresh.find(s => !s.deactivated_at);
+        if (nextActive) {
+          setActiveProfileId(nextActive.id);
+        } else {
+          clearActiveProfileId();
+        }
         window.location.reload();
         return;
       }
 
-      if (action === "toggle-active") {
-        const target = students.find(s => String(s.id) === String(studentId));
-        const isActive = target && !target.deactivated_at;
-        const nextValue = isActive ? new Date().toISOString() : null;
-        const { error } = await supabase
+      await renderLinkedStudents(parentId, studioId);
+    });
+  });
+
+  list.querySelectorAll("button[data-action=\"change-avatar\"]").forEach(btn => {
+    btn.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      const studentId = btn.dataset.id;
+      const input = list.querySelector(`input.student-avatar-input[data-id="${studentId}"]`);
+      if (!input) return;
+      input.click();
+    });
+  });
+
+  list.querySelectorAll("input.student-avatar-input").forEach(input => {
+    input.addEventListener("change", async () => {
+      const studentId = input.dataset.id;
+      const file = input.files?.[0];
+      if (!file || !studentId) return;
+
+      const ok = await requireReauth();
+      if (!ok) return;
+
+      try {
+        const bucketName = "avatars";
+        const filePath = `${studentId}/avatar.png`;
+        const { error: upErr } = await supabase
+          .storage
+          .from(bucketName)
+          .upload(filePath, file, { upsert: true, contentType: file.type });
+        if (upErr) throw upErr;
+
+        const { data: pub } = supabase
+          .storage
+          .from(bucketName)
+          .getPublicUrl(filePath);
+        const publicUrl = pub?.publicUrl;
+        if (!publicUrl) throw new Error("Failed to generate public avatar URL");
+
+        const { error: dbErr } = await supabase
           .from("users")
-          .update({ deactivated_at: nextValue })
+          .update({ avatarUrl: publicUrl })
           .eq("id", studentId);
-        if (error) {
-          console.error("[Settings] failed to update student status", error);
-          alert("Failed to update student status.");
-          return;
-        }
+        if (dbErr) throw dbErr;
 
-        if (isActive && String(studentId) === String(getActiveProfileId())) {
-          const refresh = await loadLinkedStudents(parentId, studioId);
-          const nextActive = refresh.find(s => !s.deactivated_at);
-          if (nextActive) {
-            setActiveProfileId(nextActive.id);
-          } else {
-            clearActiveProfileId();
-          }
-          window.location.reload();
-          return;
-        }
-
-        await renderLinkedStudents(parentId, studioId);
+        const img = input.closest(".family-student-row")?.querySelector("img");
+        if (img) img.src = publicUrl;
+      } catch (err) {
+        console.error("[Settings] avatar upload failed", err);
+        alert("Avatar upload failed.");
+      } finally {
+        input.value = "";
       }
+    });
+  });
+
+  list.querySelectorAll(".family-student-row").forEach(row => {
+    row.addEventListener("click", async (e) => {
+      if (e.target.closest("button") || e.target.closest("input")) return;
+      const studentId = row.dataset.studentId;
+      if (!studentId) return;
+      const student = students.find(s => String(s.id) === String(studentId));
+      if (student?.deactivated_at) return;
+      const ok = await requireReauth();
+      if (!ok) return;
+      setActiveProfileId(studentId);
+      window.location.reload();
     });
   });
 }
@@ -530,7 +590,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   await renderActiveStudentHeader({
     mountId: "activeStudentHeader",
-    contentSelector: ".settings-student-content"
+    contentSelector: ".__nohide__"
   });
 
   const { data: authProfile, error: authProfileErr } = await supabase
@@ -572,7 +632,10 @@ return;
   document.getElementById('firstName').value = user.firstName || '';
   document.getElementById('lastName').value  = user.lastName  || '';
   document.getElementById('newEmail').value  = authEmail || user.email || '';
-  document.getElementById('avatarImage').src = user.avatarUrl || 'images/logos/default.png';
+  const avatarImageEl = document.getElementById('avatarImage');
+  if (avatarImageEl) {
+    avatarImageEl.src = user.avatarUrl || 'images/logos/default.png';
+  }
   const teacherWrap = document.getElementById("teacherSelectWrap");
   const teacherSelect = document.getElementById("teacherIds");
   const roleList = parseRoles(user.roles || user.role);
@@ -662,7 +725,7 @@ return;
 let updatedAllUsers = JSON.parse(localStorage.getItem('allUsers')) || [];
 if (!updatedAllUsers.some(u => String(u.id) === String(user.id))) updatedAllUsers.push(user);
 
-const linkedForSwitch = await loadLinkedStudents(authUserId, activeStudioId);
+const linkedForSwitch = await loadLinkedStudents(authUserId, activeStudioId, { includeInactive: false });
 linkedForSwitch.forEach(k => {
   if (!updatedAllUsers.some(u => String(u.id) === String(k.id))) updatedAllUsers.push(k);
 });
@@ -701,27 +764,8 @@ localStorage.setItem('allUsers', JSON.stringify(updatedAllUsers));
     setTimeout(() => promptUserSwitch(), 400);
   }
 });
-/* === Append-only: flat 2D password toggles for Settings === */
+/* === Append-only: clear password toggles for Settings === */
 (function () {
-  function svgEyeOpen() {
-    return `
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <g fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/>
-          <circle cx="12" cy="12" r="3"/>
-        </g>
-      </svg>`;
-  }
-  function svgEyeClosed() {
-    return `
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <g fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/>
-          <circle cx="12" cy="12" r="3"/>
-        </g>
-        <line x1="3" y1="21" x2="21" y2="3" stroke="currentColor" stroke-width="2"/>
-      </svg>`;
-  }
   function addPwToggle(input) {
     if (!input || input.dataset.hasToggle === '1') return;
     input.dataset.hasToggle = '1';
@@ -736,12 +780,13 @@ localStorage.setItem('allUsers', JSON.stringify(updatedAllUsers));
     btn.className = 'pw-toggle';
     btn.setAttribute('aria-label', 'Show password');
     btn.setAttribute('aria-pressed', 'false');
-    btn.innerHTML = svgEyeOpen();
+    btn.textContent = 'Show';
     btn.addEventListener('click', () => {
       const showing = input.type === 'text';
       input.type = showing ? 'password' : 'text';
       btn.setAttribute('aria-pressed', String(!showing));
-      btn.innerHTML = showing ? svgEyeOpen() : svgEyeClosed();
+      btn.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
+      btn.textContent = showing ? 'Show' : 'Hide';
     });
     wrap.appendChild(btn);
   }

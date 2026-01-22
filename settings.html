@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Settings | Achievement App</title>
+  <title>Family Settings | Achievement App</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="stylesheet" href="style.css" />
   <style>
@@ -72,21 +72,9 @@
 
 <main class="app">
   <div id="activeStudentHeader"></div>
-  <h2 style="text-align: center; color: #3399e8; margin: 10px 0;">Account Settings</h2>
+  <h2 style="text-align: center; color: #3399e8; margin: 10px 0;">Family Settings</h2>
 
   <form class="settings-form">
-    <div class="avatar-wrapper">
-      <img id="avatarImage" class="avatar" src="" alt="Your avatar" />
-      <div class="avatar-overlay">Click to change avatar</div>
-    </div>
-
-    <!-- ✅ Help Link -->
-    <small id="howToAvatar" style="color:#00477d; cursor:pointer; display:block; text-align:center; margin-bottom:15px;">
-      How do I create an avatar?
-    </small>
-
-    <input type="file" id="avatarInput" accept="image/*" style="display: none;" />
-
     <input type="text" id="firstName" placeholder="First Name" />
     <input type="text" id="lastName" placeholder="Last Name" />
     <div id="teacherSelectWrap" class="teacher-select-wrap" style="display:none;">
@@ -106,7 +94,7 @@
 
     <div class="button-row">
       <button id="saveBtn" type="submit" class="blue-button">Save</button>
-      <button id="cancelBtn" type="button" class="blue-button">Cancel</button>
+      <button id="cancelBtn" type="button" class="blue-button">Cancel Changes and Return to Home</button>
     </div>
 
     <div class="button-row">
@@ -121,7 +109,7 @@
 
   <section id="linkedStudentsSection" class="settings-section">
     <h3 class="settings-section-title">Students on this account</h3>
-    <div id="linkedStudentsList" class="linked-students"></div>
+    <div id="linkedStudentsList" class="family-students-list"></div>
   </section>
 </main>
 

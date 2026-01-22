@@ -40,9 +40,14 @@ document.addEventListener("DOMContentLoaded", async () => {
   const userId = activeStudentId;
   console.log("[DEBUG] Fetching logs for user ID:", userId);
 
-  const logsTableBody = document.querySelector("#logsTable tbody");
+  const logsTableBody = document.getElementById("logsTableBody");
   const categorySummary = document.getElementById("categorySummary");
-  const levelBadge = document.getElementById("levelBadge");
+  const pointsTitle = document.getElementById("pointsTitle");
+  const searchInput = document.getElementById("searchInput");
+  const statusFilter = document.getElementById("statusFilter");
+
+  let allLogs = [];
+  let filteredLogs = [];
 
   try {
     // ✅ Fetch logs
@@ -63,69 +68,75 @@ document.addEventListener("DOMContentLoaded", async () => {
       });
     }
 
-const { totalPoints, currentLevel } = await recalculateUserPoints(userId);
-console.log("[DEBUG] Total approved points:", totalPoints);
+    const { totalPoints } = await recalculateUserPoints(userId);
+    console.log("[DEBUG] Total approved points:", totalPoints);
 
-levelBadge.src = currentLevel?.badge || "images/levelBadges/level1.png";
-renderCategorySummary(logs.filter(l => l.status === "approved"), totalPoints);
+    const storedProfile = JSON.parse(localStorage.getItem("loggedInUser") || "null");
+    const firstName = storedProfile?.firstName || "";
+    if (pointsTitle) {
+      pointsTitle.textContent = firstName ? `${firstName}'s Points` : "My Points";
+    }
 
-    logs.sort((a, b) => new Date(b.date) - new Date(a.date));
-    renderLogs(logs);
+    allLogs = (logs || []).slice().sort((a, b) => new Date(b.date) - new Date(a.date));
+    renderCategorySummary(allLogs);
+    applyFilters();
 
   } catch (err) {
     console.error("[ERROR] My Points:", err);
   }
 
   // ---- FUNCTIONS ----
-  function renderCategorySummary(logs, totalPoints) {
+  function renderCategorySummary(logs) {
     categorySummary.innerHTML = "";
-    const icons = {
-      practice: "images/categories/practice.png",
-      participation: "images/categories/participation.png",
-      performance: "images/categories/performance.png",
-      personal: "images/categories/personal.png",
-      proficiency: "images/categories/proficiency.png",
-      total: "images/categories/allCategories.png"
-    };
+    const categories = [
+      { key: "practice", label: "Practice" },
+      { key: "participation", label: "Participation" },
+      { key: "performance", label: "Performance" },
+      { key: "personal", label: "Personal" },
+      { key: "proficiency", label: "Proficiency" }
+    ];
 
-    const categories = ["practice", "participation", "performance", "personal", "proficiency"];
-    const totals = {};
+    const summary = {};
     logs.forEach(l => {
-      const cat = l.category?.toLowerCase();
-      if (!totals[cat]) totals[cat] = { points: 0, logs: 0 };
-      totals[cat].points += l.points || 0;
-      totals[cat].logs++;
+      const cat = String(l.category || "").toLowerCase();
+      if (!summary[cat]) summary[cat] = { approvedPoints: 0, approvedCount: 0, pendingPoints: 0, pendingCount: 0 };
+      const isApproved = String(l.status || "").toLowerCase() === "approved";
+      if (isApproved) {
+        summary[cat].approvedPoints += l.points || 0;
+        summary[cat].approvedCount += 1;
+      } else {
+        summary[cat].pendingPoints += l.points || 0;
+        summary[cat].pendingCount += 1;
+      }
     });
 
-    categories.forEach(cat => {
-      const c = totals[cat] || { points: 0, logs: 0 };
-      categorySummary.innerHTML += `
-        <div class="category-card">
-          <img src="${icons[cat]}" alt="${cat}">
-          <h3>${c.points} pts</h3>
-          <p>${c.logs} logs</p>
-        </div>`;
-    });
-
-    categorySummary.innerHTML += `
-      <div class="category-card total-card">
-        <img src="${icons.total}" alt="Total">
-        <h3>${totalPoints} pts</h3>
-        <p>${logs.length} logs</p>
-      </div>`;
+    categorySummary.innerHTML = categories.map(cat => {
+      const data = summary[cat.key] || { approvedPoints: 0, approvedCount: 0, pendingPoints: 0, pendingCount: 0 };
+      return `
+        <div class="summary-card">
+          <div class="summary-label">${cat.label}</div>
+          <div class="summary-value">${data.approvedPoints} pts</div>
+          <div class="summary-sub">
+            Approved: ${data.approvedCount} • Pending: ${data.pendingCount} (${data.pendingPoints} pts)
+          </div>
+        </div>
+      `;
+    }).join("");
   }
 
   function renderLogs(logs) {
     logsTableBody.innerHTML = "";
     logs.forEach((log, index) => {
-const icon = `images/categories/${(log.category || "allCategories").toLowerCase()}.png`;
+      const icon = `images/categories/${(log.category || "allCategories").toLowerCase()}.png`;
+      const status = String(log.status || "pending");
+      const rowClass = `${index % 2 === 0 ? 'log-row-even' : 'log-row-odd'} ${status.toLowerCase() === "pending" ? "row-pending" : ""}`;
       logsTableBody.innerHTML += `
-        <tr class="${index % 2 === 0 ? 'log-row-even' : 'log-row-odd'}">
+        <tr class="${rowClass}">
           <td><img src="${icon}" style="width:30px;height:30px"></td>
           <td>${log.date ? new Date(log.date).toLocaleDateString() : ""}</td>
           <td>${log.points ?? ""}</td>
           <td>${log.notes || ""}</td>
-          <td>${log.status || "pending"}</td>
+          <td><span class="status-pill status-${status.toLowerCase().replace(" ", "-")}">${status}</span></td>
         </tr>`;
     });
   }
@@ -140,6 +151,30 @@ const icon = `images/categories/${(log.category || "allCategories").toLowerCase(
       }
     });
   }
+
+  function applyFilters() {
+    const query = (searchInput?.value || "").trim().toLowerCase();
+    const status = statusFilter?.value || "all";
+
+    filteredLogs = allLogs.filter(log => {
+      const matchesStatus = status === "all"
+        ? true
+        : String(log.status || "").toLowerCase() === status;
+      const haystack = [
+        log.category,
+        log.notes,
+        log.status,
+        log.date ? new Date(log.date).toLocaleDateString() : ""
+      ].join(" ").toLowerCase();
+      const matchesQuery = !query || haystack.includes(query);
+      return matchesStatus && matchesQuery;
+    });
+
+    renderLogs(filteredLogs);
+  }
+
+  if (searchInput) searchInput.addEventListener("input", applyFilters);
+  if (statusFilter) statusFilter.addEventListener("change", applyFilters);
 
   new ResizeObserver(syncHeaderWidths).observe(document.querySelector("#logsTable"));
 });

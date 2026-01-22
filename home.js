@@ -178,6 +178,7 @@ async function loadAvailableUsers(parentId, fallbackProfile) {
       .from("users")
       .select("*")
       .eq("parent_uuid", parentId)
+      .is("deactivated_at", null)
       .order("created_at", { ascending: true });
 
     if (!error && Array.isArray(data)) {
@@ -193,6 +194,7 @@ async function loadAvailableUsers(parentId, fallbackProfile) {
       .from("users")
       .select("*")
       .eq("parent_uuid", parentId)
+      .is("deactivated_at", null)
       .order("created_at", { ascending: true });
 
     if (!error && Array.isArray(data)) {
@@ -422,6 +424,7 @@ async function loadLinkedStudentsForParent(parentId, studioId) {
     .from("users")
     .select("id, firstName, lastName, roles, avatarUrl")
     .in("id", studentIds)
+    .is("deactivated_at", null)
     .order("lastName", { ascending: true })
     .order("firstName", { ascending: true });
   if (studentsErr) {
@@ -1498,6 +1501,7 @@ async function loadStudentsForStudio(studioId) {
     .select('id, firstName, lastName, email')
     .eq('studio_id', studioId)
     .eq('active', true)
+    .is('deactivated_at', null)
     .contains('roles', ['student']);
   if (error || !Array.isArray(data)) return { data: [], error };
   return { data, error: null };
