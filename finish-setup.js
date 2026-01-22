@@ -281,14 +281,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.log("[FinishSetup] invite accepted ok");
 
     const ensureStudioMembership = async (studioId) => {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const uid = sessionData?.session?.user?.id;
+      const { data: authData } = await supabase.auth.getUser();
+      const uid = authData?.user?.id;
       if (!uid) return;
 
-      const payload = {
-        studio_id: studioId,
-        user_id: uid
-      };
+      const payload = { studio_id: studioId, user_id: uid };
+      console.log("[FinishSetup] ensureStudioMembership payload", payload);
 
       const { data, error } = await supabase
         .from("studio_members")
@@ -296,8 +294,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         .select()
         .single();
 
-      if (error) console.error("[FinishSetup] ensureStudioMembership failed", error);
-      else console.log("[FinishSetup] ensureStudioMembership ok", data);
+      if (error) {
+        console.error("[FinishSetup] ensureStudioMembership failed", error);
+        showError("Could not join studio (membership insert blocked). Please contact admin.");
+      } else {
+        console.log("[FinishSetup] ensureStudioMembership ok", data);
+      }
     };
 
     await ensureStudioMembership(contextResult.studioId);
