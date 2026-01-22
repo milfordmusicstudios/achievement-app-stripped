@@ -283,26 +283,30 @@ document.addEventListener("DOMContentLoaded", async () => {
     const ensureStudioMembership = async (studioId) => {
       const { data: authData } = await supabase.auth.getUser();
       const uid = authData?.user?.id;
-      if (!uid) return;
+      if (!uid) return false;
 
-      const payload = { studio_id: studioId, user_id: uid };
-      console.log("[FinishSetup] ensureStudioMembership payload", payload);
+      console.log("[FinishSetup] ensureStudioMembership payload", { studio_id: studioId, user_id: uid });
 
-      const { data, error } = await supabase
-        .from("studio_members")
-        .upsert(payload, { onConflict: "studio_id,user_id" })
-        .select()
-        .single();
+      const { data, error } = await supabase.rpc("join_studio", {
+        p_studio_id: studioId,
+        p_roles: ["parent"]
+      });
 
       if (error) {
         console.error("[FinishSetup] ensureStudioMembership failed", error);
-        showError("Could not join studio (membership insert blocked). Please contact admin.");
-      } else {
-        console.log("[FinishSetup] ensureStudioMembership ok", data);
+        showError("Could not join studio. Please contact an admin.");
+        return false;
       }
+
+      console.log("[FinishSetup] ensureStudioMembership ok", data);
+      return true;
     };
 
-    await ensureStudioMembership(contextResult.studioId);
+    const membershipOk = await ensureStudioMembership(contextResult.studioId);
+    if (!membershipOk) {
+      disableForm(true);
+      return;
+    }
   } else {
     showError("Missing invite token. Please check your invite link.");
     disableForm(true);
