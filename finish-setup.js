@@ -498,6 +498,45 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
         console.log("[FinishSetup] students created", studentPayload.length);
         showMessage(`Created ${studentPayload.length} student(s).`);
+
+        const linkBase = {
+          parent_id: authUser.id,
+          student_id: null,
+          studio_id: activeStudioId,
+          created_by: authUser.id
+        };
+        const fullLinkRows = studentPayload.map(s => ({
+          ...linkBase,
+          student_id: s.id
+        }));
+
+        let linkErr = null;
+        const { error: fullInsertErr } = await supabase
+          .from("parent_student_links")
+          .insert(fullLinkRows);
+        if (fullInsertErr) {
+          linkErr = fullInsertErr;
+          const msg = String(fullInsertErr.message || "");
+          if (msg.toLowerCase().includes("does not exist")) {
+            const minimalRows = studentPayload.map(s => ({
+              parent_id: authUser.id,
+              student_id: s.id
+            }));
+            const { error: retryErr } = await supabase
+              .from("parent_student_links")
+              .insert(minimalRows);
+            if (retryErr) linkErr = retryErr;
+            else linkErr = null;
+          }
+        }
+
+        if (linkErr) {
+          console.error("[FinishSetup] parent_student_links insert failed", linkErr);
+          showError(linkErr.message || "Failed to link parent to student.");
+          if (submitBtn) submitBtn.disabled = false;
+          return;
+        }
+        console.log("[FinishSetup] linked parent->student");
       }
     }
 
