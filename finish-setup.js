@@ -285,24 +285,25 @@ document.addEventListener("DOMContentLoaded", async () => {
       const uid = authData?.user?.id;
       if (!uid) return false;
 
-      console.log("[FinishSetup] ensureStudioMembership payload", { studio_id: studioId, user_id: uid });
-
-      const { data, error } = await supabase.rpc("join_studio", {
+      const rolesToJoin = ["parent"];
+      const { error: joinErr } = await supabase.rpc('join_studio', {
         p_studio_id: studioId,
-        p_roles: ["parent"]
+        p_roles: rolesToJoin
       });
 
-      if (error) {
-        console.error("[FinishSetup] ensureStudioMembership failed", error);
-        showError("Could not join studio. Please contact an admin.");
-        return false;
+      if (joinErr) {
+        console.error("join_studio failed", joinErr);
+        throw joinErr;
       }
-
-      console.log("[FinishSetup] ensureStudioMembership ok", data);
       return true;
     };
 
-    const membershipOk = await ensureStudioMembership(contextResult.studioId);
+    let membershipOk = false;
+    try {
+      membershipOk = await ensureStudioMembership(contextResult.studioId);
+    } catch {
+      showError("Could not join studio. Please contact an admin.");
+    }
     if (!membershipOk) {
       disableForm(true);
       return;
