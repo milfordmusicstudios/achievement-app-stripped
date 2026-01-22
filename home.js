@@ -787,8 +787,9 @@ async function initStudentLogActions() {
         showToast("Parents are read-only.");
         return;
       }
-      if (!ctx?.activeStudentId) return;
-      const activeStudentId = ctx.activeStudentId;
+      const activeStudentId = getActiveStudentIdForContext(ctx);
+      if (!activeStudentId) return;
+      console.log("[Home] logging as", ctx.mode, "targetUserId", activeStudentId);
       practiceLoggedToday = await checkPracticeLoggedToday(activeStudentId);
       setPracticeButtonState(practiceBtn, practiceLoggedToday);
       if (practiceLoggedToday) {
@@ -797,7 +798,7 @@ async function initStudentLogActions() {
       }
       const today = getTodayString();
       const ok = await insertLogs([{
-        userId,
+        userId: activeStudentId,
         category: "practice",
         notes: "",
         date: today,
@@ -821,8 +822,9 @@ async function initStudentLogActions() {
         showToast("Parents are read-only.");
         return;
       }
-      if (!ctx?.activeStudentId) return;
-      await openPastPracticeModal(ctx.activeStudentId);
+      const activeStudentId = getActiveStudentIdForContext(ctx);
+      if (!activeStudentId) return;
+      await openPastPracticeModal(activeStudentId);
     });
   }
 
@@ -835,8 +837,9 @@ async function initStudentLogActions() {
         showToast("Parents are read-only.");
         return;
       }
-      if (!ctx?.activeStudentId) return;
-      await openChipModal(btn, ctx.activeStudentId);
+      const activeStudentId = getActiveStudentIdForContext(ctx);
+      if (!activeStudentId) return;
+      await openChipModal(btn, activeStudentId);
     });
   });
 }
