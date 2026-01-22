@@ -1555,14 +1555,12 @@ body.review-logs-page .review-title {
 body.review-logs-page .review-role-badge {
   width: 76px;
   height: 76px;
+  object-fit: contain;
   border-radius: 50%;
+  padding: 6px;
   background: rgba(255,255,255,0.75);
   border: 2px solid rgba(11,79,138,0.2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 900;
-  color: #0B4F8A;
+  display: block;
 }
 
 body.review-logs-page .summary-strip {
@@ -1581,6 +1579,7 @@ body.review-logs-page .summary-card {
   text-align: center;
   position: relative;
   overflow: hidden;
+  cursor: pointer;
 }
 
 body.review-logs-page .summary-card::before {
@@ -1771,8 +1770,8 @@ body.review-logs-page #logsTable select.status-pill[data-status="approved"] {
 }
 
 body.review-logs-page #logsTable select.status-pill[data-status="pending"] {
-  background: rgba(255,214,107,0.3);
-  border-color: rgba(255,196,59,0.7);
+  background: rgba(210, 216, 224, 0.45);
+  border-color: rgba(120, 130, 145, 0.5);
 }
 
 body.review-logs-page #logsTable select.status-pill[data-status="rejected"],
@@ -1820,6 +1819,94 @@ body.review-logs-page .pagination-row select.blue-button {
   min-height: 36px;
   border-radius: 6px;
   line-height: 1.1;
+}
+
+body.review-logs-page .review-header .blue-button.btn-rect {
+  padding: 10px 16px;
+  min-height: 42px;
+  border-radius: 12px;
+  font-size: 15px;
+}
+
+/* ===============================
+   REVIEW LOGS PALETTE OVERRIDES
+================================ */
+body.review-logs-page .summary-card::before {
+  height: 8px;
+}
+
+body.review-logs-page .summary-card.pending::before {
+  background: #F8B858;
+}
+
+body.review-logs-page .summary-card.approved::before {
+  background: #C8F880;
+}
+
+body.review-logs-page .summary-card.total::before {
+  background: #58E0E0;
+}
+
+body.review-logs-page .summary-card.pending .summary-value {
+  color: #F06828;
+}
+
+body.review-logs-page .summary-card.approved .summary-value {
+  color: #488038;
+}
+
+body.review-logs-page .summary-card.total .summary-value {
+  color: #3090A8;
+}
+
+body.review-logs-page .cat-indicator {
+  display: inline-block;
+  width: 8px;
+  height: 22px;
+  border-radius: 999px;
+  margin-right: 8px;
+  vertical-align: middle;
+  background: rgba(11,79,138,0.18);
+}
+
+body.review-logs-page .cat-indicator[data-category="practice"] {
+  background: #C8F880;
+}
+body.review-logs-page .cat-indicator[data-category="participation"] {
+  background: #58E0E0;
+}
+body.review-logs-page .cat-indicator[data-category="performance"] {
+  background: #C868E0;
+}
+body.review-logs-page .cat-indicator[data-category="personal"] {
+  background: #F8B858;
+}
+body.review-logs-page .cat-indicator[data-category="proficiency"] {
+  background: #F890C8;
+}
+
+body.review-logs-page #logsTable select.status-pill[data-status="approved"] {
+  background: #488038;
+  color: #ffffff;
+  border-color: #488038;
+}
+
+body.review-logs-page #logsTable select.status-pill[data-status="pending"] {
+  background: #C7CED8;
+  color: #0B2B4A;
+  border-color: #A7B1BE;
+}
+
+body.review-logs-page #logsTable select.status-pill[data-status="rejected"] {
+  background: #F06828;
+  color: #ffffff;
+  border-color: #F06828;
+}
+
+body.review-logs-page #logsTable select.status-pill[data-status="needs info"] {
+  background: #F8B858;
+  color: #0B2B4A;
+  border-color: #F8B858;
 }
 
 body.review-logs-page .btn-rect {

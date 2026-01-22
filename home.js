@@ -335,6 +335,13 @@ function getTodayString() {
   return new Date().toISOString().split("T")[0];
 }
 
+function getLocalDateString(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 function showToast(message) {
   const toast = qs("toast");
   if (!toast) return;
@@ -711,9 +718,9 @@ async function openChipModal(button, userId) {
   const notesRequired = button.dataset.notesRequired === "true";
 
   if (logType === "outside-performance") {
-    const hasRecent = await hasOutsidePerformanceThisMonth(userId);
-    if (hasRecent) {
-      showToast("You already logged an outside performance this month.");
+    const existingPoints = await getOutsidePerformancePointsThisMonth(userId);
+    if (existingPoints >= 100 || existingPoints + points > 100) {
+      showToast("You’ve reached the 100-point outside performance limit for this month.");
       return;
     }
   }
@@ -735,7 +742,7 @@ async function openChipModal(button, userId) {
     label,
     points,
     notesRequired,
-    notePrefix: logType === "outside-performance" ? "Outside Performance: " : "",
+    notePrefix: logType === "outside-performance" ? "[Outside Performance] " : "",
     statusText: "Pending approval",
     submitLabel: "Submit",
     statusValue: "pending",
@@ -743,23 +750,26 @@ async function openChipModal(button, userId) {
   });
 }
 
-async function hasOutsidePerformanceThisMonth(userId) {
-  const today = new Date();
-  const start = new Date();
-  start.setDate(today.getDate() - 30);
-  const startStr = start.toISOString().split("T")[0];
+async function getOutsidePerformancePointsThisMonth(userId) {
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  const startStr = getLocalDateString(monthStart);
+  const endStr = getLocalDateString(monthEnd);
   const { data, error } = await supabase
     .from("logs")
-    .select("id")
+    .select("points")
     .eq("userId", userId)
     .eq("category", "performance")
+    .in("status", ["pending", "approved"])
     .gte("date", startStr)
-    .ilike("notes", "Outside Performance%");
+    .lte("date", endStr)
+    .ilike("notes", "[Outside Performance]%");
   if (error) {
     console.error("Failed outside performance check", error);
-    return false;
+    return 0;
   }
-  return Array.isArray(data) && data.length > 0;
+  return (data || []).reduce((sum, row) => sum + (row.points || 0), 0);
 }
 
 function openFixedModal({ userId, category, label, points, notesRequired, notePrefix, statusText, submitLabel, statusValue, pointsHint }) {

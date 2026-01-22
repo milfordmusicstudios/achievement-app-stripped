@@ -27,8 +27,18 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   const roleBadge = document.getElementById("reviewRoleBadge");
-  if (roleBadge) {
-    roleBadge.textContent = activeRole === "admin" ? "ADMIN" : "TEACHER";
+  if (roleBadge instanceof HTMLImageElement) {
+    if (activeRole === "admin") {
+      roleBadge.src = "images/levelBadges/admin.png";
+      roleBadge.alt = "Admin";
+      roleBadge.style.display = "";
+    } else if (activeRole === "teacher") {
+      roleBadge.src = "images/levelBadges/teacher.png";
+      roleBadge.alt = "Teacher";
+      roleBadge.style.display = "";
+    } else {
+      roleBadge.style.display = "none";
+    }
   }
 
   const logsTableBody = document.getElementById("logsTableBody");
@@ -43,6 +53,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   let currentSort = { field: "date", order: "desc" };
   let currentPage = 1;
   let logsPerPage = 25;
+  let summaryFilter = "all";
 
   try {
     const { data: logsData, error: logsError } = await supabase
@@ -82,11 +93,15 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // Search + Status Filter
   searchInput.addEventListener("input", applyFilters);
-  statusFilter.addEventListener("change", applyFilters);
+  statusFilter.addEventListener("change", () => {
+    summaryFilter = "all";
+    applyFilters();
+  });
 
   function applyFilters() {
     const searchVal = searchInput.value.toLowerCase();
     const statusVal = statusFilter.value;
+    const todayStr = new Date().toISOString().split("T")[0];
 
     filteredLogs = logs.filter(l => {
       const matchesSearch =
@@ -94,7 +109,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         (l.notes || "").toLowerCase().includes(searchVal) ||
         (l.category || "").toLowerCase().includes(searchVal);
       const matchesStatus = !statusVal || (l.status && l.status.toLowerCase() === statusVal.toLowerCase());
-      return matchesSearch && matchesStatus;
+      const matchesToday = summaryFilter !== "approved-today" || String(l.date || "").startsWith(todayStr);
+      return matchesSearch && matchesStatus && matchesToday;
     });
 
     currentPage = 1;
@@ -193,17 +209,42 @@ document.addEventListener("DOMContentLoaded", async () => {
     categorySummary.innerHTML = cards.map(card => {
       const key = card.label.toLowerCase();
       let extraClass = "";
-      if (key.includes("pending")) extraClass = "pending";
-      else if (key.includes("approved")) extraClass = "approved";
-      else if (key.includes("total")) extraClass = "total";
+      let filterTag = "all";
+      if (key.includes("pending")) {
+        extraClass = "pending";
+        filterTag = "pending";
+      } else if (key.includes("approved")) {
+        extraClass = "approved";
+        filterTag = "approved-today";
+      } else if (key.includes("total")) {
+        extraClass = "total";
+        filterTag = "all";
+      }
       else extraClass = "review";
       return `
-      <div class="summary-card ${extraClass}">
+      <div class="summary-card ${extraClass}" data-filter="${filterTag}">
         <div class="summary-label">${card.label}</div>
         <div class="summary-value">${card.value}</div>
       </div>
     `;
     }).join("");
+
+    categorySummary.querySelectorAll(".summary-card").forEach(card => {
+      card.addEventListener("click", () => {
+        const filter = card.dataset.filter || "all";
+        if (filter === "pending") {
+          summaryFilter = "pending";
+          statusFilter.value = "pending";
+        } else if (filter === "approved-today") {
+          summaryFilter = "approved-today";
+          statusFilter.value = "approved";
+        } else {
+          summaryFilter = "all";
+          statusFilter.value = "";
+        }
+        applyFilters();
+      });
+    });
   }
 
   function renderLogsTable(list) {
@@ -215,8 +256,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     pageLogs.forEach((log, index) => {
       const row = document.createElement("tr");
       row.className = index % 2 === 0 ? "log-row-even" : "log-row-odd";
+      const categoryKey = String(log.category || "").toLowerCase();
       row.innerHTML = `
-        <td><input type="checkbox" class="select-log" data-id="${log.id}"></td>
+        <td><span class="cat-indicator" data-category="${categoryKey}"></span><input type="checkbox" class="select-log" data-id="${log.id}"></td>
         <td>${log.fullName}</td>
         <td>
           <select class="edit-input" data-id="${log.id}" data-field="category">
@@ -336,6 +378,41 @@ document.addEventListener("DOMContentLoaded", async () => {
     } catch (err) {
       console.error("Delete logs failed:", err);
       alert("❌ Failed to delete logs.");
+    }
+    });
+
+  document.getElementById("bulkApproveBtn").addEventListener("click", async () => {
+    const selectedIds = Array.from(document.querySelectorAll(".select-log:checked"))
+      .map(cb => String(cb.dataset.id).trim())
+      .filter(Boolean);
+
+    if (selectedIds.length === 0) {
+      alert("No logs selected.");
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from("logs")
+        .update({ status: "approved" })
+        .in("id", selectedIds);
+
+      if (error) {
+        console.error("[APPROVE ERROR]", error);
+        alert("Failed to approve logs: " + error.message);
+        return;
+      }
+
+      console.log("[Approve Selected] updated", selectedIds.length, data);
+
+      logs = logs.map(l => selectedIds.includes(String(l.id)) ? { ...l, status: "approved" } : l);
+      filteredLogs = filteredLogs.map(l => selectedIds.includes(String(l.id)) ? { ...l, status: "approved" } : l);
+      renderLogsTable(filteredLogs);
+      renderCategorySummary(filteredLogs);
+      updateBulkActionBarVisibility();
+    } catch (err) {
+      console.error("Approve logs failed:", err);
+      alert("Failed to approve logs.");
     }
   });
 
