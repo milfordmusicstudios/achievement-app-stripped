@@ -1,6 +1,6 @@
 import { supabase } from './supabaseClient.js';
 import { ensureStudioContextAndRoute } from './studio-routing.js';
-import { ensureUserRow, getAuthUserId, getViewerContext, recalculateUserPoints } from './utils.js';
+import { ensureUserRow, getAuthUserId, getViewerContext } from './utils.js';
 import { getActiveProfileId, setActiveProfileId } from './active-profile.js';
 
 const qs = id => document.getElementById(id);
@@ -83,6 +83,38 @@ async function loadLevel(levelId) {
     return null;
   }
   return data;
+}
+
+async function calculateXpAndLevel(userId) {
+  if (!userId) return { totalPoints: 0, currentLevel: null };
+
+  const { data: logs, error: logsError } = await supabase
+    .from("logs")
+    .select("points")
+    .eq("userId", userId)
+    .eq("status", "approved");
+  if (logsError) {
+    console.error("[Home] XP logs fetch failed", logsError);
+    return { totalPoints: 0, currentLevel: null };
+  }
+
+  const totalPoints = (logs || []).reduce((sum, log) => sum + (log.points || 0), 0);
+
+  const { data: levels, error: levelsError } = await supabase
+    .from("levels")
+    .select("*")
+    .order("minPoints", { ascending: true });
+  if (levelsError) {
+    console.error("[Home] levels fetch failed", levelsError);
+    return { totalPoints, currentLevel: null };
+  }
+
+  const currentLevel =
+    (levels || []).find(l => totalPoints >= l.minPoints && totalPoints <= l.maxPoints) ||
+    (levels || [])[levels?.length - 1] ||
+    null;
+
+  return { totalPoints, currentLevel };
 }
 
 function renderIdentity(profile, level, showWelcome = true) {
@@ -304,6 +336,7 @@ async function switchUser(user) {
     persistParentSelection(ctx.viewerUserId, ctx.studioId, user.id);
   }
   setActiveProfileId(user.id);
+  window.location.reload();
   localStorage.setItem("loggedInUser", JSON.stringify(user));
   localStorage.setItem("activeStudentId", user.id);
   currentProfile = user;
@@ -608,12 +641,15 @@ async function checkPracticeLoggedToday(userId) {
 }
 
 async function applyApprovedRecalc(userId) {
-  const result = await recalculateUserPoints(userId);
+  const result = await calculateXpAndLevel(userId);
   if (!result || !currentProfile || currentProfile.id !== userId) return;
-  currentProfile.points = result.totalPoints;
-  currentProfile.level = result.currentLevel?.id || currentProfile.level;
-  localStorage.setItem("loggedInUser", JSON.stringify(currentProfile));
-  currentLevelRow = await loadLevel(currentProfile.level || 1);
+  const nextLevel = result.currentLevel || currentLevelRow || (await loadLevel(currentProfile.level || 1));
+  currentProfile = {
+    ...currentProfile,
+    points: result.totalPoints,
+    level: nextLevel?.id || currentProfile.level
+  };
+  currentLevelRow = nextLevel;
   if (currentLevelRow) renderIdentity(currentProfile, currentLevelRow);
   updatePendingProgressFill();
 }
@@ -667,12 +703,18 @@ async function refreshActiveStudentData({ userId, fallbackProfile } = {}) {
 
   const profile = profileRow || fallbackProfile || currentProfile;
   if (profile) {
-    currentProfile = profile;
     localStorage.setItem("loggedInUser", JSON.stringify(profile));
-    currentLevelRow = await loadLevel(profile.level || 1);
+    const { totalPoints, currentLevel } = await calculateXpAndLevel(activeStudentId);
+    const resolvedLevel = currentLevel || (await loadLevel(profile.level || 1));
+    currentProfile = {
+      ...profile,
+      points: totalPoints,
+      level: resolvedLevel?.id || profile.level
+    };
+    currentLevelRow = resolvedLevel;
     if (currentLevelRow) {
       const showWelcome = ctx.mode === "student";
-      renderIdentity(profile, currentLevelRow, showWelcome);
+      renderIdentity(currentProfile, currentLevelRow, showWelcome);
     }
   }
 
