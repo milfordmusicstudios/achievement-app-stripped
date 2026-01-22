@@ -288,7 +288,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       const payload = {
         studio_id: studioId,
         user_id: uid,
-        roles: ["parent"],
         created_by: uid
       };
 
