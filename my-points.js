@@ -1,5 +1,5 @@
 import { supabase } from "./supabaseClient.js";
-import { getViewerContext, recalculateUserPoints, renderActiveStudentHeader } from './utils.js';
+import { getViewerContext, recalculateUserPoints } from './utils.js';
 import { ensureStudioContextAndRoute } from "./studio-routing.js";
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -7,12 +7,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const routeResult = await ensureStudioContextAndRoute({ redirectHome: false });
   if (routeResult?.redirected) return;
-
-  const headerState = await renderActiveStudentHeader({
-    mountId: "activeStudentHeader",
-    contentSelector: ".student-content"
-  });
-  if (headerState?.blocked) return;
 
   const { data: sessionData } = await supabase.auth.getSession();
   if (!sessionData?.session) {
@@ -43,6 +37,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const logsTableBody = document.getElementById("logsTableBody");
   const categorySummary = document.getElementById("categorySummary");
   const pointsTitle = document.getElementById("pointsTitle");
+  const levelBadge = document.getElementById("levelBadge");
   const searchInput = document.getElementById("searchInput");
   const statusFilter = document.getElementById("statusFilter");
 
@@ -68,11 +63,19 @@ document.addEventListener("DOMContentLoaded", async () => {
       });
     }
 
-    const { totalPoints } = await recalculateUserPoints(userId);
+    const { totalPoints, currentLevel } = await recalculateUserPoints(userId);
     console.log("[DEBUG] Total approved points:", totalPoints);
 
-    const storedProfile = JSON.parse(localStorage.getItem("loggedInUser") || "null");
-    const firstName = storedProfile?.firstName || "";
+    if (levelBadge) {
+      levelBadge.src = currentLevel?.badge || "images/levelBadges/level1.png";
+    }
+
+    const { data: profileRow } = await supabase
+      .from("users")
+      .select("firstName, lastName")
+      .eq("id", userId)
+      .single();
+    const firstName = profileRow?.firstName || "";
     if (pointsTitle) {
       pointsTitle.textContent = firstName ? `${firstName}'s Points` : "My Points";
     }
@@ -96,6 +99,14 @@ document.addEventListener("DOMContentLoaded", async () => {
       { key: "proficiency", label: "Proficiency" }
     ];
 
+    const categoryIconMap = {
+      practice: "images/categories/practice.png",
+      participation: "images/categories/participation.png",
+      performance: "images/categories/performance.png",
+      personal: "images/categories/personal.png",
+      proficiency: "images/categories/proficiency.png"
+    };
+
     const summary = {};
     logs.forEach(l => {
       const cat = String(l.category || "").toLowerCase();
@@ -112,12 +123,14 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     categorySummary.innerHTML = categories.map(cat => {
       const data = summary[cat.key] || { approvedPoints: 0, approvedCount: 0, pendingPoints: 0, pendingCount: 0 };
+      const icon = categoryIconMap[cat.key] || "images/categories/allCategories.png";
       return `
-        <div class="summary-card">
+        <div class="summary-card category-card">
+          <img class="category-icon" src="${icon}" alt="${cat.label}">
           <div class="summary-label">${cat.label}</div>
           <div class="summary-value">${data.approvedPoints} pts</div>
           <div class="summary-sub">
-            Approved: ${data.approvedCount} • Pending: ${data.pendingCount} (${data.pendingPoints} pts)
+            ${data.approvedCount} logs • Pending ${data.pendingCount}
           </div>
         </div>
       `;

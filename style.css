@@ -2315,12 +2315,22 @@ body.my-points-page main.app {
   padding: 18px 16px 32px;
 }
 
-body.my-points-page .points-header-row {
+body.my-points-page .points-header {
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: 12px;
   margin-bottom: 16px;
+}
+
+body.my-points-page .home-button {
+  padding: 10px 18px;
+  border-radius: 999px;
+  font-size: 1rem;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 body.my-points-page .points-title {
@@ -2343,6 +2353,14 @@ body.my-points-page .summary-card {
   background: rgba(255,255,255,0.95);
   border: 2px solid rgba(11,79,138,0.12);
   box-shadow: 0 8px 18px rgba(0,0,0,0.08);
+  text-align: center;
+}
+
+body.my-points-page .summary-card .category-icon {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+  margin-bottom: 8px;
 }
 
 body.my-points-page .summary-card .summary-label {
@@ -2438,4 +2456,53 @@ body.leaderboard-page .leaderboard-scroll-wrapper {
   max-height: calc(100vh - 180px);
   overflow: auto;
   padding-right: 6px;
+}
+
+body.leaderboard-page .leaderboard-count {
+  text-align: center;
+  color: #4c6a86;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+body.leaderboard-page .level-row {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+body.leaderboard-page .level-badge {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+}
+
+body.leaderboard-page .level-bar {
+  position: relative;
+  height: 58px;
+  border-radius: 999px;
+  background: #3eb7f8;
+  border: 3px solid rgba(11,79,138,0.25);
+  overflow: visible;
+}
+
+body.leaderboard-page .lb-avatar {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: white;
+  border: 2px solid rgba(0,0,0,0.12);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.12);
+  transition: left 600ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.leaderboard-page .lb-avatar {
+    transition: none;
+  }
 }

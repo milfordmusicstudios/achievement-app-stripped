@@ -11,39 +11,36 @@
 <div id="envBadge" class="env-badge" style="display:none;"></div>
 
   <main class="app">
-    <div id="activeStudentHeader"></div>
-    <div class="student-content">
-      <div class="points-header-row">
-        <button class="blue-button btn-rect" onclick="window.location.href='index.html'">Home</button>
-        <h2 id="pointsTitle" class="points-title">My Points</h2>
-        <div class="points-header-spacer"></div>
-      </div>
+    <header class="points-header">
+      <a class="blue-button home-button" href="index.html">Home</a>
+      <h1 id="pointsTitle" class="points-title">My Points</h1>
+      <img id="levelBadge" src="images/levelBadges/level1.png" alt="Level Badge">
+    </header>
 
-      <section id="categorySummary" class="summary-strip"></section>
+    <section id="categorySummary" class="summary-strip"></section>
 
-      <div class="points-toolbar">
-        <input id="searchInput" class="white-input" type="search" placeholder="Search logs">
-        <select id="statusFilter" class="white-input">
-          <option value="all">All statuses</option>
-          <option value="approved">Approved</option>
-          <option value="pending">Pending</option>
-        </select>
-      </div>
+    <div class="points-toolbar">
+      <input id="searchInput" class="white-input" type="search" placeholder="Search logs">
+      <select id="statusFilter" class="white-input">
+        <option value="all">All statuses</option>
+        <option value="approved">Approved</option>
+        <option value="pending">Pending</option>
+      </select>
+    </div>
 
-      <div class="logs-table-wrap">
-        <table id="logsTable">
-          <thead>
-            <tr>
-              <th>Category</th>
-              <th>Date</th>
-              <th>Points</th>
-              <th>Notes</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody id="logsTableBody"></tbody>
-        </table>
-      </div>
+    <div class="logs-table-wrap">
+      <table id="logsTable">
+        <thead>
+          <tr>
+            <th>Category</th>
+            <th>Date</th>
+            <th>Points</th>
+            <th>Notes</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="logsTableBody"></tbody>
+      </table>
     </div>
   </main>
 </body>

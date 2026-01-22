@@ -1,6 +1,8 @@
-// leaderboard.js
 import { supabase } from "./supabaseClient.js";
 import { ensureStudioContextAndRoute } from "./studio-routing.js";
+
+const OFFSETS = [0, 14, -14, 28, -28];
+const PAD_X = 28;
 
 document.addEventListener("DOMContentLoaded", async () => {
   const routeResult = await ensureStudioContextAndRoute({ redirectHome: false });
@@ -8,129 +10,250 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const popup = document.getElementById("loadingPopup");
   const loadingText = document.getElementById("loadingMessage");
+  const countEl = document.getElementById("leaderboardCount");
+  const container = document.getElementById("leaderboardBars") || document.getElementById("leaderboardContainer");
 
   const messages = [
     "🎶 Loading the rhythm of success…",
     "🎸 Tuning up the strings of greatness…",
     "🥁 Drumming up some excitement…",
     "🎹 Hitting all the right keys…",
-    "🎤 Mic check... 1, 2, 3, almost there!",
-    "🎧 Mixing the perfect soundtrack for victory…",
-    "🎼 Arranging the notes of achievement…",
-    "🎻 Violins of victory are warming up…",
-    "🔥 Shredding through the data like a solo guitar riff…",
-    "🏆 Composing the champions’ anthem…",
-    "💃 Dancing through the scores…",
-    "🧩 Piecing together the perfect harmony…",
-    "🎶 Where words fail, music speaks… loading greatness…",
-    "🌟 Every note counts… loading your masterpiece…"
+    "🎤 Mic check... 1, 2, 3, almost there!"
   ];
-
   if (loadingText) loadingText.textContent = messages[Math.floor(Math.random() * messages.length)];
   if (popup) popup.style.display = "flex";
 
-  await loadLeaderboard(); // read-only
+  const activeStudioId = localStorage.getItem("activeStudioId");
+  if (!activeStudioId) {
+    if (container) container.innerHTML = "<p class=\"empty-state\">No studio selected.</p>";
+    if (popup) popup.style.display = "none";
+    return;
+  }
 
-  if (popup) popup.style.display = "none";
+  try {
+    const { data: levels, error: levelsErr } = await supabase
+      .from("levels")
+      .select("*")
+      .order("minPoints", { ascending: true });
+    if (levelsErr || !levels?.length) throw levelsErr || new Error("No levels found.");
+
+    window.__LEVELS_ASC__ = [...levels];
+    const levelsDesc = [...levels].sort((a, b) => (b.minPoints ?? 0) - (a.minPoints ?? 0));
+
+    renderLevelBars(container, levelsDesc);
+
+    const studentIds = await fetchStudentIds(activeStudioId);
+    if (!studentIds.length) {
+      if (container) container.innerHTML = "<p class=\"empty-state\">No students found for this studio.</p>";
+      if (countEl) countEl.textContent = "Showing 0 students";
+      if (popup) popup.style.display = "none";
+      return;
+    }
+
+    const students = await fetchStudentsByIds(studentIds, activeStudioId);
+    if (!students.length) {
+      if (container) container.innerHTML = "<p class=\"empty-state\">No students found for this studio.</p>";
+      if (countEl) countEl.textContent = "Showing 0 students";
+      if (popup) popup.style.display = "none";
+      return;
+    }
+
+    const totals = await fetchTotals(activeStudioId, students.map(s => s.id));
+    if (countEl) countEl.textContent = `Showing ${students.length} students`;
+
+    const placements = buildPlacements(students, totals, levels);
+    renderAvatars(placements);
+
+    const reposition = debounce(() => positionAvatars(placements), 150);
+    window.addEventListener("resize", reposition);
+  } catch (err) {
+    console.error("[Leaderboard] load failed", err);
+    if (container) container.innerHTML = "<p class=\"empty-state\">Failed to load leaderboard.</p>";
+  } finally {
+    if (popup) popup.style.display = "none";
+  }
 });
 
-/** Read-only leaderboard: uses users.points & users.level as-is */
-async function loadLeaderboard() {
-  const container = document.getElementById("leaderboardContainer");
+function renderLevelBars(container, levelsDesc) {
   if (!container) return;
   container.innerHTML = "";
 
-  try {
-    const [{ data: users }, { data: levels }] = await Promise.all([
-      supabase.from("users").select("id, firstName, lastName, avatarUrl, roles, points, level"),
-      supabase.from("levels").select("*").order("minPoints", { ascending: true })
-    ]);
+  levelsDesc.forEach(level => {
+    const row = document.createElement("div");
+    row.className = "level-row";
+    row.dataset.level = String(level.id);
 
-    // Keep an ascending copy for overlay math (minPoints -> next minPoints)
-    window.__LEVELS_ASC__ = [...(levels || [])].sort((a, b) => (a.minPoints ?? 0) - (b.minPoints ?? 0));
+    const badge = document.createElement("img");
+    badge.className = "level-badge";
+    badge.src = level.badge || `images/levelBadges/level${level.id}.png`;
+    badge.alt = `Level ${level.id}`;
 
-    // Existing rendering order (highest level first)
-    const sortedLevels = [...(levels || [])].sort((a, b) => b.id - a.id);
-
-    for (const level of sortedLevels) {
-      const levelRow = document.createElement("div");
-      levelRow.classList.add("level-row");
-
-      const badge = document.createElement("img");
-      badge.src = level.badge || `images/levelBadges/level${level.id}.png`;
-      badge.classList.add("level-badge-icon");
-
-      const levelTrack = document.createElement("div");
-      levelTrack.classList.add("level-track");
-      levelTrack.style.backgroundColor = level.color || "#3eb7f8";
-      levelTrack.style.border = `4px solid ${darkenColor(level.color || "#3eb7f8")}`;
-
-      const avatarTrack = document.createElement("div");
-      avatarTrack.classList.add("avatar-track");
-      const placedAvatars = [];
-
-      (users || []).forEach(user => {
-        const isStudent = Array.isArray(user.roles) ? user.roles.includes("student") : user.roles === "student";
-        if (!isStudent || user.level !== level.id) return;
-
-        const span = Math.max(1, (level.maxPoints - level.minPoints));
-        const percent = ((Number(user.points) - level.minPoints) / span) * 100;
-        const clampedPercent = Math.min(100, Math.max(0, percent));
-
-        const spacingThreshold = 3, bumpX = 6, bumpY = 22, maxStack = 3;
-        let bumpLevel = 0, adjustedLeft = clampedPercent;
-
-        while (placedAvatars.some(p => Math.abs(p.left - adjustedLeft) < spacingThreshold && p.top === bumpLevel)) {
-          bumpLevel++;
-          if (bumpLevel >= maxStack) { bumpLevel = 0; adjustedLeft += bumpX; }
-        }
-        placedAvatars.push({ left: adjustedLeft, top: bumpLevel });
-
-        if (user.avatarUrl && user.avatarUrl.trim() !== "") {
-          const avatar = document.createElement("img");
-          avatar.src = user.avatarUrl;
-          avatar.classList.add("avatar");
-          // NEW: add a dedicated class for overlay targeting (doesn't affect existing styles)
-          avatar.classList.add("leaderboard-avatar");
-
-          // Gate whether hover title shows name (students only see points)
-          const canSeeNames = (() => {
-            const role = (localStorage.getItem('activeRole') || '').toLowerCase();
-            return role === 'admin' || role === 'teacher';
-          })();
-
-          avatar.alt = `${user.firstName} ${user.lastName}`;
-          avatar.title = canSeeNames
-            ? `${user.firstName} ${user.lastName} (${user.points ?? 0} pts)`
-            : `${user.points ?? 0} pts`;
-
-          // Provide data for the overlay (no visual change)
-          avatar.dataset.userId = user.id;
-          avatar.dataset.points = String(user.points ?? 0);
-          // Include dataset.name; overlay still gates visibility by role
-          avatar.dataset.name = `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim();
-
-          avatar.style.left = `${adjustedLeft}%`;
-          avatar.style.top = `${10 + bumpLevel * bumpY}px`;
-
-          const loggedInUser = JSON.parse(localStorage.getItem("loggedInUser"));
-          if (loggedInUser && user.id === loggedInUser.id) {
-            avatar.style.zIndex = "999";
-            avatar.style.border = "3px solid gold";
-          }
-
-          avatarTrack.appendChild(avatar);
-        }
-      });
-
-      levelTrack.appendChild(avatarTrack);
-      levelRow.appendChild(badge);
-      levelRow.appendChild(levelTrack);
-      container.appendChild(levelRow);
+    const bar = document.createElement("div");
+    bar.className = "level-bar";
+    bar.id = `levelBar-${level.id}`;
+    if (level.color) {
+      bar.style.background = level.color;
+      bar.style.borderColor = darkenColor(level.color);
     }
+
+    row.appendChild(badge);
+    row.appendChild(bar);
+    container.appendChild(row);
+  });
+}
+
+async function fetchStudentIds(studioId) {
+  try {
+    const { data, error } = await supabase
+      .from("studio_members")
+      .select("user_id, roles")
+      .eq("studio_id", studioId)
+      .contains("roles", ["student"]);
+    if (error) throw error;
+    const ids = (data || []).map(r => r.user_id).filter(Boolean);
+    if (ids.length) return ids;
   } catch (err) {
-    console.error("[ERROR] Rendering leaderboard:", err);
+    console.warn("[Leaderboard] studio_members fallback", err);
   }
+
+  const { data: logs, error } = await supabase
+    .from("logs")
+    .select("userId")
+    .eq("studio_id", studioId)
+    .eq("status", "approved");
+  if (error) {
+    console.error("[Leaderboard] logs fallback failed", error);
+    return [];
+  }
+  return Array.from(new Set((logs || []).map(l => l.userId).filter(Boolean)));
+}
+
+async function fetchStudentsByIds(ids, studioId) {
+  if (!ids.length) return [];
+  const { data, error } = await supabase
+    .from("users")
+    .select("id, firstName, lastName, avatarUrl, roles, deactivated_at")
+    .in("id", ids)
+    .eq("studio_id", studioId)
+    .is("deactivated_at", null);
+  if (error) {
+    console.error("[Leaderboard] users fetch failed", error);
+    return [];
+  }
+  return (data || []).filter(u => {
+    const roles = Array.isArray(u.roles) ? u.roles : [u.roles].filter(Boolean);
+    return roles.includes("student");
+  });
+}
+
+async function fetchTotals(studioId, userIds) {
+  if (!userIds.length) return {};
+  const { data, error } = await supabase
+    .from("logs")
+    .select("userId, points")
+    .eq("studio_id", studioId)
+    .eq("status", "approved")
+    .in("userId", userIds);
+  if (error) {
+    console.error("[Leaderboard] totals fetch failed", error);
+    return {};
+  }
+  const totals = {};
+  (data || []).forEach(row => {
+    const id = row.userId;
+    totals[id] = (totals[id] || 0) + (row.points || 0);
+  });
+  return totals;
+}
+
+function buildPlacements(students, totals, levels) {
+  const placements = [];
+  const perLevelCount = {};
+
+  students.forEach(student => {
+    const total = totals[student.id] || 0;
+    const level = getLevelForPoints(total, levels);
+    if (!level) return;
+
+    const range = getLevelRange(level, levels);
+    const pointsInto = Math.max(0, total - range.minPoints);
+    const ratio = range.span > 0 ? Math.min(1, pointsInto / range.span) : 1;
+
+    const index = perLevelCount[level.id] || 0;
+    perLevelCount[level.id] = index + 1;
+    const offset = OFFSETS[index % OFFSETS.length];
+
+    placements.push({
+      student,
+      total,
+      levelId: level.id,
+      ratio,
+      offset
+    });
+  });
+
+  return placements;
+}
+
+function renderAvatars(placements) {
+  placements.forEach(p => {
+    const bar = document.getElementById(`levelBar-${p.levelId}`);
+    if (!bar) return;
+
+    const avatar = document.createElement("img");
+    avatar.className = "lb-avatar leaderboard-avatar";
+    avatar.src = p.student.avatarUrl || "images/icons/default.png";
+    const fullName = `${p.student.firstName ?? ""} ${p.student.lastName ?? ""}`.trim() || "Student";
+    avatar.alt = fullName;
+    avatar.title = `${fullName} — ${p.total} pts`;
+    avatar.dataset.levelId = String(p.levelId);
+    avatar.dataset.ratio = String(p.ratio);
+    avatar.dataset.offset = String(p.offset);
+    avatar.dataset.points = String(p.total);
+    avatar.dataset.name = fullName;
+
+    avatar.style.left = `${PAD_X}px`;
+    avatar.style.top = `calc(50% + ${p.offset}px)`;
+
+    bar.appendChild(avatar);
+    p.el = avatar;
+    p.bar = bar;
+  });
+
+  requestAnimationFrame(() => positionAvatars(placements));
+}
+
+function positionAvatars(placements) {
+  placements.forEach(p => {
+    const bar = p.bar;
+    const avatar = p.el;
+    if (!bar || !avatar) return;
+
+    const barWidth = bar.clientWidth || 0;
+    const pad = Math.min(PAD_X, Math.max(12, barWidth * 0.08));
+    const x = pad + p.ratio * Math.max(1, barWidth - pad * 2);
+
+    avatar.style.left = `${x}px`;
+  });
+}
+
+function getLevelForPoints(points, levels) {
+  const list = Array.isArray(levels) ? levels : [];
+  let current = list[0] || null;
+  list.forEach(level => {
+    if (points >= (level.minPoints ?? 0)) current = level;
+  });
+  return current;
+}
+
+function getLevelRange(level, levels) {
+  const list = Array.isArray(levels) ? levels : [];
+  const idx = list.findIndex(l => l.id === level.id);
+  const next = idx >= 0 ? list[idx + 1] : null;
+  const minPoints = level.minPoints ?? 0;
+  const maxPoints = level.maxPoints ?? next?.minPoints ?? (minPoints + 1);
+  const span = Math.max(1, maxPoints - minPoints);
+  return { minPoints, maxPoints, span };
 }
 
 function darkenColor(hex, amt = -30) {
@@ -148,15 +271,20 @@ function darkenColor(hex, amt = -30) {
   }
 }
 
-/* ====== Gated popup overlay (append-only logic) ====== */
+function debounce(fn, wait) {
+  let t;
+  return (...args) => {
+    clearTimeout(t);
+    t = setTimeout(() => fn(...args), wait);
+  };
+}
 
-// Helper math
+/* ====== Gated popup overlay (append-only logic) ====== */
 function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
 function computeLevelAndPercent(points) {
   const levelsAsc = Array.isArray(window.__LEVELS_ASC__) ? window.__LEVELS_ASC__ : [];
   if (!levelsAsc.length) return { levelNumber: 1, percentWithin: 0 };
 
-  // find current level by minPoints threshold
   let idx = 0;
   for (let i = 0; i < levelsAsc.length; i++) {
     if (points >= (levelsAsc[i].minPoints ?? 0)) idx = i; else break;
@@ -175,21 +303,16 @@ function computeLevelAndPercent(points) {
   return { levelNumber, percentWithin: pct };
 }
 function squareFromPercent(p01) {
-  // 0%→1 … 100%→12
   return clamp(Math.ceil(p01 * 12), 1, 12);
 }
-
-// Role check
 function viewerCanSeeNames() {
   const role = (localStorage.getItem('activeRole') || '').toLowerCase();
   return role === 'admin' || role === 'teacher';
-}function viewerIsAdmin() {
+}
+function viewerIsAdmin() {
   const role = (localStorage.getItem('activeRole') || '').toLowerCase();
   return role === 'admin';
 }
-
-
-// Overlay UI
 function ensureOverlay() {
   let card = document.getElementById('lb-overlay-card');
   if (!card) {
@@ -241,7 +364,6 @@ function showOverlay({ x, y, name, points, levelNumber, square }) {
   card.style.top  = Math.max(8, top)  + 'px';
 }
 
-// Delegated click handler (works with dynamically added avatars)
 document.addEventListener('click', (e) => {
   const el = e.target.closest('.leaderboard-avatar');
   if (!el) return;
