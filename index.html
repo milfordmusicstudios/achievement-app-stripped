@@ -61,34 +61,6 @@
       <select id="parentStudentSelect" aria-label="Viewing student"></select>
     </div>
     <div id="staffQuickLogMount"></div>
-    <section id="quickLogCard" style="display:none;">
-      <form id="quickLogForm" class="staff-card">
-        <label for="qlStudent">Student</label>
-        <select id="qlStudent" required>
-          <option value="">Select a student</option>
-        </select>
-
-        <label for="qlCategory">Category</label>
-        <select id="qlCategory" required>
-          <option value="">Select category</option>
-        </select>
-
-        <label for="qlDate">Date</label>
-        <input id="qlDate" type="date" required />
-
-        <label for="qlPoints">Points</label>
-        <input id="qlPoints" type="number" min="1" required />
-
-        <label for="qlNotes">Notes</label>
-        <input id="qlNotes" type="text" maxlength="140" />
-
-        <span id="qlStatus" class="staff-msg"></span>
-
-        <div class="button-row" style="margin-top:10px;">
-          <button id="qlSubmit" type="submit" class="blue-button">Submit Points</button>
-        </div>
-      </form>
-    </section>
     <!-- Action hub -->
     <section class="home-actions student-only" aria-label="Log your progress">
       <div id="parentReadOnlyNotice" class="helper-text" style="display:none;">

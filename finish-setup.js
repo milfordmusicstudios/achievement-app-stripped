@@ -98,34 +98,46 @@ function setTeacherError(row, message) {
 }
 
 async function loadTeachersForStudio(studioId) {
-  const { data: rows, error } = await supabase
+  console.log("[FinishSetup] studioId for teacher load", studioId);
+  const { data: memberRows, error: memberErr } = await supabase
     .from("studio_members")
-    .select("user_id, roles, users(id, firstName, lastName)")
+    .select("user_id, roles")
     .eq("studio_id", studioId)
     .or("roles.cs.{teacher},roles.cs.{admin}");
 
-  if (error) {
-    console.error("[FinishSetup] teacher load failed", error);
+  if (memberErr) {
+    console.error("[FinishSetup] teacher load failed", memberErr);
     teacherOptionData = [];
     return;
   }
 
-  const teachers = (rows || [])
-    .map(r => r.users)
-    .filter(Boolean)
-    .sort(
-      (a, b) =>
-        (a.lastName || "").localeCompare(b.lastName || "") ||
-        (a.firstName || "").localeCompare(b.firstName || "")
-    );
+  const teacherIds = Array.from(new Set((memberRows || []).map(r => r.user_id).filter(Boolean)));
+  if (teacherIds.length === 0) {
+    teacherOptionData = [];
+    console.log("[FinishSetup] teachers found", 0);
+    return;
+  }
 
-  teacherOptionData = teachers.map(t => ({
+  const { data: users, error: userErr } = await supabase
+    .from("users")
+    .select("id, firstName, lastName")
+    .in("id", teacherIds)
+    .order("lastName", { ascending: true })
+    .order("firstName", { ascending: true });
+
+  if (userErr) {
+    console.error("[FinishSetup] teacher user lookup failed", userErr);
+    teacherOptionData = [];
+    return;
+  }
+
+  const teachers = (users || []).map(t => ({
     id: t.id,
     label: (`${t.firstName ?? ""} ${t.lastName ?? ""}`.trim() || "Unnamed Teacher")
   }));
 
-  console.log("[setup] invite studioId", studioId);
-  console.log("[setup] teacher results", teachers.length, teachers);
+  teacherOptionData = teachers;
+  console.log("[FinishSetup] teachers found", teachers.length);
 }
 
 async function resolveInviteContext(token) {
@@ -367,10 +379,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (desiredRoles.includes("student") && !(inviteRoles.includes("teacher") || inviteRoles.includes("admin"))) {
       if (teacherOptionData.length === 0 || selfTeacherIds.length === 0) {
         if (selfTeacherError) {
-          selfTeacherError.textContent = "Please select your teacher.";
+          selfTeacherError.textContent = "Select at least one teacher.";
           selfTeacherError.style.display = "block";
         }
-        showError("Please select your teacher.");
+        showError("Select at least one teacher.");
         if (submitBtn) submitBtn.disabled = false;
         return;
       }
@@ -421,14 +433,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (!hasFirst || !hasLast) continue;
         if (!isStaffInvite) {
           if (teacherOptionData.length === 0) {
-            setTeacherError(entry.row, "Please select your teacher.");
-            showError("Please select your teacher.");
+            setTeacherError(entry.row, "Select at least one teacher.");
+            showError("Select at least one teacher.");
             if (submitBtn) submitBtn.disabled = false;
             return;
           }
           if (!entry.teacherIds.length) {
-            setTeacherError(entry.row, "Please select your teacher.");
-            showError("Please select your teacher.");
+            setTeacherError(entry.row, "Select at least one teacher.");
+            showError("Select at least one teacher.");
             if (submitBtn) submitBtn.disabled = false;
             return;
           }

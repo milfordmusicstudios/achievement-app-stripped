@@ -257,11 +257,9 @@ function applyParentReadOnlyUI() {
   const notice = qs("parentReadOnlyNotice");
   const controls = qs("studentLoggingControls");
   const staffMount = qs("staffQuickLogMount");
-  const quickLogCard = qs("quickLogCard");
   if (notice) notice.style.display = isParentReadOnly ? "block" : "none";
   if (controls) controls.style.display = isParentReadOnly ? "none" : "";
   if (staffMount) staffMount.style.display = isParentReadOnly ? "none" : "";
-  if (quickLogCard) quickLogCard.style.display = isParentReadOnly ? "none" : "";
 
   const modalLogPractice = qs("modalLogPractice");
   const modalLogOther = qs("modalLogOther");
