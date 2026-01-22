@@ -5,6 +5,83 @@ export async function getAuthUserId() {
   return authData?.user?.id || null;
 }
 
+export function parseRoles(raw) {
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw.map(r => String(r).toLowerCase());
+  if (typeof raw === "string") {
+    try {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed)
+        ? parsed.map(r => String(r).toLowerCase())
+        : [String(parsed).toLowerCase()];
+    } catch {
+      return raw.split(",").map(r => r.trim().toLowerCase()).filter(Boolean);
+    }
+  }
+  return [String(raw).toLowerCase()];
+}
+
+export async function getViewerContext() {
+  const { data: sessionData } = await supabase.auth.getSession();
+  const viewerUserId = sessionData?.session?.user?.id || null;
+  if (!viewerUserId) {
+    return {
+      viewerUserId: null,
+      viewerRoles: [],
+      isAdmin: false,
+      isTeacher: false,
+      isStudent: false,
+      isParent: false,
+      mode: "unknown",
+      studioId: null
+    };
+  }
+
+  let studioId = localStorage.getItem("activeStudioId");
+  if (!studioId) {
+    studioId = await getActiveStudioIdForUser(viewerUserId);
+  }
+
+  const { data: viewerProfile, error } = await supabase
+    .from("users")
+    .select("roles, studio_id")
+    .eq("id", viewerUserId)
+    .single();
+
+  if (error) {
+    console.error("[ViewerContext] user lookup failed", error);
+  }
+
+  if (!studioId && viewerProfile?.studio_id) {
+    studioId = viewerProfile.studio_id;
+    localStorage.setItem("activeStudioId", studioId);
+  }
+
+  const viewerRoles = parseRoles(viewerProfile?.roles);
+  localStorage.setItem("activeStudioRoles", JSON.stringify(viewerRoles));
+
+  const isAdmin = viewerRoles.includes("admin");
+  const isTeacher = viewerRoles.includes("teacher");
+  const isStudent = viewerRoles.includes("student");
+  const isParent = viewerRoles.includes("parent");
+
+  let mode = "unknown";
+  if (isAdmin || isTeacher) mode = "staff";
+  else if (isStudent) mode = "student";
+  else if (isParent) mode = "parent";
+
+  return {
+    viewerUserId,
+    viewerRoles,
+    isAdmin,
+    isTeacher,
+    isStudent,
+    isParent,
+    mode,
+    studioId
+  };
+}
+
 export async function getActiveStudentId() {
   const rolesRaw = localStorage.getItem("activeStudioRoles");
   let roles = [];

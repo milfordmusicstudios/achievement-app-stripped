@@ -33,6 +33,12 @@
           </label>
         </div>
 
+        <section id="selfTeacherSection" style="margin-top:12px; display:none;">
+          <h3 style="margin:0 0 6px 0;">Teacher(s)</h3>
+          <select id="selfTeacherIds" class="teacher-select" multiple></select>
+          <div id="selfTeacherError" class="teacher-error" style="display:none;"></div>
+        </section>
+
         <section id="studentsSection" style="margin-top:14px;">
           <h3 style="margin:0 0 6px 0;">Add Students</h3>
           <p style="margin:0 0 10px 0;">Add one or more students now (you can add more later).</p>
@@ -96,6 +102,11 @@
       </div>
       <div class="form-row">
         <input type="text" class="student-instrument" placeholder="Instrument (optional)" />
+      </div>
+      <div class="form-row teacher-select-wrap">
+        <label class="teacher-label">Teacher(s)</label>
+        <select class="student-teachers teacher-select" multiple></select>
+        <div class="teacher-error" style="display:none;"></div>
       </div>
       <button type="button" class="blue-button remove-student-btn" style="background:#999;">
         Remove student

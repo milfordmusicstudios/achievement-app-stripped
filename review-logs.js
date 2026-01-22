@@ -1,5 +1,5 @@
 import { supabase } from "./supabaseClient.js";
-import { recalculateUserPoints, requireStudioRoles } from './utils.js';
+import { getViewerContext, recalculateUserPoints } from './utils.js';
 import { ensureStudioContextAndRoute } from "./studio-routing.js";
 
 const categoryOptions = ["practice", "participation", "performance", "personal", "proficiency"];
@@ -16,15 +16,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  const authz = await requireStudioRoles(["admin", "teacher"]);
-  console.log("[AuthZ]", { page: "review-logs", requiredRoles: ["admin", "teacher"], roles: authz.roles, studioId: authz.studioId });
-  if (!authz.ok) return;
-  let activeRole = null;
-  if (authz.roles?.includes("admin")) {
-    activeRole = "admin";
-  } else if (authz.roles?.includes("teacher")) {
-    activeRole = "teacher";
+  const viewerContext = await getViewerContext();
+  console.log("[AuthZ]", { page: "review-logs", roles: viewerContext.viewerRoles, studioId: viewerContext.studioId });
+  if (!viewerContext.isAdmin && !viewerContext.isTeacher) {
+    alert("Access denied.");
+    window.location.href = "index.html";
+    return;
   }
+  const activeRole = viewerContext.isAdmin ? "admin" : "teacher";
 
   const roleBadge = document.getElementById("reviewRoleBadge");
   if (roleBadge instanceof HTMLImageElement) {
@@ -85,12 +84,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         (users.find(u => String(u.id) === String(l.userId))?.lastName || "")
     }));
 
-    if (activeRole === "teacher") {
-      const myStudents = users
-        .filter(u => Array.isArray(u.teacherIds) && u.teacherIds.map(String).includes(String(user.id)))
-        .map(s => String(s.id));
-      allLogs = allLogs.filter(l => myStudents.includes(String(l.userId)));
-    }
+  if (viewerContext.isTeacher && !viewerContext.isAdmin) {
+    const myStudents = users
+      .filter(u => Array.isArray(u.teacherIds) && u.teacherIds.map(String).includes(String(viewerContext.viewerUserId)))
+      .map(s => String(s.id));
+    allLogs = allLogs.filter(l => myStudents.includes(String(l.userId)));
+  }
 
     applyFilters();
   } catch (err) {
@@ -507,8 +506,7 @@ if (quickAddCancel) {
 async function loadQuickAddStudents() {
   quickAddStudentsList.innerHTML = "<p>Loading students...</p>";
 
-  const user = JSON.parse(localStorage.getItem("loggedInUser"));
-  const activeRole = localStorage.getItem("activeRole");
+  const viewerContext = await getViewerContext();
 
   const { data: students, error } = await supabase
     .from("users")
@@ -522,9 +520,9 @@ async function loadQuickAddStudents() {
   let filtered = students.filter(s => {
     const roles = Array.isArray(s.roles) ? s.roles : [s.roles];
     const isStudent = roles.includes("student");
-    if (activeRole === "admin") return isStudent;
-    if (activeRole === "teacher")
-      return isStudent && Array.isArray(s.teacherIds) && s.teacherIds.includes(user.id);
+    if (viewerContext.isAdmin) return isStudent;
+    if (viewerContext.isTeacher)
+      return isStudent && Array.isArray(s.teacherIds) && s.teacherIds.includes(viewerContext.viewerUserId);
     return false;
   });
 

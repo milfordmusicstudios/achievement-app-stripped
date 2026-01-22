@@ -88,6 +88,11 @@
 
     <input type="text" id="firstName" placeholder="First Name" />
     <input type="text" id="lastName" placeholder="Last Name" />
+    <div id="teacherSelectWrap" class="teacher-select-wrap" style="display:none;">
+      <label for="teacherIds" class="teacher-label">Teacher(s)</label>
+      <select id="teacherIds" class="teacher-select" multiple></select>
+      <div id="teacherSelectError" class="teacher-error" style="display:none;"></div>
+    </div>
     <input type="email" id="newEmail" placeholder="New Email" />
     <input type="password" id="currentPassword" placeholder="Current Password" />
     <input type="password" id="newPassword" placeholder="New Password" />

@@ -1545,6 +1545,38 @@ body.settings-page .settings-form {
 }
 
 /* ===============================
+   TEACHER SELECT (Setup + Settings)
+================================ */
+.teacher-select-wrap {
+  margin-bottom: 16px;
+}
+.teacher-label {
+  display: block;
+  font-weight: 700;
+  color: #00477d;
+  margin-bottom: 6px;
+}
+.teacher-select {
+  width: 100%;
+  min-height: 120px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(11,79,138,0.2);
+  font-size: 14px;
+  background: #ffffff;
+}
+.teacher-error {
+  margin-top: 6px;
+  color: #c62828;
+  font-size: 13px;
+  font-weight: 700;
+}
+.tag-empty {
+  opacity: 0.7;
+  font-style: italic;
+}
+
+/* ===============================
    REVIEW LOGS PAGE (scoped)
 ================================ */
 body.review-logs-page main.app {

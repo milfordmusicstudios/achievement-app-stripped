@@ -1,52 +1,6 @@
 import { supabase } from "./supabaseClient.js";
-import { recalculateUserPoints } from './utils.js';
+import { getViewerContext, recalculateUserPoints } from './utils.js';
 import { ensureStudioContextAndRoute } from "./studio-routing.js";
-
-function getParentSelectionKey(studioId, viewerUserId) {
-  return studioId && viewerUserId ? `aa.activeStudent.${studioId}.${viewerUserId}` : null;
-}
-
-async function getViewerContext() {
-  const { data: sessionData } = await supabase.auth.getSession();
-  const viewerUserId = sessionData?.session?.user?.id || null;
-  const studioId = localStorage.getItem("activeStudioId");
-
-  let roles = [];
-  try {
-    roles = JSON.parse(localStorage.getItem("activeStudioRoles") || "[]");
-  } catch {
-    roles = [];
-  }
-
-  if (!roles.length && viewerUserId && studioId) {
-    const { data: member } = await supabase
-      .from("studio_members")
-      .select("roles")
-      .eq("user_id", viewerUserId)
-      .eq("studio_id", studioId)
-      .single();
-    roles = Array.isArray(member?.roles) ? member.roles : [];
-    localStorage.setItem("activeStudioRoles", JSON.stringify(roles));
-  }
-
-  let mode = "parent";
-  if (roles.includes("admin")) mode = "admin";
-  else if (roles.includes("teacher")) mode = "teacher";
-  else if (roles.includes("student")) mode = "student";
-  else if (roles.includes("parent")) mode = "parent";
-
-  let activeStudentId = null;
-  if (roles.includes("student")) {
-    activeStudentId = viewerUserId;
-  } else if (roles.includes("parent") && !roles.includes("student")) {
-    const key = getParentSelectionKey(studioId, viewerUserId);
-    activeStudentId = (key && localStorage.getItem(key))
-      || localStorage.getItem("activeStudentId")
-      || null;
-  }
-
-  return { viewerUserId, roles, studioId, activeStudentId, mode };
-}
 
 document.addEventListener("DOMContentLoaded", async () => {
   console.log("[DEBUG] My Points: Script loaded");
@@ -62,13 +16,22 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const viewerContext = await getViewerContext();
   console.log("[Identity] viewer context", viewerContext);
-  if (!viewerContext?.activeStudentId) {
+  let activeStudentId = null;
+  if (viewerContext.mode === "student") {
+    activeStudentId = viewerContext.viewerUserId;
+  } else if (viewerContext.mode === "parent") {
+    const key = viewerContext.studioId && viewerContext.viewerUserId
+      ? `aa.activeStudent.${viewerContext.studioId}.${viewerContext.viewerUserId}`
+      : null;
+    activeStudentId = (key && localStorage.getItem(key)) || null;
+  }
+  if (!activeStudentId) {
     alert("Select a student on Home to view points.");
     window.location.href = "index.html";
     return;
   }
 
-  const userId = viewerContext.activeStudentId;
+  const userId = activeStudentId;
   console.log("[DEBUG] Fetching logs for user ID:", userId);
 
   const logsTableBody = document.querySelector("#logsTable tbody");

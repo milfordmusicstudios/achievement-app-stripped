@@ -50,6 +50,80 @@ function parseInstruments(raw) {
     .filter(Boolean);
 }
 
+function parseRoles(roles) {
+  if (!roles) return [];
+  if (Array.isArray(roles)) return roles.map(r => String(r).toLowerCase());
+  if (typeof roles === "string") {
+    try {
+      const parsed = JSON.parse(roles);
+      return Array.isArray(parsed) ? parsed.map(r => String(r).toLowerCase()) : [String(parsed).toLowerCase()];
+    } catch {
+      return roles.split(",").map(r => r.trim().toLowerCase()).filter(Boolean);
+    }
+  }
+  return [String(roles).toLowerCase()];
+}
+
+let teacherOptionData = [];
+
+function applyTeacherOptionsToSelect(selectEl) {
+  if (!selectEl) return;
+  if (teacherOptionData.length === 0) {
+    selectEl.innerHTML = "";
+    selectEl.disabled = true;
+    const opt = document.createElement("option");
+    opt.value = "";
+    opt.textContent = "No teachers available";
+    selectEl.appendChild(opt);
+    return;
+  }
+  const selected = new Set(Array.from(selectEl.selectedOptions || []).map(o => o.value));
+  selectEl.innerHTML = "";
+  teacherOptionData.forEach(t => {
+    const opt = document.createElement("option");
+    opt.value = t.id;
+    opt.textContent = t.label;
+    if (selected.has(t.id)) opt.selected = true;
+    selectEl.appendChild(opt);
+  });
+}
+
+function setTeacherError(row, message) {
+  const errorEl = row.querySelector(".teacher-error");
+  if (!errorEl) return;
+  errorEl.textContent = message || "";
+  errorEl.style.display = message ? "block" : "none";
+}
+
+async function loadTeachersForStudio(studioId) {
+  const { data: users, error } = await supabase
+    .from("users")
+    .select("id, firstName, lastName, roles")
+    .eq("studio_id", studioId);
+
+  if (error) {
+    console.error("[FinishSetup] teacher load failed", error);
+    teacherOptionData = [];
+    return;
+  }
+
+  const teachers = (users || [])
+    .filter(u => {
+      const roles = parseRoles(u.roles);
+      return roles.includes("teacher") || roles.includes("admin");
+    })
+    .sort(
+      (a, b) =>
+        (a.lastName || "").localeCompare(b.lastName || "") ||
+        (a.firstName || "").localeCompare(b.firstName || "")
+    );
+
+  teacherOptionData = teachers.map(t => ({
+    id: t.id,
+    label: (`${t.firstName ?? ""} ${t.lastName ?? ""}`.trim() || "Unnamed Teacher")
+  }));
+}
+
 function getAccountType() {
   const selected = document.querySelector('input[name="accountType"]:checked');
   return selected?.value || "parent";
@@ -67,7 +141,9 @@ function collectStudentRows() {
     const lastName = (row.querySelector(".student-last")?.value || "").trim();
     const grade = (row.querySelector(".student-grade")?.value || "").trim();
     const instrumentRaw = (row.querySelector(".student-instrument")?.value || "").trim();
-    return { row, firstName, lastName, grade, instrumentRaw };
+    const teacherSelect = row.querySelector(".student-teachers");
+    const teacherIds = Array.from(teacherSelect?.selectedOptions || []).map(o => o.value);
+    return { row, firstName, lastName, grade, instrumentRaw, teacherIds };
   });
 }
 
@@ -92,10 +168,20 @@ function addStudentRow(initial = {}) {
   const lastInput = block.querySelector(".student-last");
   const gradeInput = block.querySelector(".student-grade");
   const instrumentInput = block.querySelector(".student-instrument");
+  const teacherSelect = block.querySelector(".student-teachers");
   if (firstInput) firstInput.value = initial.firstName || "";
   if (lastInput) lastInput.value = initial.lastName || "";
   if (gradeInput) gradeInput.value = initial.grade || "";
   if (instrumentInput) instrumentInput.value = initial.instrument || "";
+  if (teacherSelect) {
+    applyTeacherOptionsToSelect(teacherSelect);
+    const selectedIds = Array.isArray(initial.teacherIds) ? initial.teacherIds.map(String) : [];
+    selectedIds.forEach(id => {
+      const opt = Array.from(teacherSelect.options).find(o => o.value === id);
+      if (opt) opt.selected = true;
+    });
+    teacherSelect.addEventListener("change", () => setTeacherError(block, ""));
+  }
 
   const removeBtn = block.querySelector(".remove-student-btn");
   if (removeBtn) {
@@ -186,6 +272,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (firstNameInput) firstNameInput.value = profile.firstName || "";
   if (lastNameInput) lastNameInput.value = profile.lastName || "";
 
+  const storedRoles = safeParseJSON(localStorage.getItem("activeStudioRoles"), []);
+  const studioRoles = normalizeRoles(storedRoles);
+
   document.querySelectorAll('input[name="accountType"]').forEach(radio => {
     radio.addEventListener("change", () => {
       setStudentsVisible(getAccountType() === "parent");
@@ -193,8 +282,25 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
   setStudentsVisible(getAccountType() === "parent");
 
+  await loadTeachersForStudio(activeStudioId);
   addStudentRow();
   document.getElementById("addStudentBtn")?.addEventListener("click", () => addStudentRow());
+
+  const selfTeacherSection = document.getElementById("selfTeacherSection");
+  const selfTeacherSelect = document.getElementById("selfTeacherIds");
+  const selfTeacherError = document.getElementById("selfTeacherError");
+  const isStudentRole = studioRoles.includes("student");
+  const isStaffRole = studioRoles.includes("teacher") || studioRoles.includes("admin");
+  if (selfTeacherSection && selfTeacherSelect && isStudentRole && !isStaffRole) {
+    selfTeacherSection.style.display = "";
+    applyTeacherOptionsToSelect(selfTeacherSelect);
+    selfTeacherSelect.addEventListener("change", () => {
+      if (selfTeacherError) {
+        selfTeacherError.textContent = "";
+        selfTeacherError.style.display = "none";
+      }
+    });
+  }
 
   const form = document.getElementById("finishSetupForm");
   const skipBtn = document.getElementById("skipBtn");
@@ -225,13 +331,27 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     const accountType = getAccountType();
-    const storedRoles = safeParseJSON(localStorage.getItem("activeStudioRoles"), []);
-    const studioRoles = normalizeRoles(storedRoles);
     const preservedStaffRoles = studioRoles.filter(r => r === "teacher" || r === "admin");
     const desiredRoles = Array.from(new Set([
       ...(accountType === "parent" || accountType === "adult" ? ["parent"] : []),
-      ...preservedStaffRoles
+      ...preservedStaffRoles,
+      ...(studioRoles.includes("student") ? ["student"] : [])
     ]));
+
+    const selfTeacherSelect = document.getElementById("selfTeacherIds");
+    const selfTeacherError = document.getElementById("selfTeacherError");
+    const selfTeacherIds = Array.from(selfTeacherSelect?.selectedOptions || []).map(o => o.value);
+    if (desiredRoles.includes("student") && !(studioRoles.includes("teacher") || studioRoles.includes("admin"))) {
+      if (teacherOptionData.length === 0 || selfTeacherIds.length === 0) {
+        if (selfTeacherError) {
+          selfTeacherError.textContent = "Please select your teacher.";
+          selfTeacherError.style.display = "block";
+        }
+        showError("Please select your teacher.");
+        if (submitBtn) submitBtn.disabled = false;
+        return;
+      }
+    }
 
     // Idempotent profile upsert prevents duplicate parent rows for the same auth user.
     const { error: updateErr } = await supabase
@@ -242,6 +362,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         firstName,
         lastName,
         roles: desiredRoles,
+        ...(desiredRoles.includes("student") ? { teacherIds: selfTeacherIds } : {}),
         active: true
       }, { onConflict: "id" });
 
@@ -275,6 +396,18 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         // Only create linked students when explicit student info is provided.
         if (!hasFirst || !hasLast) continue;
+        if (teacherOptionData.length === 0) {
+          setTeacherError(entry.row, "Please select your teacher.");
+          showError("Please select your teacher.");
+          if (submitBtn) submitBtn.disabled = false;
+          return;
+        }
+        if (!entry.teacherIds.length) {
+          setTeacherError(entry.row, "Please select your teacher.");
+          showError("Please select your teacher.");
+          if (submitBtn) submitBtn.disabled = false;
+          return;
+        }
 
         studentPayload.push({
           id: crypto.randomUUID(),
@@ -283,7 +416,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           roles: ["student"],
           parent_uuid: authUser.id,
           instrument: parseInstruments(entry.instrumentRaw),
-          teacherIds: [],
+          teacherIds: entry.teacherIds,
           points: 0,
           level: 1,
           active: true,

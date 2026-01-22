@@ -1,6 +1,6 @@
 import { supabase } from './supabaseClient.js';
 import { ensureStudioContextAndRoute } from './studio-routing.js';
-import { ensureUserRow, getAuthUserId, recalculateUserPoints } from './utils.js';
+import { ensureUserRow, getAuthUserId, getViewerContext, recalculateUserPoints } from './utils.js';
 
 const qs = id => document.getElementById(id);
 const safeParse = value => {
@@ -18,48 +18,8 @@ let currentLevelRow = null;
 let isStaffUser = false;
 let isParentReadOnly = false;
 let practiceLoggedToday = false;
-let viewerContextCache = null;
-
 function getParentSelectionKey(studioId, viewerUserId) {
   return studioId && viewerUserId ? `aa.activeStudent.${studioId}.${viewerUserId}` : null;
-}
-
-async function getViewerContext() {
-  const { data: sessionData } = await supabase.auth.getSession();
-  const viewerUserId = sessionData?.session?.user?.id || null;
-  const studioId = localStorage.getItem("activeStudioId");
-
-  let roles = safeParse(localStorage.getItem("activeStudioRoles")) || [];
-  if (!roles.length && viewerUserId && studioId) {
-    const { data: member } = await supabase
-      .from("studio_members")
-      .select("roles")
-      .eq("user_id", viewerUserId)
-      .eq("studio_id", studioId)
-      .single();
-    roles = Array.isArray(member?.roles) ? member.roles : [];
-    localStorage.setItem("activeStudioRoles", JSON.stringify(roles));
-  }
-
-  let mode = "parent";
-  if (roles.includes("admin")) mode = "admin";
-  else if (roles.includes("teacher")) mode = "teacher";
-  else if (roles.includes("student")) mode = "student";
-  else if (roles.includes("parent")) mode = "parent";
-
-  let activeStudentId = null;
-  if (roles.includes("student")) {
-    activeStudentId = viewerUserId;
-  } else if (roles.includes("parent") && !roles.includes("student")) {
-    const key = getParentSelectionKey(studioId, viewerUserId);
-    activeStudentId = (key && localStorage.getItem(key))
-      || localStorage.getItem("activeStudentId")
-      || null;
-  }
-
-  const context = { viewerUserId, roles, studioId, activeStudentId, mode };
-  viewerContextCache = context;
-  return context;
 }
 
 function clearParentSelection(viewerUserId, studioId) {
@@ -97,6 +57,16 @@ function logEmptyFetch(label, userId) {
     roles: ctx.roles,
     studioId: ctx.studioId
   });
+}
+
+function getActiveStudentIdForContext(ctx) {
+  if (!ctx) return null;
+  if (ctx.mode === "student") return ctx.viewerUserId;
+  if (ctx.mode === "parent") {
+    const key = getParentSelectionKey(ctx.studioId, ctx.viewerUserId);
+    return (key && localStorage.getItem(key)) || null;
+  }
+  return null;
 }
 
 
@@ -330,7 +300,7 @@ async function switchUser(user) {
     return;
   }
 
-  const ctx = viewerContextCache || await getViewerContext();
+  const ctx = await getViewerContext();
   if (ctx?.mode === "parent") {
     persistParentSelection(ctx.viewerUserId, ctx.studioId, user.id);
   }
@@ -389,51 +359,48 @@ async function init() {
     return;
   }
 
-  const authUserId = await getAuthUserId();
-  console.log('[Identity] authUserId', authUserId);
-  if (authUserId) {
-    const { data: authProfile, error: authErr } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', authUserId)
-      .single();
-    if (!authErr && authProfile) {
-      console.log('[Identity] loaded profile id', authProfile.id);
-      const name = authProfile.firstName || 'Student';
-      qs('welcomeText').textContent = `Welcome, ${name}!`;
-    }
+  let viewerContext = await getViewerContext();
+  console.log("[Identity] viewer context", viewerContext);
+  if (!viewerContext?.viewerUserId) {
+    window.location.href = "login.html";
+    return;
+  }
+  if (viewerContext.mode === "unknown") {
+    alert("Please finish setup before continuing.");
+    window.location.href = "finish-setup.html";
+    return;
   }
 
-  const activeStudioId = localStorage.getItem("activeStudioId");
+  const authUserId = viewerContext.viewerUserId;
+  const { data: authProfile, error: authErr } = await supabase
+    .from('users')
+    .select('*')
+    .eq('id', authUserId)
+    .single();
+  if (!authErr && authProfile) {
+    console.log('[Identity] loaded profile id', authProfile.id);
+    const name = authProfile.firstName || 'Student';
+    qs('welcomeText').textContent = `Welcome, ${name}!`;
+  }
+
+  const activeStudioId = viewerContext.studioId || localStorage.getItem("activeStudioId");
   console.log('[Home] activeStudioId', activeStudioId);
   if (authUserId && activeStudioId) {
-    const [{ data: studioMember }, { data: studioRow }] = await Promise.all([
-      supabase
-        .from('studio_members')
-        .select('roles')
-        .eq('user_id', authUserId)
-        .eq('studio_id', activeStudioId)
-        .single(),
-      supabase
-        .from('studios')
-        .select('name')
-        .eq('id', activeStudioId)
-        .single()
-    ]);
+    const { data: studioRow } = await supabase
+      .from('studios')
+      .select('name')
+      .eq('id', activeStudioId)
+      .single();
 
-    const studioRoles = Array.isArray(studioMember?.roles) ? studioMember.roles : [];
-    const isStaff = studioRoles.includes('admin') || studioRoles.includes('teacher');
-    const isAdmin = studioRoles.includes('admin');
+    const isStaff = viewerContext.mode === "staff";
+    const isAdmin = viewerContext.isAdmin;
     isStaffUser = isStaff;
-    const isParentRole = studioRoles.includes('parent');
-    const isStudentRole = studioRoles.includes('student');
-    isParentReadOnly = isParentRole && !isStudentRole;
-    localStorage.setItem('activeStudioRoles', JSON.stringify(studioRoles));
+    isParentReadOnly = viewerContext.mode === "parent";
     if (isParentReadOnly) document.body.classList.add('is-parent');
     if (isStaff) document.body.classList.add('is-staff');
     if (isAdmin) document.body.classList.add('is-admin');
-    console.log('[Home] studio roles', studioRoles);
-    console.log('[Home] isAdminOrTeacher', isStaff);
+    console.log('[Home] viewer roles', viewerContext.viewerRoles);
+    console.log('[Home] isStaff', isStaff);
 
     const studioNameLine = document.getElementById('studioNameLine');
     if (studioNameLine) {
@@ -455,7 +422,7 @@ async function init() {
       if (isAdmin) {
         roleBadge.textContent = "ADMIN";
         roleBadge.style.display = "";
-      } else if (studioRoles.includes('teacher')) {
+      } else if (viewerContext.isTeacher) {
         roleBadge.textContent = "TEACHER";
         roleBadge.style.display = "";
       } else {
@@ -476,7 +443,7 @@ async function init() {
       await initStaffQuickLog({
         authUserId,
         studioId: activeStudioId,
-        roles: studioRoles
+        roles: viewerContext.viewerRoles
       });
     }
     applyParentReadOnlyUI();
@@ -499,7 +466,6 @@ async function init() {
 const profile = JSON.parse(raw);
 currentProfile = profile;
 
-  const viewerContext = await getViewerContext();
   if (viewerContext?.mode === "student") {
     clearParentSelection(viewerContext.viewerUserId, viewerContext.studioId);
     if (viewerContext.viewerUserId && String(profile?.id) !== String(viewerContext.viewerUserId)) {
@@ -514,7 +480,6 @@ currentProfile = profile;
       }
     }
   }
-  console.log("[Identity] viewer context", viewerContext);
 
   const parentId = sessionData?.session?.user?.id;
 availableUsers = await loadAvailableUsers(parentId, profile);
@@ -679,7 +644,7 @@ function updatePendingProgressFill() {
 
 async function refreshActiveStudentData({ userId, fallbackProfile } = {}) {
   const ctx = await getViewerContext();
-  const activeStudentId = userId || ctx.activeStudentId;
+  const activeStudentId = userId || getActiveStudentIdForContext(ctx);
   if (!activeStudentId) {
     updateParentProgressState({ hasSelection: false });
     return;

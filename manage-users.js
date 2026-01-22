@@ -1,6 +1,6 @@
 import { supabase } from "./supabaseClient.js";
 import { ensureStudioContextAndRoute } from "./studio-routing.js";
-import { requireStudioRoles } from "./utils.js";
+import { getViewerContext } from "./utils.js";
 
 let allUsers = [];
 let currentPage = 1;
@@ -9,16 +9,27 @@ let searchQuery = "";
 let sortColumn = "lastName";     // ✅ Default sort column
 let sortDirection = 1;           // ✅ Ascending by default
 
+function normalizeRoleList(value) {
+  if (!value) return [];
+  if (Array.isArray(value)) return value.map(r => String(r).toLowerCase());
+  return [String(value).toLowerCase()];
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
   const routeResult = await ensureStudioContextAndRoute({ redirectHome: false });
   if (routeResult?.redirected) return;
 
-  const authz = await requireStudioRoles(["admin"]);
-  console.log("[AuthZ]", { page: "manage-users", requiredRoles: ["admin"], roles: authz.roles, studioId: authz.studioId });
-  if (!authz.ok) return;
+  const viewerContext = await getViewerContext();
+  console.log("[AuthZ]", { page: "manage-users", roles: viewerContext.viewerRoles, studioId: viewerContext.studioId });
+  if (!viewerContext.isAdmin) {
+    alert("Access denied.");
+    window.location.href = "index.html";
+    return;
+  }
 
   await fetchUsers();
   document.getElementById("addUserBtn").addEventListener("click", openAddUserModal);
+  document.getElementById("normalizeStaffRolesBtn")?.addEventListener("click", normalizeStaffRoles);
   setupSearchAndSort();
   updateSortIndicators("lastName");  // ✅ Show arrow for default sort
 });
@@ -29,6 +40,37 @@ async function fetchUsers() {
   if (error) return console.error("Error fetching users:", error);
   allUsers = data;
   renderUsers();
+}
+
+async function normalizeStaffRoles() {
+  const updates = [];
+  allUsers.forEach(user => {
+    const roles = normalizeRoleList(user.roles);
+    if (roles.includes("admin") && !roles.includes("teacher")) {
+      const nextRoles = Array.from(new Set([...roles, "teacher"]));
+      updates.push({ id: user.id, roles: nextRoles });
+    }
+  });
+
+  if (updates.length === 0) {
+    alert("No staff roles needed normalization.");
+    return;
+  }
+
+  try {
+    await Promise.all(
+      updates.map(u => supabase.from("users").update({ roles: u.roles }).eq("id", u.id))
+    );
+    allUsers = allUsers.map(u => {
+      const update = updates.find(x => x.id === u.id);
+      return update ? { ...u, roles: update.roles } : u;
+    });
+    renderUsers();
+    alert(`Updated ${updates.length} user(s).`);
+  } catch (err) {
+    console.error("[NormalizeRoles] failed", err);
+    alert("Failed to normalize staff roles.");
+  }
 }
 
 // ✅ Filter & Sort
@@ -122,7 +164,7 @@ window.updateField = async function(id, field, value) {
 
 // ✅ Render Tags
 function renderRoleTags(user) {
-  const roles = ["student", "teacher", "admin"];
+  const roles = ["student", "teacher", "admin", "parent"];
   const selected = Array.isArray(user.roles) ? user.roles : [user.roles].filter(Boolean);
   return buildTagContainer(user.id, "roles", selected, roles);
 }
@@ -142,6 +184,10 @@ function buildTagContainer(userId, type, selected, options) {
         return t ? { id, name: `${t.firstName} ${t.lastName}` } : null;
       }).filter(Boolean));
 
+  const emptyTag = (type === "teacherIds" && tags.length === 0)
+    ? `<span class="tag tag-empty">None</span>`
+    : "";
+
   const optionsHTML = (type === "roles"
     ? options.filter(r => !selected.includes(r)).map(r => `<div class="tag-option" data-value="${r}">${r}</div>`)
     : options.filter(t => !selected.includes(t.id)).map(t => `<div class="tag-option" data-value="${t.id}">${t.firstName} ${t.lastName}</div>`)).join("");
@@ -152,7 +198,7 @@ function buildTagContainer(userId, type, selected, options) {
 
   return `
     <div class="tag-container" data-id="${userId}" data-type="${type}">
-      ${tagsHTML}
+      ${emptyTag}${tagsHTML}
       <img src="images/icons/plus.png" class="tag-add-icon">
       <div class="tag-options">${optionsHTML}</div>
     </div>
@@ -184,6 +230,37 @@ document.addEventListener("click", e => {
     }
   });
 });
+  const ensureEmptyTag = (container) => {
+    if (!container || container.dataset.type !== "teacherIds") return;
+    const hasTag = container.querySelectorAll(".tag:not(.tag-empty)").length > 0;
+    const emptyTag = container.querySelector(".tag-empty");
+    if (!hasTag && !emptyTag) {
+      const tag = document.createElement("span");
+      tag.className = "tag tag-empty";
+      tag.textContent = "None";
+      container.insertBefore(tag, container.querySelector(".tag-add-icon"));
+    } else if (hasTag && emptyTag) {
+      emptyTag.remove();
+    }
+  };
+  const bindRemove = (removeEl) => {
+    removeEl.addEventListener("click", async () => {
+      const tagEl = removeEl.closest(".tag");
+      const container = removeEl.closest(".tag-container");
+      if (!container) return;
+      const id = container.dataset.id;
+      const type = container.dataset.type;
+      const user = allUsers.find(u => u.id === id);
+      const value = removeEl.dataset.value;
+      if (!user) return;
+
+      user[type] = Array.isArray(user[type]) ? user[type].filter(v => String(v) !== String(value)) : [];
+      await supabase.from("users").update({ [type]: user[type] }).eq("id", id);
+      if (tagEl) tagEl.remove();
+      ensureEmptyTag(container);
+    });
+  };
+  document.querySelectorAll(".remove-tag").forEach(bindRemove);
   document.querySelectorAll(".tag-option").forEach(opt => {
     opt.addEventListener("click", async e => {
       const container = e.target.closest(".tag-container");
@@ -202,13 +279,12 @@ document.addEventListener("click", e => {
       const newTag = document.createElement("span");
       newTag.className = "tag";
       newTag.innerHTML = `${tagLabel}<span class="remove-tag" data-value="${value}">×</span>`;
+      const emptyTag = container.querySelector(".tag-empty");
+      if (emptyTag) emptyTag.remove();
       container.insertBefore(newTag, container.querySelector(".tag-add-icon"));
 
-      newTag.querySelector(".remove-tag").addEventListener("click", async () => {
-        user[type] = user[type].filter(v => v !== value);
-        await supabase.from("users").update({ [type]: user[type] }).eq("id", id);
-        newTag.remove();
-      });
+      const removeEl = newTag.querySelector(".remove-tag");
+      if (removeEl) bindRemove(removeEl);
     });
   });
 }

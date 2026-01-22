@@ -4,6 +4,7 @@ import { recalculateUserPoints, ensureUserRow, getAuthUserId } from './utils.js'
 
 let authViewerId = null;
 let activeStudioId = null;
+let teacherOptionData = [];
 
 // ---------- helpers ----------
 function getHighestRole(roles) {
@@ -17,6 +18,82 @@ function normalizeUUID(value) {
   return String(value);
 }
 function capitalize(str) { return str ? str.charAt(0).toUpperCase() + str.slice(1) : ''; }
+
+function parseRoles(roles) {
+  if (!roles) return [];
+  if (Array.isArray(roles)) return roles.map(r => String(r).toLowerCase());
+  if (typeof roles === "string") {
+    try {
+      const parsed = JSON.parse(roles);
+      return Array.isArray(parsed) ? parsed.map(r => String(r).toLowerCase()) : [String(parsed).toLowerCase()];
+    } catch {
+      return roles.split(",").map(r => r.trim().toLowerCase()).filter(Boolean);
+    }
+  }
+  return [String(roles).toLowerCase()];
+}
+
+function setTeacherError(message) {
+  const errorEl = document.getElementById("teacherSelectError");
+  if (!errorEl) return;
+  errorEl.textContent = message || "";
+  errorEl.style.display = message ? "block" : "none";
+}
+
+function applyTeacherOptionsToSelect(selectEl) {
+  if (!selectEl) return;
+  if (teacherOptionData.length === 0) {
+    selectEl.innerHTML = "";
+    selectEl.disabled = true;
+    const opt = document.createElement("option");
+    opt.value = "";
+    opt.textContent = "No teachers available";
+    selectEl.appendChild(opt);
+    return;
+  }
+  const selected = new Set(Array.from(selectEl.selectedOptions || []).map(o => o.value));
+  selectEl.innerHTML = "";
+  teacherOptionData.forEach(t => {
+    const opt = document.createElement("option");
+    opt.value = t.id;
+    opt.textContent = t.label;
+    if (selected.has(t.id)) opt.selected = true;
+    selectEl.appendChild(opt);
+  });
+}
+
+async function loadTeachersForStudio(studioId) {
+  if (!studioId) {
+    teacherOptionData = [];
+    return;
+  }
+  const { data: users, error } = await supabase
+    .from("users")
+    .select("id, firstName, lastName, roles")
+    .eq("studio_id", studioId);
+
+  if (error) {
+    console.error("[Settings] teacher load failed", error);
+    teacherOptionData = [];
+    return;
+  }
+
+  const teachers = (users || [])
+    .filter(u => {
+      const roles = parseRoles(u.roles);
+      return roles.includes("teacher") || roles.includes("admin");
+    })
+    .sort(
+      (a, b) =>
+        (a.lastName || "").localeCompare(b.lastName || "") ||
+        (a.firstName || "").localeCompare(b.firstName || "")
+    );
+
+  teacherOptionData = teachers.map(t => ({
+    id: t.id,
+    label: (`${t.firstName ?? ""} ${t.lastName ?? ""}`.trim() || "Unnamed Teacher")
+  }));
+}
 function clearActiveStudentCacheIfStudent(roles) {
   if (!Array.isArray(roles)) return;
   const normalized = roles.map(r => String(r).toLowerCase());
@@ -186,6 +263,18 @@ async function saveSettings() {
     email: isEditingOwnAccount ? (newEmail || currentEmail) : currentEmail
   };
 
+  const roleList = parseRoles(profile.roles || profile.role);
+  const teacherWrap = document.getElementById("teacherSelectWrap");
+  const teacherSelect = document.getElementById("teacherIds");
+  if (teacherWrap && teacherSelect && roleList.includes("student")) {
+    const teacherIds = Array.from(teacherSelect.selectedOptions || []).map(o => o.value);
+    if (teacherOptionData.length > 0 && teacherIds.length === 0) {
+      setTeacherError("Please select your teacher.");
+      return;
+    }
+    updatedUser.teacherIds = teacherIds;
+  }
+
   try {
     // 1) Update profile in your users table
     const { error: dbError } = await supabase.from('users').update(updatedUser).eq('id', profile.id);
@@ -293,6 +382,22 @@ return;
   document.getElementById('lastName').value  = user.lastName  || '';
   document.getElementById('newEmail').value  = user.email     || '';
   document.getElementById('avatarImage').src = user.avatarUrl || 'images/logos/default.png';
+  const teacherWrap = document.getElementById("teacherSelectWrap");
+  const teacherSelect = document.getElementById("teacherIds");
+  const roleList = parseRoles(user.roles || user.role);
+  if (teacherWrap && teacherSelect && roleList.includes("student")) {
+    teacherWrap.style.display = "";
+    await loadTeachersForStudio(activeStudioId);
+    applyTeacherOptionsToSelect(teacherSelect);
+    const selectedIds = Array.isArray(user.teacherIds) ? user.teacherIds.map(String) : [user.teacherIds].filter(Boolean).map(String);
+    selectedIds.forEach(id => {
+      const opt = Array.from(teacherSelect.options).find(o => o.value === id);
+      if (opt) opt.selected = true;
+    });
+    teacherSelect.addEventListener("change", () => setTeacherError(""));
+  } else if (teacherWrap) {
+    teacherWrap.style.display = "none";
+  }
   // ----- Avatar click → file picker + upload -----
   const avatarImgEl = document.getElementById('avatarImage');
   const avatarInputEl = document.getElementById('avatarInput');
