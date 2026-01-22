@@ -1,4 +1,5 @@
 import { supabase } from "./supabaseClient.js";
+import { getActiveProfileId, setActiveProfileId } from "./active-profile.js";
 
 export async function getAuthUserId() {
   const { data: authData } = await supabase.auth.getUser();
@@ -33,8 +34,13 @@ export async function getViewerContext() {
       isStudent: false,
       isParent: false,
       mode: "unknown",
-      studioId: null
+      studioId: null,
+      activeProfileId: null
     };
+  }
+
+  if (!getActiveProfileId()) {
+    setActiveProfileId(viewerUserId);
   }
 
   let studioId = localStorage.getItem("activeStudioId");
@@ -42,14 +48,24 @@ export async function getViewerContext() {
     studioId = await getActiveStudioIdForUser(viewerUserId);
   }
 
-  const { data: viewerProfile, error } = await supabase
+  const activeProfileId = getActiveProfileId() || viewerUserId;
+  let { data: viewerProfile, error } = await supabase
     .from("users")
     .select("roles, studio_id")
-    .eq("id", viewerUserId)
+    .eq("id", activeProfileId)
     .single();
 
   if (error) {
     console.error("[ViewerContext] user lookup failed", error);
+  }
+  if (!viewerProfile && activeProfileId !== viewerUserId) {
+    const { data: fallbackProfile } = await supabase
+      .from("users")
+      .select("roles, studio_id")
+      .eq("id", viewerUserId)
+      .single();
+    viewerProfile = fallbackProfile || null;
+    setActiveProfileId(viewerUserId);
   }
 
   if (!studioId && viewerProfile?.studio_id) {
@@ -78,7 +94,8 @@ export async function getViewerContext() {
     isStudent,
     isParent,
     mode,
-    studioId
+    studioId,
+    activeProfileId
   };
 }
 
@@ -216,6 +233,10 @@ export async function ensureUserRow() {
   const authUser = authData?.user || null;
   if (!authUser?.id) return null;
 
+  if (!getActiveProfileId()) {
+    setActiveProfileId(authUser.id);
+  }
+
   const payload = {
     id: authUser.id,
     email: authUser.email,
@@ -231,15 +252,27 @@ export async function ensureUserRow() {
     return null;
   }
 
-  const { data: row, error: selectError } = await supabase
+  const profileId = getActiveProfileId() || authUser.id;
+  let { data: row, error: selectError } = await supabase
     .from("users")
     .select("*")
-    .eq("id", authUser.id)
+    .eq("id", profileId)
     .single();
 
   if (selectError) {
     console.error("[UserRow] select failed:", selectError);
-    return null;
+    if (profileId !== authUser.id) {
+      const { data: fallbackRow } = await supabase
+        .from("users")
+        .select("*")
+        .eq("id", authUser.id)
+        .single();
+      if (fallbackRow) {
+        setActiveProfileId(authUser.id);
+        row = fallbackRow;
+      }
+    }
+    if (!row) return null;
   }
 
   console.log("[UserRow] ensured id/email", authUser.id, authUser.email);

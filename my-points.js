@@ -18,7 +18,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   console.log("[Identity] viewer context", viewerContext);
   let activeStudentId = null;
   if (viewerContext.mode === "student") {
-    activeStudentId = viewerContext.viewerUserId;
+    activeStudentId = viewerContext.activeProfileId || viewerContext.viewerUserId;
   } else if (viewerContext.mode === "parent") {
     const key = viewerContext.studioId && viewerContext.viewerUserId
       ? `aa.activeStudent.${viewerContext.studioId}.${viewerContext.viewerUserId}`

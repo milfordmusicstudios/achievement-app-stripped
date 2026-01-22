@@ -1,6 +1,7 @@
 import { supabase } from './supabaseClient.js';
 import { ensureStudioContextAndRoute } from './studio-routing.js';
 import { ensureUserRow, getAuthUserId, getViewerContext, recalculateUserPoints } from './utils.js';
+import { getActiveProfileId, setActiveProfileId } from './active-profile.js';
 
 const qs = id => document.getElementById(id);
 const safeParse = value => {
@@ -61,7 +62,7 @@ function logEmptyFetch(label, userId) {
 
 function getActiveStudentIdForContext(ctx) {
   if (!ctx) return null;
-  if (ctx.mode === "student") return ctx.viewerUserId;
+  if (ctx.mode === "student") return ctx.activeProfileId || ctx.viewerUserId;
   if (ctx.mode === "parent") {
     const key = getParentSelectionKey(ctx.studioId, ctx.viewerUserId);
     return (key && localStorage.getItem(key)) || null;
@@ -302,6 +303,7 @@ async function switchUser(user) {
   if (ctx?.mode === "parent") {
     persistParentSelection(ctx.viewerUserId, ctx.studioId, user.id);
   }
+  setActiveProfileId(user.id);
   localStorage.setItem("loggedInUser", JSON.stringify(user));
   localStorage.setItem("activeStudentId", user.id);
   currentProfile = user;
@@ -370,10 +372,11 @@ async function init() {
   }
 
   const authUserId = viewerContext.viewerUserId;
+  const activeProfileId = viewerContext.activeProfileId || authUserId;
   const { data: authProfile, error: authErr } = await supabase
     .from('users')
     .select('*')
-    .eq('id', authUserId)
+    .eq('id', activeProfileId)
     .single();
   if (!authErr && authProfile) {
     console.log('[Identity] loaded profile id', authProfile.id);
@@ -447,7 +450,11 @@ async function init() {
     applyParentReadOnlyUI();
   }
 
-  await ensureUserRow();
+  const ensuredProfile = await ensureUserRow();
+  if (ensuredProfile) {
+    localStorage.setItem("loggedInUser", JSON.stringify(ensuredProfile));
+  }
+  const activeProfileIdCurrent = getActiveProfileId() || authUserId;
 
   const routeResult = await ensureStudioContextAndRoute({ redirectHome: false });
   if (routeResult?.redirected) return;
@@ -455,22 +462,22 @@ async function init() {
 
   // 🔁 Active student must already be selected
   const raw = localStorage.getItem("loggedInUser");
-  if (!raw) {
+  if (!raw && !ensuredProfile) {
     // Logged in parent, but no student selected yet
     window.location.href = "settings.html";
     return;
   }
 
-const profile = JSON.parse(raw);
+const profile = ensuredProfile || JSON.parse(raw);
 currentProfile = profile;
 
   if (viewerContext?.mode === "student") {
     clearParentSelection(viewerContext.viewerUserId, viewerContext.studioId);
-    if (viewerContext.viewerUserId && String(profile?.id) !== String(viewerContext.viewerUserId)) {
+    if (activeProfileIdCurrent && String(profile?.id) !== String(activeProfileIdCurrent)) {
       const { data: viewerProfile } = await supabase
         .from("users")
         .select("*")
-        .eq("id", viewerContext.viewerUserId)
+        .eq("id", activeProfileIdCurrent)
         .single();
       if (viewerProfile) {
         currentProfile = viewerProfile;

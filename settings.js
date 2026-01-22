@@ -1,6 +1,7 @@
 // settings.js — patched to fix password/email updates with switched profiles
 import { supabase } from "./supabaseClient.js";
 import { recalculateUserPoints, ensureUserRow, getAuthUserId } from './utils.js';
+import { setActiveProfileId } from './active-profile.js';
 
 let authViewerId = null;
 let activeStudioId = null;
@@ -144,6 +145,20 @@ async function promptUserSwitch() {
   const listContainer = document.getElementById('userSwitchList');
   listContainer.innerHTML = '';
 
+  if (authViewerId) {
+    const li = document.createElement('li');
+    const btn = document.createElement('button');
+    btn.className = 'blue-button';
+    btn.style = 'margin: 5px 0; width: 100%;';
+    btn.textContent = 'Parent (Me)';
+    btn.onclick = () => {
+      setActiveProfileId(authViewerId);
+      window.location.href = 'index.html';
+    };
+    li.appendChild(btn);
+    listContainer.appendChild(li);
+  }
+
   others.forEach(u => {
     const li = document.createElement('li');
     const btn = document.createElement('button');
@@ -154,6 +169,7 @@ async function promptUserSwitch() {
     btn.onclick = async () => {
       // Option A: loggedInUser is the selected STUDENT profile
       localStorage.setItem('loggedInUser', JSON.stringify(u));
+      setActiveProfileId(u.id);
 
       // keep your existing "highest role" logic
       const priority = { admin:3, teacher:2, student:1, parent:0 };

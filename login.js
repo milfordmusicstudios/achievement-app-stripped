@@ -2,6 +2,7 @@
 import { supabase } from "./supabaseClient.js";
 import { finalizePostAuth } from "./studio-routing.js";
 import { ensureUserRow } from "./utils.js";
+import { setActiveProfileId } from "./active-profile.js";
 
 async function createStudioStudents(students, parentId, studioId) {
   if (!crypto?.randomUUID) {
@@ -38,6 +39,7 @@ window.selectStudent = function(student) {
   console.log("DEBUG: Student selected", student?.id);
   localStorage.setItem('loggedInUser', JSON.stringify(student));
   localStorage.setItem('activeStudentId', student.id);
+  setActiveProfileId(student.id);
   document.getElementById('studentSelectOverlay')?.style && (document.getElementById('studentSelectOverlay').style.display = 'none');
   window.location.href = 'index.html';
 };
