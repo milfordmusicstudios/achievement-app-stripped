@@ -71,6 +71,7 @@
 <div id="envBadge" class="env-badge" style="display:none;"></div>
 
 <main class="app">
+  <div id="activeStudentHeader"></div>
   <h2 style="text-align: center; color: #3399e8; margin: 10px 0;">Account Settings</h2>
 
   <form class="settings-form">
@@ -117,6 +118,11 @@
       <button id="logoutBtn" type="button" class="blue-button">Logout</button>
     </div>
   </form>
+
+  <section id="linkedStudentsSection" class="settings-section">
+    <h3 class="settings-section-title">Students on this account</h3>
+    <div id="linkedStudentsList" class="linked-students"></div>
+  </section>
 </main>
 
 <!-- ✅ Avatar Help Modal -->

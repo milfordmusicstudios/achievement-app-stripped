@@ -1,5 +1,5 @@
 import { supabase } from "./supabaseClient.js";
-import { ensureUserRow } from "./utils.js";
+import { clearAppSessionCache, ensureUserRow } from "./utils.js";
 import { ensureStudioContextAndRoute } from "./studio-routing.js";
 
 function showError(message) {
@@ -569,13 +569,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   logoutBtn?.addEventListener("click", async () => {
     await supabase.auth.signOut();
-    localStorage.removeItem("loggedInUser");
-    localStorage.removeItem("activeStudioId");
-    localStorage.removeItem("activeStudioRoles");
-    localStorage.removeItem("pendingInviteToken");
-    localStorage.removeItem("pendingInviteStudioId");
-    localStorage.removeItem("pendingInviteEmail");
-    localStorage.removeItem("pendingInviteRoleHint");
+    await clearAppSessionCache("logout");
     window.location.href = "login.html";
   });
 });

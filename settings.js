@@ -1,11 +1,14 @@
 // settings.js — patched to fix password/email updates with switched profiles
 import { supabase } from "./supabaseClient.js";
-import { recalculateUserPoints, ensureUserRow, getAuthUserId } from './utils.js';
-import { setActiveProfileId } from './active-profile.js';
+import { clearAppSessionCache, recalculateUserPoints, ensureUserRow, getAuthUserId, getViewerContext, renderActiveStudentHeader } from './utils.js';
+import { clearActiveProfileId, getActiveProfileId, setActiveProfileId } from './active-profile.js';
 
 let authViewerId = null;
 let activeStudioId = null;
 let teacherOptionData = [];
+let authEmail = null;
+let authProfileCache = null;
+const REAUTH_WINDOW_MS = 10 * 60 * 1000;
 
 // ---------- helpers ----------
 function getHighestRole(roles) {
@@ -39,6 +42,168 @@ function setTeacherError(message) {
   if (!errorEl) return;
   errorEl.textContent = message || "";
   errorEl.style.display = message ? "block" : "none";
+}
+
+async function requireReauth() {
+  const last = Number(sessionStorage.getItem("reauthAt") || 0);
+  if (last && Date.now() - last < REAUTH_WINDOW_MS) return true;
+
+  const passwordInput = document.getElementById("currentPassword");
+  const password = (passwordInput?.value || "").trim();
+  if (!password) {
+    alert("Please enter your current password to continue.");
+    return false;
+  }
+
+  const { data: authData } = await supabase.auth.getUser();
+  const email = authEmail || authData?.user?.email;
+  if (!email) {
+    alert("Missing account email. Please log in again.");
+    return false;
+  }
+
+  const { error } = await supabase.auth.signInWithPassword({
+    email,
+    password
+  });
+
+  if (error) {
+    alert("Current password is incorrect.");
+    return false;
+  }
+
+  sessionStorage.setItem("reauthAt", String(Date.now()));
+  return true;
+}
+
+async function loadLinkedStudents(parentId, studioId) {
+  if (!parentId) return [];
+  let query = supabase
+    .from("parent_student_links")
+    .select("student_id")
+    .eq("parent_id", parentId);
+  if (studioId) query = query.eq("studio_id", studioId);
+
+  const { data: links, error } = await query;
+  if (error) {
+    console.error("[Settings] parent_student_links fetch failed", error);
+    return [];
+  }
+  const ids = (links || []).map(l => l.student_id).filter(Boolean);
+  if (!ids.length) return [];
+
+  const { data: students, error: studentErr } = await supabase
+    .from("users")
+    .select("id, firstName, lastName, avatarUrl, deactivated_at")
+    .in("id", ids)
+    .order("lastName", { ascending: true })
+    .order("firstName", { ascending: true });
+  if (studentErr) {
+    console.error("[Settings] linked students fetch failed", studentErr);
+    return [];
+  }
+  return Array.isArray(students) ? students : [];
+}
+
+async function renderLinkedStudents(parentId, studioId) {
+  const list = document.getElementById("linkedStudentsList");
+  if (!list) return;
+  list.innerHTML = "<p class=\"empty-state\">Loading students...</p>";
+
+  const students = await loadLinkedStudents(parentId, studioId);
+  const activeProfileId = getActiveProfileId();
+  const activeRow = students.find(s => String(s.id) === String(activeProfileId));
+
+  if (activeRow?.deactivated_at) {
+    const nextActive = students.find(s => !s.deactivated_at);
+    if (nextActive) {
+      setActiveProfileId(nextActive.id);
+      window.location.reload();
+      return;
+    }
+    clearActiveProfileId();
+  }
+
+  if (!students.length) {
+    list.innerHTML = "<p class=\"empty-state\">No students linked to this account yet.</p>";
+    return;
+  }
+
+  list.innerHTML = "";
+  students.forEach(student => {
+    const isActive = !student.deactivated_at;
+    const isCurrent = String(student.id) === String(activeProfileId);
+    const name = `${student.firstName ?? ""} ${student.lastName ?? ""}`.trim() || "Student";
+    const card = document.createElement("div");
+    card.className = "linked-student-card";
+
+    card.innerHTML = `
+      <div>
+        <div class="linked-student-name">
+          ${name}
+          ${isCurrent ? "<span class=\"linked-student-tag\">CURRENT</span>" : ""}
+          ${isActive ? "<span class=\"linked-student-tag\">ACTIVE</span>" : "<span class=\"linked-student-tag\">INACTIVE</span>"}
+        </div>
+        <div class="linked-student-meta">${isActive ? "Active profile" : "Inactive profile"}</div>
+      </div>
+      <div class="linked-student-actions">
+        <button class="blue-button" data-action="set-active" data-id="${student.id}" ${isActive ? "" : "disabled"}>
+          ${isCurrent ? "Current" : "Make Current"}
+        </button>
+        <button class="blue-button" data-action="toggle-active" data-id="${student.id}">
+          ${isActive ? "Deactivate" : "Activate"}
+        </button>
+      </div>
+    `;
+
+    list.appendChild(card);
+  });
+
+  list.querySelectorAll("button[data-action]").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const action = btn.dataset.action;
+      const studentId = btn.dataset.id;
+      if (!studentId) return;
+
+      const ok = await requireReauth();
+      if (!ok) return;
+
+      if (action === "set-active") {
+        setActiveProfileId(studentId);
+        window.location.reload();
+        return;
+      }
+
+      if (action === "toggle-active") {
+        const target = students.find(s => String(s.id) === String(studentId));
+        const isActive = target && !target.deactivated_at;
+        const nextValue = isActive ? new Date().toISOString() : null;
+        const { error } = await supabase
+          .from("users")
+          .update({ deactivated_at: nextValue })
+          .eq("id", studentId);
+        if (error) {
+          console.error("[Settings] failed to update student status", error);
+          alert("Failed to update student status.");
+          return;
+        }
+
+        if (isActive && String(studentId) === String(getActiveProfileId())) {
+          const refresh = await loadLinkedStudents(parentId, studioId);
+          const nextActive = refresh.find(s => !s.deactivated_at);
+          if (nextActive) {
+            setActiveProfileId(nextActive.id);
+          } else {
+            clearActiveProfileId();
+          }
+          window.location.reload();
+          return;
+        }
+
+        await renderLinkedStudents(parentId, studioId);
+      }
+    });
+  });
 }
 
 function applyTeacherOptionsToSelect(selectEl) {
@@ -152,8 +317,12 @@ async function promptUserSwitch() {
     btn.style = 'margin: 5px 0; width: 100%;';
     btn.textContent = 'Parent (Me)';
     btn.onclick = () => {
-      setActiveProfileId(authViewerId);
-      window.location.href = 'index.html';
+      (async () => {
+        const ok = await requireReauth();
+        if (!ok) return;
+        setActiveProfileId(authViewerId);
+        window.location.href = 'index.html';
+      })();
     };
     li.appendChild(btn);
     listContainer.appendChild(li);
@@ -167,6 +336,8 @@ async function promptUserSwitch() {
     const rolesText = Array.isArray(u.roles) ? u.roles.join(', ') : (u.role || '');
     btn.textContent = `${u.firstName ?? ''} ${u.lastName ?? ''} (${rolesText})`.trim();
     btn.onclick = async () => {
+      const ok = await requireReauth();
+      if (!ok) return;
       // Option A: loggedInUser is the selected STUDENT profile
       localStorage.setItem('loggedInUser', JSON.stringify(u));
       setActiveProfileId(u.id);
@@ -271,6 +442,10 @@ async function saveSettings() {
   const newPassword   = (document.getElementById('newPassword').value || '').trim();
   const currentPassword = (document.getElementById('currentPassword').value || '').trim();
 
+  const roleList = parseRoles(profile.roles || profile.role);
+  const teacherWrap = document.getElementById("teacherSelectWrap");
+  const teacherSelect = document.getElementById("teacherIds");
+
   // Profile fields always editable
   const updatedUser = {
     firstName: (document.getElementById('firstName').value || '').trim(),
@@ -279,9 +454,6 @@ async function saveSettings() {
     email: isEditingOwnAccount ? (newEmail || currentEmail) : currentEmail
   };
 
-  const roleList = parseRoles(profile.roles || profile.role);
-  const teacherWrap = document.getElementById("teacherSelectWrap");
-  const teacherSelect = document.getElementById("teacherIds");
   if (teacherWrap && teacherSelect && roleList.includes("student")) {
     const teacherIds = Array.from(teacherSelect.selectedOptions || []).map(o => o.value);
     if (teacherOptionData.length > 0 && teacherIds.length === 0) {
@@ -292,6 +464,18 @@ async function saveSettings() {
   }
 
   try {
+    const requiresAuth = (
+      updatedUser.firstName !== (profile.firstName || "") ||
+      updatedUser.lastName !== (profile.lastName || "") ||
+      (newEmail && newEmail !== currentEmail) ||
+      !!newPassword ||
+      (teacherWrap && teacherSelect && roleList.includes("student"))
+    );
+    if (requiresAuth) {
+      const ok = await requireReauth();
+      if (!ok) return;
+    }
+
     // 1) Update profile in your users table
     const { error: dbError } = await supabase.from('users').update(updatedUser).eq('id', profile.id);
     if (dbError) throw dbError;
@@ -300,24 +484,6 @@ async function saveSettings() {
     if (isEditingOwnAccount) {
       const emailChanged    = !!(newEmail && newEmail !== currentEmail);
       const passwordChanged = !!newPassword;
-
-      if ((emailChanged || passwordChanged) && !currentPassword) {
-        alert('Please enter your current password to make changes.');
-        return;
-      }
-
-      if (emailChanged || passwordChanged) {
-        // Re-auth with the ACTUAL signed-in user
-        const authEmail = authUser.email;
-        const { error: reauthErr } = await supabase.auth.signInWithPassword({
-          email: authEmail,
-          password: currentPassword
-        });
-        if (reauthErr) {
-          alert('Current password is incorrect.');
-          return;
-        }
-      }
 
       if (emailChanged) {
         const { error: emailErr } = await supabase.auth.updateUser({ email: newEmail });
@@ -359,7 +525,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
   authViewerId = authUserId;
-  activeStudioId = localStorage.getItem('activeStudioId');
+  const viewerContext = await getViewerContext();
+  activeStudioId = viewerContext?.studioId || localStorage.getItem('activeStudioId');
+
+  await renderActiveStudentHeader({
+    mountId: "activeStudentHeader",
+    contentSelector: ".settings-student-content"
+  });
 
   const { data: authProfile, error: authProfileErr } = await supabase
     .from('users')
@@ -375,6 +547,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   console.log('[Identity] loaded profile id', authProfile.id);
+  authProfileCache = authProfile;
+  const { data: authData } = await supabase.auth.getUser();
+  authEmail = authData?.user?.email || authProfile?.email || null;
   let user = authProfile;
   let activeRole = localStorage.getItem('activeRole');
   if (!activeRole && user?.roles) {
@@ -396,7 +571,7 @@ return;
   // hydrate fields
   document.getElementById('firstName').value = user.firstName || '';
   document.getElementById('lastName').value  = user.lastName  || '';
-  document.getElementById('newEmail').value  = user.email     || '';
+  document.getElementById('newEmail').value  = authEmail || user.email || '';
   document.getElementById('avatarImage').src = user.avatarUrl || 'images/logos/default.png';
   const teacherWrap = document.getElementById("teacherSelectWrap");
   const teacherSelect = document.getElementById("teacherIds");
@@ -480,7 +655,6 @@ return;
   }
 
   // determine if viewing own account for creds guard
-  const { data: authData } = await supabase.auth.getUser();
   const authUser = authData?.user || null;
   applyCredsGuard(!!(authUser && authUser.id === user.id));
 
@@ -488,28 +662,16 @@ return;
 let updatedAllUsers = JSON.parse(localStorage.getItem('allUsers')) || [];
 if (!updatedAllUsers.some(u => String(u.id) === String(user.id))) updatedAllUsers.push(user);
 
-// IMPORTANT: use the AUTH login id (parent) to fetch children
-const { data: authData2 } = await supabase.auth.getUser();
-const authUser2 = authData2?.user || null;
-
-if (authUser2?.id) {
-  const { data: kids, error: kidsErr } = await supabase
-    .from('users')
-    .select('*')
-    .eq('parent_uuid', authUser2.id);
-
-  if (kidsErr) {
-    console.error('[Settings] Failed to load children:', kidsErr);
-  } else {
-    (kids || []).forEach(k => {
-      if (!updatedAllUsers.some(u => String(u.id) === String(k.id))) updatedAllUsers.push(k);
-    });
-  }
-}
+const linkedForSwitch = await loadLinkedStudents(authUserId, activeStudioId);
+linkedForSwitch.forEach(k => {
+  if (!updatedAllUsers.some(u => String(u.id) === String(k.id))) updatedAllUsers.push(k);
+});
 
 // de-dupe
 updatedAllUsers = updatedAllUsers.filter((v, i, a) => a.findIndex(t => String(t.id) === String(v.id)) === i);
 localStorage.setItem('allUsers', JSON.stringify(updatedAllUsers));
+
+  await renderLinkedStudents(authUserId, activeStudioId);
 
   // show/hide switch buttons
   document.getElementById('switchUserBtn').style.display = (updatedAllUsers.length > 1) ? 'inline-block' : 'none';
@@ -518,7 +680,7 @@ localStorage.setItem('allUsers', JSON.stringify(updatedAllUsers));
   // wire buttons
   document.getElementById('logoutBtn').addEventListener('click', async () => {
     await supabase.auth.signOut();
-    localStorage.clear();
+    await clearAppSessionCache("logout");
     window.location.href = 'login.html';
   });
   document.getElementById('cancelBtn').addEventListener('click', () => window.location.href = 'index.html');

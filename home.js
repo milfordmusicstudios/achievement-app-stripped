@@ -1,6 +1,6 @@
 import { supabase } from './supabaseClient.js';
 import { ensureStudioContextAndRoute } from './studio-routing.js';
-import { ensureUserRow, getAuthUserId, getViewerContext } from './utils.js';
+import { clearAppSessionCache, ensureUserRow, getAuthUserId, getViewerContext, renderActiveStudentHeader } from './utils.js';
 import { getActiveProfileId, setActiveProfileId } from './active-profile.js';
 
 const qs = id => document.getElementById(id);
@@ -173,7 +173,22 @@ async function loadAvailableUsers(parentId, fallbackProfile) {
   let users = safeParse(localStorage.getItem("allUsers"));
   if (!Array.isArray(users)) users = [];
 
-  if (!users.length && parentId) {
+  if (isParentReadOnly && parentId) {
+    const { data, error } = await supabase
+      .from("users")
+      .select("*")
+      .eq("parent_uuid", parentId)
+      .order("created_at", { ascending: true });
+
+    if (!error && Array.isArray(data)) {
+      users = data;
+      if (!users.length) {
+        await clearAppSessionCache("no parent_student_links");
+        return [];
+      }
+      localStorage.setItem("allUsers", JSON.stringify(users));
+    }
+  } else if (!users.length && parentId) {
     const { data, error } = await supabase
       .from("users")
       .select("*")
@@ -186,7 +201,7 @@ async function loadAvailableUsers(parentId, fallbackProfile) {
     }
   }
 
-  if (fallbackProfile) users.push(fallbackProfile);
+  if (fallbackProfile && (!isParentReadOnly || users.length > 0)) users.push(fallbackProfile);
   return uniqueUsers(users);
 }
 
@@ -249,8 +264,20 @@ function initParentViewerSelector(users, activeProfile, viewerUserId, studioId) 
   const select = qs("parentStudentSelect");
   if (!row || !select) return;
 
-  if (!isParentReadOnly || !Array.isArray(users) || users.length === 0) {
+  if (!isParentReadOnly || !Array.isArray(users)) {
     row.style.display = "none";
+    return;
+  }
+
+  if (users.length === 0) {
+    select.innerHTML = "";
+    const option = document.createElement("option");
+    option.value = "";
+    option.textContent = "No students found";
+    select.appendChild(option);
+    select.disabled = true;
+    row.style.display = "";
+    updateParentProgressState({ hasSelection: false });
     return;
   }
 
@@ -316,6 +343,92 @@ function updateParentProgressState({ hasSelection }) {
   }
   if (progressWrap) progressWrap.style.display = hasSelection ? "" : "none";
   if (notice) notice.style.display = hasSelection ? "none" : "block";
+}
+
+function ensureParentActionsRow() {
+  let row = qs("parentActionsRow");
+  if (row) return row;
+
+  row = document.createElement("div");
+  row.id = "parentActionsRow";
+  row.className = "home-nav";
+  row.style.display = "none";
+  row.innerHTML = `
+    <a class="nav-btn" href="settings.html">Settings</a>
+  `;
+  const parentViewer = qs("parentViewerRow");
+  if (parentViewer?.parentNode) {
+    parentViewer.parentNode.insertBefore(row, parentViewer.nextSibling);
+  }
+  return row;
+}
+
+function setParentNotice(text) {
+  const notice = qs("parentProgressNotice");
+  if (notice && typeof text === "string") {
+    notice.textContent = text;
+  }
+}
+
+function setHomeMode(mode) {
+  const studentEls = document.querySelectorAll(".student-only");
+  const staffEls = document.querySelectorAll(".staff-only");
+  const header = qs("homeHeader");
+  const staffMount = qs("staffQuickLogMount");
+  const parentViewer = qs("parentViewerRow");
+  const parentActions = ensureParentActionsRow();
+
+  if (mode === "parent") {
+    studentEls.forEach(el => el.style.display = "none");
+    staffEls.forEach(el => el.style.display = "none");
+    if (header) header.style.display = "none";
+    if (staffMount) staffMount.style.display = "none";
+    if (parentViewer) parentViewer.style.display = "";
+    if (parentActions) parentActions.style.display = "";
+    updateParentProgressState({ hasSelection: false });
+    return;
+  }
+
+  studentEls.forEach(el => el.style.display = "");
+  staffEls.forEach(el => el.style.display = isStaffUser ? "" : "none");
+  if (header) header.style.display = "";
+  if (staffMount) staffMount.style.display = isStaffUser ? "" : "none";
+  if (parentViewer) parentViewer.style.display = "none";
+  if (parentActions) parentActions.style.display = "none";
+}
+
+async function loadLinkedStudentsForParent(parentId, studioId) {
+  if (!parentId) return [];
+  let query = supabase
+    .from("parent_student_links")
+    .select("student_id")
+    .eq("parent_id", parentId);
+  if (studioId) {
+    query = query.eq("studio_id", studioId);
+  }
+
+  const { data: links, error } = await query;
+  if (error) {
+    console.error("[Home] parent_student_links fetch failed", error);
+    return [];
+  }
+  const studentIds = (links || []).map(l => l.student_id).filter(Boolean);
+  if (studentIds.length === 0) {
+    await clearAppSessionCache("no parent_student_links");
+    return [];
+  }
+
+  const { data: students, error: studentsErr } = await supabase
+    .from("users")
+    .select("id, firstName, lastName, roles, avatarUrl")
+    .in("id", studentIds)
+    .order("lastName", { ascending: true })
+    .order("firstName", { ascending: true });
+  if (studentsErr) {
+    console.error("[Home] linked students fetch failed", studentsErr);
+    return [];
+  }
+  return Array.isArray(students) ? students : [];
 }
 
 async function refreshHomeForUser(profile) {
@@ -405,6 +518,48 @@ async function init() {
   }
 
   const authUserId = viewerContext.viewerUserId;
+
+  if (viewerContext.mode === "parent") {
+    isParentReadOnly = true;
+    setHomeMode("parent");
+    const linkedStudents = await loadLinkedStudentsForParent(authUserId, viewerContext.studioId);
+    if (linkedStudents.length === 1) {
+      const studentId = linkedStudents[0].id;
+      if (studentId && String(getActiveProfileId() || "") !== String(studentId)) {
+        setActiveProfileId(studentId);
+        window.location.href = "index.html";
+        return;
+      }
+    } else if (linkedStudents.length === 0) {
+      setParentNotice("No students yet. Go to Settings to add one.");
+      initParentViewerSelector([], null, authUserId, viewerContext.studioId);
+      return;
+    } else {
+      const storedKey = getParentSelectionKey(viewerContext.studioId, authUserId);
+      const stored = storedKey ? localStorage.getItem(storedKey) : null;
+      const storedExists = stored && linkedStudents.some(s => String(s.id) === String(stored));
+      if (storedExists && String(getActiveProfileId() || "") !== String(stored)) {
+        setActiveProfileId(stored);
+        window.location.href = "index.html";
+        return;
+      }
+      if (stored && !storedExists && storedKey) {
+        localStorage.removeItem(storedKey);
+      }
+      setParentNotice("Select a student to continue.");
+      initParentViewerSelector(linkedStudents, null, authUserId, viewerContext.studioId);
+      return;
+    }
+  }
+
+  if (viewerContext.mode === "student") {
+    await renderActiveStudentHeader({
+      useHomeHeader: true,
+      nameTemplate: (student) => `Welcome, ${student?.firstName || "Student"}!`,
+      skipMenu: true
+    });
+  }
+
   const activeProfileId = viewerContext.activeProfileId || authUserId;
   const { data: authProfile, error: authErr } = await supabase
     .from('users')

@@ -485,6 +485,118 @@ body.is-admin #roleBadgeTeacher {
   border-color: rgba(18,121,200,0.35);
 }
 
+.active-student-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  margin: 10px 0 16px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+}
+
+.active-student-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.active-student-center {
+  flex: 1;
+  text-align: left;
+}
+
+.active-student-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #0B2D4A;
+}
+
+.active-student-badge {
+  width: 46px;
+  height: 46px;
+  object-fit: contain;
+}
+
+.active-student-select select {
+  width: 100%;
+  max-width: 320px;
+  padding: 8px 10px;
+  border: 2px solid #D6E6F3;
+  border-radius: 10px;
+  font-size: 1rem;
+}
+
+.active-student-empty,
+.active-student-select {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.settings-section {
+  max-width: 700px;
+  margin: 20px auto 0;
+  padding: 14px 16px;
+  background: #ffffff;
+  border-radius: 14px;
+  border: 2px solid rgba(11,79,138,0.12);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.06);
+}
+
+.settings-section-title {
+  margin: 0 0 12px;
+  font-size: 1.1rem;
+  color: #0B4F8A;
+}
+
+.linked-students {
+  display: grid;
+  gap: 10px;
+}
+
+.linked-student-card {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(11,79,138,0.06);
+  border: 1px solid rgba(11,79,138,0.12);
+}
+
+.linked-student-name {
+  font-weight: 700;
+  color: #0B2D4A;
+}
+
+.linked-student-meta {
+  font-size: 0.9rem;
+  color: #3b5b7a;
+}
+
+.linked-student-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.linked-student-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #0B4F8A;
+  background: rgba(11,79,138,0.12);
+  margin-left: 6px;
+}
+
 /* Level badge */
 .identity-level img {
   width: 130px;

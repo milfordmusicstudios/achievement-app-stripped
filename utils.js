@@ -22,6 +22,47 @@ export function parseRoles(raw) {
   return [String(raw).toLowerCase()];
 }
 
+export async function clearAppSessionCache(reason = "unknown") {
+  const keysToRemove = [
+    "aa_active_profile_id",
+    "activeStudioId",
+    "activeStudioRoles",
+    "activeRole",
+    "activeStudentId",
+    "loggedInUser",
+    "allUsers",
+    "pendingInviteToken",
+    "pendingInviteStudioId",
+    "pendingInviteEmail",
+    "pendingInviteRoleHint",
+    "pendingChildren",
+    "pendingChildrenEmail"
+  ];
+
+  keysToRemove.forEach(key => localStorage.removeItem(key));
+
+  for (let i = localStorage.length - 1; i >= 0; i--) {
+    const key = localStorage.key(i);
+    if (key && key.startsWith("aa.activeStudent.")) {
+      localStorage.removeItem(key);
+    }
+  }
+
+  sessionStorage.removeItem("invite_accept_attempted");
+  sessionStorage.removeItem("forceUserSwitch");
+
+  if ("caches" in window) {
+    try {
+      const names = await caches.keys();
+      await Promise.all(names.map(name => caches.delete(name)));
+    } catch (err) {
+      console.warn("[Cache] failed to clear storage cache", err);
+    }
+  }
+
+  console.log(`[Cache] cleared ${reason}`);
+}
+
 export async function getViewerContext() {
   const { data: sessionData } = await supabase.auth.getSession();
   const viewerUserId = sessionData?.session?.user?.id || null;
@@ -39,26 +80,23 @@ export async function getViewerContext() {
     };
   }
 
-  if (!getActiveProfileId()) {
-    setActiveProfileId(viewerUserId);
-  }
-
   let studioId = localStorage.getItem("activeStudioId");
   if (!studioId) {
     studioId = await getActiveStudioIdForUser(viewerUserId);
   }
 
-  const activeProfileId = getActiveProfileId() || viewerUserId;
+  const storedProfileId = getActiveProfileId();
+  const effectiveProfileId = storedProfileId || viewerUserId;
   let { data: viewerProfile, error } = await supabase
     .from("users")
     .select("roles, studio_id")
-    .eq("id", activeProfileId)
+    .eq("id", effectiveProfileId)
     .single();
 
   if (error) {
     console.error("[ViewerContext] user lookup failed", error);
   }
-  if (!viewerProfile && activeProfileId !== viewerUserId) {
+  if (!viewerProfile && effectiveProfileId !== viewerUserId) {
     const { data: fallbackProfile } = await supabase
       .from("users")
       .select("roles, studio_id")
@@ -86,6 +124,13 @@ export async function getViewerContext() {
   else if (isStudent) mode = "student";
   else if (isParent) mode = "parent";
 
+  let activeProfileId = storedProfileId || viewerUserId;
+  if (!storedProfileId && mode === "parent" && !isStudent && !isTeacher && !isAdmin) {
+    activeProfileId = null;
+  } else if (!storedProfileId && activeProfileId) {
+    setActiveProfileId(activeProfileId);
+  }
+
   return {
     viewerUserId,
     viewerRoles,
@@ -97,6 +142,247 @@ export async function getViewerContext() {
     studioId,
     activeProfileId
   };
+}
+
+export async function renderActiveStudentHeader(options = {}) {
+  const {
+    mountId = "activeStudentHeader",
+    contentSelector = ".student-content",
+    useHomeHeader = false,
+    nameTemplate,
+    reloadTo = null,
+    skipMenu = false
+  } = options;
+
+  const mount = document.getElementById(mountId);
+  if (!mount && !useHomeHeader) return { blocked: false };
+
+  const { data: sessionData } = await supabase.auth.getSession();
+  const authUserId = sessionData?.session?.user?.id || null;
+  if (!authUserId) return { blocked: false };
+
+  const { data: authProfile } = await supabase
+    .from("users")
+    .select("roles, studio_id")
+    .eq("id", authUserId)
+    .single();
+
+  const authRoles = parseRoles(authProfile?.roles);
+  const isParentContainer = authRoles.includes("parent")
+    && !authRoles.includes("student")
+    && !authRoles.includes("teacher")
+    && !authRoles.includes("admin");
+
+  const viewerContext = await getViewerContext();
+  const studioId = viewerContext?.studioId || authProfile?.studio_id || null;
+
+  const storedProfileId = getActiveProfileId();
+  const hasSelectedStudent = storedProfileId && String(storedProfileId) !== String(authUserId);
+
+  const loadLinkedStudents = async () => {
+    let query = supabase
+      .from("parent_student_links")
+      .select("student_id")
+      .eq("parent_id", authUserId);
+    if (studioId) query = query.eq("studio_id", studioId);
+    const { data: links, error } = await query;
+    if (error) {
+      console.error("[Header] parent_student_links fetch failed", error);
+      return [];
+    }
+    const ids = (links || []).map(l => l.student_id).filter(Boolean);
+    if (!ids.length) return [];
+    const { data: students, error: studentErr } = await supabase
+      .from("users")
+      .select("id, firstName, lastName, avatarUrl, roles, level")
+      .in("id", ids)
+      .order("lastName", { ascending: true })
+      .order("firstName", { ascending: true });
+    if (studentErr) {
+      console.error("[Header] student lookup failed", studentErr);
+      return [];
+    }
+    return Array.isArray(students) ? students : [];
+  };
+
+  if (isParentContainer && !hasSelectedStudent) {
+    const linked = await loadLinkedStudents();
+    const contentEls = document.querySelectorAll(contentSelector);
+    contentEls.forEach(el => el.style.display = "none");
+
+    if (linked.length === 1) {
+      const studentId = linked[0]?.id;
+      if (studentId && String(getActiveProfileId() || "") !== String(studentId)) {
+        setActiveProfileId(studentId);
+        if (reloadTo) window.location.href = reloadTo;
+        else window.location.reload();
+        return { blocked: true };
+      }
+    }
+
+    if (mount) {
+      if (linked.length === 0) {
+        mount.innerHTML = `
+          <div class="active-student-header active-student-empty">
+            <div class="active-student-name">No students yet. Go to Settings to add one.</div>
+            <a class="nav-btn" href="settings.html">Settings</a>
+          </div>
+        `;
+      } else {
+        const optionsHtml = linked.map(s => {
+          const label = `${s.firstName ?? ""} ${s.lastName ?? ""}`.trim() || "Student";
+          return `<option value="${s.id}">${label}</option>`;
+        }).join("");
+        mount.innerHTML = `
+          <div class="active-student-header active-student-select">
+            <div class="active-student-name">Select a student</div>
+            <select id="activeStudentSelect">
+              <option value="">Choose a student</option>
+              ${optionsHtml}
+            </select>
+            <a class="nav-btn" href="settings.html">Settings</a>
+          </div>
+        `;
+        const select = document.getElementById("activeStudentSelect");
+        if (select) {
+          select.addEventListener("change", () => {
+            const value = select.value;
+            if (!value) return;
+            if (studioId && authUserId) {
+              localStorage.setItem(`aa.activeStudent.${studioId}.${authUserId}`, value);
+            }
+            setActiveProfileId(value);
+            if (reloadTo) window.location.href = reloadTo;
+            else window.location.reload();
+          });
+        }
+      }
+    }
+    return { blocked: true };
+  }
+
+  const activeStudentId = hasSelectedStudent
+    ? storedProfileId
+    : (isParentContainer ? null : (storedProfileId || authUserId));
+
+  if (!activeStudentId) return { blocked: true };
+
+  const { data: studentProfile } = await supabase
+    .from("users")
+    .select("id, firstName, lastName, avatarUrl, level")
+    .eq("id", activeStudentId)
+    .single();
+
+  if (studentProfile) {
+    localStorage.setItem("loggedInUser", JSON.stringify(studentProfile));
+  }
+
+  const { data: logs } = await supabase
+    .from("logs")
+    .select("points")
+    .eq("userId", activeStudentId)
+    .eq("status", "approved");
+  const totalPoints = (logs || []).reduce((sum, log) => sum + (log.points || 0), 0);
+  const { data: levels } = await supabase
+    .from("levels")
+    .select("*")
+    .order("minPoints", { ascending: true });
+  const currentLevel =
+    (levels || []).find(l => totalPoints >= l.minPoints && totalPoints <= l.maxPoints)
+    || (levels || [])[levels?.length - 1]
+    || null;
+
+  const badgeSrc = currentLevel?.badge
+    || (currentLevel?.id ? `images/levelBadges/level${currentLevel.id}.png` : null)
+    || "images/levelBadges/level1.png";
+
+  const fullName = `${studentProfile?.firstName ?? ""} ${studentProfile?.lastName ?? ""}`.trim() || "Student";
+  const nameText = typeof nameTemplate === "function" ? nameTemplate(studentProfile) : fullName;
+
+  if (useHomeHeader) {
+    const nameEl = document.getElementById("welcomeText");
+    const avatarImg = document.getElementById("avatarImg");
+    const badgeImg = document.getElementById("levelBadgeImg");
+    if (nameEl) nameEl.textContent = nameText;
+    if (avatarImg) {
+      avatarImg.src = studentProfile?.avatarUrl || "images/icons/default.png";
+    }
+    if (badgeImg) badgeImg.src = badgeSrc;
+    return { blocked: false, activeStudentId };
+  }
+
+  if (mount) {
+    mount.innerHTML = `
+      <div class="active-student-header">
+        <div class="active-student-left">
+          <button id="activeStudentAvatarBtn" class="avatar-button" type="button" aria-haspopup="menu" aria-expanded="false">
+            <img id="activeStudentAvatarImg" src="${studentProfile?.avatarUrl || "images/icons/default.png"}" alt="Avatar">
+          </button>
+          <div id="activeStudentMenu" class="avatar-menu" role="menu" hidden></div>
+        </div>
+        <div class="active-student-center">
+          <div id="activeStudentName" class="active-student-name">${nameText}</div>
+        </div>
+        <div class="active-student-right">
+          <img id="activeStudentBadge" class="active-student-badge" src="${badgeSrc}" alt="Level badge">
+        </div>
+      </div>
+    `;
+  }
+
+  const avatarBtn = document.getElementById("activeStudentAvatarBtn");
+  const avatarMenu = document.getElementById("activeStudentMenu");
+  const linkedStudents = authRoles.includes("parent") ? await loadLinkedStudents() : [];
+
+  if (!skipMenu && avatarBtn && avatarMenu && linkedStudents.length > 1) {
+    avatarMenu.innerHTML = "";
+    linkedStudents.forEach(student => {
+      const item = document.createElement("button");
+      item.type = "button";
+      item.className = "avatar-menu-item";
+      if (String(student.id) === String(activeStudentId)) {
+        item.classList.add("is-active");
+        item.setAttribute("aria-current", "true");
+      }
+      const img = document.createElement("img");
+      img.src = student.avatarUrl || "images/icons/default.png";
+      img.alt = "";
+      const label = document.createElement("span");
+      label.textContent = `${student.firstName ?? ""} ${student.lastName ?? ""}`.trim() || "Student";
+      item.appendChild(img);
+      item.appendChild(label);
+      item.addEventListener("click", () => {
+        if (studioId && authUserId) {
+          localStorage.setItem(`aa.activeStudent.${studioId}.${authUserId}`, student.id);
+        }
+        setActiveProfileId(student.id);
+        if (reloadTo) window.location.href = reloadTo;
+        else window.location.reload();
+      });
+      avatarMenu.appendChild(item);
+    });
+
+    avatarBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      const isOpen = !avatarMenu.hidden;
+      avatarMenu.hidden = isOpen;
+      avatarBtn.setAttribute("aria-expanded", String(!isOpen));
+    });
+
+    document.addEventListener("click", (e) => {
+      if (!avatarMenu.hidden && !avatarMenu.contains(e.target) && !avatarBtn.contains(e.target)) {
+        avatarMenu.hidden = true;
+        avatarBtn.setAttribute("aria-expanded", "false");
+      }
+    });
+  } else if (avatarBtn) {
+    avatarBtn.setAttribute("aria-expanded", "false");
+  }
+
+  const contentEls = document.querySelectorAll(contentSelector);
+  contentEls.forEach(el => el.style.display = "");
+
+  return { blocked: false, activeStudentId };
 }
 
 export async function getActiveStudentId() {
