@@ -1,5 +1,5 @@
 import { supabase } from "./supabaseClient.js";
-import { recalculateUserPoints } from './utils.js';
+import { getActiveStudentId, recalculateUserPoints } from './utils.js';
 import { ensureStudioContextAndRoute } from "./studio-routing.js";
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -8,14 +8,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   const routeResult = await ensureStudioContextAndRoute({ redirectHome: false });
   if (routeResult?.redirected) return;
 
-  const user = JSON.parse(localStorage.getItem("loggedInUser"));
-  if (!user || !user.id) {
+  const userId = await getActiveStudentId();
+  if (!userId) {
     alert("User session not found. Please log in again.");
     window.location.href = "login.html";
     return;
   }
 
-  const userId = String(user.id).trim(); // ✅ normalize UUID
   console.log("[DEBUG] Fetching logs for user ID:", userId);
 
   const logsTableBody = document.querySelector("#logsTable tbody");
@@ -32,6 +31,20 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     if (logsError) throw logsError;
     console.log("[DEBUG] Logs fetched:", logs);
+    if (!logs || logs.length === 0) {
+      const rolesRaw = localStorage.getItem("activeStudioRoles");
+      let roles = [];
+      try {
+        roles = JSON.parse(rolesRaw || "[]");
+      } catch {
+        roles = [];
+      }
+      console.log("[My Points] empty logs", {
+        activeStudentId: userId,
+        roles,
+        studioId: localStorage.getItem("activeStudioId")
+      });
+    }
 
 const { totalPoints, currentLevel } = await recalculateUserPoints(userId);
 console.log("[DEBUG] Total approved points:", totalPoints);

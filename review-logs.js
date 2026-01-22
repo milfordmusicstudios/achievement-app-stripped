@@ -44,27 +44,24 @@ document.addEventListener("DOMContentLoaded", async () => {
   const logsTableBody = document.getElementById("logsTableBody");
   const categorySummary = document.getElementById("categorySummary");
   const searchInput = document.getElementById("searchInput");
-  const statusFilter = document.getElementById("statusFilter");
   const bulkActionBar = document.getElementById("bulkActionBar");
 
-  let logs = [];
+  let allLogs = [];
   let users = [];
   let filteredLogs = [];
   let currentSort = { field: "date", order: "desc" };
   let currentPage = 1;
   let logsPerPage = 25;
-  let summaryFilter = "all";
-  let activeSummaryCard = "all";
+  let activeCardFilter = "all";
 
   const todayString = () => new Date().toISOString().split("T")[0];
   const isApprovedStatus = (value) => String(value || "").toLowerCase() === "approved";
   const isSameDay = (value, today) => String(value || "").startsWith(today);
+  const getApprovedTimestamp = (log) => log._approvedAtLocal || log.approved_at || log.updated_at || "";
   const isApprovedToday = (log, today) => {
     if (!isApprovedStatus(log.status)) return false;
-    if (log._approvedToday) return true;
-    if (log.approved_at && isSameDay(log.approved_at, today)) return true;
-    if (log.updated_at && isSameDay(log.updated_at, today)) return true;
-    return isSameDay(log.date, today);
+    const approvedStamp = getApprovedTimestamp(log);
+    return approvedStamp ? isSameDay(approvedStamp, today) : false;
   };
 
   try {
@@ -80,7 +77,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (usersError) throw usersError;
 
     users = usersData || [];
-    logs = (logsData || []).map(l => ({
+    allLogs = (logsData || []).map(l => ({
       ...l,
       fullName:
         (users.find(u => String(u.id) === String(l.userId))?.firstName || "Unknown") +
@@ -92,42 +89,41 @@ document.addEventListener("DOMContentLoaded", async () => {
       const myStudents = users
         .filter(u => Array.isArray(u.teacherIds) && u.teacherIds.map(String).includes(String(user.id)))
         .map(s => String(s.id));
-      logs = logs.filter(l => myStudents.includes(String(l.userId)));
+      allLogs = allLogs.filter(l => myStudents.includes(String(l.userId)));
     }
 
-    filteredLogs = [...logs];
-    renderCategorySummary(filteredLogs);
-    renderLogsTable(filteredLogs);
+    applyFilters();
   } catch (err) {
     console.error("[ERROR] Review Logs:", err);
     alert("Failed to load logs.");
   }
 
-  // Search + Status Filter
+  // Search + Card Filter
   searchInput.addEventListener("input", applyFilters);
-  statusFilter.addEventListener("change", () => {
-    summaryFilter = "all";
-    applyFilters();
-  });
 
   function applyFilters() {
     const searchVal = searchInput.value.toLowerCase();
-    const statusVal = statusFilter.value;
     const todayStr = todayString();
 
-    filteredLogs = logs.filter(l => {
+    filteredLogs = allLogs.filter(l => {
       const matchesSearch =
         l.fullName.toLowerCase().includes(searchVal) ||
         (l.notes || "").toLowerCase().includes(searchVal) ||
         (l.category || "").toLowerCase().includes(searchVal);
-      const matchesStatus = !statusVal || (l.status && l.status.toLowerCase() === statusVal.toLowerCase());
-      const matchesToday = summaryFilter !== "approved-today" || isApprovedToday(l, todayStr);
-      return matchesSearch && matchesStatus && matchesToday;
+      let matchesCard = true;
+      if (activeCardFilter === "pending") {
+        matchesCard = String(l.status || "").toLowerCase() === "pending";
+      } else if (activeCardFilter === "approved-today") {
+        matchesCard = isApprovedToday(l, todayStr);
+      } else if (activeCardFilter === "needs info") {
+        matchesCard = String(l.status || "").toLowerCase() === "needs info";
+      }
+      return matchesSearch && matchesCard;
     });
 
     currentPage = 1;
     sortLogs();
-    renderCategorySummary(filteredLogs);
+    renderCategorySummary(allLogs);
     renderLogsTable(filteredLogs);
   }
 
@@ -193,24 +189,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     const todayStr = todayString();
     const approvedTodayCount = list.filter(l => isApprovedToday(l, todayStr)).length;
     const needsInfoCount = list.filter(l => String(l.status || "").toLowerCase() === "needs info").length;
-    const rejectedCount = list.filter(l => String(l.status || "").toLowerCase() === "rejected").length;
-
-    let reviewLabel = null;
-    let reviewCount = 0;
-    if (needsInfoCount > 0) {
-      reviewLabel = "Needs Info";
-      reviewCount = needsInfoCount;
-    } else if (rejectedCount > 0) {
-      reviewLabel = "Rejected";
-      reviewCount = rejectedCount;
-    }
 
     const cards = [
       { label: "Pending Logs", value: pendingCount },
       { label: "Approved Today", value: approvedTodayCount },
-      reviewLabel ? { label: reviewLabel, value: reviewCount } : null,
+      { label: "Needs Info", value: needsInfoCount },
       { label: "Total Logs", value: list.length }
-    ].filter(Boolean);
+    ];
 
     categorySummary.innerHTML = cards.map(card => {
       const key = card.label.toLowerCase();
@@ -228,13 +213,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       } else if (key.includes("needs info")) {
         extraClass = "review";
         filterTag = "needs info";
-      } else if (key.includes("rejected")) {
+      } else {
         extraClass = "review";
-        filterTag = "rejected";
       }
-      else extraClass = "review";
       return `
-      <div class="summary-card ${extraClass} ${activeSummaryCard === filterTag ? "is-active" : ""}" data-filter="${filterTag}">
+      <div class="summary-card ${extraClass} ${activeCardFilter === filterTag ? "is-active" : ""}" data-filter="${filterTag}">
         <div class="summary-label">${card.label}</div>
         <div class="summary-value">${card.value}</div>
       </div>
@@ -244,24 +227,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     categorySummary.querySelectorAll(".summary-card").forEach(card => {
       card.addEventListener("click", () => {
         const filter = card.dataset.filter || "all";
-        if (filter === "pending") {
-          summaryFilter = "pending";
-          statusFilter.value = "pending";
-        } else if (filter === "approved-today") {
-          summaryFilter = "approved-today";
-          statusFilter.value = "approved";
-        } else if (filter === "needs info") {
-          summaryFilter = "all";
-          statusFilter.value = "needs info";
-        } else if (filter === "rejected") {
-          summaryFilter = "all";
-          statusFilter.value = "rejected";
-        } else {
-          summaryFilter = "all";
-          statusFilter.value = "";
-        }
-        searchInput.value = "";
-        activeSummaryCard = filter;
+        activeCardFilter = filter;
         applyFilters();
       });
     });
@@ -344,7 +310,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         console.log(`[DEBUG] Updated log ${logId}: ${field} = ${value}`);
 
         // Find the affected log to know which user to recalc
-        const updated = logs.find(l => String(l.id) === String(logId));
+        const updated = allLogs.find(l => String(l.id) === String(logId));
         if (!updated) return;
 
         // Keep our local copy in sync
@@ -354,6 +320,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         const nowApproved = field === "status" && String(value).toLowerCase() === "approved";
         const pointsChangedWhileApproved = field === "points" && String(updated.status).toLowerCase() === "approved";
 
+        if (nowApproved) {
+          updated._approvedAtLocal = new Date().toISOString();
+          updated.updated_at = updated._approvedAtLocal;
+        }
+
         if (nowApproved || pointsChangedWhileApproved) {
           try {
             await recalculateUserPoints(String(updated.userId));
@@ -361,6 +332,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             console.error("[ERROR] recalculateUserPoints:", recalcErr);
           }
         }
+        applyFilters();
       });
     });
   }
@@ -388,11 +360,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
 
       // Remove from local arrays
-      logs = logs.filter(l => !selectedIds.includes(String(l.id)));
-      filteredLogs = filteredLogs.filter(l => !selectedIds.includes(String(l.id)));
-
-      renderLogsTable(filteredLogs);
-      renderCategorySummary(filteredLogs);
+      allLogs = allLogs.filter(l => !selectedIds.includes(String(l.id)));
+      applyFilters();
       updateBulkActionBarVisibility();
       alert("✅ Selected logs deleted successfully.");
     } catch (err) {
@@ -425,11 +394,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       console.log("[Approve Selected] updated", selectedIds.length, data);
 
-      const todayStr = todayString();
-      logs = logs.map(l => selectedIds.includes(String(l.id)) ? { ...l, status: "approved", _approvedToday: true, updated_at: todayStr } : l);
-      filteredLogs = filteredLogs.map(l => selectedIds.includes(String(l.id)) ? { ...l, status: "approved", _approvedToday: true, updated_at: todayStr } : l);
-      renderLogsTable(filteredLogs);
-      renderCategorySummary(filteredLogs);
+      const approvedStamp = new Date().toISOString();
+      allLogs = allLogs.map(l => selectedIds.includes(String(l.id))
+        ? { ...l, status: "approved", _approvedAtLocal: approvedStamp, updated_at: approvedStamp }
+        : l);
+      applyFilters();
       updateBulkActionBarVisibility();
     } catch (err) {
       console.error("Approve logs failed:", err);

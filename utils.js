@@ -5,6 +5,33 @@ export async function getAuthUserId() {
   return authData?.user?.id || null;
 }
 
+export async function getActiveStudentId() {
+  const rolesRaw = localStorage.getItem("activeStudioRoles");
+  let roles = [];
+  try {
+    roles = JSON.parse(rolesRaw || "[]");
+  } catch {
+    roles = [];
+  }
+
+  const hasParent = Array.isArray(roles) && roles.includes("parent");
+  const hasStudent = Array.isArray(roles) && roles.includes("student");
+  const { data: authData } = await supabase.auth.getUser();
+  const authUserId = authData?.user?.id || null;
+  if (hasParent && !hasStudent) {
+    const selector = document.getElementById("parentStudentSelect");
+    const selectedId = selector?.value
+      || localStorage.getItem("activeStudentId")
+      || JSON.parse(localStorage.getItem("loggedInUser") || "null")?.id;
+    return selectedId ? String(selectedId) : null;
+  }
+  const fallbackSelectedId = localStorage.getItem("activeStudentId");
+  if (fallbackSelectedId && authUserId && String(fallbackSelectedId) !== String(authUserId)) {
+    return String(fallbackSelectedId);
+  }
+  return authUserId;
+}
+
 export async function getStudioRolesForActiveStudio() {
   const { data: authData } = await supabase.auth.getUser();
   const authUser = authData?.user || null;

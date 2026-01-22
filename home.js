@@ -1,6 +1,6 @@
 import { supabase } from './supabaseClient.js';
 import { ensureStudioContextAndRoute } from './studio-routing.js';
-import { ensureUserRow, getAuthUserId, recalculateUserPoints } from './utils.js';
+import { ensureUserRow, getActiveStudentId, getAuthUserId, recalculateUserPoints } from './utils.js';
 
 const qs = id => document.getElementById(id);
 const safeParse = value => {
@@ -18,6 +18,29 @@ let currentLevelRow = null;
 let isStaffUser = false;
 let isParentReadOnly = false;
 let practiceLoggedToday = false;
+
+function getStudioRoleContext() {
+  const rolesRaw = localStorage.getItem("activeStudioRoles");
+  let roles = [];
+  try {
+    roles = JSON.parse(rolesRaw || "[]");
+  } catch {
+    roles = [];
+  }
+  return {
+    roles,
+    studioId: localStorage.getItem("activeStudioId")
+  };
+}
+
+function logEmptyFetch(label, userId) {
+  const ctx = getStudioRoleContext();
+  console.log(`[Home] empty ${label}`, {
+    activeStudentId: userId,
+    roles: ctx.roles,
+    studioId: ctx.studioId
+  });
+}
 
 
 async function loadLevel(levelId) {
@@ -222,12 +245,7 @@ async function switchUser(user) {
   localStorage.setItem("activeStudentId", user.id);
   currentProfile = user;
 
-  await refreshHomeForUser(user);
-  currentLevelRow = await loadLevel(user.level || 1);
-  await loadPendingPoints(user.id);
-  updatePendingProgressFill();
-  practiceLoggedToday = await checkPracticeLoggedToday(user.id);
-  setPracticeButtonState(qs("quickPracticeBtn"), practiceLoggedToday);
+  await refreshActiveStudentData({ userId: user.id, fallbackProfile: user });
   renderAvatarMenu(availableUsers, user.id);
   syncParentViewerSelector(user.id);
   closeAvatarMenu();
@@ -317,6 +335,7 @@ async function init() {
     const isParentRole = studioRoles.includes('parent');
     const isStudentRole = studioRoles.includes('student');
     isParentReadOnly = isParentRole && !isStudentRole;
+    localStorage.setItem('activeStudioRoles', JSON.stringify(studioRoles));
     if (isParentReadOnly) document.body.classList.add('is-parent');
     if (isStaff) document.body.classList.add('is-staff');
     if (isAdmin) document.body.classList.add('is-admin');
@@ -387,9 +406,6 @@ async function init() {
 const profile = JSON.parse(raw);
 currentProfile = profile;
 
-  const levelRow = await loadLevel(profile.level || 1);
-  renderIdentity(profile, levelRow);
-
   const parentId = sessionData?.session?.user?.id;
 availableUsers = await loadAvailableUsers(parentId, profile);
 if (isParentReadOnly) {
@@ -397,11 +413,9 @@ if (isParentReadOnly) {
 }
 initAvatarSwitcher(availableUsers);
 initParentViewerSelector(availableUsers, profile);
-currentLevelRow = levelRow;
-await loadPendingPoints(profile.id);
-updatePendingProgressFill();
+await refreshActiveStudentData({ fallbackProfile: profile });
 if (!isStaffUser && !isParentReadOnly) {
-  await initStudentLogActions(profile.id);
+  await initStudentLogActions();
 }
 }
 
@@ -503,6 +517,7 @@ async function applyApprovedRecalc(userId) {
 }
 
 async function loadPendingPoints(userId) {
+  if (!userId) return;
   const { data, error } = await supabase
     .from("logs")
     .select("points")
@@ -512,6 +527,9 @@ async function loadPendingPoints(userId) {
     console.error("Failed to load pending logs", error);
     pendingPointsTotal = 0;
     return;
+  }
+  if (!data || data.length === 0) {
+    logEmptyFetch("pending logs", userId);
   }
   pendingPointsTotal = (data || []).reduce((sum, log) => sum + (log.points || 0), 0);
 }
@@ -524,6 +542,34 @@ function updatePendingProgressFill() {
   const pendingPct = Math.max(0, Math.round((pendingPointsTotal / range) * 100));
   const combined = Math.min(100, approvedPct + pendingPct);
   pendingEl.style.width = `${combined}%`;
+}
+
+async function refreshActiveStudentData({ userId, fallbackProfile } = {}) {
+  const activeStudentId = userId || await getActiveStudentId();
+  if (!activeStudentId) return;
+
+  const { data: profileRow, error } = await supabase
+    .from("users")
+    .select("*")
+    .eq("id", activeStudentId)
+    .single();
+
+  if (error) {
+    console.error("[Home] Failed to refresh profile", error);
+  }
+
+  const profile = profileRow || fallbackProfile || currentProfile;
+  if (profile) {
+    currentProfile = profile;
+    localStorage.setItem("loggedInUser", JSON.stringify(profile));
+    currentLevelRow = await loadLevel(profile.level || 1);
+    if (currentLevelRow) renderIdentity(profile, currentLevelRow);
+  }
+
+  await loadPendingPoints(activeStudentId);
+  updatePendingProgressFill();
+  practiceLoggedToday = await checkPracticeLoggedToday(activeStudentId);
+  setPracticeButtonState(qs("quickPracticeBtn"), practiceLoggedToday);
 }
 
 function buildCategoryHeader(category, label) {
@@ -571,20 +617,19 @@ async function insertLogs(rows, { approved }) {
   }
   if (approved && rows.length > 0) {
     await applyApprovedRecalc(rows[0].userId);
-  } else if (!approved) {
-    pendingPointsTotal += rows.reduce((sum, row) => sum + (row.points || 0), 0);
-    updatePendingProgressFill();
   }
   return true;
 }
 
-async function initStudentLogActions(userId) {
+async function initStudentLogActions() {
   const practiceBtn = qs("quickPracticeBtn");
   if (practiceBtn) {
-    practiceLoggedToday = await checkPracticeLoggedToday(userId);
-    setPracticeButtonState(practiceBtn, practiceLoggedToday);
     practiceBtn.addEventListener("click", async (e) => {
       e.preventDefault();
+      const activeStudentId = await getActiveStudentId();
+      if (!activeStudentId) return;
+      practiceLoggedToday = await checkPracticeLoggedToday(activeStudentId);
+      setPracticeButtonState(practiceBtn, practiceLoggedToday);
       if (practiceLoggedToday) {
         showToast("You already logged today's practice.");
         return;
@@ -599,8 +644,7 @@ async function initStudentLogActions(userId) {
         status: "approved"
       }], { approved: true });
       if (ok) {
-        practiceLoggedToday = true;
-        setPracticeButtonState(practiceBtn, true);
+        await refreshActiveStudentData({ userId: activeStudentId });
         showToast("✅ Practice logged (+5)");
       }
     });
@@ -610,14 +654,18 @@ async function initStudentLogActions(userId) {
   if (pastPracticeBtn) {
     pastPracticeBtn.addEventListener("click", async (e) => {
       e.preventDefault();
-      await openPastPracticeModal(userId);
+      const activeStudentId = await getActiveStudentId();
+      if (!activeStudentId) return;
+      await openPastPracticeModal(activeStudentId);
     });
   }
 
   document.querySelectorAll(".action-grid .chip").forEach((btn) => {
     btn.addEventListener("click", async (e) => {
       e.preventDefault();
-      await openChipModal(btn, userId);
+      const activeStudentId = await getActiveStudentId();
+      if (!activeStudentId) return;
+      await openChipModal(btn, activeStudentId);
     });
   });
 }
@@ -688,10 +736,7 @@ async function openPastPracticeModal(userId) {
       const ok = await insertLogs(rows, { approved: true });
       if (ok) {
         showToast(`✅ Logged ${selected.length} practice day(s)`);
-        if (selected.includes(todayStr)) {
-          practiceLoggedToday = true;
-          setPracticeButtonState(qs("quickPracticeBtn"), true);
-        }
+        await refreshActiveStudentData({ userId });
         closeStudentModal();
       }
     }
@@ -902,6 +947,7 @@ function openFixedModal({ userId, category, label, points, notesRequired, notesP
       }], { approved: statusValue === "approved" });
       if (ok) {
         showToast("Log submitted.");
+        await refreshActiveStudentData({ userId });
         closeStudentModal();
       }
     }
@@ -956,6 +1002,7 @@ function openFestivalModal({ userId, category, label }) {
       }], { approved: false });
       if (ok) {
         showToast("Log submitted.");
+        await refreshActiveStudentData({ userId });
         closeStudentModal();
       }
     }
@@ -1020,6 +1067,7 @@ function openMemorizationModal({ userId, category, label, notesRequired, notesPr
       }], { approved: false });
       if (ok) {
         showToast("Log submitted.");
+        await refreshActiveStudentData({ userId });
         closeStudentModal();
       }
     }
@@ -1053,12 +1101,18 @@ function renderStaffQuickLogShell() {
           <option value="">Loading...</option>
         </select>
 
-        <label for="staffDate">Dates</label>
-        <div class="date-row">
-          <input id="staffDate" type="date" />
-          <button id="addDateBtn" type="button" class="blue-button">Add date</button>
+        <label>Dates (last 30 days)</label>
+        <div class="calendar">
+          <div class="calendar-header">
+            <button id="staffCalPrev" class="calendar-nav" type="button">‹</button>
+            <div id="staffCalMonthLabel" class="calendar-title"></div>
+            <button id="staffCalNext" class="calendar-nav" type="button">›</button>
+          </div>
+          <div class="calendar-weekdays">
+            <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+          </div>
+          <div id="staffCalendar" class="calendar-grid"></div>
         </div>
-        <div id="dateChips" class="date-chips"></div>
 
         <label for="staffPoints">Points</label>
         <input id="staffPoints" type="number" min="0" required />
@@ -1151,14 +1205,16 @@ async function initStaffQuickLog({ authUserId, studioId, roles }) {
 
   const categorySelect = document.getElementById('staffCategory');
   const studentSelect = document.getElementById('staffStudents');
-  const dateInput = document.getElementById('staffDate');
-  const addDateBtn = document.getElementById('addDateBtn');
-  const dateChips = document.getElementById('dateChips');
+  const calendarEl = document.getElementById('staffCalendar');
+  const monthLabel = document.getElementById('staffCalMonthLabel');
+  const prevBtn = document.getElementById('staffCalPrev');
+  const nextBtn = document.getElementById('staffCalNext');
   const pointsInput = document.getElementById('staffPoints');
   const notesInput = document.getElementById('staffNotes');
   const msgEl = document.getElementById('staffQuickLogMsg');
   const errorEl = document.getElementById('staffQuickLogError');
   const submitBtn = document.getElementById('staffQuickLogSubmit');
+  const selectedDates = new Set();
 
   const setError = (message) => {
     if (!errorEl) return;
@@ -1166,6 +1222,93 @@ async function initStaffQuickLog({ authUserId, studioId, roles }) {
     errorEl.style.display = 'block';
     errorEl.style.color = '#c62828';
   };
+
+  const today = new Date();
+  const todayStr = getTodayString();
+  const start = new Date();
+  start.setDate(today.getDate() - 29);
+  const startStr = getLocalDateString(start);
+  const monthNames = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ];
+  const view = { year: today.getFullYear(), month: today.getMonth() };
+
+  const renderStaffCalendar = () => {
+    if (!calendarEl || !monthLabel || !prevBtn || !nextBtn) return;
+    calendarEl.innerHTML = "";
+
+    const firstDay = new Date(view.year, view.month, 1);
+    const startDay = firstDay.getDay();
+    const gridStart = new Date(view.year, view.month, 1 - startDay);
+    monthLabel.textContent = `${monthNames[view.month]} ${view.year}`;
+
+    const startRange = new Date(startStr);
+    startRange.setHours(0, 0, 0, 0);
+    const endRange = new Date(todayStr);
+    endRange.setHours(23, 59, 59, 999);
+
+    const monthStart = new Date(view.year, view.month, 1);
+    const monthEnd = new Date(view.year, view.month + 1, 0);
+    prevBtn.disabled = monthStart <= startRange;
+    nextBtn.disabled = monthEnd >= endRange;
+
+    for (let i = 0; i < 42; i++) {
+      const cellDate = new Date(gridStart);
+      cellDate.setDate(gridStart.getDate() + i);
+      const dateStr = getLocalDateString(cellDate);
+      const inMonth = cellDate.getMonth() === view.month;
+      const inRange = cellDate >= startRange && cellDate <= endRange;
+
+      const cell = document.createElement("button");
+      cell.type = "button";
+      cell.className = "calendar-day";
+      cell.dataset.date = dateStr;
+      cell.textContent = String(cellDate.getDate());
+
+      if (!inMonth) cell.classList.add("outside");
+      if (!inRange) {
+        cell.classList.add("disabled");
+        cell.disabled = true;
+      } else {
+        cell.addEventListener("click", () => {
+          if (selectedDates.has(dateStr)) {
+            selectedDates.delete(dateStr);
+            cell.classList.remove("selected");
+          } else {
+            selectedDates.add(dateStr);
+            cell.classList.add("selected");
+          }
+        });
+      }
+
+      if (selectedDates.has(dateStr)) {
+        cell.classList.add("selected");
+      }
+
+      calendarEl.appendChild(cell);
+    }
+  };
+
+  if (prevBtn && nextBtn) {
+    prevBtn.addEventListener("click", () => {
+      const prevMonth = new Date(view.year, view.month - 1, 1);
+      if (prevMonth >= new Date(startStr)) {
+        view.year = prevMonth.getFullYear();
+        view.month = prevMonth.getMonth();
+        renderStaffCalendar();
+      }
+    });
+
+    nextBtn.addEventListener("click", () => {
+      const nextMonth = new Date(view.year, view.month + 1, 1);
+      if (nextMonth <= new Date(todayStr)) {
+        view.year = nextMonth.getFullYear();
+        view.month = nextMonth.getMonth();
+        renderStaffCalendar();
+      }
+    });
+  }
 
   const { data: categories, error: catErr } = await loadCategoriesForStudio(studioId);
   if (catErr?.message) {
@@ -1213,25 +1356,22 @@ async function initStaffQuickLog({ authUserId, studioId, roles }) {
   const canSubmit = !catErr && !studentErr && categories.length > 0 && students.length > 0;
   if (submitBtn) submitBtn.disabled = !canSubmit;
 
-  if (addDateBtn && dateInput && dateChips) {
-    addDateBtn.addEventListener('click', () => {
-      if (!dateInput.value) return;
-      addDateChip(dateChips, dateInput.value);
-      dateInput.value = '';
-    });
-  }
+  renderStaffCalendar();
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    if (!categorySelect || !studentSelect || !pointsInput || !dateChips) return;
+    if (!categorySelect || !studentSelect || !pointsInput) return;
 
     const category = categorySelect.value;
     const points = Number(pointsInput.value);
     const notes = notesInput?.value?.trim() || '';
-    const dates = getSelectedDates(dateChips);
+    const dates = Array.from(selectedDates);
     const studentIds = Array.from(studentSelect.selectedOptions).map(o => o.value);
 
-    if (!category || !studentIds.length || !dates.length || !Number.isFinite(points)) return;
+    if (!category || !studentIds.length || !dates.length || !Number.isFinite(points)) {
+      showToast("Couldn't submit points");
+      return;
+    }
 
     const isStaff = roles.includes('admin') || roles.includes('teacher');
     const status = isStaff ? 'approved' : 'pending';
@@ -1260,6 +1400,7 @@ async function initStaffQuickLog({ authUserId, studioId, roles }) {
         msgEl.style.display = 'block';
         msgEl.style.color = '#c62828';
       }
+      showToast("Couldn't submit points");
       return;
     }
 
@@ -1268,5 +1409,6 @@ async function initStaffQuickLog({ authUserId, studioId, roles }) {
       msgEl.style.display = 'block';
       msgEl.style.color = '#0b7a3a';
     }
+    showToast("✅ Points submitted");
   });
 }
