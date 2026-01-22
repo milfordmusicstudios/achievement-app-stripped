@@ -1,6 +1,6 @@
 import { supabase } from './supabaseClient.js';
 import { ensureStudioContextAndRoute } from './studio-routing.js';
-import { ensureUserRow, getActiveStudentId, getAuthUserId, recalculateUserPoints } from './utils.js';
+import { ensureUserRow, getAuthUserId, recalculateUserPoints } from './utils.js';
 
 const qs = id => document.getElementById(id);
 const safeParse = value => {
@@ -18,6 +18,63 @@ let currentLevelRow = null;
 let isStaffUser = false;
 let isParentReadOnly = false;
 let practiceLoggedToday = false;
+let viewerContextCache = null;
+
+function getParentSelectionKey(studioId, viewerUserId) {
+  return studioId && viewerUserId ? `aa.activeStudent.${studioId}.${viewerUserId}` : null;
+}
+
+async function getViewerContext() {
+  const { data: sessionData } = await supabase.auth.getSession();
+  const viewerUserId = sessionData?.session?.user?.id || null;
+  const studioId = localStorage.getItem("activeStudioId");
+
+  let roles = safeParse(localStorage.getItem("activeStudioRoles")) || [];
+  if (!roles.length && viewerUserId && studioId) {
+    const { data: member } = await supabase
+      .from("studio_members")
+      .select("roles")
+      .eq("user_id", viewerUserId)
+      .eq("studio_id", studioId)
+      .single();
+    roles = Array.isArray(member?.roles) ? member.roles : [];
+    localStorage.setItem("activeStudioRoles", JSON.stringify(roles));
+  }
+
+  let mode = "parent";
+  if (roles.includes("admin")) mode = "admin";
+  else if (roles.includes("teacher")) mode = "teacher";
+  else if (roles.includes("student")) mode = "student";
+  else if (roles.includes("parent")) mode = "parent";
+
+  let activeStudentId = null;
+  if (roles.includes("student")) {
+    activeStudentId = viewerUserId;
+  } else if (roles.includes("parent") && !roles.includes("student")) {
+    const key = getParentSelectionKey(studioId, viewerUserId);
+    activeStudentId = (key && localStorage.getItem(key))
+      || localStorage.getItem("activeStudentId")
+      || null;
+  }
+
+  const context = { viewerUserId, roles, studioId, activeStudentId, mode };
+  viewerContextCache = context;
+  return context;
+}
+
+function clearParentSelection(viewerUserId, studioId) {
+  const key = getParentSelectionKey(studioId, viewerUserId);
+  if (key) localStorage.removeItem(key);
+  localStorage.removeItem("activeStudentId");
+}
+
+function persistParentSelection(viewerUserId, studioId, studentId) {
+  const key = getParentSelectionKey(studioId, viewerUserId);
+  if (key && studentId) {
+    localStorage.setItem(key, String(studentId));
+  }
+  if (studentId) localStorage.setItem("activeStudentId", String(studentId));
+}
 
 function getStudioRoleContext() {
   const rolesRaw = localStorage.getItem("activeStudioRoles");
@@ -57,8 +114,10 @@ async function loadLevel(levelId) {
   return data;
 }
 
-function renderIdentity(profile, level) {
-qs('welcomeText').textContent = `Welcome, ${profile.firstName || 'Student'}!`;
+function renderIdentity(profile, level, showWelcome = true) {
+if (showWelcome) {
+  qs('welcomeText').textContent = `Welcome, ${profile.firstName || 'Student'}!`;
+}
 const avatarImg = document.getElementById("avatarImg");
 const url = profile?.avatarUrl;
 
@@ -179,9 +238,10 @@ function syncParentViewerSelector(activeId) {
   if (!select) return;
   const value = String(activeId || "");
   if (value && select.value !== value) select.value = value;
+  updateParentProgressState({ hasSelection: !!value });
 }
 
-function initParentViewerSelector(users, activeProfile) {
+function initParentViewerSelector(users, activeProfile, viewerUserId, studioId) {
   const row = qs("parentViewerRow");
   const select = qs("parentStudentSelect");
   if (!row || !select) return;
@@ -192,6 +252,14 @@ function initParentViewerSelector(users, activeProfile) {
   }
 
   select.innerHTML = "";
+  const key = getParentSelectionKey(studioId, viewerUserId);
+  const stored = key ? localStorage.getItem(key) : null;
+  if (users.length > 1 && !stored) {
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = "Select a student";
+    select.appendChild(placeholder);
+  }
   users.forEach(user => {
     const option = document.createElement("option");
     option.value = user.id;
@@ -199,22 +267,31 @@ function initParentViewerSelector(users, activeProfile) {
     select.appendChild(option);
   });
 
-  const activeId = activeProfile?.id || users[0]?.id;
-  if (activeId) select.value = activeId;
+  const activeId = stored || activeProfile?.id || users[0]?.id;
+  if (activeId && !(users.length > 1 && !stored)) select.value = activeId;
   select.disabled = users.length <= 1;
   row.style.display = "";
 
   select.onchange = async () => {
+    if (!select.value) return;
     const nextUser = users.find(u => String(u.id) === String(select.value));
-    if (nextUser) await switchUser(nextUser);
+    if (nextUser) {
+      persistParentSelection(viewerUserId, studioId, nextUser.id);
+      updateParentProgressState({ hasSelection: true });
+      await switchUser(nextUser);
+    }
   };
 }
 
 function applyParentReadOnlyUI() {
   const notice = qs("parentReadOnlyNotice");
   const controls = qs("studentLoggingControls");
+  const staffMount = qs("staffQuickLogMount");
+  const quickLogCard = qs("quickLogCard");
   if (notice) notice.style.display = isParentReadOnly ? "block" : "none";
   if (controls) controls.style.display = isParentReadOnly ? "none" : "";
+  if (staffMount) staffMount.style.display = isParentReadOnly ? "none" : "";
+  if (quickLogCard) quickLogCard.style.display = isParentReadOnly ? "none" : "";
 
   const modalLogPractice = qs("modalLogPractice");
   const modalLogOther = qs("modalLogOther");
@@ -226,6 +303,18 @@ function applyParentReadOnlyUI() {
     modalLogOther.disabled = isParentReadOnly;
     modalLogOther.style.display = isParentReadOnly ? "none" : "";
   }
+}
+
+function updateParentProgressState({ hasSelection }) {
+  const progressWrap = qs("identityProgress");
+  const notice = qs("parentProgressNotice");
+  if (!isParentReadOnly) {
+    if (progressWrap) progressWrap.style.display = "";
+    if (notice) notice.style.display = "none";
+    return;
+  }
+  if (progressWrap) progressWrap.style.display = hasSelection ? "" : "none";
+  if (notice) notice.style.display = hasSelection ? "none" : "block";
 }
 
 async function refreshHomeForUser(profile) {
@@ -241,6 +330,10 @@ async function switchUser(user) {
     return;
   }
 
+  const ctx = viewerContextCache || await getViewerContext();
+  if (ctx?.mode === "parent") {
+    persistParentSelection(ctx.viewerUserId, ctx.studioId, user.id);
+  }
   localStorage.setItem("loggedInUser", JSON.stringify(user));
   localStorage.setItem("activeStudentId", user.id);
   currentProfile = user;
@@ -406,13 +499,52 @@ async function init() {
 const profile = JSON.parse(raw);
 currentProfile = profile;
 
+  const viewerContext = await getViewerContext();
+  if (viewerContext?.mode === "student") {
+    clearParentSelection(viewerContext.viewerUserId, viewerContext.studioId);
+    if (viewerContext.viewerUserId && String(profile?.id) !== String(viewerContext.viewerUserId)) {
+      const { data: viewerProfile } = await supabase
+        .from("users")
+        .select("*")
+        .eq("id", viewerContext.viewerUserId)
+        .single();
+      if (viewerProfile) {
+        currentProfile = viewerProfile;
+        localStorage.setItem("loggedInUser", JSON.stringify(viewerProfile));
+      }
+    }
+  }
+  console.log("[Identity] viewer context", viewerContext);
+
   const parentId = sessionData?.session?.user?.id;
 availableUsers = await loadAvailableUsers(parentId, profile);
 if (isParentReadOnly) {
   availableUsers = filterParentViewerUsers(availableUsers);
 }
 initAvatarSwitcher(availableUsers);
-initParentViewerSelector(availableUsers, profile);
+
+  if (viewerContext?.mode === "parent") {
+    const storedKey = getParentSelectionKey(viewerContext.studioId, viewerContext.viewerUserId);
+    const stored = storedKey ? localStorage.getItem(storedKey) : null;
+    if (!stored && availableUsers.length === 1) {
+      persistParentSelection(viewerContext.viewerUserId, viewerContext.studioId, availableUsers[0].id);
+    }
+  }
+
+initParentViewerSelector(availableUsers, profile, viewerContext.viewerUserId, viewerContext.studioId);
+
+  if (viewerContext?.mode === "parent") {
+    const storedKey = getParentSelectionKey(viewerContext.studioId, viewerContext.viewerUserId);
+    if (storedKey && !localStorage.getItem(storedKey)) {
+      console.log("[Identity] parent requires student selection", {
+        viewerUserId: viewerContext.viewerUserId,
+        studioId: viewerContext.studioId
+      });
+      updateParentProgressState({ hasSelection: false });
+      return;
+    }
+  }
+
 await refreshActiveStudentData({ fallbackProfile: profile });
 if (!isStaffUser && !isParentReadOnly) {
   await initStudentLogActions();
@@ -518,6 +650,7 @@ async function applyApprovedRecalc(userId) {
 
 async function loadPendingPoints(userId) {
   if (!userId) return;
+  console.log("[Home] fetching pending logs for userId", userId);
   const { data, error } = await supabase
     .from("logs")
     .select("points")
@@ -545,8 +678,12 @@ function updatePendingProgressFill() {
 }
 
 async function refreshActiveStudentData({ userId, fallbackProfile } = {}) {
-  const activeStudentId = userId || await getActiveStudentId();
-  if (!activeStudentId) return;
+  const ctx = await getViewerContext();
+  const activeStudentId = userId || ctx.activeStudentId;
+  if (!activeStudentId) {
+    updateParentProgressState({ hasSelection: false });
+    return;
+  }
 
   const { data: profileRow, error } = await supabase
     .from("users")
@@ -563,9 +700,13 @@ async function refreshActiveStudentData({ userId, fallbackProfile } = {}) {
     currentProfile = profile;
     localStorage.setItem("loggedInUser", JSON.stringify(profile));
     currentLevelRow = await loadLevel(profile.level || 1);
-    if (currentLevelRow) renderIdentity(profile, currentLevelRow);
+    if (currentLevelRow) {
+      const showWelcome = ctx.mode === "student";
+      renderIdentity(profile, currentLevelRow, showWelcome);
+    }
   }
 
+  updateParentProgressState({ hasSelection: true });
   await loadPendingPoints(activeStudentId);
   updatePendingProgressFill();
   practiceLoggedToday = await checkPracticeLoggedToday(activeStudentId);
@@ -586,14 +727,16 @@ function buildCategoryHeader(category, label) {
 }
 
 async function insertLogs(rows, { approved }) {
-  if (isParentReadOnly) {
-    showToast("Parents can view progress. Students log points from their student profile.");
+  const ctx = await getViewerContext();
+  if (ctx?.mode === "parent") {
+    showToast("Parents are read-only.");
     return false;
   }
-  const { data: sessionData } = await supabase.auth.getSession();
+  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
   const authUserId = sessionData?.session?.user?.id || null;
   if (!authUserId) {
-    showToast("Please log in again.");
+    if (sessionError) console.error("[Home] session check failed", sessionError);
+    window.location.href = "login.html";
     return false;
   }
 
@@ -626,8 +769,14 @@ async function initStudentLogActions() {
   if (practiceBtn) {
     practiceBtn.addEventListener("click", async (e) => {
       e.preventDefault();
-      const activeStudentId = await getActiveStudentId();
-      if (!activeStudentId) return;
+      const ctx = await getViewerContext();
+      console.log("[Home] log action context", ctx);
+      if (ctx?.mode === "parent") {
+        showToast("Parents are read-only.");
+        return;
+      }
+      if (!ctx?.activeStudentId) return;
+      const activeStudentId = ctx.activeStudentId;
       practiceLoggedToday = await checkPracticeLoggedToday(activeStudentId);
       setPracticeButtonState(practiceBtn, practiceLoggedToday);
       if (practiceLoggedToday) {
@@ -654,18 +803,28 @@ async function initStudentLogActions() {
   if (pastPracticeBtn) {
     pastPracticeBtn.addEventListener("click", async (e) => {
       e.preventDefault();
-      const activeStudentId = await getActiveStudentId();
-      if (!activeStudentId) return;
-      await openPastPracticeModal(activeStudentId);
+      const ctx = await getViewerContext();
+      console.log("[Home] log action context", ctx);
+      if (ctx?.mode === "parent") {
+        showToast("Parents are read-only.");
+        return;
+      }
+      if (!ctx?.activeStudentId) return;
+      await openPastPracticeModal(ctx.activeStudentId);
     });
   }
 
   document.querySelectorAll(".action-grid .chip").forEach((btn) => {
     btn.addEventListener("click", async (e) => {
       e.preventDefault();
-      const activeStudentId = await getActiveStudentId();
-      if (!activeStudentId) return;
-      await openChipModal(btn, activeStudentId);
+      const ctx = await getViewerContext();
+      console.log("[Home] log action context", ctx);
+      if (ctx?.mode === "parent") {
+        showToast("Parents are read-only.");
+        return;
+      }
+      if (!ctx?.activeStudentId) return;
+      await openChipModal(btn, ctx.activeStudentId);
     });
   });
 }

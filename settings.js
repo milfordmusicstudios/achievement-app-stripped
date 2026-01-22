@@ -2,6 +2,9 @@
 import { supabase } from "./supabaseClient.js";
 import { recalculateUserPoints, ensureUserRow, getAuthUserId } from './utils.js';
 
+let authViewerId = null;
+let activeStudioId = null;
+
 // ---------- helpers ----------
 function getHighestRole(roles) {
   const priority = { admin: 3, teacher: 2, student: 1, parent: 0 };
@@ -14,6 +17,16 @@ function normalizeUUID(value) {
   return String(value);
 }
 function capitalize(str) { return str ? str.charAt(0).toUpperCase() + str.slice(1) : ''; }
+function clearActiveStudentCacheIfStudent(roles) {
+  if (!Array.isArray(roles)) return;
+  const normalized = roles.map(r => String(r).toLowerCase());
+  if (!normalized.includes('student')) return;
+  const studioId = activeStudioId || localStorage.getItem('activeStudioId');
+  if (studioId && authViewerId) {
+    localStorage.removeItem(`aa.activeStudent.${studioId}.${authViewerId}`);
+  }
+  localStorage.removeItem('activeStudentId');
+}
 
 // ---------- related users (parent/children/siblings) ----------
 async function fetchRelatedUsers(user) {
@@ -70,6 +83,7 @@ async function promptUserSwitch() {
       const roles = Array.isArray(u.roles) ? u.roles : (u.role ? [u.role] : []);
       const highest = roles.slice().sort((a,b)=>(priority[b?.toLowerCase()]??-1)-(priority[a?.toLowerCase()]??-1))[0] || 'student';
       localStorage.setItem('activeRole', highest);
+      clearActiveStudentCacheIfStudent(roles);
 
       try {
         const m = await import('./utils.js').catch(()=>null);
@@ -98,6 +112,7 @@ function promptRoleSwitch() {
     btn.textContent = capitalize(role);
     btn.onclick = () => {
       localStorage.setItem('activeRole', role);
+      clearActiveStudentCacheIfStudent([role]);
       window.location.href = 'index.html';
     };
     li.appendChild(btn);
@@ -238,6 +253,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.location.replace("./login.html");
     return;
   }
+  authViewerId = authUserId;
+  activeStudioId = localStorage.getItem('activeStudioId');
 
   const { data: authProfile, error: authProfileErr } = await supabase
     .from('users')

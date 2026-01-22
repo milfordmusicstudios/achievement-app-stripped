@@ -1,6 +1,52 @@
 import { supabase } from "./supabaseClient.js";
-import { getActiveStudentId, recalculateUserPoints } from './utils.js';
+import { recalculateUserPoints } from './utils.js';
 import { ensureStudioContextAndRoute } from "./studio-routing.js";
+
+function getParentSelectionKey(studioId, viewerUserId) {
+  return studioId && viewerUserId ? `aa.activeStudent.${studioId}.${viewerUserId}` : null;
+}
+
+async function getViewerContext() {
+  const { data: sessionData } = await supabase.auth.getSession();
+  const viewerUserId = sessionData?.session?.user?.id || null;
+  const studioId = localStorage.getItem("activeStudioId");
+
+  let roles = [];
+  try {
+    roles = JSON.parse(localStorage.getItem("activeStudioRoles") || "[]");
+  } catch {
+    roles = [];
+  }
+
+  if (!roles.length && viewerUserId && studioId) {
+    const { data: member } = await supabase
+      .from("studio_members")
+      .select("roles")
+      .eq("user_id", viewerUserId)
+      .eq("studio_id", studioId)
+      .single();
+    roles = Array.isArray(member?.roles) ? member.roles : [];
+    localStorage.setItem("activeStudioRoles", JSON.stringify(roles));
+  }
+
+  let mode = "parent";
+  if (roles.includes("admin")) mode = "admin";
+  else if (roles.includes("teacher")) mode = "teacher";
+  else if (roles.includes("student")) mode = "student";
+  else if (roles.includes("parent")) mode = "parent";
+
+  let activeStudentId = null;
+  if (roles.includes("student")) {
+    activeStudentId = viewerUserId;
+  } else if (roles.includes("parent") && !roles.includes("student")) {
+    const key = getParentSelectionKey(studioId, viewerUserId);
+    activeStudentId = (key && localStorage.getItem(key))
+      || localStorage.getItem("activeStudentId")
+      || null;
+  }
+
+  return { viewerUserId, roles, studioId, activeStudentId, mode };
+}
 
 document.addEventListener("DOMContentLoaded", async () => {
   console.log("[DEBUG] My Points: Script loaded");
@@ -8,13 +54,21 @@ document.addEventListener("DOMContentLoaded", async () => {
   const routeResult = await ensureStudioContextAndRoute({ redirectHome: false });
   if (routeResult?.redirected) return;
 
-  const userId = await getActiveStudentId();
-  if (!userId) {
-    alert("User session not found. Please log in again.");
+  const { data: sessionData } = await supabase.auth.getSession();
+  if (!sessionData?.session) {
     window.location.href = "login.html";
     return;
   }
 
+  const viewerContext = await getViewerContext();
+  console.log("[Identity] viewer context", viewerContext);
+  if (!viewerContext?.activeStudentId) {
+    alert("Select a student on Home to view points.");
+    window.location.href = "index.html";
+    return;
+  }
+
+  const userId = viewerContext.activeStudentId;
   console.log("[DEBUG] Fetching logs for user ID:", userId);
 
   const logsTableBody = document.querySelector("#logsTable tbody");
@@ -23,6 +77,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   try {
     // ✅ Fetch logs
+    console.log("[My Points] fetching logs for userId", userId);
     const { data: logs, error: logsError } = await supabase
       .from("logs")
       .select("*")
@@ -32,17 +87,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (logsError) throw logsError;
     console.log("[DEBUG] Logs fetched:", logs);
     if (!logs || logs.length === 0) {
-      const rolesRaw = localStorage.getItem("activeStudioRoles");
-      let roles = [];
-      try {
-        roles = JSON.parse(rolesRaw || "[]");
-      } catch {
-        roles = [];
-      }
       console.log("[My Points] empty logs", {
         activeStudentId: userId,
-        roles,
-        studioId: localStorage.getItem("activeStudioId")
+        roles: viewerContext.roles,
+        studioId: viewerContext.studioId
       });
     }
 
