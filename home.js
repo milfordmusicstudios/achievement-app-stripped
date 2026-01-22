@@ -16,6 +16,7 @@ let availableUsers = [];
 let pendingPointsTotal = 0;
 let currentLevelRow = null;
 let isStaffUser = false;
+let isParentReadOnly = false;
 let practiceLoggedToday = false;
 
 
@@ -70,6 +71,17 @@ function uniqueUsers(users) {
     if (u && u.id && !map.has(u.id)) map.set(u.id, u);
   });
   return Array.from(map.values());
+}
+
+function filterParentViewerUsers(users) {
+  if (!Array.isArray(users)) return [];
+  return users.filter(user => {
+    const roles = Array.isArray(user.roles) ? user.roles : (user.role ? [user.role] : []);
+    if (!roles.length) return true;
+    const hasParent = roles.includes("parent");
+    const hasStudent = roles.includes("student");
+    return hasStudent || !hasParent;
+  });
 }
 
 async function loadAvailableUsers(parentId, fallbackProfile) {
@@ -139,6 +151,60 @@ function renderAvatarMenu(users, activeId) {
   });
 }
 
+function syncParentViewerSelector(activeId) {
+  const select = qs("parentStudentSelect");
+  if (!select) return;
+  const value = String(activeId || "");
+  if (value && select.value !== value) select.value = value;
+}
+
+function initParentViewerSelector(users, activeProfile) {
+  const row = qs("parentViewerRow");
+  const select = qs("parentStudentSelect");
+  if (!row || !select) return;
+
+  if (!isParentReadOnly || !Array.isArray(users) || users.length === 0) {
+    row.style.display = "none";
+    return;
+  }
+
+  select.innerHTML = "";
+  users.forEach(user => {
+    const option = document.createElement("option");
+    option.value = user.id;
+    option.textContent = getUserLabel(user);
+    select.appendChild(option);
+  });
+
+  const activeId = activeProfile?.id || users[0]?.id;
+  if (activeId) select.value = activeId;
+  select.disabled = users.length <= 1;
+  row.style.display = "";
+
+  select.onchange = async () => {
+    const nextUser = users.find(u => String(u.id) === String(select.value));
+    if (nextUser) await switchUser(nextUser);
+  };
+}
+
+function applyParentReadOnlyUI() {
+  const notice = qs("parentReadOnlyNotice");
+  const controls = qs("studentLoggingControls");
+  if (notice) notice.style.display = isParentReadOnly ? "block" : "none";
+  if (controls) controls.style.display = isParentReadOnly ? "none" : "";
+
+  const modalLogPractice = qs("modalLogPractice");
+  const modalLogOther = qs("modalLogOther");
+  if (modalLogPractice) {
+    modalLogPractice.disabled = isParentReadOnly;
+    modalLogPractice.style.display = isParentReadOnly ? "none" : "";
+  }
+  if (modalLogOther) {
+    modalLogOther.disabled = isParentReadOnly;
+    modalLogOther.style.display = isParentReadOnly ? "none" : "";
+  }
+}
+
 async function refreshHomeForUser(profile) {
   const levelRow = await loadLevel(profile.level || 1);
   if (!levelRow) return;
@@ -163,6 +229,7 @@ async function switchUser(user) {
   practiceLoggedToday = await checkPracticeLoggedToday(user.id);
   setPracticeButtonState(qs("quickPracticeBtn"), practiceLoggedToday);
   renderAvatarMenu(availableUsers, user.id);
+  syncParentViewerSelector(user.id);
   closeAvatarMenu();
 }
 
@@ -247,6 +314,10 @@ async function init() {
     const isStaff = studioRoles.includes('admin') || studioRoles.includes('teacher');
     const isAdmin = studioRoles.includes('admin');
     isStaffUser = isStaff;
+    const isParentRole = studioRoles.includes('parent');
+    const isStudentRole = studioRoles.includes('student');
+    isParentReadOnly = isParentRole && !isStudentRole;
+    if (isParentReadOnly) document.body.classList.add('is-parent');
     if (isStaff) document.body.classList.add('is-staff');
     if (isAdmin) document.body.classList.add('is-admin');
     console.log('[Home] studio roles', studioRoles);
@@ -296,6 +367,7 @@ async function init() {
         roles: studioRoles
       });
     }
+    applyParentReadOnlyUI();
   }
 
   await ensureUserRow();
@@ -320,11 +392,15 @@ currentProfile = profile;
 
   const parentId = sessionData?.session?.user?.id;
 availableUsers = await loadAvailableUsers(parentId, profile);
+if (isParentReadOnly) {
+  availableUsers = filterParentViewerUsers(availableUsers);
+}
 initAvatarSwitcher(availableUsers);
+initParentViewerSelector(availableUsers, profile);
 currentLevelRow = levelRow;
 await loadPendingPoints(profile.id);
 updatePendingProgressFill();
-if (!isStaffUser) {
+if (!isStaffUser && !isParentReadOnly) {
   await initStudentLogActions(profile.id);
 }
 }
@@ -464,6 +540,10 @@ function buildCategoryHeader(category, label) {
 }
 
 async function insertLogs(rows, { approved }) {
+  if (isParentReadOnly) {
+    showToast("Parents can view progress. Students log points from their student profile.");
+    return false;
+  }
   const { data: sessionData } = await supabase.auth.getSession();
   const authUserId = sessionData?.session?.user?.id || null;
   if (!authUserId) {
@@ -715,7 +795,10 @@ async function openChipModal(button, userId) {
   const category = button.dataset.category || "";
   const label = button.dataset.hint || button.textContent.trim();
   const points = Number(button.dataset.points || 0);
-  const notesRequired = button.dataset.notesRequired === "true";
+  const notesPrompt = button.dataset.notesPrompt || "";
+  const notesRequired = logType === "festival"
+    ? false
+    : button.dataset.notesRequired !== "false";
 
   if (logType === "outside-performance") {
     const existingPoints = await getOutsidePerformancePointsThisMonth(userId);
@@ -731,7 +814,7 @@ async function openChipModal(button, userId) {
   }
 
   if (logType === "memorization") {
-    openMemorizationModal({ userId, category, label });
+    openMemorizationModal({ userId, category, label, notesPrompt, notesRequired });
     return;
   }
 
@@ -742,6 +825,7 @@ async function openChipModal(button, userId) {
     label,
     points,
     notesRequired,
+    notesPrompt,
     notePrefix: logType === "outside-performance" ? "[Outside Performance] " : "",
     statusText: "Pending approval",
     submitLabel: "Submit",
@@ -772,9 +856,11 @@ async function getOutsidePerformancePointsThisMonth(userId) {
   return (data || []).reduce((sum, row) => sum + (row.points || 0), 0);
 }
 
-function openFixedModal({ userId, category, label, points, notesRequired, notePrefix, statusText, submitLabel, statusValue, pointsHint }) {
+function openFixedModal({ userId, category, label, points, notesRequired, notesPrompt, notePrefix, statusText, submitLabel, statusValue, pointsHint }) {
   const safePoints = Number.isFinite(points) && points > 0 ? points : 5;
   const pointsLabel = pointsHint || safePoints;
+  const noteLabel = notesPrompt || `Notes${notesRequired ? " (required)" : " (optional)"}`;
+  const notePlaceholder = notesPrompt || "Add a note";
   openStudentModal({
     title: label,
     submitLabel,
@@ -789,8 +875,8 @@ function openFixedModal({ userId, category, label, points, notesRequired, notePr
         <input id="logPointsInput" class="points-readonly" type="text" value="${pointsLabel}" disabled>
       </div>
       <div class="modal-field">
-        <label>Notes${notesRequired ? " (required)" : " (optional)"}</label>
-        <textarea id="logNotesInput" placeholder="Add a note"></textarea>
+        <label>${noteLabel}</label>
+        <textarea id="logNotesInput" placeholder="${notePlaceholder}" ${notesRequired ? "required" : ""}></textarea>
       </div>
       <div class="status-note">${statusText}</div>
     `,
@@ -802,7 +888,7 @@ function openFixedModal({ userId, category, label, points, notesRequired, notePr
         return;
       }
       if (notesRequired && !notesValue) {
-        showToast("Please add a note.");
+        showToast("Please add a note");
         return;
       }
       const notes = `${notePrefix || ""}${notesValue}`.trim();
@@ -885,7 +971,9 @@ function openFestivalModal({ userId, category, label }) {
   }
 }
 
-function openMemorizationModal({ userId, category, label }) {
+function openMemorizationModal({ userId, category, label, notesRequired, notesPrompt }) {
+  const noteLabel = notesPrompt || "Notes";
+  const notePlaceholder = notesPrompt || "Add a note";
   openStudentModal({
     title: label,
     submitLabel: "Submit",
@@ -904,8 +992,8 @@ function openMemorizationModal({ userId, category, label }) {
         <input id="memorizationPoints" class="points-readonly" type="text" value="2" disabled>
       </div>
       <div class="modal-field">
-        <label>Notes (optional)</label>
-        <textarea id="memorizationNotes" placeholder="Add a note"></textarea>
+        <label>${noteLabel}</label>
+        <textarea id="memorizationNotes" placeholder="${notePlaceholder}" ${notesRequired ? "required" : ""}></textarea>
       </div>
       <div class="status-note">Pending approval</div>
     `,
@@ -915,6 +1003,10 @@ function openMemorizationModal({ userId, category, label }) {
       const notes = qs("memorizationNotes")?.value?.trim() || "";
       if (!date || !Number.isFinite(measures) || measures < 1) {
         showToast("Enter a measures count.");
+        return;
+      }
+      if (notesRequired && !notes) {
+        showToast("Please add a note");
         return;
       }
       const points = measures * 2;

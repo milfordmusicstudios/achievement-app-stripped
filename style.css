@@ -453,6 +453,34 @@ body.is-admin #roleBadgeTeacher {
 ================================ */
 .identity-progress { margin-top: 8px; }
 
+.parent-viewer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 10px 14px;
+  background: rgba(255,255,255,0.78);
+  border-radius: 18px;
+  border: 2px solid rgba(11,79,138,0.18);
+  box-shadow: 0 8px 18px rgba(0,0,0,0.08);
+}
+
+.parent-viewer-label {
+  font-weight: 900;
+  color: #0B4F8A;
+}
+
+.parent-viewer select {
+  flex: 1;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 2px solid rgba(11,79,138,0.2);
+  font-size: 14px;
+  font-weight: 800;
+  color: #0B4F8A;
+  background: #ffffff;
+}
+
 .progress-card {
   background: rgba(255,255,255,0.85);
   border-radius: 20px;

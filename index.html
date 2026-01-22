@@ -53,6 +53,10 @@
         <div id="progressPercent" class="progress-percent">0% complete</div>
       </div>
     </div>
+    <div id="parentViewerRow" class="parent-viewer" style="display:none;">
+      <span class="parent-viewer-label">Viewing:</span>
+      <select id="parentStudentSelect" aria-label="Viewing student"></select>
+    </div>
     <div id="staffQuickLogMount"></div>
     <section id="quickLogCard" style="display:none;">
       <form id="quickLogForm" class="staff-card">
@@ -84,36 +88,41 @@
     </section>
     <!-- Action hub -->
     <section class="home-actions student-only" aria-label="Log your progress">
-      <button id="quickPracticeBtn" class="action-primary">
-        ✅ <span>Log Today&apos;s Practice</span> <span class="muted">(+5 XP)</span>
-      </button>
-
-      <button id="logPastPracticeBtn" class="action-secondary">
-        🗓️ <span>Log Past Practice</span> <span class="muted">(last 30 days)</span>
-      </button>
-
-      <div class="action-title">Did you do any of these?</div>
-
-      <div class="action-grid">
-        <button class="chip" data-log-type="fixed" data-points="50" data-category="proficiency" data-hint="Finish a book">📘 Finish a book</button>
-        <button class="chip" data-log-type="fixed" data-points="50" data-category="participation" data-hint="Group class">👥 Group class</button>
-        <button class="chip" data-log-type="fixed" data-points="100" data-category="performance" data-hint="Milford performance">🎤 Milford performance</button>
-        <button class="chip" data-log-type="outside-performance" data-points="25" data-notes-required="true" data-category="performance" data-hint="Outside Performance">🎬 Outside Performance</button>
-        <button class="chip" data-log-type="fixed" data-points="100" data-category="participation" data-hint="Competition">🏅 Competition</button>
-        <button class="chip" data-log-type="festival" data-category="proficiency" data-hint="Festival rating">🏆 Festival rating</button>
-        <button class="chip" data-log-type="memorization" data-category="proficiency" data-hint="Memorization">🧠 Memorization</button>
-        <button class="chip" data-log-type="fixed" data-points="50" data-category="proficiency" data-hint="Theory/Technique test">📝 Theory/Technique test</button>
-        <button class="chip" data-log-type="discretionary" data-points="5" data-notes-required="true" data-category="personal" data-hint="Personal goal">🎯 Personal goal</button>
-
-        <!-- Teacher goal (only shown if teacher/admin has assigned something active) -->
-        <button id="teacherGoalChip" class="chip chip-teacher" data-log-type="discretionary" data-points="5" data-notes-required="true" data-category="personal" data-hint="Teacher goal" style="display:none;">
-          ⭐ Teacher goal
-        </button>
+      <div id="parentReadOnlyNotice" class="helper-text" style="display:none;">
+        Parents can view progress. Students log points from their student profile.
       </div>
+      <div id="studentLoggingControls">
+        <button id="quickPracticeBtn" class="action-primary">
+          ✅ <span>Log Today&apos;s Practice</span> <span class="muted">(+5 XP)</span>
+        </button>
 
-<div class="helper-text">
-  Pending = in review by your teacher 👍
-</div>
+        <button id="logPastPracticeBtn" class="action-secondary">
+          🗓️ <span>Log Past Practice</span> <span class="muted">(last 30 days)</span>
+        </button>
+
+        <div class="action-title">Did you do any of these?</div>
+
+        <div class="action-grid">
+          <button class="chip" data-log-type="fixed" data-points="50" data-notes-required="true" data-notes-prompt="What book did you complete?" data-category="proficiency" data-hint="Finish a book">📘 Finish a book</button>
+          <button class="chip" data-log-type="fixed" data-points="50" data-notes-required="true" data-notes-prompt="What class did you attend?" data-category="participation" data-hint="Group class">👥 Group class</button>
+          <button class="chip" data-log-type="fixed" data-points="100" data-notes-required="true" data-notes-prompt="What performance did you participate in?" data-category="performance" data-hint="Studio Performance">🎤 Studio Performance</button>
+          <button class="chip" data-log-type="outside-performance" data-points="25" data-notes-required="true" data-notes-prompt="What event did you perform at?" data-category="performance" data-hint="Outside Performance">🎬 Outside Performance</button>
+          <button class="chip" data-log-type="fixed" data-points="100" data-notes-required="true" data-notes-prompt="Describe the competition." data-category="participation" data-hint="Competition">🏅 Competition</button>
+          <button class="chip" data-log-type="festival" data-category="proficiency" data-hint="Festival rating">🏆 Festival rating</button>
+          <button class="chip" data-log-type="memorization" data-points="2" data-notes-required="true" data-notes-prompt="Name of piece." data-category="proficiency" data-hint="Memorization">🧠 Memorization</button>
+          <button class="chip" data-log-type="fixed" data-points="50" data-notes-required="true" data-notes-prompt="What level test did you complete?" data-category="proficiency" data-hint="Theory/Technique test">📝 Theory/Technique test</button>
+          <button class="chip" data-log-type="discretionary" data-points="5" data-notes-required="true" data-notes-prompt="Describe the goal." data-category="personal" data-hint="Personal goal">🎯 Personal goal</button>
+
+          <!-- Teacher goal (only shown if teacher/admin has assigned something active) -->
+          <button id="teacherGoalChip" class="chip chip-teacher" data-log-type="discretionary" data-points="5" data-notes-required="true" data-notes-prompt="Describe the goal." data-category="personal" data-hint="Teacher goal" style="display:none;">
+            ⭐ Teacher goal
+          </button>
+        </div>
+
+        <div class="helper-text">
+          Pending = in review by your teacher 👍
+        </div>
+      </div>
 
       <div class="recent-badge">
 <h3 class="achievement-title">✨ Your Latest Achievement</h3>
