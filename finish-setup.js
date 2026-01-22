@@ -287,19 +287,17 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       const payload = {
         studio_id: studioId,
-        user_id: uid,
-        created_by: uid
+        user_id: uid
       };
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("studio_members")
-        .upsert(payload, { onConflict: "studio_id,user_id" });
+        .upsert(payload, { onConflict: "studio_id,user_id" })
+        .select()
+        .single();
 
-      if (error) {
-        console.warn("[FinishSetup] ensureStudioMembership failed", error);
-      } else {
-        console.log("[FinishSetup] ensureStudioMembership ok");
-      }
+      if (error) console.error("[FinishSetup] ensureStudioMembership failed", error);
+      else console.log("[FinishSetup] ensureStudioMembership ok", data);
     };
 
     await ensureStudioMembership(contextResult.studioId);
