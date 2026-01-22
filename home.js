@@ -759,10 +759,26 @@ async function insertLogs(rows, { approved }) {
     ...(studioId ? { studio_id: studioId } : {})
   }));
 
-  const { error } = await supabase.from("logs").insert(payload);
-  if (error) {
-    console.error("Failed to save log:", error);
-    const message = String(error.message || "");
+  const normalizeDate = (value) => {
+    if (!value) return null;
+    if (value instanceof Date) return value.toISOString().slice(0, 10);
+    if (typeof value === "string") return value.slice(0, 10);
+    return String(value);
+  };
+
+  const results = await Promise.all(payload.map(row => supabase.rpc("insert_log", {
+    p_user_id: row.userId,
+    p_studio_id: row.studio_id || null,
+    p_category: row.category,
+    p_points: row.points,
+    p_note: row.notes ?? null,
+    p_date: normalizeDate(row.date)
+  })));
+
+  const firstError = results.find(r => r.error)?.error || null;
+  if (firstError) {
+    console.error("Failed to save log:", firstError);
+    const message = String(firstError.message || "");
     if (message.toLowerCase().includes("row-level security")) {
       showToast("Please log in again.");
     } else {
