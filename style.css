@@ -1582,6 +1582,11 @@ body.review-logs-page .summary-card {
   cursor: pointer;
 }
 
+body.review-logs-page .summary-card.is-active {
+  box-shadow: 0 12px 24px rgba(0,0,0,0.18);
+  border-color: rgba(11,79,138,0.32);
+}
+
 body.review-logs-page .summary-card::before {
   content: "";
   position: absolute;

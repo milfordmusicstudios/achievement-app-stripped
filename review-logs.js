@@ -54,6 +54,18 @@ document.addEventListener("DOMContentLoaded", async () => {
   let currentPage = 1;
   let logsPerPage = 25;
   let summaryFilter = "all";
+  let activeSummaryCard = "all";
+
+  const todayString = () => new Date().toISOString().split("T")[0];
+  const isApprovedStatus = (value) => String(value || "").toLowerCase() === "approved";
+  const isSameDay = (value, today) => String(value || "").startsWith(today);
+  const isApprovedToday = (log, today) => {
+    if (!isApprovedStatus(log.status)) return false;
+    if (log._approvedToday) return true;
+    if (log.approved_at && isSameDay(log.approved_at, today)) return true;
+    if (log.updated_at && isSameDay(log.updated_at, today)) return true;
+    return isSameDay(log.date, today);
+  };
 
   try {
     const { data: logsData, error: logsError } = await supabase
@@ -101,7 +113,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   function applyFilters() {
     const searchVal = searchInput.value.toLowerCase();
     const statusVal = statusFilter.value;
-    const todayStr = new Date().toISOString().split("T")[0];
+    const todayStr = todayString();
 
     filteredLogs = logs.filter(l => {
       const matchesSearch =
@@ -109,7 +121,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         (l.notes || "").toLowerCase().includes(searchVal) ||
         (l.category || "").toLowerCase().includes(searchVal);
       const matchesStatus = !statusVal || (l.status && l.status.toLowerCase() === statusVal.toLowerCase());
-      const matchesToday = summaryFilter !== "approved-today" || String(l.date || "").startsWith(todayStr);
+      const matchesToday = summaryFilter !== "approved-today" || isApprovedToday(l, todayStr);
       return matchesSearch && matchesStatus && matchesToday;
     });
 
@@ -178,14 +190,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   function renderCategorySummary(list) {
     if (!categorySummary) return;
     const pendingCount = list.filter(l => String(l.status || "").toLowerCase() === "pending").length;
-    const approvedTodayCount = list.filter(l => {
-      const status = String(l.status || "").toLowerCase();
-      if (status !== "approved") return false;
-      if (!l.date) return false;
-      const logDate = new Date(l.date);
-      const now = new Date();
-      return logDate.toDateString() === now.toDateString();
-    }).length;
+    const todayStr = todayString();
+    const approvedTodayCount = list.filter(l => isApprovedToday(l, todayStr)).length;
     const needsInfoCount = list.filter(l => String(l.status || "").toLowerCase() === "needs info").length;
     const rejectedCount = list.filter(l => String(l.status || "").toLowerCase() === "rejected").length;
 
@@ -219,10 +225,16 @@ document.addEventListener("DOMContentLoaded", async () => {
       } else if (key.includes("total")) {
         extraClass = "total";
         filterTag = "all";
+      } else if (key.includes("needs info")) {
+        extraClass = "review";
+        filterTag = "needs info";
+      } else if (key.includes("rejected")) {
+        extraClass = "review";
+        filterTag = "rejected";
       }
       else extraClass = "review";
       return `
-      <div class="summary-card ${extraClass}" data-filter="${filterTag}">
+      <div class="summary-card ${extraClass} ${activeSummaryCard === filterTag ? "is-active" : ""}" data-filter="${filterTag}">
         <div class="summary-label">${card.label}</div>
         <div class="summary-value">${card.value}</div>
       </div>
@@ -238,10 +250,18 @@ document.addEventListener("DOMContentLoaded", async () => {
         } else if (filter === "approved-today") {
           summaryFilter = "approved-today";
           statusFilter.value = "approved";
+        } else if (filter === "needs info") {
+          summaryFilter = "all";
+          statusFilter.value = "needs info";
+        } else if (filter === "rejected") {
+          summaryFilter = "all";
+          statusFilter.value = "rejected";
         } else {
           summaryFilter = "all";
           statusFilter.value = "";
         }
+        searchInput.value = "";
+        activeSummaryCard = filter;
         applyFilters();
       });
     });
@@ -405,8 +425,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       console.log("[Approve Selected] updated", selectedIds.length, data);
 
-      logs = logs.map(l => selectedIds.includes(String(l.id)) ? { ...l, status: "approved" } : l);
-      filteredLogs = filteredLogs.map(l => selectedIds.includes(String(l.id)) ? { ...l, status: "approved" } : l);
+      const todayStr = todayString();
+      logs = logs.map(l => selectedIds.includes(String(l.id)) ? { ...l, status: "approved", _approvedToday: true, updated_at: todayStr } : l);
+      filteredLogs = filteredLogs.map(l => selectedIds.includes(String(l.id)) ? { ...l, status: "approved", _approvedToday: true, updated_at: todayStr } : l);
       renderLogsTable(filteredLogs);
       renderCategorySummary(filteredLogs);
       updateBulkActionBarVisibility();
