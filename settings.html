@@ -71,8 +71,8 @@
 <div id="envBadge" class="env-badge" style="display:none;"></div>
 
 <main class="app">
-  <div id="activeStudentHeader"></div>
   <h2 style="text-align: center; color: #3399e8; margin: 10px 0;">Family Settings</h2>
+  <p class="settings-subtitle">Manage login info and students on this account.</p>
 
   <form class="settings-form">
     <input type="text" id="firstName" placeholder="First Name" />
@@ -83,7 +83,6 @@
       <div id="teacherSelectError" class="teacher-error" style="display:none;"></div>
     </div>
     <input type="email" id="newEmail" placeholder="New Email" />
-    <input type="password" id="currentPassword" placeholder="Current Password" />
     <input type="password" id="newPassword" placeholder="New Password" />
 <tr>
   <td colspan="2" style="padding: 5px 15px; text-align: center; font-size: 0.9rem; color: #00477d; font-weight: bold;">
@@ -140,6 +139,22 @@
     <h3>Select Role</h3>
     <ul id="roleSwitchList" style="list-style: none; padding: 0;"></ul>
     <button id="cancelRoleSwitchBtn" class="blue-button" style="margin-top: 10px; width: 100%;">Cancel</button>
+  </div>
+</div>
+
+<div id="passwordConfirmModal" class="modal-overlay">
+  <div class="modal-card">
+    <h3>Confirm your password</h3>
+    <p class="modal-helper">Enter your password to continue.</p>
+    <div class="pw-field">
+      <input id="confirmPasswordInput" type="password" placeholder="Password" />
+      <button id="confirmPasswordToggle" type="button" class="pw-toggle">Show</button>
+    </div>
+    <div id="confirmPasswordError" class="modal-error" style="display:none;"></div>
+    <div class="modal-actions">
+      <button id="confirmPasswordCancel" type="button" class="blue-button">Cancel</button>
+      <button id="confirmPasswordSubmit" type="button" class="blue-button">Confirm</button>
+    </div>
   </div>
 </div>
 

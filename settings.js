@@ -1,6 +1,6 @@
 // settings.js — patched to fix password/email updates with switched profiles
 import { supabase } from "./supabaseClient.js";
-import { clearAppSessionCache, recalculateUserPoints, ensureUserRow, getAuthUserId, getViewerContext, renderActiveStudentHeader } from './utils.js';
+import { clearAppSessionCache, recalculateUserPoints, ensureUserRow, getAuthUserId, getViewerContext } from './utils.js';
 import { clearActiveProfileId, getActiveProfileId, setActiveProfileId } from './active-profile.js';
 
 let authViewerId = null;
@@ -8,7 +8,7 @@ let activeStudioId = null;
 let teacherOptionData = [];
 let authEmail = null;
 let authProfileCache = null;
-const REAUTH_WINDOW_MS = 10 * 60 * 1000;
+let pendingSensitiveAction = null;
 
 // ---------- helpers ----------
 function getHighestRole(roles) {
@@ -44,36 +44,63 @@ function setTeacherError(message) {
   errorEl.style.display = message ? "block" : "none";
 }
 
-async function requireReauth() {
-  const last = Number(sessionStorage.getItem("reauthAt") || 0);
-  if (last && Date.now() - last < REAUTH_WINDOW_MS) return true;
-
-  const passwordInput = document.getElementById("currentPassword");
-  const password = (passwordInput?.value || "").trim();
-  if (!password) {
-    alert("Please enter your current password to continue.");
-    return false;
+function openPasswordModal({ onConfirm }) {
+  const overlay = document.getElementById("passwordConfirmModal");
+  const input = document.getElementById("confirmPasswordInput");
+  const errorEl = document.getElementById("confirmPasswordError");
+  if (!overlay || !input) return;
+  if (errorEl) {
+    errorEl.textContent = "";
+    errorEl.style.display = "none";
   }
+  pendingSensitiveAction = onConfirm;
+  overlay.classList.add("is-open");
+  setTimeout(() => input.focus(), 0);
+}
 
+function closePasswordModal() {
+  const overlay = document.getElementById("passwordConfirmModal");
+  const input = document.getElementById("confirmPasswordInput");
+  const errorEl = document.getElementById("confirmPasswordError");
+  if (overlay) overlay.classList.remove("is-open");
+  if (input) input.value = "";
+  if (errorEl) {
+    errorEl.textContent = "";
+    errorEl.style.display = "none";
+  }
+  pendingSensitiveAction = null;
+}
+
+function setPasswordModalError(message) {
+  const errorEl = document.getElementById("confirmPasswordError");
+  if (!errorEl) return;
+  errorEl.textContent = message || "";
+  errorEl.style.display = message ? "block" : "none";
+}
+
+async function confirmPasswordAndRun() {
+  const input = document.getElementById("confirmPasswordInput");
+  const password = (input?.value || "").trim();
+  if (!password) {
+    setPasswordModalError("Please enter your password.");
+    return;
+  }
   const { data: authData } = await supabase.auth.getUser();
   const email = authEmail || authData?.user?.email;
   if (!email) {
-    alert("Missing account email. Please log in again.");
-    return false;
+    setPasswordModalError("Missing account email. Please log in again.");
+    return;
   }
-
-  const { error } = await supabase.auth.signInWithPassword({
-    email,
-    password
-  });
-
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) {
-    alert("Current password is incorrect.");
-    return false;
+    setPasswordModalError("Incorrect password.");
+    return;
   }
-
-  sessionStorage.setItem("reauthAt", String(Date.now()));
-  return true;
+  const action = pendingSensitiveAction;
+  closePasswordModal();
+  if (typeof action === "function") {
+    await action();
+  }
 }
 
 async function loadLinkedStudents(parentId, studioId, options = {}) {
@@ -167,35 +194,36 @@ async function renderLinkedStudents(parentId, studioId) {
       const studentId = btn.dataset.id;
       if (!studentId) return;
 
-      const ok = await requireReauth();
-      if (!ok) return;
+      openPasswordModal({
+        onConfirm: async () => {
+          const target = students.find(s => String(s.id) === String(studentId));
+          const isActive = target && !target.deactivated_at;
+          const nextValue = isActive ? new Date().toISOString() : null;
+          const { error } = await supabase
+            .from("users")
+            .update({ deactivated_at: nextValue })
+            .eq("id", studentId);
+          if (error) {
+            console.error("[Settings] failed to update student status", error);
+            alert("Failed to update student status.");
+            return;
+          }
 
-      const target = students.find(s => String(s.id) === String(studentId));
-      const isActive = target && !target.deactivated_at;
-      const nextValue = isActive ? new Date().toISOString() : null;
-      const { error } = await supabase
-        .from("users")
-        .update({ deactivated_at: nextValue })
-        .eq("id", studentId);
-      if (error) {
-        console.error("[Settings] failed to update student status", error);
-        alert("Failed to update student status.");
-        return;
-      }
+          if (isActive && String(studentId) === String(getActiveProfileId())) {
+            const refresh = await loadLinkedStudents(parentId, studioId);
+            const nextActive = refresh.find(s => !s.deactivated_at);
+            if (nextActive) {
+              setActiveProfileId(nextActive.id);
+            } else {
+              clearActiveProfileId();
+            }
+            window.location.reload();
+            return;
+          }
 
-      if (isActive && String(studentId) === String(getActiveProfileId())) {
-        const refresh = await loadLinkedStudents(parentId, studioId);
-        const nextActive = refresh.find(s => !s.deactivated_at);
-        if (nextActive) {
-          setActiveProfileId(nextActive.id);
-        } else {
-          clearActiveProfileId();
+          await renderLinkedStudents(parentId, studioId);
         }
-        window.location.reload();
-        return;
-      }
-
-      await renderLinkedStudents(parentId, studioId);
+      });
     });
   });
 
@@ -205,7 +233,11 @@ async function renderLinkedStudents(parentId, studioId) {
       const studentId = btn.dataset.id;
       const input = list.querySelector(`input.student-avatar-input[data-id="${studentId}"]`);
       if (!input) return;
-      input.click();
+      openPasswordModal({
+        onConfirm: async () => {
+          input.click();
+        }
+      });
     });
   });
 
@@ -214,9 +246,6 @@ async function renderLinkedStudents(parentId, studioId) {
       const studentId = input.dataset.id;
       const file = input.files?.[0];
       if (!file || !studentId) return;
-
-      const ok = await requireReauth();
-      if (!ok) return;
 
       try {
         const bucketName = "avatars";
@@ -258,8 +287,6 @@ async function renderLinkedStudents(parentId, studioId) {
       if (!studentId) return;
       const student = students.find(s => String(s.id) === String(studentId));
       if (student?.deactivated_at) return;
-      const ok = await requireReauth();
-      if (!ok) return;
       setActiveProfileId(studentId);
       window.location.reload();
     });
@@ -377,12 +404,8 @@ async function promptUserSwitch() {
     btn.style = 'margin: 5px 0; width: 100%;';
     btn.textContent = 'Parent (Me)';
     btn.onclick = () => {
-      (async () => {
-        const ok = await requireReauth();
-        if (!ok) return;
-        setActiveProfileId(authViewerId);
-        window.location.href = 'index.html';
-      })();
+      setActiveProfileId(authViewerId);
+      window.location.href = 'index.html';
     };
     li.appendChild(btn);
     listContainer.appendChild(li);
@@ -396,8 +419,6 @@ async function promptUserSwitch() {
     const rolesText = Array.isArray(u.roles) ? u.roles.join(', ') : (u.role || '');
     btn.textContent = `${u.firstName ?? ''} ${u.lastName ?? ''} (${rolesText})`.trim();
     btn.onclick = async () => {
-      const ok = await requireReauth();
-      if (!ok) return;
       // Option A: loggedInUser is the selected STUDENT profile
       localStorage.setItem('loggedInUser', JSON.stringify(u));
       setActiveProfileId(u.id);
@@ -500,7 +521,6 @@ async function saveSettings() {
   const currentEmail  = profile.email || '';
   const newEmail      = (document.getElementById('newEmail').value || '').trim();
   const newPassword   = (document.getElementById('newPassword').value || '').trim();
-  const currentPassword = (document.getElementById('currentPassword').value || '').trim();
 
   const roleList = parseRoles(profile.roles || profile.role);
   const teacherWrap = document.getElementById("teacherSelectWrap");
@@ -524,18 +544,6 @@ async function saveSettings() {
   }
 
   try {
-    const requiresAuth = (
-      updatedUser.firstName !== (profile.firstName || "") ||
-      updatedUser.lastName !== (profile.lastName || "") ||
-      (newEmail && newEmail !== currentEmail) ||
-      !!newPassword ||
-      (teacherWrap && teacherSelect && roleList.includes("student"))
-    );
-    if (requiresAuth) {
-      const ok = await requireReauth();
-      if (!ok) return;
-    }
-
     // 1) Update profile in your users table
     const { error: dbError } = await supabase.from('users').update(updatedUser).eq('id', profile.id);
     if (dbError) throw dbError;
@@ -587,11 +595,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   authViewerId = authUserId;
   const viewerContext = await getViewerContext();
   activeStudioId = viewerContext?.studioId || localStorage.getItem('activeStudioId');
-
-  await renderActiveStudentHeader({
-    mountId: "activeStudentHeader",
-    contentSelector: ".__nohide__"
-  });
 
   const { data: authProfile, error: authProfileErr } = await supabase
     .from('users')
@@ -749,7 +752,10 @@ localStorage.setItem('allUsers', JSON.stringify(updatedAllUsers));
   document.getElementById('cancelBtn').addEventListener('click', () => window.location.href = 'index.html');
   document.getElementById('switchRoleBtn').addEventListener('click', promptRoleSwitch);
   document.getElementById('switchUserBtn').addEventListener('click', promptUserSwitch);
-  document.getElementById('saveBtn').addEventListener('click', e => { e.preventDefault(); saveSettings(); });
+  document.getElementById('saveBtn').addEventListener('click', e => {
+    e.preventDefault();
+    openPasswordModal({ onConfirm: saveSettings });
+  });
 
   // modal cancels
   document.getElementById('cancelUserSwitchBtn').addEventListener('click', () => {
@@ -757,6 +763,33 @@ localStorage.setItem('allUsers', JSON.stringify(updatedAllUsers));
   });
   document.getElementById('cancelRoleSwitchBtn').addEventListener('click', () => {
     document.getElementById('roleSwitchModal').style.display = 'none';
+  });
+
+  const passwordOverlay = document.getElementById("passwordConfirmModal");
+  const passwordCancel = document.getElementById("confirmPasswordCancel");
+  const passwordSubmit = document.getElementById("confirmPasswordSubmit");
+  const passwordToggle = document.getElementById("confirmPasswordToggle");
+  const passwordInput = document.getElementById("confirmPasswordInput");
+
+  if (passwordCancel) passwordCancel.addEventListener("click", closePasswordModal);
+  if (passwordSubmit) passwordSubmit.addEventListener("click", confirmPasswordAndRun);
+  if (passwordToggle && passwordInput) {
+    passwordToggle.addEventListener("click", () => {
+      const showing = passwordInput.type === "text";
+      passwordInput.type = showing ? "password" : "text";
+      passwordToggle.textContent = showing ? "Show" : "Hide";
+    });
+  }
+  if (passwordOverlay) {
+    passwordOverlay.addEventListener("click", (e) => {
+      if (e.target === passwordOverlay) closePasswordModal();
+    });
+  }
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closePasswordModal();
+    if (e.key === "Enter" && passwordOverlay?.classList.contains("is-open")) {
+      confirmPasswordAndRun();
+    }
   });
 
   if (sessionStorage.getItem('forceUserSwitch') === 'true') {
@@ -792,7 +825,6 @@ localStorage.setItem('allUsers', JSON.stringify(updatedAllUsers));
   }
 
   document.addEventListener('DOMContentLoaded', () => {
-    addPwToggle(document.getElementById('currentPassword'));
     addPwToggle(document.getElementById('newPassword'));
   });
 })();

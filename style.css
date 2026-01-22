@@ -2559,6 +2559,53 @@ body.leaderboard-page .lb-avatar.is-self {
   z-index: 4;
 }
 
+body.settings-page .settings-subtitle {
+  text-align: center;
+  margin: 0 0 14px;
+  color: #4c6a86;
+  font-weight: 600;
+}
+
+body.settings-page .modal-overlay.is-open {
+  display: flex;
+}
+
+body.settings-page .modal-card {
+  width: min(520px, 92vw);
+  background: rgba(255,255,255,0.92);
+  border: 2px solid rgba(0,71,125,0.25);
+  border-radius: 18px;
+  padding: 18px;
+  box-shadow: 0 18px 60px rgba(0,0,0,0.18);
+  text-align: left;
+}
+
+body.settings-page .modal-card h3 {
+  margin: 0 0 6px;
+  color: #0B4F8A;
+}
+
+body.settings-page .modal-helper {
+  margin: 0 0 12px;
+  color: #4c6a86;
+}
+
+body.settings-page .modal-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+body.settings-page .modal-actions .blue-button {
+  flex: 1;
+}
+
+body.settings-page .modal-error {
+  color: #c62828;
+  font-weight: 600;
+  margin-top: 8px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   body.leaderboard-page .lb-avatar {
     transition: none;
