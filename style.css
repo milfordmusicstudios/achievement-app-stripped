@@ -2757,10 +2757,10 @@ body.settings-page .settings-card-body {
   font-weight: 600;
   color: #0B4F8A;
 }
-.studio-iframe-accordion {
+.settings-accordion {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 }
 .accordion-card {
   border: 1px solid rgba(11, 79, 138, 0.18);
@@ -2781,17 +2781,31 @@ body.settings-page .settings-card-body {
 .accordion-inner {
   padding: 12px;
 }
-.studio-iframe {
+.accordion-header {
   width: 100%;
-  min-height: 780px;
-  border: 1px solid rgba(11, 79, 138, 0.2);
-  border-radius: 12px;
-  background: #fff;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+  padding: 14px 18px;
+  text-align: left;
+  background: rgba(255, 255, 255, 0.95);
+  border: none;
+  font-weight: 700;
+  color: #0B4F8A;
+  cursor: pointer;
 }
-.studio-access-card {
-  margin-bottom: 20px;
-  border: 2px dashed rgba(11, 79, 138, 0.3);
+.accordion-body {
+  padding: 0 18px 18px;
+  max-width: 960px;
+}
+.accordion-body.is-open {
+  animation: fadeIn 180ms ease;
+}
+.studio-settings .accordion-body .bottom-nav,
+.studio-settings .accordion-body nav,
+.studio-settings .accordion-body footer,
+.studio-settings .accordion-body .env-badge {
+  display: none !important;
+}
+.panel-root {
+  width: 100%;
 }
 
 .full-width-btn {
