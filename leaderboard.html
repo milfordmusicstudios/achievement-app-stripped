@@ -5,13 +5,14 @@
   <title>Leaderboard | Achievement App</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="nav.css" />
 </head>
 <body class="tall-background leaderboard-page">
 <div id="envBadge" class="env-badge" style="display:none;"></div>
 
   <main class="app">
     <div class="page-header">
-      <a class="blue-button home-button" href="index.html">Home</a>
+      <a class="blue-button home-button" href="home.html">Home</a>
       <div class="page-header-center">
         <h2 class="page-title">Leaderboard</h2>
         <div id="leaderboardCount" class="page-subtitle"></div>
@@ -35,6 +36,8 @@
 </div>
 
   <!-- ✅ Scripts -->
+  <div id="app-bottom-nav"></div>
+  <script type="module" src="nav.js"></script>
   <script type="module" src="leaderboard.js"></script>
 </body>
 </html>

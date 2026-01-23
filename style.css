@@ -2672,6 +2672,17 @@ body.settings-page .settings-title {
   margin: 8px 0 16px;
 }
 
+body.settings-page .settings-header .nav-btn {
+  flex: none;
+  max-width: none;
+  padding: 10px 14px;
+}
+
+body.settings-page .settings-link {
+  width: 100%;
+  max-width: none;
+}
+
 body.settings-page .settings-card {
   background: rgba(255, 255, 255, 0.88);
   border: 2px solid rgba(0, 71, 125, 0.15);

@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Manage Users | Achievement App</title>
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="nav.css">
+  <script type="module" src="nav.js" defer></script>
   <script type="module" src="manage-users.js" defer></script>
 </head>
 <body class="manage-users">
@@ -13,7 +15,7 @@
 <main class="app">
   <!-- ✅ Top Bar -->
   <header style="display:flex; justify-content:space-between; align-items:center; padding:10px 20px;">
-    <button class="blue-button" onclick="window.location.href='index.html'">Home</button>
+    <button class="blue-button" onclick="window.location.href='home.html'">Home</button>
     <h2 style="color:#00477d; flex:1; text-align:center;">Manage Users</h2>
   </header>
 
@@ -63,5 +65,6 @@ window.addEventListener("load", syncUserTableWidths);
 window.addEventListener("resize", syncUserTableWidths);
 </script>
 
+<div id="app-bottom-nav"></div>
 </body>
 </html>

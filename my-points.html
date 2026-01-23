@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>My Points | Achievement App</title>
   <link rel="stylesheet" href="style.css?v=20260121-1">
+  <link rel="stylesheet" href="nav.css">
+  <script type="module" src="nav.js" defer></script>
   <script type="module" src="my-points.js" defer></script>
 </head>
 <body class="tall-background my-points-page">
@@ -12,7 +14,7 @@
 
   <main class="app">
     <header class="points-header">
-      <a class="blue-button home-button" href="index.html">Home</a>
+      <a class="blue-button home-button" href="home.html">Home</a>
       <h1 id="pointsTitle" class="points-title">My Points</h1>
       <img id="levelBadge" src="images/levelBadges/level1.png" alt="Level Badge">
     </header>
@@ -44,5 +46,6 @@
     </div>
   </main>
   <div id="toast" class="toast"></div>
+  <div id="app-bottom-nav"></div>
 </body>
 </html>

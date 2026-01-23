@@ -356,7 +356,7 @@ function ensureParentActionsRow() {
   row.className = "home-nav";
   row.style.display = "none";
   row.innerHTML = `
-    <a class="nav-btn" href="settings-security.html">Settings</a>
+    <a class="nav-btn" href="settings.html">Settings</a>
   `;
   const parentViewer = qs("parentViewerRow");
   if (parentViewer?.parentNode) {
@@ -655,7 +655,7 @@ async function init() {
   const raw = localStorage.getItem("loggedInUser");
   if (!raw && !ensuredProfile) {
     // Logged in parent, but no student selected yet
-    window.location.href = "settings-security.html";
+    window.location.href = "settings.html";
     return;
   }
 

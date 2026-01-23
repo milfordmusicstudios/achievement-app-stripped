@@ -23,8 +23,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   if (!memberships || memberships.length === 0) {
-    console.log("[StudioRoute] redirect target", "settings-security.html", "(placeholder)");
-    window.location.href = "settings-security.html";
+    console.log("[StudioRoute] redirect target", "settings.html", "(placeholder)");
+    window.location.href = "settings.html";
     return;
   }
 

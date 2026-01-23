@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Achievement Awards - Home</title>
   <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="nav.css" />
 </head>
 <body class="app-bg bg-yellow student-home-page">
 <div id="envBadge" class="env-badge" style="display:none;"></div>
@@ -122,7 +123,7 @@
     <!-- Utility nav -->
     <section class="home-nav student-only">
       <a id="myPointsLink" class="nav-btn" href="my-points.html">My Points</a>
-      <a class="nav-btn" href="settings-security.html">Settings</a>
+      <a class="nav-btn" href="settings.html">Settings</a>
     </section>
 
     <section class="home-nav staff-only" aria-label="Staff leaderboard">
@@ -137,7 +138,7 @@
         <a class="nav-btn admin-only" href="manage-users.html" style="min-width:220px; padding:14px 18px; text-align:center;">Manage Users</a>
         <a class="nav-btn admin-only" href="invite-staff.html" style="min-width:220px; padding:14px 18px; text-align:center;">Invite Student/Staff</a>
         <a class="nav-btn admin-only" href="studio-settings.html" style="min-width:220px; padding:14px 18px; text-align:center;">Studio Settings</a>
-        <a class="nav-btn" href="settings-security.html" style="min-width:220px; padding:14px 18px; text-align:center;">Settings</a>
+        <a class="nav-btn" href="settings.html" style="min-width:220px; padding:14px 18px; text-align:center;">Settings</a>
       </div>
     </section>
   </main>
@@ -175,6 +176,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./teacher-quicklog.js"></script>
 <script type="module" src="supabaseClient.js"></script>
-<script type="module" src="home.js"></script>
+  <div id="app-bottom-nav"></div>
+  <script type="module" src="nav.js"></script>
+  <script type="module" src="home.js"></script>
 </body>
 </html>
