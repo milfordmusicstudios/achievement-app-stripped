@@ -9,6 +9,7 @@ let teacherOptionData = [];
 let authEmail = null;
 let authProfileCache = null;
 let pendingSensitiveAction = null;
+let addStudentOpen = false;
 
 // ---------- helpers ----------
 function getHighestRole(roles) {
@@ -76,6 +77,127 @@ function setPasswordModalError(message) {
   if (!errorEl) return;
   errorEl.textContent = message || "";
   errorEl.style.display = message ? "block" : "none";
+}
+
+function openAddStudentModal() {
+  const overlay = document.getElementById("addStudentModal");
+  const firstName = document.getElementById("addStudentFirstName");
+  const lastName = document.getElementById("addStudentLastName");
+  const instrument = document.getElementById("addStudentInstrument");
+  const teacherSelect = document.getElementById("addStudentTeachers");
+  const errorEl = document.getElementById("addStudentError");
+  const teacherError = document.getElementById("addStudentTeacherError");
+  if (!overlay || !teacherSelect) return;
+
+  if (errorEl) {
+    errorEl.textContent = "";
+    errorEl.style.display = "none";
+  }
+  if (teacherError) {
+    teacherError.textContent = "";
+    teacherError.style.display = "none";
+  }
+  if (firstName) firstName.value = "";
+  if (lastName) lastName.value = "";
+  if (instrument) instrument.value = "";
+
+  teacherSelect.innerHTML = "";
+  if (teacherOptionData.length === 0) {
+    teacherSelect.disabled = true;
+    const opt = document.createElement("option");
+    opt.value = "";
+    opt.textContent = "No teachers available";
+    teacherSelect.appendChild(opt);
+  } else {
+    teacherSelect.disabled = false;
+    teacherOptionData.forEach(t => {
+      const opt = document.createElement("option");
+      opt.value = t.id;
+      opt.textContent = t.label;
+      teacherSelect.appendChild(opt);
+    });
+  }
+
+  overlay.classList.add("is-open");
+  addStudentOpen = true;
+  setTimeout(() => firstName?.focus(), 0);
+}
+
+function closeAddStudentModal() {
+  const overlay = document.getElementById("addStudentModal");
+  if (overlay) overlay.classList.remove("is-open");
+  addStudentOpen = false;
+}
+
+function setAddStudentError(message) {
+  const errorEl = document.getElementById("addStudentError");
+  if (!errorEl) return;
+  errorEl.textContent = message || "";
+  errorEl.style.display = message ? "block" : "none";
+}
+
+function setAddStudentTeacherError(message) {
+  const errorEl = document.getElementById("addStudentTeacherError");
+  if (!errorEl) return;
+  errorEl.textContent = message || "";
+  errorEl.style.display = message ? "block" : "none";
+}
+
+async function handleAddStudent() {
+  const firstName = (document.getElementById("addStudentFirstName")?.value || "").trim();
+  const lastName = (document.getElementById("addStudentLastName")?.value || "").trim();
+  const instrumentRaw = (document.getElementById("addStudentInstrument")?.value || "").trim();
+  const teacherSelect = document.getElementById("addStudentTeachers");
+
+  if (!firstName || !lastName) {
+    setAddStudentError("Please enter first and last name.");
+    return;
+  }
+
+  const teacherIds = Array.from(teacherSelect?.selectedOptions || []).map(o => o.value);
+  if (teacherOptionData.length > 0 && teacherIds.length === 0) {
+    setAddStudentTeacherError("Please select at least one teacher.");
+    return;
+  }
+
+  if (!crypto?.randomUUID) {
+    setAddStudentError("Browser does not support student creation.");
+    return;
+  }
+
+  const studentId = crypto.randomUUID();
+  const payload = {
+    id: studentId,
+    firstName,
+    lastName,
+    roles: ["student"],
+    parent_uuid: authViewerId,
+    instrument: instrumentRaw,
+    teacherIds,
+    points: 0,
+    level: 1,
+    active: true,
+    studio_id: activeStudioId,
+    showonleaderboard: true
+  };
+
+  const { error: insertErr } = await supabase.from("users").insert([payload]);
+  if (insertErr) {
+    console.error("[Settings] add student failed", insertErr);
+    setAddStudentError(insertErr.message || "Failed to add student.");
+    return;
+  }
+
+  const { error: linkErr } = await supabase.rpc("link_parent_student", {
+    p_student_id: studentId,
+    p_studio_id: activeStudioId
+  });
+  if (linkErr) {
+    console.error("[Settings] link_parent_student failed", linkErr);
+  }
+
+  closeAddStudentModal();
+  await renderLinkedStudents(authViewerId, activeStudioId);
 }
 
 async function confirmPasswordAndRun() {
@@ -595,6 +717,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   authViewerId = authUserId;
   const viewerContext = await getViewerContext();
   activeStudioId = viewerContext?.studioId || localStorage.getItem('activeStudioId');
+  await loadTeachersForStudio(activeStudioId);
 
   const { data: authProfile, error: authProfileErr } = await supabase
     .from('users')
@@ -740,7 +863,8 @@ localStorage.setItem('allUsers', JSON.stringify(updatedAllUsers));
   await renderLinkedStudents(authUserId, activeStudioId);
 
   // show/hide switch buttons
-  document.getElementById('switchUserBtn').style.display = (updatedAllUsers.length > 1) ? 'inline-block' : 'none';
+  const switchUserBtn = document.getElementById('switchUserBtn');
+  if (switchUserBtn) switchUserBtn.style.display = 'none';
   document.getElementById('switchRoleBtn').style.display = (user.roles?.length > 1) ? 'inline-block' : 'none';
 
   // wire buttons
@@ -751,7 +875,7 @@ localStorage.setItem('allUsers', JSON.stringify(updatedAllUsers));
   });
   document.getElementById('cancelBtn').addEventListener('click', () => window.location.href = 'index.html');
   document.getElementById('switchRoleBtn').addEventListener('click', promptRoleSwitch);
-  document.getElementById('switchUserBtn').addEventListener('click', promptUserSwitch);
+  if (switchUserBtn) switchUserBtn.addEventListener('click', promptUserSwitch);
   document.getElementById('saveBtn').addEventListener('click', e => {
     e.preventDefault();
     openPasswordModal({ onConfirm: saveSettings });
@@ -790,6 +914,32 @@ localStorage.setItem('allUsers', JSON.stringify(updatedAllUsers));
     if (e.key === "Enter" && passwordOverlay?.classList.contains("is-open")) {
       confirmPasswordAndRun();
     }
+  });
+
+  const addStudentBtn = document.getElementById("addStudentBtn");
+  const addStudentCancel = document.getElementById("addStudentCancel");
+  const addStudentSubmit = document.getElementById("addStudentSubmit");
+  const addStudentOverlay = document.getElementById("addStudentModal");
+
+  if (addStudentBtn) {
+    addStudentBtn.addEventListener("click", () => openAddStudentModal());
+  }
+  if (addStudentCancel) {
+    addStudentCancel.addEventListener("click", closeAddStudentModal);
+  }
+  if (addStudentSubmit) {
+    addStudentSubmit.addEventListener("click", () => {
+      openPasswordModal({ onConfirm: handleAddStudent });
+    });
+  }
+  if (addStudentOverlay) {
+    addStudentOverlay.addEventListener("click", (e) => {
+      if (e.target === addStudentOverlay) closeAddStudentModal();
+    });
+  }
+  document.addEventListener("keydown", (e) => {
+    if (!addStudentOpen) return;
+    if (e.key === "Escape") closeAddStudentModal();
   });
 
   if (sessionStorage.getItem('forceUserSwitch') === 'true') {

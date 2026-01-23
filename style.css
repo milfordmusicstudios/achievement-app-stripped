@@ -2607,6 +2607,23 @@ body.settings-page .modal-error {
   margin-top: 8px;
 }
 
+body.settings-page .family-students-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 12px;
+}
+
+body.settings-page .modal-field {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+body.settings-page .modal-field label {
+  font-weight: 700;
+  color: #0B4F8A;
+}
+
 @media (prefers-reduced-motion: reduce) {
   body.leaderboard-page .lb-avatar {
     transition: none;

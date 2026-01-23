@@ -98,7 +98,6 @@
 
     <div class="button-row">
       <button id="switchRoleBtn" type="button" class="blue-button">Switch Role</button>
-      <button id="switchUserBtn" type="button" class="blue-button">Switch User</button>
     </div>
 
     <div class="button-row">
@@ -109,6 +108,9 @@
   <section id="linkedStudentsSection" class="settings-section">
     <h3 class="settings-section-title">Students on this account</h3>
     <div id="linkedStudentsList" class="family-students-list"></div>
+    <div class="family-students-actions">
+      <button id="addStudentBtn" type="button" class="blue-button">Add Student</button>
+    </div>
   </section>
 </main>
 
@@ -154,6 +156,35 @@
     <div class="modal-actions">
       <button id="confirmPasswordCancel" type="button" class="blue-button">Cancel</button>
       <button id="confirmPasswordSubmit" type="button" class="blue-button">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<div id="addStudentModal" class="modal-overlay">
+  <div class="modal-card">
+    <h3>Add Student</h3>
+    <p class="modal-helper">Enter the student details to add them to this account.</p>
+    <div class="modal-field">
+      <label for="addStudentFirstName">First Name</label>
+      <input id="addStudentFirstName" type="text" placeholder="First name" />
+    </div>
+    <div class="modal-field">
+      <label for="addStudentLastName">Last Name</label>
+      <input id="addStudentLastName" type="text" placeholder="Last name" />
+    </div>
+    <div class="modal-field">
+      <label for="addStudentInstrument">Instrument</label>
+      <input id="addStudentInstrument" type="text" placeholder="Piano, Voice, etc." />
+    </div>
+    <div class="modal-field">
+      <label for="addStudentTeachers">Teacher(s)</label>
+      <select id="addStudentTeachers" class="teacher-select" multiple></select>
+      <div id="addStudentTeacherError" class="teacher-error" style="display:none;"></div>
+    </div>
+    <div id="addStudentError" class="modal-error" style="display:none;"></div>
+    <div class="modal-actions">
+      <button id="addStudentCancel" type="button" class="blue-button">Cancel</button>
+      <button id="addStudentSubmit" type="button" class="blue-button">Add Student</button>
     </div>
   </div>
 </div>

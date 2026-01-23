@@ -1,5 +1,5 @@
 import { supabase } from "./supabaseClient.js";
-import { getViewerContext, recalculateUserPoints } from './utils.js';
+import { getViewerContext } from './utils.js';
 import { ensureStudioContextAndRoute } from "./studio-routing.js";
 
 function getLastToastLevel(userId) {
@@ -141,8 +141,26 @@ document.addEventListener("DOMContentLoaded", async () => {
       });
     }
 
-    const { totalPoints, currentLevel } = await recalculateUserPoints(userId);
+    const { data: approvedLogs, error: approvedErr } = await supabase
+      .from("logs")
+      .select("points")
+      .eq("userId", userId)
+      .eq("status", "approved");
+    if (approvedErr) throw approvedErr;
+
+    const totalPoints = (approvedLogs || []).reduce((sum, log) => sum + (log.points || 0), 0);
     console.log("[DEBUG] Total approved points:", totalPoints);
+
+    const { data: levels, error: levelsErr } = await supabase
+      .from("levels")
+      .select("*")
+      .order("minPoints", { ascending: true });
+    if (levelsErr) throw levelsErr;
+
+    const currentLevel =
+      (levels || []).find(l => totalPoints >= l.minPoints && totalPoints <= l.maxPoints)
+      || (levels || [])[levels?.length - 1]
+      || null;
 
     if (levelBadge) {
       levelBadge.src = currentLevel?.badge || "images/levelBadges/level1.png";
