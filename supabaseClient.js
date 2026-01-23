@@ -1,52 +1,46 @@
-// supabaseClient.js
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+// supabaseClient.js (UMD/global build - no ESM import)
 
-// APP_ENV must be set in config.js before this file loads.
-// Allowed: "dev" | "prod" | "demo"
+// Determine env
 const env = (
   window.APP_ENV ||
   (location.hostname.includes("vercel.app") ? "dev" : "prod")
 ).toLowerCase();
 
+// Your per-env config
 const SUPABASE_CONFIG = {
   dev: {
     url: "https://dtvcjmcstedudunjvbuv.supabase.co",
     anonKey: "sb_publishable_x8CRqSl5wiZhIIGy1ozb5g_8l_cVpft",
   },
-  // Keep your current live project here for now (this is your existing one)
   prod: {
     url: "https://wygdmapqwqjqrmrksaef.supabase.co",
-anonKey: "sb_publishable_x8CRqSl5wiZhIIGy1ozb5g_8l_cVpft",
+    anonKey: "sb_publishable_x8CRqSl5wiZhIIGy1ozb5g_8l_cVpft",
   },
-  // Not used until you create a demo Supabase project
-  demo: {
-    url: "",
-    anonKey: "",
-  },
+  demo: { url: "", anonKey: "" },
 };
 
 const selected = SUPABASE_CONFIG[env] || SUPABASE_CONFIG.dev;
+const finalConfig =
+  selected.url && selected.anonKey ? selected : SUPABASE_CONFIG.dev;
 
-if (!selected.url || !selected.anonKey) {
-  console.warn(
-    `[Supabase] Missing keys for env="${env}". Falling back to DEV config.`
+if (!window.supabase || !window.supabase.createClient) {
+  console.error(
+    "[Supabase] window.supabase.createClient not found. " +
+      "Make sure the Supabase CDN script loads BEFORE supabaseClient.js"
   );
 }
 
-const finalConfig = selected.url && selected.anonKey ? selected : SUPABASE_CONFIG.dev;
+export const supabase = window.supabase.createClient(
+  finalConfig.url,
+  finalConfig.anonKey,
+  {
+    auth: { persistSession: true, autoRefreshToken: true },
+    global: { headers: { apikey: finalConfig.anonKey } },
+  }
+);
 
-export const supabase = createClient(finalConfig.url, finalConfig.anonKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-  },
-  global: {
-    headers: {
-      apikey: finalConfig.anonKey,
-    },
-  },
-});
-window.supabase = supabase;
+// Do NOT overwrite window.supabase (that's the library namespace)
+window.sb = supabase;
 
 console.log(`[Supabase] client initialized (env=${env})`, supabase);
 
@@ -54,23 +48,15 @@ function renderEnvBadge() {
   const el = document.getElementById("envBadge");
   if (!el) return;
 
-  // You likely already have something like ENV or APP_ENV
-const env = (
-  window.APP_ENV ||
-  (location.hostname.includes("vercel.app") ? "dev" : "prod")
-).toLowerCase();
+  const e = (
+    window.APP_ENV ||
+    (location.hostname.includes("vercel.app") ? "dev" : "prod")
+  ).toLowerCase();
 
-  el.textContent = `ENV: ${env.toUpperCase()}`;
-
+  el.textContent = `ENV: ${e.toUpperCase()}`;
   el.classList.remove("dev", "demo", "prod");
-  el.classList.add(env);
-
-  // show for dev/demo only
-  if (env === "dev" || env === "demo") {
-    el.style.display = "block";
-  } else {
-    el.style.display = "none";
-  }
+  el.classList.add(e);
+  el.style.display = e === "dev" || e === "demo" ? "block" : "none";
 }
 
 document.addEventListener("DOMContentLoaded", renderEnvBadge);
