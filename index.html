@@ -7,7 +7,8 @@
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="nav.css" />
 </head>
-<body class="app-bg bg-yellow student-home-page">
+<body class="app-shell app-bg bg-yellow student-home-page">
+  <div class="app-main">
 <div id="envBadge" class="env-badge" style="display:none;"></div>
   <main class="home-wrap">
     <!-- Identity first -->
@@ -60,6 +61,9 @@
     <div id="parentViewerRow" class="parent-viewer" style="display:none;">
       <span class="parent-viewer-label">Viewing:</span>
       <select id="parentStudentSelect" aria-label="Viewing student"></select>
+    </div>
+    <div id="switchStudentTip" class="switch-student-tip" role="status" aria-live="polite">
+      To switch students, tap your avatar in the top corner.
     </div>
     <div id="staffQuickLogMount"></div>
     <!-- Action hub -->
@@ -115,22 +119,6 @@
       </div>
     </section>
 
-    <section class="home-staff admin-dashboard staff-only" aria-label="Staff actions">
-      <div class="admin-action-grid">
-        <a class="admin-action-card admin-only" href="manage-users.html">
-          <span class="admin-card-title">Manage Users</span>
-          <span class="admin-card-subtitle">Add or edit students, parents, and staff.</span>
-        </a>
-        <a class="admin-action-card admin-only" href="invite-staff.html">
-          <span class="admin-card-title">Invite People</span>
-          <span class="admin-card-subtitle">Send links for new students or staff.</span>
-        </a>
-        <a class="admin-action-card admin-only" href="studio-settings.html">
-          <span class="admin-card-title">Studio Settings</span>
-          <span class="admin-card-subtitle">Adjust branding, policies, and more.</span>
-        </a>
-      </div>
-    </section>
   </main>
 
   <!-- Absence modal -->
@@ -166,6 +154,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./teacher-quicklog.js"></script>
 <script type="module" src="supabaseClient.js"></script>
+  </div>
+
   <div id="app-bottom-nav"></div>
   <script type="module" src="nav.js"></script>
   <script type="module" src="home.js"></script>

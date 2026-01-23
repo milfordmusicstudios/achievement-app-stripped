@@ -37,6 +37,22 @@ html, body {
 }
 
 :root {
+  --app-shell-bg: #f6f8fb;
+}
+
+body.app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+:root {
   --home-id-size: 96px;
 }
 
@@ -99,6 +115,19 @@ a.big-fun-btn:focus-visible {
   max-width: 980px;
   margin: 0 auto;
   padding: 12px 16px 28px;
+}
+
+.switch-student-tip {
+  display: none;
+  margin: 10px auto 0;
+  padding: 10px 14px;
+  max-width: 420px;
+  font-size: 0.9rem;
+  text-align: center;
+  color: #0B4F8A;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 12px;
+  border-left: 4px solid #0B4F8A;
 }
 
 .home-welcome {
@@ -1794,20 +1823,17 @@ body.my-points-page main.app {
 }
 
 body.review-logs-page .review-header {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 12px;
-  margin: 0 auto 12px;
-}
-
-body.review-logs-page .review-header-spacer {
-  width: 72px;
+  justify-content: center;
+  gap: 10px;
+  margin: 0 auto 16px;
+  width: min(720px, 100%);
 }
 
 body.review-logs-page .review-title {
   margin: 0;
-  text-align: center;
   font-size: 28px;
   color: #00477d;
 }
@@ -1820,9 +1846,8 @@ body.review-logs-page .review-role-badge {
   padding: 6px;
   background: rgba(255,255,255,0.75);
   border: 2px solid rgba(11,79,138,0.2);
-  display: block;
-  justify-self: end;
-  align-self: center;
+  margin-left: auto;
+  order: 2;
 }
 
 body.review-logs-page .summary-strip {
@@ -2194,13 +2219,6 @@ body.review-logs-page .btn-rect {
     width: min(100%, calc(100% - 24px));
     padding: 14px 12px 28px;
   }
-  body.review-logs-page .review-header {
-    grid-template-columns: auto 1fr auto;
-    gap: 8px;
-  }
-  body.review-logs-page .review-role-badge {
-    margin: 0;
-  }
   body.review-logs-page .filter-toolbar {
     align-items: stretch;
   }
@@ -2497,64 +2515,27 @@ body.leaderboard-page main.app {
 }
 
 body.leaderboard-page .leaderboard-header {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 12px;
+  justify-content: flex-start;
+  gap: 8px;
+  margin: 0 auto 18px;
+  width: 100%;
 }
 
 body.leaderboard-page .leaderboard-title {
   text-align: center;
   color: #0B4F8A;
   margin: 0;
-}
-
-body.leaderboard-page .leaderboard-scroll-wrapper {
-  max-height: calc(100vh - 180px);
-  overflow: auto;
-  padding-right: 6px;
-}
-
-body.leaderboard-page .page-header {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 0 6px;
-}
-
-body.leaderboard-page .page-header .home-button {
-  align-self: flex-start;
-  padding: 10px 18px;
-  border-radius: 12px;
-  font-size: 1rem;
-  text-decoration: none;
-}
-
-body.leaderboard-page .page-title {
-  margin: 0;
-  text-align: center;
-  font-size: 1.2rem;
-  color: #0B4F8A;
-}
-
-body.leaderboard-page .page-subtitle {
-  text-align: center;
-  font-size: 0.85rem;
-  color: #4c6a86;
-}
-
-body.leaderboard-page .leaderboard-scroll-wrapper {
-  max-height: calc(100vh - 150px);
-  padding-top: 4px;
+  font-size: 1.8rem;
 }
 
 body.leaderboard-page .leaderboard-count {
   text-align: center;
   color: #4c6a86;
   font-weight: 600;
-  margin-bottom: 8px;
+  margin: 0;
 }
 
 body.leaderboard-page .level-row {

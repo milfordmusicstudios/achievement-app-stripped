@@ -6,16 +6,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="style.css?v=20260121-1">
   <link rel="stylesheet" href="nav.css">
-  <script type="module" src="nav.js" defer></script>
-  <script type="module" src="review-logs.js" defer></script>
 </head>
-<body class="tall-background review-logs-page">
+<body class="app-shell tall-background review-logs-page">
+  <div class="app-main">
 <div id="envBadge" class="env-badge" style="display:none;"></div>
 
   <main class="app">
 
     <header id="pageHeader" class="review-header">
-      <div class="review-header-spacer"></div>
       <h2 class="review-title">Review Points</h2>
       <img id="reviewRoleBadge" class="review-role-badge" src="" alt="Role badge">
     </header>
@@ -120,6 +118,10 @@
     </div>
 
   </main>
+  </div>
+
   <div id="app-bottom-nav"></div>
+  <script type="module" src="nav.js"></script>
+  <script type="module" src="review-logs.js"></script>
 </body>
 </html>

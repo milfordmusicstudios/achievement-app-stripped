@@ -6,30 +6,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="nav.css" />
+  <link rel="stylesheet" href="settings-tabs.css" />
 </head>
-<body class="app-bg bg-teal settings-page settings-family-page">
+<body class="app-shell app-bg bg-teal settings-page settings-family-page">
+  <div class="app-main">
 <div id="envBadge" class="env-badge" style="display:none;"></div>
 
 <main class="app">
-  <header class="settings-header">
-    <div class="settings-header-spacer"></div>
-    <nav class="settings-tabs">
-      <a class="settings-tab" href="settings-security.html">Login &amp; Security</a>
-      <a class="settings-tab is-active" href="settings-family.html">Family</a>
-    </nav>
-    <div class="settings-header-spacer"></div>
-  </header>
-
+  <div id="settings-tabs"></div>
   <h2 class="settings-title">Family</h2>
-
-  <div class="family-switch-row">
-    <button id="switchStudentBtn" type="button" class="blue-button btn-ghost full-width-btn">
-      Switch Student
-    </button>
-    <p id="switchStudentTip" class="switch-student-tip" style="display:none;">
-      To switch students, click this button and pick the profile you want on the home screen.
-    </p>
-  </div>
 
   <section id="linkedStudentsSection" class="settings-card">
     <div class="settings-card-header">
@@ -85,10 +70,13 @@
   </div>
 </div>
 
-<div id="app-bottom-nav"></div>
+  </div>
 
-<script src="config.js"></script>
-<script type="module" src="nav.js"></script>
-<script type="module" src="settings-family.js"></script>
+  <div id="app-bottom-nav"></div>
+
+  <script src="config.js"></script>
+  <script type="module" src="nav.js"></script>
+  <script type="module" src="settings-tabs.js"></script>
+  <script type="module" src="settings-family.js"></script>
 </body>
 </html>

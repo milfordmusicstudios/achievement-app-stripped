@@ -50,7 +50,6 @@ function renderNav(role) {
 
   mount.innerHTML = "";
   mount.appendChild(nav);
-  document.body.classList.add("has-bottom-nav");
 }
 
 document.addEventListener("DOMContentLoaded", async () => {

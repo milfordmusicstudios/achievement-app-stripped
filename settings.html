@@ -6,11 +6,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="nav.css" />
+  <link rel="stylesheet" href="settings-tabs.css" />
 </head>
-<body class="settings-page settings-hub-page settings-plain">
+<body class="app-shell settings-page settings-hub-page settings-plain">
+  <div class="app-main">
 <div id="envBadge" class="env-badge" style="display:none;"></div>
 
 <main class="app">
+  <div id="settings-tabs"></div>
   <h2 class="settings-title">Settings</h2>
 
   <section class="settings-card">
@@ -36,20 +39,21 @@
   </section>
 </main>
 
-<div id="toast" class="toast"></div>
-
-<div id="roleSwitchModal" class="modal-overlay">
-  <div class="modal-card">
-    <h3>Select Role</h3>
-    <ul id="roleSwitchList" style="list-style: none; padding: 0;"></ul>
-    <button id="cancelRoleSwitchBtn" class="blue-button" style="margin-top: 10px; width: 100%;">Cancel</button>
+  <div id="roleSwitchModal" class="modal-overlay">
+    <div class="modal-card">
+      <h3>Select Role</h3>
+      <ul id="roleSwitchList" style="list-style: none; padding: 0;"></ul>
+      <button id="cancelRoleSwitchBtn" class="blue-button" style="margin-top: 10px; width: 100%;">Cancel</button>
+    </div>
   </div>
-</div>
 
-<div id="app-bottom-nav"></div>
+  </div>
 
-<script src="config.js"></script>
-<script type="module" src="nav.js"></script>
-<script type="module" src="settings.js"></script>
+  <div id="app-bottom-nav"></div>
+
+  <script src="config.js"></script>
+  <script type="module" src="nav.js"></script>
+  <script type="module" src="settings-tabs.js"></script>
+  <script type="module" src="settings.js"></script>
 </body>
 </html>

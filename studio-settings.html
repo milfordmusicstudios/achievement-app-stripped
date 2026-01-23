@@ -6,21 +6,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="nav.css" />
+  <link rel="stylesheet" href="settings-tabs.css" />
 </head>
-<body class="white-page studio-settings-page">
-  <div id="envBadge" class="env-badge" style="display:none;"></div>
+<body class="app-shell white-page studio-settings-page">
+  <div class="app-main">
+    <div id="envBadge" class="env-badge" style="display:none;"></div>
 
-  <main class="app">
-    <header class="settings-header">
-      <div class="settings-header-spacer"></div>
-      <nav class="settings-tabs">
-        <a class="settings-tab" href="settings-security.html">Account</a>
-        <a class="settings-tab is-active" href="studio-settings.html">Studio</a>
-      </nav>
-      <div class="settings-header-spacer"></div>
-    </header>
-
-    <h2 class="settings-title">Studio Settings</h2>
+    <main class="app">
+      <div id="settings-tabs"></div>
+      <h2 class="settings-title">Studio Settings</h2>
 
     <section class="settings-card">
       <div class="settings-card-body">
@@ -37,10 +31,12 @@
         <a class="blue-button" href="invite-staff.html">Invite Staff</a>
       </div>
     </section>
-  </main>
+    </main>
+  </div>
 
   <div id="app-bottom-nav"></div>
   <script type="module" src="nav.js"></script>
+  <script type="module" src="settings-tabs.js"></script>
   <script type="module" src="studio-settings.js"></script>
 </body>
 </html>

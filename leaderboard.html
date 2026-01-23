@@ -7,35 +7,32 @@
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="nav.css" />
 </head>
-<body class="tall-background leaderboard-page">
-<div id="envBadge" class="env-badge" style="display:none;"></div>
+<body class="app-shell tall-background leaderboard-page">
+  <div class="app-main">
+    <div id="envBadge" class="env-badge" style="display:none;"></div>
 
-  <main class="app">
-    <div class="page-header">
-      <div class="page-header-spacer"></div>
-      <div class="page-header-center">
-        <h2 class="page-title">Leaderboard</h2>
-        <div id="leaderboardCount" class="page-subtitle"></div>
+    <main class="app">
+      <header class="leaderboard-header">
+        <h1 class="leaderboard-title">Leaderboard</h1>
+        <div id="leaderboardCount" class="leaderboard-count"></div>
+      </header>
+      <div class="leaderboard-scroll-wrapper">
+        <div class="level-bars" id="leaderboardContainer">
+          <div id="leaderboardBars"></div>
+        </div>
       </div>
-      <div class="page-header-spacer"></div>
+    </main>
+
+    <footer>
+      &copy; 2025 Milford Music Studios Achievement App
+    </footer>
+
+    <!-- ðŸ”¹ Loading Popup -->
+    <div id="loadingPopup">
+      <p id="loadingMessage">ðŸŽ¶ Tuning up the instruments...</p>
     </div>
-    <div class="leaderboard-scroll-wrapper">
-      <div class="level-bars" id="leaderboardContainer">
-        <div id="leaderboardBars"></div>
-      </div>
-    </div>
+  </div>
 
-  </main>
-
-  <footer>
-    &copy; 2025 Milford Music Studios Achievement App
-  </footer>
-<!-- 🔹 Loading Popup -->
-<div id="loadingPopup">
-  <p id="loadingMessage">🎶 Tuning up the instruments...</p>
-</div>
-
-  <!-- ✅ Scripts -->
   <div id="app-bottom-nav"></div>
   <script type="module" src="nav.js"></script>
   <script type="module" src="leaderboard.js"></script>

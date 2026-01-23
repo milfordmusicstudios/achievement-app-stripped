@@ -7,10 +7,11 @@
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="nav.css" />
 </head>
-<body class="white-page">
-  <div id="envBadge" class="env-badge" style="display:none;"></div>
+<body class="app-shell white-page">
+  <div class="app-main">
+    <div id="envBadge" class="env-badge" style="display:none;"></div>
 
-  <main class="app">
+    <main class="app">
     <h2>Create Invite</h2>
 
     <form id="inviteForm" class="settings-form" style="max-width:520px;">
@@ -44,7 +45,8 @@
       <h3 style="text-align:left;">Pending Invites</h3>
       <div id="pendingInvites" style="display:grid; gap:10px;"></div>
     </div>
-  </main>
+    </main>
+  </div>
 
   <div id="app-bottom-nav"></div>
   <script type="module" src="nav.js"></script>

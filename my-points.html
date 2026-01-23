@@ -6,13 +6,12 @@
   <title>My Points | Achievement App</title>
   <link rel="stylesheet" href="style.css?v=20260121-1">
   <link rel="stylesheet" href="nav.css">
-  <script type="module" src="nav.js" defer></script>
-  <script type="module" src="my-points.js" defer></script>
 </head>
-<body class="tall-background my-points-page">
+<body class="app-shell tall-background my-points-page">
+  <div class="app-main">
 <div id="envBadge" class="env-badge" style="display:none;"></div>
 
-  <main class="app">
+    <main class="app">
     <header class="points-header">
       <div class="points-header-spacer"></div>
       <h1 id="pointsTitle" class="points-title">My Points</h1>
@@ -44,8 +43,12 @@
         <tbody id="logsTableBody"></tbody>
       </table>
     </div>
-  </main>
-  <div id="toast" class="toast"></div>
+    </main>
+    <div id="toast" class="toast"></div>
+  </div>
+
   <div id="app-bottom-nav"></div>
+  <script type="module" src="nav.js"></script>
+  <script type="module" src="my-points.js"></script>
 </body>
 </html>

@@ -6,20 +6,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="nav.css" />
+  <link rel="stylesheet" href="settings-tabs.css" />
 </head>
-<body class="app-bg bg-teal settings-page settings-security-page">
+<body class="app-shell app-bg bg-teal settings-page settings-security-page">
+  <div class="app-main">
 <div id="envBadge" class="env-badge" style="display:none;"></div>
 
 <main class="app">
-  <header class="settings-header">
-    <div class="settings-header-spacer"></div>
-    <nav class="settings-tabs">
-      <a class="settings-tab is-active" href="settings-security.html">Account</a>
-      <a class="settings-tab" href="studio-settings.html">Studio</a>
-    </nav>
-    <div class="settings-header-spacer"></div>
-  </header>
-
+  <div id="settings-tabs"></div>
   <h2 class="settings-title">Login &amp; Security</h2>
 
   <section class="settings-card" id="accountCard">
@@ -109,10 +103,13 @@
   </div>
 </div>
 
-<div id="app-bottom-nav"></div>
+  </div>
 
-<script src="config.js"></script>
-<script type="module" src="nav.js"></script>
-<script type="module" src="settings-security.js"></script>
+  <div id="app-bottom-nav"></div>
+
+  <script src="config.js"></script>
+  <script type="module" src="nav.js"></script>
+  <script type="module" src="settings-tabs.js"></script>
+  <script type="module" src="settings-security.js"></script>
 </body>
 </html>

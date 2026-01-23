@@ -38,6 +38,24 @@ function persistParentSelection(viewerUserId, studioId, studentId) {
   persistLastActiveStudent(viewerUserId, studioId, studentId);
 }
 
+const SWITCH_STUDENT_TIP_KEY = "aa_switch_student_tip_shown";
+
+function maybeShowSwitchStudentTip(mode) {
+  const tip = qs("switchStudentTip");
+  if (!tip) return;
+  if (mode !== "student") {
+    tip.style.display = "none";
+    return;
+  }
+  const alreadyShown = localStorage.getItem(SWITCH_STUDENT_TIP_KEY) === "true";
+  if (alreadyShown) {
+    tip.style.display = "none";
+    return;
+  }
+  tip.style.display = "";
+  localStorage.setItem(SWITCH_STUDENT_TIP_KEY, "true");
+}
+
 function getStudioRoleContext() {
   const rolesRaw = localStorage.getItem("activeStudioRoles");
   let roles = [];
@@ -348,24 +366,6 @@ function updateParentProgressState({ hasSelection }) {
   if (notice) notice.style.display = hasSelection ? "none" : "block";
 }
 
-function ensureParentActionsRow() {
-  let row = qs("parentActionsRow");
-  if (row) return row;
-
-  row = document.createElement("div");
-  row.id = "parentActionsRow";
-  row.className = "home-nav";
-  row.style.display = "none";
-  row.innerHTML = `
-    <a class="nav-btn" href="settings.html">Settings</a>
-  `;
-  const parentViewer = qs("parentViewerRow");
-  if (parentViewer?.parentNode) {
-    parentViewer.parentNode.insertBefore(row, parentViewer.nextSibling);
-  }
-  return row;
-}
-
 function setParentNotice(text) {
   const notice = qs("parentProgressNotice");
   if (notice && typeof text === "string") {
@@ -379,7 +379,6 @@ function setHomeMode(mode) {
   const header = qs("homeHeader");
   const staffMount = qs("staffQuickLogMount");
   const parentViewer = qs("parentViewerRow");
-  const parentActions = ensureParentActionsRow();
 
   if (mode === "parent") {
     studentEls.forEach(el => el.style.display = "none");
@@ -387,7 +386,6 @@ function setHomeMode(mode) {
     if (header) header.style.display = "none";
     if (staffMount) staffMount.style.display = "none";
     if (parentViewer) parentViewer.style.display = "";
-    if (parentActions) parentActions.style.display = "";
     updateParentProgressState({ hasSelection: false });
     return;
   }
@@ -397,7 +395,6 @@ function setHomeMode(mode) {
   if (header) header.style.display = "";
   if (staffMount) staffMount.style.display = isStaffUser ? "" : "none";
   if (parentViewer) parentViewer.style.display = "none";
-  if (parentActions) parentActions.style.display = "none";
 }
 
 async function loadLinkedStudentsForParent(parentId, studioId) {
@@ -522,6 +519,8 @@ async function init() {
     window.location.href = "finish-setup.html";
     return;
   }
+
+  maybeShowSwitchStudentTip(viewerContext.mode);
 
   const authUserId = viewerContext.viewerUserId;
 

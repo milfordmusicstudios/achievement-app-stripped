@@ -6,10 +6,9 @@
   <title>Manage Users | Achievement App</title>
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="nav.css">
-  <script type="module" src="nav.js" defer></script>
-  <script type="module" src="manage-users.js" defer></script>
 </head>
-<body class="manage-users">
+<body class="app-shell manage-users">
+  <div class="app-main">
 <div id="envBadge" class="env-badge" style="display:none;"></div>
 
 <main class="app">
@@ -64,6 +63,10 @@ window.addEventListener("load", syncUserTableWidths);
 window.addEventListener("resize", syncUserTableWidths);
 </script>
 
-<div id="app-bottom-nav"></div>
+  </div>
+
+  <div id="app-bottom-nav"></div>
+  <script type="module" src="nav.js"></script>
+  <script type="module" src="manage-users.js"></script>
 </body>
 </html>
