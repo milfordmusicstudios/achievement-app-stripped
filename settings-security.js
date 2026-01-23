@@ -278,6 +278,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   wirePasswordToggles();
 
+  const roleCard = document.getElementById("roleCard");
+  if (roleCard) {
+    roleCard.style.display = roleList.length > 1 ? "" : "none";
+  }
   const switchRoleBtn = document.getElementById("switchRoleBtn");
   if (switchRoleBtn) {
     switchRoleBtn.style.display = roleList.length > 1 ? "inline-block" : "none";

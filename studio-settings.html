@@ -7,27 +7,36 @@
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="nav.css" />
 </head>
-<body class="white-page">
+<body class="white-page studio-settings-page">
   <div id="envBadge" class="env-badge" style="display:none;"></div>
 
   <main class="app">
-    <div class="leaderboard-header">
-      <h2 class="leaderboard-title">Studio Settings</h2>
-    </div>
+    <header class="settings-header">
+      <div class="settings-header-spacer"></div>
+      <nav class="settings-tabs">
+        <a class="settings-tab" href="settings-security.html">Account</a>
+        <a class="settings-tab is-active" href="studio-settings.html">Studio</a>
+      </nav>
+      <div class="settings-header-spacer"></div>
+    </header>
 
-    <div class="settings-form">
-      <p><b>Studio:</b> <span id="studioName">—</span></p>
-      <p><b>Slug:</b> <span id="studioSlug">—</span></p>
+    <h2 class="settings-title">Studio Settings</h2>
 
-      <h3>Studio Name</h3>
-      <p>Read-only for now.</p>
+    <section class="settings-card">
+      <div class="settings-card-body">
+        <p><b>Studio:</b> <span id="studioName">—</span></p>
+        <p><b>Slug:</b> <span id="studioSlug">—</span></p>
 
-      <h3>Theme / Branding</h3>
-      <p>Coming soon.</p>
+        <h3>Studio Name</h3>
+        <p>Read-only for now.</p>
 
-      <h3>Manage Staff</h3>
-      <a class="blue-button" href="invite-staff.html">Invite Staff</a>
-    </div>
+        <h3>Theme / Branding</h3>
+        <p>Coming soon.</p>
+
+        <h3>Manage Staff</h3>
+        <a class="blue-button" href="invite-staff.html">Invite Staff</a>
+      </div>
+    </section>
   </main>
 
   <div id="app-bottom-nav"></div>

@@ -115,11 +115,20 @@
       </div>
     </section>
 
-    <section class="home-nav staff-only" aria-label="Staff actions">
-      <div style="display:flex; flex-wrap:wrap; gap:20px; justify-content:center;">
-        <a class="nav-btn admin-only" href="manage-users.html" style="min-width:220px; padding:14px 18px; text-align:center;">Manage Users</a>
-        <a class="nav-btn admin-only" href="invite-staff.html" style="min-width:220px; padding:14px 18px; text-align:center;">Invite Student/Staff</a>
-        <a class="nav-btn admin-only" href="studio-settings.html" style="min-width:220px; padding:14px 18px; text-align:center;">Studio Settings</a>
+    <section class="home-staff admin-dashboard staff-only" aria-label="Staff actions">
+      <div class="admin-action-grid">
+        <a class="admin-action-card admin-only" href="manage-users.html">
+          <span class="admin-card-title">Manage Users</span>
+          <span class="admin-card-subtitle">Add or edit students, parents, and staff.</span>
+        </a>
+        <a class="admin-action-card admin-only" href="invite-staff.html">
+          <span class="admin-card-title">Invite People</span>
+          <span class="admin-card-subtitle">Send links for new students or staff.</span>
+        </a>
+        <a class="admin-action-card admin-only" href="studio-settings.html">
+          <span class="admin-card-title">Studio Settings</span>
+          <span class="admin-card-subtitle">Adjust branding, policies, and more.</span>
+        </a>
       </div>
     </section>
   </main>

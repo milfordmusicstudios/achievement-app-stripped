@@ -1,7 +1,7 @@
 import { supabase } from './supabaseClient.js';
 import { ensureStudioContextAndRoute } from './studio-routing.js';
 import { clearAppSessionCache, ensureUserRow, getAuthUserId, getViewerContext, renderActiveStudentHeader } from './utils.js';
-import { getActiveProfileId, setActiveProfileId } from './active-profile.js';
+import { getActiveProfileId, setActiveProfileId, persistLastActiveStudent, getLastActiveStudent, clearLastActiveStudent } from './active-profile.js';
 
 const qs = id => document.getElementById(id);
 const safeParse = value => {
@@ -35,6 +35,7 @@ function persistParentSelection(viewerUserId, studioId, studentId) {
     localStorage.setItem(key, String(studentId));
   }
   if (studentId) localStorage.setItem("activeStudentId", String(studentId));
+  persistLastActiveStudent(viewerUserId, studioId, studentId);
 }
 
 function getStudioRoleContext() {
@@ -450,6 +451,8 @@ async function switchUser(user) {
   const ctx = await getViewerContext();
   if (ctx?.mode === "parent") {
     persistParentSelection(ctx.viewerUserId, ctx.studioId, user.id);
+  } else if (ctx?.viewerUserId) {
+    persistLastActiveStudent(ctx.viewerUserId, ctx.studioId, user.id);
   }
   setActiveProfileId(user.id);
   window.location.reload();
@@ -526,9 +529,21 @@ async function init() {
     isParentReadOnly = true;
     setHomeMode("parent");
     const linkedStudents = await loadLinkedStudentsForParent(authUserId, viewerContext.studioId);
+    const savedStudentId = getLastActiveStudent(authUserId, viewerContext.studioId);
+    const savedStudent = savedStudentId && linkedStudents.find(s => String(s.id) === String(savedStudentId));
+    if (savedStudent && String(getActiveProfileId() || "") !== String(savedStudent.id)) {
+      persistParentSelection(authUserId, viewerContext.studioId, savedStudent.id);
+      setActiveProfileId(savedStudent.id);
+      window.location.href = "index.html";
+      return;
+    }
+    if (savedStudentId && !savedStudent) {
+      clearLastActiveStudent(authUserId, viewerContext.studioId);
+    }
     if (linkedStudents.length === 1) {
       const studentId = linkedStudents[0].id;
       if (studentId && String(getActiveProfileId() || "") !== String(studentId)) {
+        persistParentSelection(authUserId, viewerContext.studioId, studentId);
         setActiveProfileId(studentId);
         window.location.href = "index.html";
         return;

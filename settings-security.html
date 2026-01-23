@@ -14,8 +14,8 @@
   <header class="settings-header">
     <div class="settings-header-spacer"></div>
     <nav class="settings-tabs">
-      <a class="settings-tab is-active" href="settings-security.html">Login &amp; Security</a>
-      <a class="settings-tab" href="settings-family.html">Family</a>
+      <a class="settings-tab is-active" href="settings-security.html">Account</a>
+      <a class="settings-tab" href="studio-settings.html">Studio</a>
     </nav>
     <div class="settings-header-spacer"></div>
   </header>
@@ -51,56 +51,50 @@
   </section>
 
   <section class="settings-card" id="passwordCard">
-    <div class="settings-card-header">
-      <h3>Password &amp; Security</h3>
-      <button id="passwordToggleBtn" type="button" class="blue-button btn-rect">Change Password</button>
-    </div>
-    <div class="settings-card-body" id="passwordBody" style="display:none;">
-      <label class="settings-label" for="currentPassword">Current Password</label>
-      <div class="pw-field">
-        <input id="currentPassword" type="password" class="settings-input" placeholder="Current Password" />
-        <button type="button" class="pw-toggle" data-target="currentPassword">Show</button>
-      </div>
+    <div class="settings-card-body">
+      <p class="settings-hint">Update your password whenever you change devices.</p>
+      <button id="passwordToggleBtn" type="button" class="blue-button btn-rect full-width-btn">Change Password</button>
+      <div id="passwordBody" class="password-body" style="display:none; margin-top:12px;">
+        <label class="settings-label" for="currentPassword">Current Password</label>
+        <div class="pw-field">
+          <input id="currentPassword" type="password" class="settings-input" placeholder="Current Password" />
+          <button type="button" class="pw-toggle" data-target="currentPassword">Show</button>
+        </div>
 
-      <label class="settings-label" for="newPassword">New Password</label>
-      <div class="pw-field">
-        <input id="newPassword" type="password" class="settings-input" placeholder="New Password" />
-        <button type="button" class="pw-toggle" data-target="newPassword">Show</button>
-      </div>
+        <label class="settings-label" for="newPassword">New Password</label>
+        <div class="pw-field">
+          <input id="newPassword" type="password" class="settings-input" placeholder="New Password" />
+          <button type="button" class="pw-toggle" data-target="newPassword">Show</button>
+        </div>
 
-      <label class="settings-label" for="confirmNewPassword">Confirm New Password</label>
-      <div class="pw-field">
-        <input id="confirmNewPassword" type="password" class="settings-input" placeholder="Confirm New Password" />
-        <button type="button" class="pw-toggle" data-target="confirmNewPassword">Show</button>
-      </div>
+        <label class="settings-label" for="confirmNewPassword">Confirm New Password</label>
+        <div class="pw-field">
+          <input id="confirmNewPassword" type="password" class="settings-input" placeholder="Confirm New Password" />
+          <button type="button" class="pw-toggle" data-target="confirmNewPassword">Show</button>
+        </div>
 
-      <div class="settings-hint">Minimum 8 characters. Use a mix of letters and numbers.</div>
-      <div id="passwordError" class="settings-error" style="display:none;"></div>
+        <div class="settings-hint">Minimum 8 characters. Use a mix of letters and numbers.</div>
+        <div id="passwordError" class="settings-error" style="display:none;"></div>
 
-      <div class="settings-actions">
-        <button id="passwordSaveBtn" type="button" class="blue-button">Save</button>
-        <button id="passwordCancelBtn" type="button" class="blue-button btn-ghost">Cancel</button>
+        <div class="settings-actions">
+          <button id="passwordSaveBtn" type="button" class="blue-button">Save</button>
+          <button id="passwordCancelBtn" type="button" class="blue-button btn-ghost">Cancel</button>
+        </div>
       </div>
     </div>
   </section>
 
   <section class="settings-card" id="roleCard">
-    <div class="settings-card-header">
-      <h3>Role &amp; Access</h3>
-      <div></div>
-    </div>
     <div class="settings-card-body">
-      <button id="switchRoleBtn" type="button" class="blue-button btn-rect">Switch Role</button>
+      <p class="settings-hint">Switch between assigned roles without logging out.</p>
+      <button id="switchRoleBtn" type="button" class="blue-button btn-rect full-width-btn">Switch Role</button>
     </div>
   </section>
 
-  <section class="settings-card">
-    <div class="settings-card-header">
-      <h3>Logout</h3>
-      <div></div>
-    </div>
+  <section class="settings-card" id="logoutCard">
     <div class="settings-card-body">
-      <button id="logoutBtn" type="button" class="blue-button btn-ghost">Logout</button>
+      <p class="settings-hint">Sign out from this device and clear local cache.</p>
+      <button id="logoutBtn" type="button" class="blue-button btn-ghost logout-btn full-width-btn">Logout</button>
     </div>
   </section>
 </main>

@@ -1,6 +1,6 @@
 import { supabase } from "./supabaseClient.js";
 import { getAuthUserId, getViewerContext } from "./utils.js";
-import { clearActiveProfileId, getActiveProfileId, setActiveProfileId } from "./active-profile.js";
+import { clearActiveProfileId, getActiveProfileId, setActiveProfileId, clearLastActiveStudent } from "./active-profile.js";
 import { applyTeacherOptionsToSelect, loadLinkedStudents, loadTeachersForStudio, normalizeTextArray, showToast } from "./settings-shared.js";
 
 let authViewerId = null;
@@ -20,6 +20,11 @@ function setAddStudentTeacherError(message) {
   if (!errorEl) return;
   errorEl.textContent = message || "";
   errorEl.style.display = message ? "block" : "none";
+}
+
+function clearParentSelectionCache(viewerId, studioId) {
+  if (!viewerId || !studioId) return;
+  localStorage.removeItem(`aa.activeStudent.${studioId}.${viewerId}`);
 }
 
 function openAddStudentModal() {
@@ -113,6 +118,21 @@ async function renderLinkedStudents(parentId, studioId) {
   list.innerHTML = "<p class=\"empty-state\">Loading students...</p>";
 
   const students = await loadLinkedStudents(parentId, studioId);
+  const switchBtn = document.getElementById("switchStudentBtn");
+  const switchTip = document.getElementById("switchStudentTip");
+  const showSwitchAction = students.length > 1;
+  if (switchBtn) {
+    switchBtn.style.display = showSwitchAction ? "" : "none";
+  }
+  if (switchTip) {
+    const tipKey = "tutorial_switch_student_shown";
+    if (showSwitchAction && !localStorage.getItem(tipKey)) {
+      switchTip.style.display = "";
+      localStorage.setItem(tipKey, "true");
+    } else {
+      switchTip.style.display = "none";
+    }
+  }
   const activeProfileId = getActiveProfileId();
   const activeRow = students.find(s => String(s.id) === String(activeProfileId));
 
@@ -289,4 +309,18 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (!addStudentOpen) return;
     if (e.key === "Escape") closeAddStudentModal();
   });
+  const switchStudentBtn = document.getElementById("switchStudentBtn");
+  if (switchStudentBtn) {
+    switchStudentBtn.addEventListener("click", async () => {
+      const viewerContext = await getViewerContext();
+      if (viewerContext?.viewerUserId) {
+        clearParentSelectionCache(viewerContext.viewerUserId, viewerContext.studioId);
+        clearLastActiveStudent(viewerContext.viewerUserId, viewerContext.studioId);
+      }
+      clearActiveProfileId();
+      localStorage.removeItem("activeStudentId");
+      showToast("Select a different student from the home screen.");
+      window.location.href = "index.html";
+    });
+  }
 });
