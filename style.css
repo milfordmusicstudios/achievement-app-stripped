@@ -2798,14 +2798,15 @@ body.settings-page .settings-card-body {
 .accordion-body.is-open {
   animation: fadeIn 180ms ease;
 }
-.studio-settings .accordion-body .bottom-nav,
-.studio-settings .accordion-body nav,
-.studio-settings .accordion-body footer,
-.studio-settings .accordion-body .env-badge {
-  display: none !important;
-}
-.panel-root {
+.accordion-panel-content {
   width: 100%;
+}
+.studio-settings-page .accordion-panel-content .bottom-nav,
+.studio-settings-page .accordion-panel-content nav,
+.studio-settings-page .accordion-panel-content footer,
+.studio-settings-page .accordion-panel-content .env-badge,
+.studio-settings-page .accordion-panel-content [data-env-badge] {
+  display: none !important;
 }
 
 .full-width-btn {
