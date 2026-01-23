@@ -3,8 +3,7 @@ import { getViewerContext, getAuthUserId, getActiveStudioIdForUser } from "./uti
 
 const PANEL_URLS = {
   "manage-users": "manage-users.html",
-  "invite-student": "invite-student.html",
-  "invite-staff": "invite-staff.html"
+  "invite-student": "invite-student.html"
 };
 
 const CLEAN_SELECTORS = [

@@ -2809,6 +2809,93 @@ body.settings-page .settings-card-body {
   display: none !important;
 }
 
+
+body.settings-page {
+  background: #f5f7fa !important;
+}
+
+body.settings-page .bg-image,
+body.settings-page .page-background,
+body.settings-page .background-image,
+body.settings-page .home-background {
+  display: none !important;
+}
+
+.settings-page .settings-card,
+.settings-page .settings-card-body,
+.settings-page .panel,
+.settings-page .panel-root,
+.settings-page .accordion-card {
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 18px 36px rgba(16, 40, 73, 0.08);
+  border-radius: 16px;
+}
+
+.settings-page .accordion-card {
+  border-radius: 16px;
+  border: 1px solid rgba(11, 79, 138, 0.12);
+}
+
+.settings-page .blue-button,
+.settings-page button.blue-button,
+.settings-page .btn,
+.settings-page .primary-button {
+  height: 44px;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 44px;
+  letter-spacing: 0.01em;
+}
+
+.settings-page .blue-button.btn-ghost,
+.settings-page button.btn-ghost {
+  background: #fff;
+}
+
+.settings-page .button-row {
+  gap: 12px;
+}
+
+.settings-page .settings-accordion .accordion-card:first-child .accordion-header {
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+}
+
+.settings-page .settings-accordion .accordion-card:last-child .accordion-header {
+  border-bottom-left-radius: 16px;
+  border-bottom-right-radius: 16px;
+}
+
+.settings-page .settings-accordion .accordion-header {
+  background: #fff;
+  border: none;
+  border-bottom: 1px solid rgba(11, 79, 138, 0.12);
+}
+
+.settings-page .accordion-body {
+  padding: 16px 20px 22px;
+}
+
+.studio-placeholder {
+  font-size: 0.95rem;
+  color: #4d5f77;
+  line-height: 1.55;
+}
+
+.studio-placeholder ul {
+  margin: 12px 0 0 18px;
+  padding-left: 12px;
+  color: #3b4c62;
+}
+
+.studio-placeholder li + li {
+  margin-top: 6px;
+}
+
 .full-width-btn {
   display: flex;
   justify-content: center;
