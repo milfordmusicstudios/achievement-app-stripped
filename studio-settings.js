@@ -1,15 +1,29 @@
 import { supabase } from "./supabaseClient.js";
-import { requireStudioRoles, getAuthUserId, getActiveStudioIdForUser } from "./utils.js";
+import { getViewerContext, getAuthUserId, getActiveStudioIdForUser } from "./utils.js";
 
 document.addEventListener("DOMContentLoaded", async () => {
-  const authz = await requireStudioRoles(["admin"]);
-  console.log("[AuthZ]", { page: "studio-settings", requiredRoles: ["admin"], roles: authz.roles, studioId: authz.studioId });
-  if (!authz.ok) return;
+  const accessNotice = document.getElementById("studioAccessNotice");
+  const sections = document.getElementById("studioSections");
+  const nameEl = document.getElementById("studioName");
+  const slugEl = document.getElementById("studioSlug");
+
+  const viewerContext = await getViewerContext();
+  const roles = viewerContext?.viewerRoles || [];
+  const isAdmin = roles.includes("admin");
+
+  if (!isAdmin) {
+    if (accessNotice) accessNotice.style.display = "";
+    if (sections) sections.style.display = "none";
+    return;
+  }
+
+  if (accessNotice) accessNotice.style.display = "none";
+  if (sections) sections.style.display = "";
 
   const authUserId = await getAuthUserId();
-  const studioId = authz.studioId || await getActiveStudioIdForUser(authUserId);
+  const studioId = viewerContext?.studioId || await getActiveStudioIdForUser(authUserId);
   if (!studioId) {
-    window.location.href = "index.html";
+    console.warn("[StudioSettings] studio id missing");
     return;
   }
 
@@ -24,8 +38,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  const nameEl = document.getElementById("studioName");
-  const slugEl = document.getElementById("studioSlug");
   if (nameEl) nameEl.textContent = studio?.name || "—";
   if (slugEl) slugEl.textContent = studio?.slug || "—";
 });

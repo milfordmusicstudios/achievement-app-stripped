@@ -10,11 +10,12 @@
 }
 
 #settings-tabs .settings-tabs-inner {
-  max-width: 640px;
+  max-width: 480px;
+  width: min(100%, 480px);
   margin: 0 auto;
   display: flex;
   justify-content: center;
-  gap: 8px;
+  gap: 10px;
   flex-wrap: wrap;
   padding: 0 12px;
 }

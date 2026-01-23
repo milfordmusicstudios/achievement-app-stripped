@@ -11,7 +11,7 @@ const TAB_CONFIG = [
     id: "family",
     label: "Family",
     href: "settings-family.html",
-    show: roles => roles.includes("parent")
+    show: () => true
   },
   {
     id: "studio",
@@ -23,6 +23,13 @@ const TAB_CONFIG = [
 
 function getPathName() {
   return window.location.pathname.split("/").pop() || "settings.html";
+}
+
+function markActive(tab, activePath) {
+  const isActive =
+    activePath === tab.href ||
+    (activePath === "settings.html" && tab.href === "settings-security.html");
+  return isActive ? 'class="settings-tab is-active" aria-current="page"' : 'class="settings-tab"';
 }
 
 async function resolveRoles() {
@@ -40,28 +47,25 @@ async function resolveRoles() {
   return ctxRoles.map(r => String(r).toLowerCase());
 }
 
-function buildTabs(roleList, activePath) {
-  return TAB_CONFIG.filter(tab => tab.show(roleList)).map(tab => {
-    const isActive =
-      activePath === tab.href ||
-      (activePath === "settings.html" && tab.href === "settings-security.html");
-    const attrs = isActive
-      ? 'class="settings-tab is-active" aria-current="page"'
-      : 'class="settings-tab"';
-    return `<a ${attrs} href="${tab.href}">${tab.label}</a>`;
-  });
+function renderTabs(tabs) {
+  const inner = document.createElement("div");
+  inner.className = "settings-tabs-inner";
+  inner.innerHTML = tabs.join("");
+  return inner;
 }
 
 async function renderSettingsTabs() {
   const container = document.getElementById("settings-tabs");
   if (!container) return;
   const roles = await resolveRoles();
-  const tabs = buildTabs(roles, getPathName());
+  const activePath = getPathName();
+  const tabs = TAB_CONFIG.filter(tab => tab.show(roles)).map(tab => `<a ${markActive(tab, activePath)} href="${tab.href}">${tab.label}</a>`);
   if (!tabs.length) {
     container.style.display = "none";
     return;
   }
-  container.innerHTML = `<div class="settings-tabs-inner">${tabs.join("")}</div>`;
+  container.innerHTML = "";
+  container.appendChild(renderTabs(tabs));
 }
 
 document.addEventListener("DOMContentLoaded", renderSettingsTabs);

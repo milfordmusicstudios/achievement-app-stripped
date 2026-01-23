@@ -8,33 +8,69 @@
   <link rel="stylesheet" href="nav.css" />
   <link rel="stylesheet" href="settings-tabs.css" />
 </head>
-<body class="app-shell white-page studio-settings-page">
+<body class="app-shell app-bg bg-teal settings-page studio-settings-page">
   <div class="app-main">
     <div id="envBadge" class="env-badge" style="display:none;"></div>
 
     <main class="app">
       <div id="settings-tabs"></div>
       <h2 class="settings-title">Studio Settings</h2>
-
-    <section class="settings-card">
-      <div class="settings-card-body">
-        <p><b>Studio:</b> <span id="studioName">—</span></p>
-        <p><b>Slug:</b> <span id="studioSlug">—</span></p>
-
-        <h3>Studio Name</h3>
-        <p>Read-only for now.</p>
-
-        <h3>Theme / Branding</h3>
-        <p>Coming soon.</p>
-
-        <h3>Manage Staff</h3>
-        <a class="blue-button" href="invite-staff.html">Invite Staff</a>
+      <div class="studio-meta">
+        <div><strong>Studio:</strong> <span id="studioName">—</span></div>
+        <div><strong>Slug:</strong> <span id="studioSlug">—</span></div>
       </div>
-    </section>
+
+      <div id="studioAccessNotice" class="settings-card studio-access-card" style="display:none;">
+        <div class="settings-card-body">
+          <p>Studio settings are available to admins only.</p>
+        </div>
+      </div>
+
+      <div id="studioSections" class="studio-iframe-accordion" style="display:none;">
+        <details class="accordion-card" open>
+          <summary>Manage Users</summary>
+          <div class="accordion-inner">
+            <iframe
+              class="studio-iframe"
+              src="manage-users.html"
+              title="Manage Users"
+              loading="lazy"
+              referrerpolicy="no-referrer"
+            ></iframe>
+          </div>
+        </details>
+
+        <details class="accordion-card" open>
+          <summary>Invite Student</summary>
+          <div class="accordion-inner">
+            <iframe
+              class="studio-iframe"
+              src="invite-student.html"
+              title="Invite Student"
+              loading="lazy"
+              referrerpolicy="no-referrer"
+            ></iframe>
+          </div>
+        </details>
+
+        <details class="accordion-card" open>
+          <summary>Invite Staff</summary>
+          <div class="accordion-inner">
+            <iframe
+              class="studio-iframe"
+              src="invite-staff.html"
+              title="Invite Staff"
+              loading="lazy"
+              referrerpolicy="no-referrer"
+            ></iframe>
+          </div>
+        </details>
+      </div>
     </main>
   </div>
 
   <div id="app-bottom-nav"></div>
+  <script src="config.js"></script>
   <script type="module" src="nav.js"></script>
   <script type="module" src="settings-tabs.js"></script>
   <script type="module" src="studio-settings.js"></script>

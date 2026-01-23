@@ -2744,6 +2744,56 @@ body.settings-page .settings-card-body {
   gap: 10px;
 }
 
+.studio-meta {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+  color: #4c6a86;
+  font-size: 0.95rem;
+}
+.studio-meta strong {
+  font-weight: 600;
+  color: #0B4F8A;
+}
+.studio-iframe-accordion {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.accordion-card {
+  border: 1px solid rgba(11, 79, 138, 0.18);
+  border-radius: 16px;
+  background: #fff;
+  overflow: hidden;
+}
+.accordion-card summary {
+  padding: 14px 18px;
+  font-weight: 700;
+  cursor: pointer;
+  list-style: none;
+  background: rgba(255, 255, 255, 0.95);
+}
+.accordion-card[open] summary {
+  border-bottom: 1px solid rgba(11, 79, 138, 0.12);
+}
+.accordion-inner {
+  padding: 12px;
+}
+.studio-iframe {
+  width: 100%;
+  min-height: 780px;
+  border: 1px solid rgba(11, 79, 138, 0.2);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+}
+.studio-access-card {
+  margin-bottom: 20px;
+  border: 2px dashed rgba(11, 79, 138, 0.3);
+}
+
 .full-width-btn {
   display: flex;
   justify-content: center;
