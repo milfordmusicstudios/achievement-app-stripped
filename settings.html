@@ -8,44 +8,22 @@
   <link rel="stylesheet" href="nav.css" />
   <link rel="stylesheet" href="settings-tabs.css" />
 </head>
-<body class="app-shell settings-page settings-hub-page settings-plain">
+<body class="app-shell settings-page settings-plain">
   <div class="app-main">
 <div id="envBadge" class="env-badge" style="display:none;"></div>
 
 <main class="app">
   <div id="settings-tabs"></div>
   <h2 class="settings-title">Settings</h2>
-
   <section class="settings-card">
-    <div class="settings-card-header">
-      <h3>Account</h3>
-    </div>
     <div class="settings-card-body">
-      <a class="nav-btn settings-link" href="settings-security.html">Login &amp; Security</a>
-      <a class="nav-btn settings-link" href="settings-family.html">Family</a>
-      <button id="switchRoleBtn" type="button" class="blue-button btn-rect full-width-btn" style="display:none;">Switch Role</button>
-    </div>
-  </section>
-
-  <section id="studioSection" class="settings-card" style="display:none;">
-    <div class="settings-card-header">
-      <h3>Studio</h3>
-    </div>
-    <div class="settings-card-body">
-      <a class="nav-btn settings-link" href="studio-settings.html">Studio Settings</a>
-      <a class="nav-btn settings-link" href="manage-users.html">Manage Users</a>
-      <a class="nav-btn settings-link" href="invite-staff.html">Invite Staff</a>
+      <p class="settings-hint">Select one of the tabs above to manage Login &amp; Security, Family, or Studio options.</p>
+      <div id="settings-placeholder" class="settings-content-placeholder">
+        <p>Account settings load by default. Use the tabs to view other sections.</p>
+      </div>
     </div>
   </section>
 </main>
-
-  <div id="roleSwitchModal" class="modal-overlay">
-    <div class="modal-card">
-      <h3>Select Role</h3>
-      <ul id="roleSwitchList" style="list-style: none; padding: 0;"></ul>
-      <button id="cancelRoleSwitchBtn" class="blue-button" style="margin-top: 10px; width: 100%;">Cancel</button>
-    </div>
-  </div>
 
   </div>
 
@@ -54,6 +32,5 @@
   <script src="config.js"></script>
   <script type="module" src="nav.js"></script>
   <script type="module" src="settings-tabs.js"></script>
-  <script type="module" src="settings.js"></script>
 </body>
 </html>

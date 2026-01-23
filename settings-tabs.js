@@ -11,7 +11,7 @@ const TAB_CONFIG = [
     id: "family",
     label: "Family",
     href: "settings-family.html",
-    show: roles => roles.includes("student") || roles.includes("parent")
+    show: roles => roles.includes("parent")
   },
   {
     id: "studio",
