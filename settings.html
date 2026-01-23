@@ -92,11 +92,6 @@
 </tr>
 
     <div class="button-row">
-      <button id="saveBtn" type="submit" class="blue-button">Save</button>
-      <button id="cancelBtn" type="button" class="blue-button">Cancel Changes and Return to Home</button>
-    </div>
-
-    <div class="button-row">
       <button id="switchRoleBtn" type="button" class="blue-button">Switch Role</button>
     </div>
 
@@ -113,6 +108,19 @@
     </div>
   </section>
 </main>
+
+<div class="confirm-save-bar">
+  <div class="confirm-save-inner">
+    <input id="confirmPassword" type="password" placeholder="Current password to confirm" />
+    <div id="confirmPasswordError" class="confirm-error" style="display:none;"></div>
+  </div>
+  <div class="confirm-save-actions">
+    <button id="saveChangesBtn" type="button" class="blue-button" disabled>Save Changes</button>
+    <button id="cancelReturnHome" type="button" class="blue-button">Cancel Changes and Return to Home</button>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
 
 <!-- ✅ Avatar Help Modal -->
 <div id="avatarHelpModal" class="modal-overlay">
@@ -141,22 +149,6 @@
     <h3>Select Role</h3>
     <ul id="roleSwitchList" style="list-style: none; padding: 0;"></ul>
     <button id="cancelRoleSwitchBtn" class="blue-button" style="margin-top: 10px; width: 100%;">Cancel</button>
-  </div>
-</div>
-
-<div id="passwordConfirmModal" class="modal-overlay">
-  <div class="modal-card">
-    <h3>Confirm your password</h3>
-    <p class="modal-helper">Enter your password to continue.</p>
-    <div class="pw-field">
-      <input id="confirmPasswordInput" type="password" placeholder="Password" />
-      <button id="confirmPasswordToggle" type="button" class="pw-toggle">Show</button>
-    </div>
-    <div id="confirmPasswordError" class="modal-error" style="display:none;"></div>
-    <div class="modal-actions">
-      <button id="confirmPasswordCancel" type="button" class="blue-button">Cancel</button>
-      <button id="confirmPasswordSubmit" type="button" class="blue-button">Confirm</button>
-    </div>
   </div>
 </div>
 

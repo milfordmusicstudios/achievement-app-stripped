@@ -8,8 +8,10 @@ let activeStudioId = null;
 let teacherOptionData = [];
 let authEmail = null;
 let authProfileCache = null;
-let pendingSensitiveAction = null;
 let addStudentOpen = false;
+let hasUnsavedChanges = false;
+let pendingStudentStatus = new Map();
+let pendingNewStudents = [];
 
 // ---------- helpers ----------
 function getHighestRole(roles) {
@@ -45,38 +47,36 @@ function setTeacherError(message) {
   errorEl.style.display = message ? "block" : "none";
 }
 
-function openPasswordModal({ onConfirm }) {
-  const overlay = document.getElementById("passwordConfirmModal");
-  const input = document.getElementById("confirmPasswordInput");
-  const errorEl = document.getElementById("confirmPasswordError");
-  if (!overlay || !input) return;
-  if (errorEl) {
-    errorEl.textContent = "";
-    errorEl.style.display = "none";
-  }
-  pendingSensitiveAction = onConfirm;
-  overlay.classList.add("is-open");
-  setTimeout(() => input.focus(), 0);
+function showToast(message) {
+  const toast = document.getElementById("toast");
+  if (!toast) return;
+  toast.textContent = message;
+  toast.classList.add("show");
+  clearTimeout(toast._hideTimer);
+  toast._hideTimer = setTimeout(() => {
+    toast.classList.remove("show");
+  }, 2200);
 }
 
-function closePasswordModal() {
-  const overlay = document.getElementById("passwordConfirmModal");
-  const input = document.getElementById("confirmPasswordInput");
-  const errorEl = document.getElementById("confirmPasswordError");
-  if (overlay) overlay.classList.remove("is-open");
-  if (input) input.value = "";
-  if (errorEl) {
-    errorEl.textContent = "";
-    errorEl.style.display = "none";
-  }
-  pendingSensitiveAction = null;
-}
-
-function setPasswordModalError(message) {
+function setConfirmPasswordError(message) {
   const errorEl = document.getElementById("confirmPasswordError");
   if (!errorEl) return;
   errorEl.textContent = message || "";
   errorEl.style.display = message ? "block" : "none";
+}
+
+function setUnsavedChanges(nextValue) {
+  hasUnsavedChanges = !!nextValue;
+  const saveBtn = document.getElementById("saveChangesBtn");
+  if (saveBtn) saveBtn.disabled = !hasUnsavedChanges;
+}
+
+function markUnsaved() {
+  setUnsavedChanges(true);
+}
+
+function getConfirmPasswordValue() {
+  return (document.getElementById("confirmPassword")?.value || "").trim();
 }
 
 function openAddStudentModal() {
@@ -143,6 +143,18 @@ function setAddStudentTeacherError(message) {
   errorEl.style.display = message ? "block" : "none";
 }
 
+function normalizeTextArray(valueOrArray) {
+  if (!valueOrArray) return [];
+  if (Array.isArray(valueOrArray)) {
+    return valueOrArray.map(v => String(v).trim()).filter(Boolean);
+  }
+  if (typeof valueOrArray === "string") {
+    const trimmed = valueOrArray.trim();
+    return trimmed ? [trimmed] : [];
+  }
+  return [String(valueOrArray).trim()].filter(Boolean);
+}
+
 async function handleAddStudent() {
   const firstName = (document.getElementById("addStudentFirstName")?.value || "").trim();
   const lastName = (document.getElementById("addStudentLastName")?.value || "").trim();
@@ -160,69 +172,129 @@ async function handleAddStudent() {
     return;
   }
 
-  if (!crypto?.randomUUID) {
-    setAddStudentError("Browser does not support student creation.");
-    return;
-  }
-
-  const studentId = crypto.randomUUID();
-  const payload = {
-    id: studentId,
+  pendingNewStudents.push({
     firstName,
     lastName,
-    roles: ["student"],
-    parent_uuid: authViewerId,
-    instrument: instrumentRaw,
-    teacherIds,
-    points: 0,
-    level: 1,
-    active: true,
-    studio_id: activeStudioId,
-    showonleaderboard: true
-  };
-
-  const { error: insertErr } = await supabase.from("users").insert([payload]);
-  if (insertErr) {
-    console.error("[Settings] add student failed", insertErr);
-    setAddStudentError(insertErr.message || "Failed to add student.");
-    return;
-  }
-
-  const { error: linkErr } = await supabase.rpc("link_parent_student", {
-    p_student_id: studentId,
-    p_studio_id: activeStudioId
+    instrument: normalizeTextArray(instrumentRaw),
+    teacherIds
   });
-  if (linkErr) {
-    console.error("[Settings] link_parent_student failed", linkErr);
-  }
 
+  console.log("[Settings] student staged", { firstName, lastName });
+  markUnsaved();
   closeAddStudentModal();
   await renderLinkedStudents(authViewerId, activeStudioId);
 }
 
-async function confirmPasswordAndRun() {
-  const input = document.getElementById("confirmPasswordInput");
-  const password = (input?.value || "").trim();
-  if (!password) {
-    setPasswordModalError("Please enter your password.");
-    return;
-  }
+async function reauthenticateWithPassword(password) {
   const { data: authData } = await supabase.auth.getUser();
   const email = authEmail || authData?.user?.email;
   if (!email) {
-    setPasswordModalError("Missing account email. Please log in again.");
-    return;
+    setConfirmPasswordError("Missing account email. Please log in again.");
+    return false;
   }
   const { error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) {
-    setPasswordModalError("Incorrect password.");
+    setConfirmPasswordError("Incorrect password.");
+    return false;
+  }
+  return true;
+}
+
+async function applyPendingStudentStatus() {
+  const entries = Array.from(pendingStudentStatus.entries());
+  if (!entries.length) return true;
+  for (const [studentId, isActive] of entries) {
+    const nextValue = isActive ? null : new Date().toISOString();
+    const { error } = await supabase
+      .from("users")
+      .update({ deactivated_at: nextValue })
+      .eq("id", studentId);
+    if (error) {
+      console.error("[Settings] failed to update student status", error);
+      return false;
+    }
+  }
+  return true;
+}
+
+async function createPendingStudents() {
+  if (!pendingNewStudents.length) return true;
+  if (!crypto?.randomUUID) {
+    console.error("[Settings] browser missing randomUUID");
+    return false;
+  }
+
+  for (const pending of pendingNewStudents) {
+    const studentId = crypto.randomUUID();
+    const payload = {
+      id: studentId,
+      firstName: pending.firstName,
+      lastName: pending.lastName,
+      roles: ["student"],
+      parent_uuid: authViewerId,
+      instrument: pending.instrument,
+      teacherIds: pending.teacherIds,
+      points: 0,
+      level: 1,
+      active: true,
+      studio_id: activeStudioId,
+      showonleaderboard: true
+    };
+
+    const { error: insertErr } = await supabase.from("users").insert([payload]);
+    if (insertErr) {
+      console.error("[Settings] add student failed", insertErr);
+      return false;
+    }
+
+    const { error: linkErr } = await supabase.rpc("link_parent_student", {
+      p_student_id: studentId,
+      p_studio_id: activeStudioId
+    });
+    if (linkErr) {
+      console.error("[Settings] link_parent_student failed", linkErr);
+    }
+  }
+
+  return true;
+}
+
+async function handleSaveChanges() {
+  if (!hasUnsavedChanges) return;
+  const password = getConfirmPasswordValue();
+  if (!password) {
+    setConfirmPasswordError("Please enter your current password to confirm these changes.");
+    document.getElementById("confirmPassword")?.focus();
     return;
   }
-  const action = pendingSensitiveAction;
-  closePasswordModal();
-  if (typeof action === "function") {
-    await action();
+  setConfirmPasswordError("");
+
+  const authed = await reauthenticateWithPassword(password);
+  if (!authed) return;
+
+  const settingsOk = await saveSettings();
+  if (!settingsOk) return;
+
+  const statusOk = await applyPendingStudentStatus();
+  if (!statusOk) {
+    showToast("Failed to update student status.");
+    return;
   }
+
+  const pendingOk = await createPendingStudents();
+  if (!pendingOk) {
+    showToast("Failed to add student.");
+    return;
+  }
+
+  pendingStudentStatus = new Map();
+  pendingNewStudents = [];
+  setUnsavedChanges(false);
+  const confirmInput = document.getElementById("confirmPassword");
+  if (confirmInput) confirmInput.value = "";
+  setConfirmPasswordError("");
+  await renderLinkedStudents(authViewerId, activeStudioId);
+  showToast("Changes saved.");
 }
 
 async function loadLinkedStudents(parentId, studioId, options = {}) {
@@ -275,14 +347,15 @@ async function renderLinkedStudents(parentId, studioId) {
     clearActiveProfileId();
   }
 
-  if (!students.length) {
+  if (!students.length && pendingNewStudents.length === 0) {
     list.innerHTML = "<p class=\"empty-state\">No students linked to this account yet.</p>";
     return;
   }
 
   list.innerHTML = "";
   students.forEach(student => {
-    const isActive = !student.deactivated_at;
+    const pendingActive = pendingStudentStatus.has(student.id) ? pendingStudentStatus.get(student.id) : null;
+    const isActive = pendingActive === null ? !student.deactivated_at : pendingActive;
     const isCurrent = String(student.id) === String(activeProfileId);
     const name = `${student.firstName ?? ""} ${student.lastName ?? ""}`.trim() || "Student";
     const avatarUrl = student.avatarUrl || "images/icons/default.png";
@@ -310,56 +383,62 @@ async function renderLinkedStudents(parentId, studioId) {
     list.appendChild(row);
   });
 
+  if (pendingNewStudents.length) {
+    pendingNewStudents.forEach(pending => {
+      const name = `${pending.firstName ?? ""} ${pending.lastName ?? ""}`.trim() || "Student";
+      const row = document.createElement("div");
+      row.className = "family-student-row is-pending";
+      row.innerHTML = `
+        <div class="family-student-avatar">
+          <img src="images/icons/default.png" alt="${name}">
+        </div>
+        <div class="family-student-info">
+          <div class="family-student-name">${name}</div>
+          <div class="family-student-meta">Pending add (save to apply)</div>
+        </div>
+        <div class="status-toggle is-inactive" aria-pressed="false">
+          <span>Active</span>
+          <span>Inactive</span>
+        </div>
+      `;
+      list.appendChild(row);
+    });
+  }
+
   list.querySelectorAll("button[data-action=\"toggle-active\"]").forEach(btn => {
-    btn.addEventListener("click", async (e) => {
+    btn.addEventListener("click", (e) => {
       e.stopPropagation();
       const studentId = btn.dataset.id;
       if (!studentId) return;
 
-      openPasswordModal({
-        onConfirm: async () => {
-          const target = students.find(s => String(s.id) === String(studentId));
-          const isActive = target && !target.deactivated_at;
-          const nextValue = isActive ? new Date().toISOString() : null;
-          const { error } = await supabase
-            .from("users")
-            .update({ deactivated_at: nextValue })
-            .eq("id", studentId);
-          if (error) {
-            console.error("[Settings] failed to update student status", error);
-            alert("Failed to update student status.");
-            return;
-          }
+      const target = students.find(s => String(s.id) === String(studentId));
+      const currentActive = pendingStudentStatus.has(studentId)
+        ? pendingStudentStatus.get(studentId)
+        : !!(target && !target.deactivated_at);
+      const nextActive = !currentActive;
 
-          if (isActive && String(studentId) === String(getActiveProfileId())) {
-            const refresh = await loadLinkedStudents(parentId, studioId);
-            const nextActive = refresh.find(s => !s.deactivated_at);
-            if (nextActive) {
-              setActiveProfileId(nextActive.id);
-            } else {
-              clearActiveProfileId();
-            }
-            window.location.reload();
-            return;
-          }
+      pendingStudentStatus.set(studentId, nextActive);
+      if (target) {
+        target.deactivated_at = nextActive ? null : new Date().toISOString();
+      }
 
-          await renderLinkedStudents(parentId, studioId);
-        }
-      });
+      const row = btn.closest(".family-student-row");
+      if (row) {
+        row.classList.toggle("is-inactive", !nextActive);
+      }
+      btn.classList.toggle("is-inactive", !nextActive);
+      btn.setAttribute("aria-pressed", String(!!nextActive));
+      markUnsaved();
     });
   });
 
   list.querySelectorAll("button[data-action=\"change-avatar\"]").forEach(btn => {
-    btn.addEventListener("click", async (e) => {
+    btn.addEventListener("click", (e) => {
       e.stopPropagation();
       const studentId = btn.dataset.id;
       const input = list.querySelector(`input.student-avatar-input[data-id="${studentId}"]`);
       if (!input) return;
-      openPasswordModal({
-        onConfirm: async () => {
-          input.click();
-        }
-      });
+      input.click();
     });
   });
 
@@ -619,8 +698,8 @@ function applyCredsGuard(isOwn) {
 async function saveSettings() {
   const authUserId = await getAuthUserId();
   if (!authUserId) {
-    alert('You must be logged in.');
-    return;
+    showToast('You must be logged in.');
+    return false;
   }
 
   const { data: authProfile, error: authProfileErr } = await supabase
@@ -631,8 +710,8 @@ async function saveSettings() {
 
   if (authProfileErr || !authProfile) {
     console.error('[Settings] failed to load auth profile', authProfileErr);
-    alert('Failed to load account profile.');
-    return;
+    showToast('Failed to load account profile.');
+    return false;
   }
 
   const profile = authProfile;
@@ -660,7 +739,7 @@ async function saveSettings() {
     const teacherIds = Array.from(teacherSelect.selectedOptions || []).map(o => o.value);
     if (teacherOptionData.length > 0 && teacherIds.length === 0) {
       setTeacherError("Please select your teacher.");
-      return;
+      return false;
     }
     updatedUser.teacherIds = teacherIds;
   }
@@ -678,30 +757,31 @@ async function saveSettings() {
       if (emailChanged) {
         const { error: emailErr } = await supabase.auth.updateUser({ email: newEmail });
         if (emailErr) {
-          alert('Failed to update email: ' + emailErr.message);
-          return;
+          showToast('Failed to update email.');
+          return false;
         }
-        alert('Check your new email to confirm the change.');
+        showToast('Check your new email to confirm the change.');
       }
 
       if (passwordChanged) {
         const { error: passErr } = await supabase.auth.updateUser({ password: newPassword });
         if (passErr) {
-          alert('Failed to update password: ' + passErr.message);
-          return;
+          showToast('Failed to update password.');
+          return false;
         }
-        alert('Password updated successfully.');
+        showToast('Password updated successfully.');
       }
     }
 
     // Refresh local cache and return
     Object.assign(profile, updatedUser);
     localStorage.setItem('loggedInUser', JSON.stringify(profile));
-    alert('Settings saved successfully!');
-    window.location.href = 'index.html';
+    showToast('Settings saved successfully!');
+    return true;
   } catch (err) {
     console.error('[ERROR] Save settings failed:', err);
-    alert('Failed to update settings: ' + (err?.message || err));
+    showToast('Failed to update settings.');
+    return false;
   }
 }
 
@@ -758,6 +838,11 @@ return;
   document.getElementById('firstName').value = user.firstName || '';
   document.getElementById('lastName').value  = user.lastName  || '';
   document.getElementById('newEmail').value  = authEmail || user.email || '';
+  setUnsavedChanges(false);
+  ["firstName", "lastName", "newEmail", "newPassword"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener("input", markUnsaved);
+  });
   const avatarImageEl = document.getElementById('avatarImage');
   if (avatarImageEl) {
     avatarImageEl.src = user.avatarUrl || 'images/logos/default.png';
@@ -774,7 +859,10 @@ return;
       const opt = Array.from(teacherSelect.options).find(o => o.value === id);
       if (opt) opt.selected = true;
     });
-    teacherSelect.addEventListener("change", () => setTeacherError(""));
+    teacherSelect.addEventListener("change", () => {
+      setTeacherError("");
+      markUnsaved();
+    });
   } else if (teacherWrap) {
     teacherWrap.style.display = "none";
   }
@@ -873,13 +961,17 @@ localStorage.setItem('allUsers', JSON.stringify(updatedAllUsers));
     await clearAppSessionCache("logout");
     window.location.href = 'login.html';
   });
-  document.getElementById('cancelBtn').addEventListener('click', () => window.location.href = 'index.html');
+  const cancelReturnHome = document.getElementById('cancelReturnHome');
+  if (cancelReturnHome) cancelReturnHome.addEventListener('click', () => window.location.href = 'index.html');
   document.getElementById('switchRoleBtn').addEventListener('click', promptRoleSwitch);
   if (switchUserBtn) switchUserBtn.addEventListener('click', promptUserSwitch);
-  document.getElementById('saveBtn').addEventListener('click', e => {
-    e.preventDefault();
-    openPasswordModal({ onConfirm: saveSettings });
-  });
+  const saveChangesBtn = document.getElementById('saveChangesBtn');
+  if (saveChangesBtn) {
+    saveChangesBtn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      await handleSaveChanges();
+    });
+  }
 
   // modal cancels
   document.getElementById('cancelUserSwitchBtn').addEventListener('click', () => {
@@ -889,37 +981,11 @@ localStorage.setItem('allUsers', JSON.stringify(updatedAllUsers));
     document.getElementById('roleSwitchModal').style.display = 'none';
   });
 
-  const passwordOverlay = document.getElementById("passwordConfirmModal");
-  const passwordCancel = document.getElementById("confirmPasswordCancel");
-  const passwordSubmit = document.getElementById("confirmPasswordSubmit");
-  const passwordToggle = document.getElementById("confirmPasswordToggle");
-  const passwordInput = document.getElementById("confirmPasswordInput");
-
-  if (passwordCancel) passwordCancel.addEventListener("click", closePasswordModal);
-  if (passwordSubmit) passwordSubmit.addEventListener("click", confirmPasswordAndRun);
-  if (passwordToggle && passwordInput) {
-    passwordToggle.addEventListener("click", () => {
-      const showing = passwordInput.type === "text";
-      passwordInput.type = showing ? "password" : "text";
-      passwordToggle.textContent = showing ? "Show" : "Hide";
-    });
-  }
-  if (passwordOverlay) {
-    passwordOverlay.addEventListener("click", (e) => {
-      if (e.target === passwordOverlay) closePasswordModal();
-    });
-  }
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") closePasswordModal();
-    if (e.key === "Enter" && passwordOverlay?.classList.contains("is-open")) {
-      confirmPasswordAndRun();
-    }
-  });
-
   const addStudentBtn = document.getElementById("addStudentBtn");
   const addStudentCancel = document.getElementById("addStudentCancel");
   const addStudentSubmit = document.getElementById("addStudentSubmit");
   const addStudentOverlay = document.getElementById("addStudentModal");
+  const confirmPasswordInput = document.getElementById("confirmPassword");
 
   if (addStudentBtn) {
     addStudentBtn.addEventListener("click", () => openAddStudentModal());
@@ -928,14 +994,15 @@ localStorage.setItem('allUsers', JSON.stringify(updatedAllUsers));
     addStudentCancel.addEventListener("click", closeAddStudentModal);
   }
   if (addStudentSubmit) {
-    addStudentSubmit.addEventListener("click", () => {
-      openPasswordModal({ onConfirm: handleAddStudent });
-    });
+    addStudentSubmit.addEventListener("click", handleAddStudent);
   }
   if (addStudentOverlay) {
     addStudentOverlay.addEventListener("click", (e) => {
       if (e.target === addStudentOverlay) closeAddStudentModal();
     });
+  }
+  if (confirmPasswordInput) {
+    confirmPasswordInput.addEventListener("input", () => setConfirmPasswordError(""));
   }
   document.addEventListener("keydown", (e) => {
     if (!addStudentOpen) return;

@@ -2624,8 +2624,86 @@ body.settings-page .modal-field label {
   color: #0B4F8A;
 }
 
+body.settings-page .family-student-row.is-pending {
+  opacity: 0.7;
+  border-style: dashed;
+}
+
+body.settings-page .family-student-meta {
+  font-size: 12px;
+  color: #5a6b7a;
+  margin-top: 4px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   body.leaderboard-page .lb-avatar {
     transition: none;
+  }
+}
+
+/* Settings confirm bar */
+body.settings-page main.app {
+  padding-bottom: 130px;
+}
+
+body.settings-page .confirm-save-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1200;
+  background: rgba(255, 255, 255, 0.92);
+  border-top: 2px solid rgba(0, 71, 125, 0.2);
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(8px);
+}
+
+body.settings-page .confirm-save-bar .confirm-save-inner {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 12px 18px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+body.settings-page .confirm-save-bar input#confirmPassword {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 71, 125, 0.25);
+  font-size: 15px;
+}
+
+body.settings-page .confirm-save-bar .confirm-error {
+  color: #b00020;
+  font-size: 13px;
+}
+
+body.settings-page .confirm-save-actions {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 18px 14px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+body.settings-page .confirm-save-actions .blue-button {
+  flex: 1 1 240px;
+}
+
+body.settings-page .confirm-save-actions .blue-button[disabled] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+body.settings-page .modal-overlay {
+  z-index: 1400;
+}
+
+@media (max-width: 640px) {
+  body.settings-page .confirm-save-actions {
+    flex-direction: column;
   }
 }
