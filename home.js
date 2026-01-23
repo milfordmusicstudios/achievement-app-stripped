@@ -356,7 +356,7 @@ function ensureParentActionsRow() {
   row.className = "home-nav";
   row.style.display = "none";
   row.innerHTML = `
-    <a class="nav-btn" href="settings.html">Settings</a>
+    <a class="nav-btn" href="settings-security.html">Settings</a>
   `;
   const parentViewer = qs("parentViewerRow");
   if (parentViewer?.parentNode) {
@@ -534,7 +534,7 @@ async function init() {
         return;
       }
     } else if (linkedStudents.length === 0) {
-      setParentNotice("No students yet. Go to Settings to add one.");
+      setParentNotice("No students yet. Go to Family to add one.");
       initParentViewerSelector([], null, authUserId, viewerContext.studioId);
       return;
     } else {
@@ -655,7 +655,7 @@ async function init() {
   const raw = localStorage.getItem("loggedInUser");
   if (!raw && !ensuredProfile) {
     // Logged in parent, but no student selected yet
-    window.location.href = "settings.html";
+    window.location.href = "settings-security.html";
     return;
   }
 

@@ -224,8 +224,8 @@ export async function renderActiveStudentHeader(options = {}) {
       if (linked.length === 0) {
         mount.innerHTML = `
           <div class="active-student-header active-student-empty">
-            <div class="active-student-name">No students yet. Go to Settings to add one.</div>
-            <a class="nav-btn" href="settings.html">Settings</a>
+            <div class="active-student-name">No students yet. Go to Family to add one.</div>
+            <a class="nav-btn" href="settings-family.html">Family</a>
           </div>
         `;
       } else {
@@ -240,7 +240,7 @@ export async function renderActiveStudentHeader(options = {}) {
               <option value="">Choose a student</option>
               ${optionsHtml}
             </select>
-            <a class="nav-btn" href="settings.html">Settings</a>
+            <a class="nav-btn" href="settings-family.html">Family</a>
           </div>
         `;
         const select = document.getElementById("activeStudentSelect");
