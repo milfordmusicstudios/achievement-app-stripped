@@ -7,16 +7,10 @@
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="nav.css" />
 </head>
-<body class="app-bg bg-teal settings-page settings-hub-page">
+<body class="settings-page settings-hub-page settings-plain">
 <div id="envBadge" class="env-badge" style="display:none;"></div>
 
 <main class="app">
-  <header class="settings-header">
-    <a class="nav-btn" href="home.html">Home</a>
-    <div class="settings-header-spacer"></div>
-    <div class="settings-header-spacer"></div>
-  </header>
-
   <h2 class="settings-title">Settings</h2>
 
   <section class="settings-card">
@@ -27,7 +21,6 @@
       <a class="nav-btn settings-link" href="settings-security.html">Login &amp; Security</a>
       <a class="nav-btn settings-link" href="settings-family.html">Family</a>
       <button id="switchRoleBtn" type="button" class="blue-button btn-rect" style="display:none;">Switch Role</button>
-      <button id="switchUserBtn" type="button" class="blue-button btn-rect" style="display:none;">Switch User</button>
     </div>
   </section>
 
@@ -44,14 +37,6 @@
 </main>
 
 <div id="toast" class="toast"></div>
-
-<div id="userSwitchModal" class="modal-overlay">
-  <div class="modal-card">
-    <h3>Select User</h3>
-    <ul id="userSwitchList" style="list-style: none; padding: 0;"></ul>
-    <button id="cancelUserSwitchBtn" class="blue-button" style="margin-top: 10px; width: 100%;">Cancel</button>
-  </div>
-</div>
 
 <div id="roleSwitchModal" class="modal-overlay">
   <div class="modal-card">

@@ -1,11 +1,11 @@
 .has-bottom-nav {
-  padding-bottom: 86px;
+  padding-bottom: 64px;
 }
 
 .has-bottom-nav main,
 .has-bottom-nav .home-wrap,
 .has-bottom-nav .app {
-  padding-bottom: 86px;
+  padding-bottom: 64px;
 }
 
 #app-bottom-nav {
@@ -19,42 +19,39 @@
 .bottom-nav {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 8px;
-  padding: 10px 14px 16px;
-  background: rgba(255, 255, 255, 0.92);
-  border-top: 2px solid rgba(0, 71, 125, 0.2);
-  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.08);
-  backdrop-filter: blur(8px);
+  gap: 0;
+  padding: 6px 10px 10px;
+  background: rgba(255, 255, 255, 0.94);
+  border-top: 1px solid rgba(0, 71, 125, 0.2);
+  box-shadow: 0 -6px 18px rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(10px);
 }
 
 .bottom-nav-link {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 10px 8px;
-  border-radius: 14px;
-  border: 2px solid rgba(0, 71, 125, 0.15);
-  background: rgba(255, 255, 255, 0.8);
-  color: #0B4F8A;
-  font-weight: 800;
+  padding: 8px 6px 10px;
+  border-top: 3px solid transparent;
+  background: transparent;
+  color: rgba(11, 79, 138, 0.7);
+  font-weight: 700;
   text-decoration: none;
-  font-size: 14px;
+  font-size: 12px;
+  letter-spacing: 0.2px;
 }
 
 .bottom-nav-link.is-active {
-  background: #49b8ff;
-  border-color: transparent;
-  color: #ffffff;
+  border-top-color: #0B4F8A;
+  color: #0B4F8A;
+  font-weight: 800;
 }
 
 @media (max-width: 600px) {
   .bottom-nav {
-    padding: 8px 10px 14px;
-    gap: 6px;
+    padding: 4px 8px 8px;
   }
   .bottom-nav-link {
-    font-size: 12px;
-    padding: 8px 6px;
+    font-size: 11px;
   }
 }

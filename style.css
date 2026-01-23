@@ -1761,6 +1761,10 @@ body.review-logs-page .review-header {
   margin: 0 auto 12px;
 }
 
+body.review-logs-page .review-header-spacer {
+  width: 72px;
+}
+
 body.review-logs-page .review-title {
   margin: 0;
   text-align: center;
@@ -2323,14 +2327,8 @@ body.my-points-page .points-header {
   margin-bottom: 16px;
 }
 
-body.my-points-page .home-button {
-  padding: 10px 18px;
-  border-radius: 12px;
-  font-size: 1rem;
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+body.my-points-page .points-header-spacer {
+  width: 72px;
 }
 
 body.my-points-page .points-title {
@@ -2670,6 +2668,14 @@ body.settings-page .settings-title {
   text-align: center;
   color: #3399e8;
   margin: 8px 0 16px;
+}
+
+body.settings-plain {
+  background: #f6f8fb;
+}
+
+body.settings-plain main.app {
+  padding-top: 10px;
 }
 
 body.settings-page .settings-header .nav-btn {
