@@ -6,69 +6,75 @@
   <title>Manage Users | Achievement App</title>
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="nav.css">
+  <style>
+    [data-embed-root].is-embedded {
+      padding: 0;
+      margin: 0;
+    }
+
+    [data-embed-root].is-embedded .standalone-only {
+      display: none;
+    }
+  </style>
 </head>
 <body class="app-shell manage-users">
-  <div class="app-main">
-<div id="envBadge" class="env-badge" style="display:none;"></div>
-
-<main class="app">
-  <div data-embed-root>
-  <!-- ✅ Top Bar -->
-  <header style="display:flex; justify-content:center; align-items:center; padding:10px 20px;">
-    <h2 style="color:#00477d; margin:0;">Manage Users</h2>
+  <header class="standalone-only">
+    <div id="envBadge" class="env-badge" style="display:none;"></div>
+    <h2 style="color:#00477d; margin:0; text-align:center; padding:10px 20px;">Manage Users</h2>
   </header>
 
-  <!-- ✅ Search Bar -->
-  <div id="actionBar">
-    <input type="text" id="userSearch" placeholder="Search users..." />
-    <button id="addUserBtn" class="blue-button">+ Add User</button>
-    <button id="normalizeStaffRolesBtn" class="blue-button">Normalize Staff Roles</button>
+  <main class="app-main standalone-only">
+    <h1>Manage Users</h1>
+  </main>
+
+  <div data-embed-root class="settings-embed">
+    <!-- Top Bar -->
+    <div id="actionBar">
+      <input type="text" id="userSearch" placeholder="Search users..." />
+      <button id="addUserBtn" class="blue-button">+ Add User</button>
+      <button id="normalizeStaffRolesBtn" class="blue-button">Normalize Staff Roles</button>
+    </div>
+
+    <!-- Single Scrollable Table -->
+    <div id="usersScrollWrapper">
+      <table id="userHeaderTable">
+        <thead>
+          <tr>
+            <th data-sort="firstName">First Name</th>
+            <th data-sort="lastName">Last Name</th>
+            <th data-sort="email">Email</th>
+            <th>Avatar</th>
+            <th data-sort="roles">Roles</th>
+            <th data-sort="teacherIds">Teachers</th>
+            <th data-sort="instrument">Instrument</th>
+            <th data-sort="points">Points</th>
+            <th data-sort="level">Level</th>
+          </tr>
+        </thead>
+        <tbody id="userTableBody">
+          <!-- Rows inserted dynamically -->
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div id="paginationControls"></div>
   </div>
 
-  <!-- ✅ Single Scrollable Table -->
-  <div id="usersScrollWrapper">
-    <table id="userHeaderTable">
-      <thead>
-        <tr>
-          <th data-sort="firstName">First Name</th>
-          <th data-sort="lastName">Last Name</th>
-          <th data-sort="email">Email</th>
-          <th>Avatar</th>
-          <th data-sort="roles">Roles</th>
-          <th data-sort="teacherIds">Teachers</th>
-          <th data-sort="instrument">Instrument</th>
-          <th data-sort="points">Points</th>
-          <th data-sort="level">Level</th>
-        </tr>
-      </thead>
-      <tbody id="userTableBody">
-        <!-- ✅ Rows inserted dynamically -->
-      </tbody>
-    </table>
-  </div>
-
-  <!-- ✅ Pagination -->
-  <div id="paginationControls"></div>
-  </div>
-</main>
-
-<script>
-function syncUserTableWidths() {
-  const headerCells = document.querySelectorAll("#userHeaderTable th");
-  const rowCells = document.querySelectorAll("#userHeaderTable tr:first-child td");
-  if (!rowCells.length) return;
-  headerCells.forEach((th, i) => {
-    if (rowCells[i]) th.style.width = rowCells[i].offsetWidth + "px";
-  });
-}
-window.addEventListener("load", syncUserTableWidths);
-window.addEventListener("resize", syncUserTableWidths);
-</script>
-
-  </div>
-
-  <div id="app-bottom-nav"></div>
+  <div id="app-bottom-nav" class="standalone-only"></div>
   <script type="module" src="nav.js"></script>
   <script type="module" src="manage-users.js"></script>
+  <script>
+    function syncUserTableWidths() {
+      const headerCells = document.querySelectorAll("#userHeaderTable th");
+      const rowCells = document.querySelectorAll("#userHeaderTable tr:first-child td");
+      if (!rowCells.length) return;
+      headerCells.forEach((th, i) => {
+        if (rowCells[i]) th.style.width = rowCells[i].offsetWidth + "px";
+      });
+    }
+    window.addEventListener("load", syncUserTableWidths);
+    window.addEventListener("resize", syncUserTableWidths);
+  </script>
 </body>
 </html>

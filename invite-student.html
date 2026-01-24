@@ -6,50 +6,63 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="nav.css" />
+  <style>
+    [data-embed-root].is-embedded {
+      padding: 0;
+      margin: 0;
+    }
+
+    [data-embed-root].is-embedded .standalone-only {
+      display: none;
+    }
+  </style>
 </head>
 <body class="app-shell white-page">
-  <div class="app-main">
+  <header class="standalone-only">
     <div id="envBadge" class="env-badge" style="display:none;"></div>
+    <h2 style="text-align:center; margin:0; padding:10px 20px;">Invite Student</h2>
+  </header>
 
-    <main class="app">
-      <h2>Invite Student</h2>
-      <div class="settings-embed" data-embed-root>
-        <form id="inviteForm" class="settings-form" style="max-width:520px;">
-          <label for="inviteEmail">Email</label>
-          <input id="inviteEmail" type="email" required />
+  <main class="app-main standalone-only">
+    <h1>Invite Student</h1>
+  </main>
 
-          <label for="inviteRole">Role</label>
-          <select id="inviteRole" required>
-            <option value="">Select role</option>
-            <option value="student">Student</option>
-            <option value="parent">Parent</option>
-            <option value="teacher">Teacher</option>
-            <option value="admin">Admin</option>
-          </select>
+  <div class="settings-embed" data-embed-root>
+    <form id="inviteForm" class="settings-form" style="max-width:520px;">
+      <label for="inviteEmail">Email</label>
+      <input id="inviteEmail" type="email" required />
 
-          <p id="inviteError" style="color:#c62828; display:none; margin-top:10px;"></p>
-          <p id="inviteSuccess" style="color:#0b7a3a; display:none; margin-top:10px;"></p>
+      <label for="inviteRole">Role</label>
+      <select id="inviteRole" required>
+        <option value="">Select role</option>
+        <option value="student">Student</option>
+        <option value="parent">Parent</option>
+        <option value="teacher">Teacher</option>
+        <option value="admin">Admin</option>
+      </select>
 
-          <div class="button-row" style="margin-top:14px;">
-            <button type="submit" class="blue-button">Create Invite</button>
-          </div>
-        </form>
+      <p id="inviteError" style="color:#c62828; display:none; margin-top:10px;"></p>
+      <p id="inviteSuccess" style="color:#0b7a3a; display:none; margin-top:10px;"></p>
 
-        <div id="inviteLinkBox" style="display:none; margin-top:16px;">
-          <div style="font-weight:700; margin-bottom:6px;">Invite link</div>
-          <input id="inviteLinkInput" type="text" readonly style="width:100%;" />
-          <button id="copyInviteBtn" class="blue-button" type="button" style="margin-top:8px;">Copy invite link</button>
-        </div>
-
-        <div style="margin-top:24px;">
-          <h3 style="text-align:left;">Pending Invites</h3>
-          <div id="pendingInvites" style="display:grid; gap:10px;"></div>
-        </div>
+      <div class="button-row" style="margin-top:14px;">
+        <button type="submit" class="blue-button">Create Invite</button>
       </div>
-    </main>
+    </form>
+
+    <div id="inviteLinkBox" style="display:none; margin-top:16px;">
+      <div style="font-weight:700; margin-bottom:6px;">Invite link</div>
+      <input id="inviteLinkInput" type="text" readonly style="width:100%;" />
+      <button id="copyInviteBtn" class="blue-button" type="button" style="margin-top:8px;">Copy invite link</button>
+    </div>
+
+    <div style="margin-top:24px;">
+      <h3 style="text-align:left;">Pending Invites</h3>
+      <div id="pendingInvites" style="display:grid; gap:10px;"></div>
+    </div>
   </div>
 
-  <div id="app-bottom-nav"></div>
+  <div id="app-bottom-nav" class="standalone-only"></div>
+
   <script type="module" src="nav.js"></script>
   <script type="module" src="invite-staff.js"></script>
   <script>

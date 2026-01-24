@@ -25,7 +25,10 @@ function extractEmbedHTML(fullHTML) {
   );
   const clone = root ? root.cloneNode(true) : null;
   clone?.querySelectorAll("script").forEach(el => el.remove());
-  return clone ? clone.innerHTML : fullHTML;
+  if (clone && root?.hasAttribute("data-embed-root")) {
+    clone.classList.add("is-embedded");
+  }
+  return clone ? clone.outerHTML : fullHTML;
 }
 
 async function ensurePanelLoaded(sectionId) {
