@@ -9,76 +9,88 @@
 }
 
 /* ================================ */
-/* Embedded Settings Panels (Accordion) */
+/* Embedded Panels (Studio Settings) */
 /* ================================ */
 
-[data-embed-root].is-embedded {
+.settings-panel-host [data-embed-root].is-embedded {
   margin: 0 !important;
   padding: 0 !important;
   max-width: 100% !important;
 }
 
-[data-embed-root].is-embedded > * {
-  margin: 0 !important;
-}
-
-[data-embed-root].is-embedded .app-shell,
-[data-embed-root].is-embedded main,
-[data-embed-root].is-embedded .app-main,
-[data-embed-root].is-embedded .page,
-[data-embed-root].is-embedded .container,
-[data-embed-root].is-embedded .content,
-[data-embed-root].is-embedded .page-card,
-[data-embed-root].is-embedded .content-card,
-[data-embed-root].is-embedded .shell,
-[data-embed-root].is-embedded .card,
-[data-embed-root].is-embedded .panel,
-[data-embed-root].is-embedded .settings-card {
-  margin: 0 !important;
-  padding: 0 !important;
-  max-width: 100% !important;
+.settings-panel-host [data-embed-root].is-embedded .settings-wrap,
+.settings-panel-host [data-embed-root].is-embedded .settings-section,
+.settings-panel-host [data-embed-root].is-embedded .settings-card,
+.settings-panel-host [data-embed-root].is-embedded .settings-card-body,
+.settings-panel-host [data-embed-root].is-embedded .accordion-card,
+.settings-panel-host [data-embed-root].is-embedded .accordion-body,
+.settings-panel-host [data-embed-root].is-embedded .accordion-panel-content {
+  background: transparent !important;
   box-shadow: none !important;
+  border: 0 !important;
+  outline: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  max-width: 100% !important;
+}
+
+.settings-panel-host [data-embed-root].is-embedded > * {
+  margin: 0 !important;
+}
+
+.settings-panel-host [data-embed-root].is-embedded > :first-child {
   background: transparent !important;
   border: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
 }
 
-[data-embed-root].is-embedded .section,
-[data-embed-root].is-embedded .block,
-[data-embed-root].is-embedded .stack {
-  margin-top: 0 !important;
+.settings-panel-host.settings-panel-host [data-embed-root].is-embedded .settings-wrap,
+.settings-panel-host.settings-panel-host [data-embed-root].is-embedded .settings-section,
+.settings-panel-host.settings-panel-host [data-embed-root].is-embedded .settings-card,
+.settings-panel-host.settings-panel-host [data-embed-root].is-embedded .settings-card-body,
+.settings-panel-host.settings-panel-host [data-embed-root].is-embedded .accordion-card,
+.settings-panel-host.settings-panel-host [data-embed-root].is-embedded .accordion-body,
+.settings-panel-host.settings-panel-host [data-embed-root].is-embedded .accordion-panel-content {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: 0 !important;
+  outline: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  max-width: 100% !important;
 }
 
-[data-embed-root].is-embedded form,
-[data-embed-root].is-embedded .form,
-[data-embed-root].is-embedded .form-card {
+.settings-panel-host [data-embed-root].is-embedded *:not(input):not(select):not(textarea):not(button) {
+  box-shadow: none !important;
+  border-color: transparent !important;
+}
+
+.settings-panel-host [data-embed-root].is-embedded form,
+.settings-panel-host [data-embed-root].is-embedded .form,
+.settings-panel-host [data-embed-root].is-embedded .form-card,
+.settings-panel-host [data-embed-root].is-embedded .form-wrap {
   width: 100% !important;
   max-width: 100% !important;
   margin: 0 !important;
 }
 
-[data-embed-root].is-embedded .settings-form {
-  max-width: 100% !important;
-  margin: 0 !important;
-}
-
-[data-embed-root].is-embedded .button-row {
-  display: flex !important;
-  flex-wrap: wrap !important;
-  justify-content: flex-start !important;
-  gap: 10px !important;
+.settings-panel-host [data-embed-root].is-embedded .blue-button,
+.settings-panel-host [data-embed-root].is-embedded button.blue-button,
+.settings-panel-host [data-embed-root].is-embedded .btn,
+.settings-panel-host [data-embed-root].is-embedded button {
   width: auto !important;
-  margin: 10px 0 !important;
+  min-width: 0 !important;
+  padding: 10px 16px !important;
+  font-size: 16px !important;
+  line-height: 1.2 !important;
 }
 
-[data-embed-root].is-embedded .button-row button {
-  width: auto !important;
-  min-width: 120px !important;
-}
-
-[data-embed-root].is-embedded #pendingInvites > div {
-  padding: 0 !important;
-  background: transparent !important;
-  border: none !important;
+.settings-panel-host [data-embed-root].is-embedded input,
+.settings-panel-host [data-embed-root].is-embedded select,
+.settings-panel-host [data-embed-root].is-embedded textarea {
+  background: #fff !important;
+  border: 1px solid rgba(0,0,0,.25) !important;
   box-shadow: none !important;
-  border-radius: 0 !important;
 }
