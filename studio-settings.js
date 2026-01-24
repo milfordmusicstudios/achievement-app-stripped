@@ -8,6 +8,7 @@ const PANEL_URLS = {
 
 const CLEAN_SELECTORS = [
   ".bottom-nav",
+  "#app-bottom-nav",
   "nav",
   ".app-footer",
   "footer",
@@ -16,7 +17,15 @@ const CLEAN_SELECTORS = [
   "#bottomNav",
   "#envBadge",
   "#appNav",
-  "#pageHeader"
+  "#pageHeader",
+  ".app-shell",
+  ".app-main",
+  ".app",
+  ".app-bg",
+  ".white-page",
+  ".settings-page",
+  ".page-background",
+  ".home-background"
 ];
 
 async function ensurePanelLoaded(sectionId) {
@@ -30,10 +39,11 @@ async function ensurePanelLoaded(sectionId) {
     const html = await response.text();
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, "text/html");
+    const mainContent = doc.querySelector("main.app") || doc.querySelector(".app") || doc.body;
     CLEAN_SELECTORS.forEach(selector => {
       doc.querySelectorAll(selector).forEach(el => el.remove());
     });
-    const mainContent = doc.querySelector("main.app") || doc.body;
+    doc.querySelectorAll("script").forEach(el => el.remove());
     target.innerHTML = mainContent ? mainContent.innerHTML : html;
     target.dataset.loaded = "true";
   } catch (err) {

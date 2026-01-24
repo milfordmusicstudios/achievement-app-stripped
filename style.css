@@ -2876,6 +2876,60 @@ body.settings-page .home-background {
   border-bottom: 1px solid rgba(11, 79, 138, 0.12);
 }
 
+.settings-page .action-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(11, 79, 138, 0.12);
+}
+
+.settings-page .action-row span {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #0b4f8a;
+}
+
+.settings-page .action-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.settings-page .btn-small {
+  height: 36px;
+  min-height: 36px;
+  padding: 0 18px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 36px;
+}
+
+.settings-page .link-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: #0b4f8a;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.settings-page .link-action:hover,
+.settings-page .link-action:focus-visible {
+  text-decoration: underline;
+}
+
+.settings-page .family-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 4px;
+}
+
 .settings-page .accordion-body {
   padding: 16px 20px 22px;
 }

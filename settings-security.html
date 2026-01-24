@@ -19,7 +19,7 @@
   <section class="settings-card" id="accountCard">
     <div class="settings-card-header">
       <h3>Account Holder</h3>
-      <button id="accountEditBtn" type="button" class="blue-button btn-rect">Edit</button>
+      <button id="accountEditBtn" type="button" class="blue-button btn-small btn-ghost">Edit</button>
     </div>
     <div class="settings-card-body">
       <label class="settings-label" for="accountFirstName">First Name</label>
@@ -44,9 +44,15 @@
     </div>
   </section>
 
-  <section class="settings-card" id="passwordCard">
+  <section class="settings-card" id="actionsCard">
+    <div class="settings-card-header">
+      <h3>Actions</h3>
+    </div>
     <div class="settings-card-body">
-      <button id="passwordToggleBtn" type="button" class="blue-button btn-rect full-width-btn">Change Password</button>
+      <div class="action-row">
+        <span>Change Password</span>
+        <button id="passwordToggleBtn" type="button" class="blue-button btn-small">Change</button>
+      </div>
       <div id="passwordBody" class="password-body" style="display:none; margin-top:12px;">
         <label class="settings-label" for="currentPassword">Current Password</label>
         <div class="pw-field">
@@ -74,18 +80,16 @@
           <button id="passwordCancelBtn" type="button" class="blue-button btn-ghost">Cancel</button>
         </div>
       </div>
-    </div>
-  </section>
 
-  <section class="settings-card" id="roleCard">
-    <div class="settings-card-body">
-      <button id="switchRoleBtn" type="button" class="blue-button btn-rect full-width-btn">Switch Role</button>
-    </div>
-  </section>
+      <div class="action-row">
+        <span>Switch Role</span>
+        <button id="switchRoleBtn" type="button" class="blue-button btn-small btn-ghost">Switch</button>
+      </div>
 
-  <section class="settings-card" id="logoutCard">
-    <div class="settings-card-body">
-      <button id="logoutBtn" type="button" class="blue-button btn-ghost logout-btn full-width-btn">Logout</button>
+      <div class="action-row">
+        <span>Logout</span>
+        <button id="logoutBtn" type="button" class="blue-button btn-ghost logout-btn btn-small">Logout</button>
+      </div>
     </div>
   </section>
 </main>
