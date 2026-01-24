@@ -3236,3 +3236,54 @@ body.settings-page .settings-header-spacer {
 body.settings-page .modal-overlay {
   z-index: 1400;
 }
+
+body.settings-page {
+  background: #f5f7fb !important;
+  background-image: none !important;
+  min-height: 100vh;
+}
+
+body.settings-page::before,
+body.settings-page::after {
+  display: none !important;
+  content: none !important;
+}
+
+body.settings-page .music-bg,
+body.settings-page .page-bg,
+body.settings-page .background-art,
+body.settings-page .home-bg,
+body.settings-page .hero-bg,
+body.settings-page .bg-image {
+  display: none !important;
+}
+
+body.settings-page .settings-wrap,
+body.settings-page .app-main,
+body.settings-page main {
+  min-height: calc(100vh - 72px);
+}
+
+body.settings-page #app-bottom-nav,
+body.settings-page .bottom-nav {
+  background: #f5f7fb !important;
+}
+
+body.settings-page .studio-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 8px 0 6px;
+}
+
+body.settings-page .studio-logo {
+  height: 34px;
+  max-width: 220px;
+  object-fit: contain;
+}
+
+body.settings-page .studio-slug,
+body.settings-page .slug,
+body.settings-page [data-studio-slug] {
+  display: none !important;
+}
