@@ -13,20 +13,24 @@
 <div id="envBadge" class="env-badge" style="display:none;"></div>
 
 <main class="app">
-  <div id="settings-tabs"></div>
-  <h2 class="settings-title">Family</h2>
+  <div class="settings-wrap">
+    <div id="settings-tabs"></div>
+    <h2 class="settings-title">Family</h2>
 
-  <section id="linkedStudentsSection" class="settings-card">
-    <div class="settings-card-header">
-      <h3>Students on this account</h3>
-    </div>
-    <div class="settings-card-body">
-      <div id="linkedStudentsList" class="family-students-list"></div>
-      <div class="family-actions">
-        <button id="addStudentBtn" type="button" class="link-action">+ Add student</button>
+    <section id="linkedStudentsSection" class="settings-section">
+      <div class="section-head">
+        <div class="section-title">Students on this account</div>
       </div>
-    </div>
-  </section>
+      <div class="settings-rows">
+        <div id="linkedStudentsList" class="family-students-list"></div>
+        <div class="settings-row link-row family-add-row">
+          <div class="row-label"></div>
+          <div class="row-value" id="familyAddMessage"></div>
+          <button id="addStudentBtn" type="button" class="link-action">+ Add student</button>
+        </div>
+      </div>
+    </section>
+  </div>
 </main>
 
 <div id="toast" class="toast"></div>

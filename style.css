@@ -2811,14 +2811,198 @@ body.settings-page .settings-card-body {
 
 
 body.settings-page {
-  background: #f5f7fa !important;
+  background: #f5f7fb !important;
 }
 
 body.settings-page .bg-image,
 body.settings-page .page-background,
 body.settings-page .background-image,
-body.settings-page .home-background {
+body.settings-page .home-background,
+body.settings-page .page-bg,
+body.settings-page .background-art,
+body.settings-page .music-bg,
+body.settings-page .sky-bg {
   display: none !important;
+}
+
+body.settings-page .settings-wrap {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 18px 16px 100px;
+}
+
+body.settings-page .settings-top-tabs,
+body.settings-page .settings-tabs,
+body.settings-page .settings-nav {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding-top: 10px !important;
+}
+
+body.settings-page .settings-tab,
+body.settings-page .tab-pill {
+  border-radius: 18px !important;
+}
+
+body.settings-page .settings-section {
+  background: #ffffff;
+  border: 1px solid #d8e3f2;
+  border-radius: 18px;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.08);
+  padding: 14px;
+  margin: 18px 0;
+}
+
+body.settings-page .section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 4px 10px;
+}
+
+body.settings-page .section-head h3,
+body.settings-page .section-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  color: #0b3c66;
+}
+
+body.settings-page .settings-rows {
+  background: #fbfdff;
+  border: 1px solid #e4edf8;
+  border-radius: 14px;
+  overflow: hidden;
+  margin-top: 6px;
+}
+
+body.settings-page .settings-row {
+  display: grid;
+  grid-template-columns: 180px 1fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 14px 14px;
+  border-top: 1px solid #e8effa;
+}
+
+body.settings-page .settings-row:first-child {
+  border-top: none;
+}
+
+body.settings-page .row-label {
+  font-weight: 800;
+  color: #0b3c66;
+}
+
+body.settings-page .row-value {
+  color: #2b3a4a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body.settings-page .row-btn,
+body.settings-page .mini-btn {
+  height: 38px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid #bcd4f2;
+  background: #46aeea;
+  color: #fff;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+body.settings-page button.row-btn.btn-ghost,
+body.settings-page .row-btn.btn-ghost {
+  background: rgba(255, 255, 255, 0.8);
+  color: #0b3c66;
+}
+
+body.settings-page .row-btn.danger {
+  background: #ffffff;
+  color: #0b3c66;
+  border: 1px solid #d7e2f1;
+}
+
+body.settings-page .row-btn.danger:hover {
+  border-color: #b8c9e3;
+}
+
+body.settings-page .edit-btn {
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 12px;
+  border: 1px solid #bcd4f2;
+  background: #eef6ff;
+  color: #0b3c66;
+  font-weight: 800;
+}
+
+body.settings-page .settings-row.link-row {
+  grid-template-columns: 1fr auto;
+}
+
+body.settings-page .link-action {
+  display: inline-block;
+  color: #0b67c2;
+  font-weight: 800;
+  text-decoration: none;
+  cursor: pointer;
+  border: none;
+  background: none;
+  padding: 0;
+}
+
+body.settings-page .link-action:hover,
+body.settings-page .link-action:focus-visible {
+  text-decoration: underline;
+}
+
+body.settings-page .row-value input {
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid #c9d9ef;
+  padding: 10px 12px;
+  width: 100%;
+  background: #fff;
+}
+
+body.settings-page .blue-button,
+body.settings-page button.blue-button {
+  width: auto !important;
+  min-width: 160px;
+  height: 42px;
+  border-radius: 14px;
+}
+
+body.settings-page .manage-users-actions,
+body.settings-page .manage-users-controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  margin: 10px 0 12px;
+}
+
+body.settings-page .manage-users-actions .blue-button {
+  width: auto !important;
+  min-width: 160px;
+  height: 42px;
+}
+
+body.settings-page .accordion-panel .card,
+body.settings-page .accordion-panel .panel,
+body.settings-page .accordion-panel .settings-section {
+  box-shadow: none !important;
+}
+
+body.settings-page .accordion-panel {
+  padding: 12px 10px 14px;
 }
 
 .settings-page .settings-card,

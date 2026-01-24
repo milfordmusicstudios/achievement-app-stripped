@@ -13,45 +13,69 @@
 <div id="envBadge" class="env-badge" style="display:none;"></div>
 
 <main class="app">
-  <div id="settings-tabs"></div>
-  <h2 class="settings-title">Login &amp; Security</h2>
+  <div class="settings-wrap">
+    <div id="settings-tabs"></div>
+    <h2 class="settings-title">Login &amp; Security</h2>
 
-  <section class="settings-card" id="accountCard">
-    <div class="settings-card-header">
-      <h3>Account Holder</h3>
-      <button id="accountEditBtn" type="button" class="blue-button btn-small btn-ghost">Edit</button>
-    </div>
-    <div class="settings-card-body">
-      <label class="settings-label" for="accountFirstName">First Name</label>
-      <input id="accountFirstName" type="text" class="settings-input" placeholder="First Name" disabled />
-
-      <label class="settings-label" for="accountLastName">Last Name</label>
-      <input id="accountLastName" type="text" class="settings-input" placeholder="Last Name" disabled />
-
-      <label class="settings-label" for="accountEmail">Email</label>
-      <input id="accountEmail" type="email" class="settings-input" placeholder="Email" disabled />
-
-      <div id="accountTeacherWrap" class="teacher-select-wrap" style="display:none;">
+    <section class="settings-section" id="accountCard">
+      <div class="section-head">
+        <div class="section-title">Account Holder</div>
+        <button id="accountEditBtn" type="button" class="edit-btn">Edit</button>
+      </div>
+      <div class="settings-rows">
+        <div class="settings-row">
+          <div class="row-label">First Name</div>
+          <div class="row-value">
+            <input id="accountFirstName" type="text" class="settings-input" placeholder="First Name" disabled />
+          </div>
+          <div></div>
+        </div>
+        <div class="settings-row">
+          <div class="row-label">Last Name</div>
+          <div class="row-value">
+            <input id="accountLastName" type="text" class="settings-input" placeholder="Last Name" disabled />
+          </div>
+          <div></div>
+        </div>
+        <div class="settings-row">
+          <div class="row-label">Email</div>
+          <div class="row-value">
+            <input id="accountEmail" type="email" class="settings-input" placeholder="Email" disabled />
+          </div>
+          <div></div>
+        </div>
+      </div>
+      <div id="accountTeacherWrap" class="teacher-select-wrap" style="display:none; margin-top:12px;">
         <label for="accountTeacherIds" class="teacher-label">Teacher(s)</label>
         <select id="accountTeacherIds" class="teacher-select" multiple disabled></select>
         <div id="accountTeacherError" class="teacher-error" style="display:none;"></div>
       </div>
-
       <div class="settings-actions" id="accountActions" style="display:none;">
         <button id="accountSaveBtn" type="button" class="blue-button">Save</button>
         <button id="accountCancelBtn" type="button" class="blue-button btn-ghost">Cancel</button>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <section class="settings-card" id="actionsCard">
-    <div class="settings-card-header">
-      <h3>Actions</h3>
-    </div>
-    <div class="settings-card-body">
-      <div class="action-row">
-        <span>Change Password</span>
-        <button id="passwordToggleBtn" type="button" class="blue-button btn-small">Change</button>
+    <section class="settings-section" id="actionsCard">
+      <div class="section-head">
+        <div class="section-title">Actions</div>
+      </div>
+      <div class="settings-rows">
+        <div class="settings-row">
+          <div class="row-label">Change Password</div>
+          <div class="row-value"></div>
+          <button id="passwordToggleBtn" type="button" class="row-btn">Change</button>
+        </div>
+        <div class="settings-row">
+          <div class="row-label">Switch Role</div>
+          <div class="row-value"></div>
+          <button id="switchRoleBtn" type="button" class="row-btn btn-ghost">Switch</button>
+        </div>
+        <div class="settings-row link-row">
+          <div class="row-label">Logout</div>
+          <div class="row-value"></div>
+          <button id="logoutBtn" type="button" class="row-btn danger logout-btn">Log out</button>
+        </div>
       </div>
       <div id="passwordBody" class="password-body" style="display:none; margin-top:12px;">
         <label class="settings-label" for="currentPassword">Current Password</label>
@@ -80,18 +104,8 @@
           <button id="passwordCancelBtn" type="button" class="blue-button btn-ghost">Cancel</button>
         </div>
       </div>
-
-      <div class="action-row">
-        <span>Switch Role</span>
-        <button id="switchRoleBtn" type="button" class="blue-button btn-small btn-ghost">Switch</button>
-      </div>
-
-      <div class="action-row">
-        <span>Logout</span>
-        <button id="logoutBtn" type="button" class="blue-button btn-ghost logout-btn btn-small">Logout</button>
-      </div>
-    </div>
-  </section>
+    </section>
+  </div>
 </main>
 
 <div id="toast" class="toast"></div>

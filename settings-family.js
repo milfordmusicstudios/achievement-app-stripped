@@ -109,7 +109,9 @@ async function handleAddStudent() {
 
 async function renderLinkedStudents(parentId, studioId) {
   const list = document.getElementById("linkedStudentsList");
+  const addMessage = document.getElementById("familyAddMessage");
   if (!list) return;
+  if (addMessage) addMessage.textContent = "";
   list.innerHTML = "<p class=\"empty-state\">Loading students...</p>";
 
   const students = await loadLinkedStudents(parentId, studioId);
@@ -127,9 +129,12 @@ async function renderLinkedStudents(parentId, studioId) {
   }
 
   if (!students.length) {
-    list.innerHTML = "<p class=\"empty-state\">No students linked to this account yet.</p>";
+    list.innerHTML = "";
+    if (addMessage) addMessage.textContent = "No students linked to this account yet.";
     return;
   }
+
+  if (addMessage) addMessage.textContent = "";
 
   list.innerHTML = "";
   students.forEach(student => {
