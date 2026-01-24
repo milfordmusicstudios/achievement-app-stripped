@@ -17,10 +17,11 @@ function extractEmbedHTML(fullHTML) {
     doc.querySelector(".embed-root") ||
     doc.querySelector(".settings-embed") ||
     doc.body;
+  const usedExplicit = !!doc.querySelector("[data-embed-root]");
   console.log(
     "[studio-settings] embed root found:",
     root ? root.tagName : "NONE",
-    root?.getAttribute?.("data-embed-root")
+    usedExplicit ? "EXPLICIT" : "FALLBACK"
   );
   const clone = root ? root.cloneNode(true) : null;
   clone?.querySelectorAll("script").forEach(el => el.remove());
