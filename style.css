@@ -2912,6 +2912,53 @@ body.settings-page .settings-panel-host {
   padding: 16px;
 }
 
+/* Flatten embedded panels inside Studio Settings accordion */
+.settings-page .settings-embed {
+  padding: 0;
+}
+
+.settings-page .settings-embed .card,
+.settings-page .settings-embed .panel,
+.settings-page .settings-embed .settings-card,
+.settings-page .settings-embed .settings-panel,
+.settings-page .settings-embed .invite-card,
+.settings-page .settings-embed .invite-panel,
+.settings-page .settings-embed .inner-card {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+}
+
+.settings-page .settings-embed .card-header,
+.settings-page .settings-embed .panel-header {
+  padding: 0 !important;
+  margin: 0 0 12px 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+.settings-page .settings-embed label {
+  display: block;
+  margin: 10px 0 6px;
+  font-weight: 600;
+}
+
+.settings-page .settings-embed input,
+.settings-page .settings-embed select {
+  width: 100%;
+  max-width: 100%;
+}
+
+.settings-page .settings-embed button,
+.settings-page .settings-embed .btn,
+.settings-page .settings-embed .blue-button {
+  width: auto;
+  min-width: 180px;
+}
+
 body.settings-page .section-head {
   display: flex;
   align-items: center;
