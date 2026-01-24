@@ -6,47 +6,43 @@ const PANEL_URLS = {
   "invite-student": "invite-student.html"
 };
 
-const CLEAN_SELECTORS = [
-  ".bottom-nav",
-  "#app-bottom-nav",
-  "nav",
-  ".app-footer",
-  "footer",
-  ".env-badge",
-  "[data-env-badge]",
-  "#bottomNav",
-  "#envBadge",
-  "#appNav",
-  "#pageHeader",
-  ".app-shell",
-  ".app-main",
-  ".app",
-  ".app-bg",
-  ".white-page",
-  ".settings-page",
-  ".page-background",
-  ".home-background"
-];
-
 const DEFAULT_STUDIO_LOGO = "images/logos/logo.png";
+
+function extractEmbedHTML(fullHTML) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(fullHTML, "text/html");
+  const root =
+    doc.querySelector("[data-embed-root]") ||
+    doc.querySelector("main") ||
+    doc.querySelector(".embed-root") ||
+    doc.querySelector(".settings-embed") ||
+    doc.body;
+  console.log(
+    "[studio-settings] embed root found:",
+    root ? root.tagName : "NONE",
+    root?.getAttribute?.("data-embed-root")
+  );
+  const clone = root ? root.cloneNode(true) : null;
+  clone?.querySelectorAll("script").forEach(el => el.remove());
+  return clone ? clone.innerHTML : fullHTML;
+}
 
 async function ensurePanelLoaded(sectionId) {
   const target = document.getElementById(`panel-${sectionId}`);
   if (!target || target.dataset.loaded === "true") return;
-  const url = PANEL_URLS[sectionId];
-  if (!url) return;
+  const panelPath = PANEL_URLS[sectionId];
+  if (!panelPath) return;
+  const cacheBustedUrl =
+    panelPath +
+    (panelPath.includes("?") ? "&" : "?") +
+    "v=" +
+    Date.now();
   try {
-    const response = await fetch(url);
-    if (!response.ok) throw new Error(`Failed to load ${url}`);
-    const html = await response.text();
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, "text/html");
-    const mainContent = doc.querySelector("main.app") || doc.querySelector(".app") || doc.body;
-    CLEAN_SELECTORS.forEach(selector => {
-      doc.querySelectorAll(selector).forEach(el => el.remove());
-    });
-    doc.querySelectorAll("script").forEach(el => el.remove());
-    target.innerHTML = mainContent ? mainContent.innerHTML : html;
+    const res = await fetch(cacheBustedUrl, { cache: "no-store" });
+    if (!res.ok) throw new Error(`Failed to load ${cacheBustedUrl}`);
+    const html = await res.text();
+    console.log("[studio-settings] fetched bytes:", html.length, "panel:", sectionId);
+    target.innerHTML = extractEmbedHTML(html);
     target.dataset.loaded = "true";
   } catch (err) {
     console.error(`[Studio] failed to load panel ${sectionId}`, err);
