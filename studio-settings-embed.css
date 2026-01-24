@@ -53,4 +53,32 @@
 [data-embed-root].is-embedded .form-card {
   width: 100% !important;
   max-width: 100% !important;
+  margin: 0 !important;
+}
+
+[data-embed-root].is-embedded .settings-form {
+  max-width: 100% !important;
+  margin: 0 !important;
+}
+
+[data-embed-root].is-embedded .button-row {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  justify-content: flex-start !important;
+  gap: 10px !important;
+  width: auto !important;
+  margin: 10px 0 !important;
+}
+
+[data-embed-root].is-embedded .button-row button {
+  width: auto !important;
+  min-width: 120px !important;
+}
+
+[data-embed-root].is-embedded #pendingInvites > div {
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
 }
