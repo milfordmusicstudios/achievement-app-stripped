@@ -8,27 +8,34 @@ const PANEL_URLS = {
 
 const DEFAULT_STUDIO_LOGO = "images/logos/logo.png";
 
-function extractEmbedHTML(fullHTML) {
+function extractEmbedHTML(fullHTML, panelUrl) {
   const parser = new DOMParser();
   const doc = parser.parseFromString(fullHTML, "text/html");
-  const root =
-    doc.querySelector("[data-embed-root]") ||
-    doc.querySelector("main") ||
-    doc.querySelector(".embed-root") ||
-    doc.querySelector(".settings-embed") ||
-    doc.body;
-  const usedExplicit = !!doc.querySelector("[data-embed-root]");
+  const embedRoot = doc.querySelector("[data-embed-root]");
   console.log(
     "[studio-settings] embed root found:",
-    root ? root.tagName : "NONE",
-    usedExplicit ? "EXPLICIT" : "FALLBACK"
+    embedRoot ? embedRoot.tagName : "NONE",
+    embedRoot ? "EXPLICIT" : "MISSING"
   );
-  const clone = root ? root.cloneNode(true) : null;
-  clone?.querySelectorAll("script").forEach(el => el.remove());
-  if (clone && root?.hasAttribute("data-embed-root")) {
-    clone.classList.add("is-embedded");
+  if (!embedRoot) {
+    return {
+      html: "",
+      hasEmbedRoot: false
+    };
   }
-  return clone ? clone.outerHTML : fullHTML;
+  const clone = embedRoot.cloneNode(true);
+  clone?.querySelectorAll("script").forEach(el => el.remove());
+  clone?.classList.add("is-embedded");
+
+  const debugMarker = doc.createElement("div");
+  debugMarker.className = "embed-debug";
+  debugMarker.textContent = `Embedded panel loaded: ${panelUrl}`;
+  clone?.insertBefore(debugMarker, clone.firstChild);
+
+  return {
+    html: clone ? clone.outerHTML : "",
+    hasEmbedRoot: true
+  };
 }
 
 async function ensurePanelLoaded(sectionId) {
@@ -46,7 +53,12 @@ async function ensurePanelLoaded(sectionId) {
     if (!res.ok) throw new Error(`Failed to load ${cacheBustedUrl}`);
     const html = await res.text();
     console.log("[studio-settings] fetched bytes:", html.length, "panel:", sectionId);
-    target.innerHTML = extractEmbedHTML(html);
+    const embedResult = extractEmbedHTML(html, panelPath);
+    if (!embedResult.hasEmbedRoot) {
+      target.innerHTML = `<div class="embed-error">No <code>data-embed-root</code> found in ${panelPath}</div>`;
+      return;
+    }
+    target.innerHTML = embedResult.html;
     target.dataset.loaded = "true";
   } catch (err) {
     console.error(`[Studio] failed to load panel ${sectionId}`, err);

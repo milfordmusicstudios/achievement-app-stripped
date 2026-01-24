@@ -1,0 +1,48 @@
+.embed-debug {
+  font-size: 12px;
+  padding: 8px 10px;
+  margin: 0 0 10px;
+  border-radius: 10px;
+  border: 1px dashed rgba(0, 0, 0, 0.25);
+  opacity: 0.8;
+  background: rgba(255, 255, 255, 0.8);
+  color: rgba(0, 0, 0, 0.75);
+}
+
+.embed-error {
+  font-size: 13px;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #c62828;
+  background: rgba(255, 230, 230, 0.95);
+  color: #a80f14;
+  margin: 0 0 10px;
+}
+
+[data-embed-root].is-embedded {
+  margin: 0 !important;
+  padding: 0 !important;
+  max-width: 100% !important;
+}
+
+[data-embed-root].is-embedded .app-shell,
+[data-embed-root].is-embedded main,
+[data-embed-root].is-embedded .app-main,
+[data-embed-root].is-embedded .page,
+[data-embed-root].is-embedded .container,
+[data-embed-root].is-embedded .content,
+[data-embed-root].is-embedded .shell {
+  margin: 0 !important;
+  padding: 0 !important;
+  max-width: 100% !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  border: 0 !important;
+}
+
+[data-embed-root].is-embedded .card,
+[data-embed-root].is-embedded .panel,
+[data-embed-root].is-embedded .settings-card {
+  box-shadow: none !important;
+  background: transparent !important;
+}
