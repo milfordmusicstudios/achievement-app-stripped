@@ -8,7 +8,7 @@ const PANEL_URLS = {
 
 const DEFAULT_STUDIO_LOGO = "images/logos/logo.png";
 
-function extractEmbedHTML(fullHTML, panelUrl) {
+function extractEmbedHTML(fullHTML) {
   const parser = new DOMParser();
   const doc = parser.parseFromString(fullHTML, "text/html");
   const embedRoot = doc.querySelector("[data-embed-root]");
@@ -26,11 +26,6 @@ function extractEmbedHTML(fullHTML, panelUrl) {
   const clone = embedRoot.cloneNode(true);
   clone?.querySelectorAll("script").forEach(el => el.remove());
   clone?.classList.add("is-embedded");
-
-  const debugMarker = doc.createElement("div");
-  debugMarker.className = "embed-debug";
-  debugMarker.textContent = `Embedded panel loaded: ${panelUrl}`;
-  clone?.insertBefore(debugMarker, clone.firstChild);
 
   return {
     html: clone ? clone.outerHTML : "",
@@ -53,7 +48,7 @@ async function ensurePanelLoaded(sectionId) {
     if (!res.ok) throw new Error(`Failed to load ${cacheBustedUrl}`);
     const html = await res.text();
     console.log("[studio-settings] fetched bytes:", html.length, "panel:", sectionId);
-    const embedResult = extractEmbedHTML(html, panelPath);
+    const embedResult = extractEmbedHTML(html);
     if (!embedResult.hasEmbedRoot) {
       target.innerHTML = `<div class="embed-error">No <code>data-embed-root</code> found in ${panelPath}</div>`;
       return;
