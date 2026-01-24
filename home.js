@@ -56,6 +56,36 @@ function maybeShowSwitchStudentTip(mode) {
   localStorage.setItem(SWITCH_STUDENT_TIP_KEY, "true");
 }
 
+function updateViewModeToggle(result) {
+  const toggle = qs("viewModeToggle");
+  if (!toggle) return;
+  const view = (result?.view) ||
+    (typeof window.AA_getActiveView === "function" ? window.AA_getActiveView() : "teacher");
+  const buttons = toggle.querySelectorAll("[data-view-mode]");
+  buttons.forEach(btn => {
+    const mode = btn.dataset.viewMode;
+    const active = mode === view;
+    btn.classList.toggle("is-active", active);
+    btn.setAttribute("aria-pressed", active ? "true" : "false");
+  });
+  toggle.dataset.allowToggle = result?.allowToggle ? "true" : "false";
+}
+
+function initViewModeToggle() {
+  const toggle = qs("viewModeToggle");
+  if (!toggle) return;
+  const buttons = toggle.querySelectorAll("[data-view-mode]");
+  buttons.forEach(btn => {
+    btn.addEventListener("click", () => {
+      const mode = btn.dataset.viewMode;
+      if (!mode || typeof window.AA_setActiveView !== "function") return;
+      const viewResult = window.AA_setActiveView(mode);
+      updateViewModeToggle(viewResult);
+    });
+  });
+  updateViewModeToggle();
+}
+
 function getStudioRoleContext() {
   const rolesRaw = localStorage.getItem("activeStudioRoles");
   let roles = [];
@@ -519,6 +549,12 @@ async function init() {
     window.location.href = "finish-setup.html";
     return;
   }
+
+  if (typeof window.AA_applyViewMode === "function") {
+    const viewResult = window.AA_applyViewMode();
+    updateViewModeToggle(viewResult);
+  }
+  initViewModeToggle();
 
   maybeShowSwitchStudentTip(viewerContext.mode);
 

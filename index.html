@@ -25,6 +25,13 @@
           </button>
           <div id="avatarMenu" class="avatar-menu" role="menu" hidden></div>
         </div>
+        <div id="viewModeToggle" class="view-mode-toggle" aria-label="View Mode" role="group">
+          <span class="view-mode-label">View Mode</span>
+          <div class="view-mode-controls" role="group" aria-label="Toggle view">
+            <button type="button" class="view-mode-option" data-view-mode="student" aria-pressed="false">Student</button>
+            <button type="button" class="view-mode-option" data-view-mode="teacher" aria-pressed="false">Teacher</button>
+          </div>
+        </div>
       </div>
 
       <div class="home-header__center">
@@ -44,7 +51,7 @@
       </div>
     </div>
 
-    <div id="identityProgress" class="identity-progress student-only">
+    <div id="identityProgress" class="identity-progress student-only only-student-view">
       <div class="progress-card">
         <div class="progress-title">Level Progress</div>
         <div class="progress-container">
@@ -62,12 +69,12 @@
       <span class="parent-viewer-label">Viewing:</span>
       <select id="parentStudentSelect" aria-label="Viewing student"></select>
     </div>
-    <div id="switchStudentTip" class="switch-student-tip" role="status" aria-live="polite">
+    <div id="switchStudentTip" class="switch-student-tip only-student-view" role="status" aria-live="polite">
       To switch students, tap your avatar in the top corner.
     </div>
-    <div id="staffQuickLogMount"></div>
+    <div id="staffQuickLogMount" class="only-teacher-view"></div>
     <!-- Action hub -->
-    <section class="home-actions student-only" aria-label="Log your progress">
+    <section class="home-actions student-only only-student-view" aria-label="Log your progress">
       <div id="parentReadOnlyNotice" class="helper-text" style="display:none;">
         Parents can view progress. Students log points from their student profile.
       </div>
@@ -157,6 +164,7 @@
   </div>
 
   <div id="app-bottom-nav"></div>
+  <script type="module" src="auth.js"></script>
   <script type="module" src="nav.js"></script>
   <script type="module" src="home.js"></script>
 </body>

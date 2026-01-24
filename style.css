@@ -177,6 +177,60 @@ a.big-fun-btn:focus-visible {
 
 .home-header__left {
   justify-self: start;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.view-mode-toggle {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+.view-mode-label {
+  font-size: 0.75rem;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: #4c6a86;
+  font-weight: 600;
+}
+.view-mode-controls {
+  display: flex;
+  border: 1px solid rgba(11, 79, 138, 0.3);
+  border-radius: 999px;
+  background: #ffffff;
+  overflow: hidden;
+  min-width: 180px;
+}
+.view-mode-option {
+  flex: 1;
+  padding: 6px 12px;
+  border: none;
+  background: transparent;
+  font-weight: 700;
+  color: #0b4f8a;
+  cursor: pointer;
+  transition: background 150ms ease, color 150ms ease;
+}
+.view-mode-option.is-active {
+  background: #49b8ff;
+  color: #ffffff;
+}
+.view-mode-option:focus-visible {
+  outline: 2px solid rgba(62, 183, 248, 0.9);
+  outline-offset: 2px;
+}
+body.has-teacher.has-student .view-mode-toggle {
+  display: flex;
+}
+body.view-teacher .only-student-view {
+  display: none !important;
+}
+body.view-student .only-teacher-view {
+  display: none !important;
 }
 
 .home-header__right {

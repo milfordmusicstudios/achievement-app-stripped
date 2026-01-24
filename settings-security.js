@@ -52,38 +52,6 @@ function fillAccountFields(profile) {
   if (email) email.value = profile?.email || "";
 }
 
-function clearActiveStudentCacheIfStudent(roles) {
-  if (!Array.isArray(roles)) return;
-  const normalized = roles.map(r => String(r).toLowerCase());
-  if (!normalized.includes("student")) return;
-  const studioId = activeStudioId || localStorage.getItem("activeStudioId");
-  if (studioId && authUserId) {
-    localStorage.removeItem(`aa.activeStudent.${studioId}.${authUserId}`);
-  }
-  localStorage.removeItem("activeStudentId");
-}
-
-function promptRoleSwitch(roles) {
-  const listContainer = document.getElementById("roleSwitchList");
-  if (!listContainer) return;
-  listContainer.innerHTML = "";
-  roles.forEach(role => {
-    const li = document.createElement("li");
-    const btn = document.createElement("button");
-    btn.className = "blue-button";
-    btn.style = "margin: 5px 0; width: 100%;";
-    btn.textContent = role.charAt(0).toUpperCase() + role.slice(1);
-    btn.onclick = () => {
-      localStorage.setItem("activeRole", role);
-      clearActiveStudentCacheIfStudent([role]);
-      window.location.href = "index.html";
-    };
-    li.appendChild(btn);
-    listContainer.appendChild(li);
-  });
-  document.getElementById("roleSwitchModal").classList.add("is-open");
-}
-
 async function saveAccountInfo() {
   if (!authProfile) return;
   setTeacherError("");
@@ -277,28 +245,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   wirePasswordToggles();
-
-  const roleCard = document.getElementById("roleCard");
-  if (roleCard) {
-    roleCard.style.display = roleList.length > 1 ? "" : "none";
-  }
-  const switchRoleBtn = document.getElementById("switchRoleBtn");
-  if (switchRoleBtn) {
-    switchRoleBtn.style.display = roleList.length > 1 ? "inline-block" : "none";
-    switchRoleBtn.addEventListener("click", () => promptRoleSwitch(roleList));
-  }
-  const cancelRoleSwitchBtn = document.getElementById("cancelRoleSwitchBtn");
-  if (cancelRoleSwitchBtn) {
-    cancelRoleSwitchBtn.addEventListener("click", () => {
-      document.getElementById("roleSwitchModal").classList.remove("is-open");
-    });
-  }
-  const roleModal = document.getElementById("roleSwitchModal");
-  if (roleModal) {
-    roleModal.addEventListener("click", (e) => {
-      if (e.target === roleModal) roleModal.classList.remove("is-open");
-    });
-  }
 
   const logoutBtn = document.getElementById("logoutBtn");
   if (logoutBtn) {
