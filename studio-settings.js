@@ -28,6 +28,8 @@ const CLEAN_SELECTORS = [
   ".home-background"
 ];
 
+const DEFAULT_STUDIO_LOGO = "images/logos/logo.png";
+
 async function ensurePanelLoaded(sectionId) {
   const target = document.getElementById(`panel-${sectionId}`);
   if (!target || target.dataset.loaded === "true") return;
@@ -85,7 +87,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   const accessNotice = document.getElementById("studioAccessNotice");
   const sections = document.getElementById("studioSections");
   const nameEl = document.getElementById("studioName");
-  const slugEl = document.getElementById("studioSlug");
+  const logoEl = document.getElementById("studioLogo");
+  if (logoEl) {
+    logoEl.src = DEFAULT_STUDIO_LOGO;
+  }
 
   const viewerContext = await getViewerContext();
   const roles = viewerContext?.viewerRoles || [];
@@ -119,7 +124,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   if (nameEl) nameEl.textContent = studio?.name || "—";
-  if (slugEl) slugEl.textContent = studio?.slug || "—";
+  if (logoEl) {
+    logoEl.alt = studio?.name ? `${studio.name} logo` : "Studio logo";
+  }
 
   document.querySelectorAll(".accordion-card").forEach(card => {
     const header = card.querySelector(".accordion-header");
@@ -128,3 +135,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   });
 });
+
+
+
+

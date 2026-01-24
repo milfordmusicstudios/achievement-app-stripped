@@ -3269,17 +3269,30 @@ body.settings-page .bottom-nav {
   background: #f5f7fb !important;
 }
 
-body.settings-page .studio-header {
+body.settings-page .settings-page-header {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  margin: 8px 0 6px;
+  gap: 10px;
+  margin: 28px auto 18px;
+  text-align: center;
 }
 
-body.settings-page .studio-logo {
-  height: 34px;
-  max-width: 220px;
+body.settings-page .studio-logo-header {
+  height: 56px;
+  width: auto;
   object-fit: contain;
+  display: block;
+}
+
+@media (max-width: 520px) {
+  body.settings-page .studio-logo-header {
+    height: 44px;
+  }
+  body.settings-page .settings-page-header {
+    gap: 8px;
+    margin: 14px auto 14px;
+  }
 }
 
 body.settings-page .studio-slug,
