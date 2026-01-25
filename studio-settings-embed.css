@@ -38,14 +38,6 @@
   margin: 0 !important;
 }
 
-.settings-panel-host [data-embed-root].is-embedded > :first-child {
-  background: transparent !important;
-  border: 0 !important;
-  box-shadow: none !important;
-  padding: 0 !important;
-  margin: 0 !important;
-}
-
 .settings-panel-host.settings-panel-host [data-embed-root].is-embedded .settings-wrap,
 .settings-panel-host.settings-panel-host [data-embed-root].is-embedded .settings-section,
 .settings-panel-host.settings-panel-host [data-embed-root].is-embedded .settings-card,
@@ -91,7 +83,7 @@
 .settings-panel-host [data-embed-root].is-embedded select,
 .settings-panel-host [data-embed-root].is-embedded textarea {
   background: #fff !important;
-  border: 1px solid rgba(0,0,0,.25) !important;
+  border: 1px solid rgba(0,0,0,.18) !important;
   box-shadow: none !important;
 }
 
@@ -103,6 +95,10 @@
   padding: 0 !important;
   margin: 0 !important;
   max-width: 100% !important;
+}
+
+.settings-panel-host [data-embed-root].is-embedded .embed-panel-body *:not(input):not(select):not(textarea):not(button) {
+  border-width: 0 !important;
 }
 
 .settings-panel-host [data-embed-root].is-embedded .embed-panel-body .section,
@@ -156,23 +152,15 @@
 
 .settings-panel-host {
   --embed-card-bg: #ffffff;
-  --embed-card-border: rgba(0, 71, 125, 0.18);
-  --embed-card-radius: 26px;
-  --embed-card-pad: 22px;
-}
-
-.settings-panel-host [data-embed-root].is-embedded .embed-panel-body > :first-child,
-.settings-panel-host [data-embed-root].is-embedded .embed-panel-body > :nth-child(2) {
-  background: var(--embed-card-bg) !important;
-  border: 2px solid var(--embed-card-border) !important;
-  border-radius: var(--embed-card-radius) !important;
-  padding: var(--embed-card-pad) !important;
-  box-shadow: none !important;
+  --embed-card-border: rgba(0, 71, 125, 0.14);
+  --embed-card-radius: 22px;
+  --embed-card-pad: 20px;
 }
 
 .settings-panel-host [data-embed-root].is-embedded .embed-panel-body label {
   display: block;
-  margin: 0 0 8px !important;
+  margin: 0 0 6px !important;
+  font-size: 18px !important;
 }
 
 .settings-panel-host [data-embed-root].is-embedded .embed-panel-body .field,
@@ -180,10 +168,32 @@
   margin: 0 0 18px !important;
 }
 
+.settings-panel-host [data-embed-root].is-embedded .embed-panel-body {
+  background: var(--embed-card-bg) !important;
+  border: 2px solid var(--embed-card-border) !important;
+  border-radius: var(--embed-card-radius) !important;
+  padding: var(--embed-card-pad) !important;
+  box-shadow: none !important;
+}
+
+.settings-panel-host [data-embed-root].is-embedded .embed-panel-body > * {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.settings-panel-host [data-embed-root].is-embedded .embed-panel-body h2,
+.settings-panel-host [data-embed-root].is-embedded .embed-panel-body h3 {
+  font-size: 20px !important;
+  margin: 18px 0 10px !important;
+}
+
 .settings-panel-host [data-embed-root].is-embedded .embed-panel-body button,
 .settings-panel-host [data-embed-root].is-embedded .embed-panel-body .blue-button {
-  padding: 10px 18px !important;
-  font-size: 18px !important;
-  border-radius: 18px !important;
+  padding: 10px 16px !important;
+  font-size: 16px !important;
+  border-radius: 16px !important;
   width: auto !important;
 }
