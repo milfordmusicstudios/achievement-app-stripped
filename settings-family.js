@@ -147,13 +147,13 @@ async function renderLinkedStudents(parentId, studioId) {
     row.className = `family-student-row${isActive ? "" : " is-inactive"}${isCurrent ? " is-current" : ""}`;
     row.dataset.studentId = student.id;
     row.innerHTML = `
-      <div class="family-student-avatar">
+      <div class="family-student-avatar" role="button" tabindex="0" data-id="${student.id}">
         <img src="${avatarUrl}" alt="${name}">
+        <span class="family-avatar-hint">Click to replace avatar</span>
       </div>
       <div class="family-student-info">
         <div class="family-student-name">${name}</div>
         <div class="family-student-actions">
-          <button class="blue-button btn-rect" data-action="change-avatar" data-id="${student.id}">Change avatar</button>
           <input class="student-avatar-input" data-id="${student.id}" type="file" accept="image/*" style="display:none;">
         </div>
       </div>
@@ -201,13 +201,19 @@ async function renderLinkedStudents(parentId, studioId) {
     });
   });
 
-  list.querySelectorAll("button[data-action=\"change-avatar\"]").forEach(btn => {
-    btn.addEventListener("click", (e) => {
+  list.querySelectorAll(".family-student-avatar").forEach(avatar => {
+    const input = list.querySelector(`input.student-avatar-input[data-id="${avatar.dataset.id}"]`);
+    const triggerUpload = (e) => {
       e.stopPropagation();
-      const studentId = btn.dataset.id;
-      const input = list.querySelector(`input.student-avatar-input[data-id="${studentId}"]`);
       if (!input) return;
       input.click();
+    };
+    avatar.addEventListener("click", triggerUpload);
+    avatar.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        triggerUpload(e);
+      }
     });
   });
 

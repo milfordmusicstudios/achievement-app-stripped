@@ -2402,17 +2402,25 @@ body.settings-page .family-student-actions {
   flex-wrap: wrap;
 }
 
-body.settings-page .family-student-actions button[data-action="change-avatar"] {
-  padding: 6px 12px;
-  height: 32px;
-  font-size: 0.75rem;
-  min-width: 0;
-  border-radius: 10px;
-  letter-spacing: 0.2px;
-  border: 1px solid rgba(11, 79, 138, 0.25);
-  background: #ffffff;
+body.settings-page .family-student-avatar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  outline: none;
+}
+
+body.settings-page .family-student-avatar:focus-visible {
+  outline: 2px solid rgba(11,79,138,0.6);
+  outline-offset: 4px;
+}
+
+body.settings-page .family-avatar-hint {
+  font-size: 0.7rem;
   color: #0b4f8a;
-  font-weight: 700;
+  font-weight: 600;
+  letter-spacing: 0.3px;
 }
 
 body.settings-page .blue-button.btn-rect {
@@ -3179,14 +3187,17 @@ body.settings-page .accordion-panel {
 .settings-page .panel-root,
 .settings-page .accordion-card {
   background: #fff;
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  box-shadow: 0 18px 36px rgba(16, 40, 73, 0.08);
-  border-radius: 16px;
+  border: 1px solid rgba(11, 79, 138, 0.18);
+  box-shadow: 0 18px 36px rgba(16, 40, 73, 0.12);
+  border-radius: 18px;
+  overflow: hidden;
 }
 
-.settings-page .accordion-card {
-  border-radius: 16px;
-  border: 1px solid rgba(11, 79, 138, 0.12);
+.settings-page .settings-accordion .accordion-card {
+  border-radius: 18px;
+  background: #fff;
+  border: 1px solid rgba(11, 79, 138, 0.2);
+  box-shadow: 0 14px 34px rgba(16, 40, 73, 0.15);
 }
 
 .settings-page .blue-button,
