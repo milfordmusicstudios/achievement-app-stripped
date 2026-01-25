@@ -99,6 +99,37 @@ a.big-fun-btn {
   -webkit-tap-highlight-color: transparent;
 }
 
+/*
+  Password toggles (used on login + other forms that inject .pw-field)
+  These rules make the button visible outside the settings page context.
+*/
+.pw-field {
+  position: relative;
+  width: 100%;
+  display: flex;
+}
+
+.pw-field input {
+  width: 100%;
+  padding-right: 52px;
+}
+
+.pw-toggle {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: rgba(11, 79, 138, 0.12);
+  color: #0B4F8A;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 button:focus-visible,
 a.nav-btn:focus-visible,
 a.big-fun-btn:focus-visible {

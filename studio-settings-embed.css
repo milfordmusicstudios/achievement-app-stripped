@@ -158,20 +158,85 @@
   border-radius: 0 !important;
 }
 
-.settings-panel-host [data-embed-root].is-embedded .embed-account-card {
-  background: #fff !important;
-  border: 2px solid rgba(0, 71, 125, 0.14) !important;
-  border-radius: 22px !important;
+/* ================================ */
+/* Embedded Invite Panel — remove inner framed outline */
+/* ================================ */
+
+.settings-panel-host [data-embed-root].is-embedded .embed-account-card,
+.settings-panel-host [data-embed-root].is-embedded .embed-panel-body.embed-account-card {
+  border: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
   padding: 0 !important;
-  overflow: hidden;
+  border-radius: 0 !important;
+  overflow: visible !important;
+}
+
+.settings-panel-host [data-embed-root].is-embedded .invite-card,
+.settings-panel-host [data-embed-root].is-embedded .form-card,
+.settings-panel-host [data-embed-root].is-embedded .card,
+.settings-panel-host [data-embed-root].is-embedded .panel {
+  border: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
 }
 
 .settings-panel-host [data-embed-root].is-embedded .embed-row {
   display: grid;
-  grid-template-columns: 220px 1fr;
+  grid-template-columns: 220px minmax(0, 1fr);
   gap: 16px;
   align-items: center;
-  padding: 22px;
+  padding: 18px 6px;
+}
+
+.settings-panel-host [data-embed-root].is-embedded .embed-divider {
+  height: 2px;
+  background: rgba(0, 71, 125, 0.10);
+  margin: 0 6px;
+}
+
+.settings-panel-host [data-embed-root].is-embedded .embed-actions {
+  padding: 14px 6px 6px;
+}
+
+.settings-panel-host [data-embed-root].is-embedded .embed-pending {
+  padding: 0 6px 10px;
+}
+
+.settings-panel-host [data-embed-root].is-embedded .embed-field {
+  width: 100% !important;
+  min-width: 0 !important;
+  display: flex !important;
+  justify-content: flex-end;
+}
+
+.settings-panel-host [data-embed-root].is-embedded .embed-field input,
+.settings-panel-host [data-embed-root].is-embedded .embed-field select,
+.settings-panel-host [data-embed-root].is-embedded .embed-field textarea {
+  width: 100% !important;
+  max-width: 520px !important;
+  min-width: 260px !important;
+  display: block !important;
+  box-sizing: border-box !important;
+}
+
+@media (max-width: 720px) {
+  .settings-panel-host [data-embed-root].is-embedded .embed-row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .settings-panel-host [data-embed-root].is-embedded .embed-field {
+    justify-content: stretch !important;
+  }
+
+  .settings-panel-host [data-embed-root].is-embedded .embed-field input,
+  .settings-panel-host [data-embed-root].is-embedded .embed-field select {
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
 }
 
 .settings-panel-host [data-embed-root].is-embedded .embed-label {
@@ -180,87 +245,8 @@
   color: #003b66;
 }
 
-.settings-panel-host [data-embed-root].is-embedded .embed-field input,
-.settings-panel-host [data-embed-root].is-embedded .embed-field select {
-  width: 100% !important;
-  max-width: 100% !important;
-}
-
-.settings-panel-host [data-embed-root].is-embedded .embed-divider {
-  height: 2px;
-  background: rgba(0, 71, 125, 0.10);
-}
-
-.settings-panel-host [data-embed-root].is-embedded .embed-actions {
-  padding: 18px 22px 8px;
-}
-
-.settings-panel-host [data-embed-root].is-embedded .embed-actions button,
-.settings-panel-host [data-embed-root].is-embedded .embed-actions .blue-button {
-  padding: 10px 16px !important;
-  font-size: 16px !important;
-  border-radius: 16px !important;
-  width: auto !important;
-}
-
 .settings-panel-host [data-embed-root].is-embedded .embed-subhead {
   text-align: center;
   font-size: 28px !important;
   margin: 18px 0 10px !important;
-}
-
-.settings-panel-host [data-embed-root].is-embedded .embed-pending {
-  padding: 0 22px 22px;
-}
-
-/* ================================ */
-/* Embedded “Account Holder” Card Style */
-/* ================================ */
-
-.settings-panel-host {
-  --embed-card-bg: #ffffff;
-  --embed-card-border: rgba(0, 71, 125, 0.14);
-  --embed-card-radius: 22px;
-  --embed-card-pad: 20px;
-}
-
-.settings-panel-host [data-embed-root].is-embedded .embed-panel-body label {
-  display: block;
-  margin: 0 0 6px !important;
-  font-size: 18px !important;
-}
-
-.settings-panel-host [data-embed-root].is-embedded .embed-panel-body .field,
-.settings-panel-host [data-embed-root].is-embedded .embed-panel-body .form-group {
-  margin: 0 0 18px !important;
-}
-
-.settings-panel-host [data-embed-root].is-embedded .embed-panel-body {
-  background: var(--embed-card-bg) !important;
-  border: 2px solid var(--embed-card-border) !important;
-  border-radius: var(--embed-card-radius) !important;
-  padding: var(--embed-card-pad) !important;
-  box-shadow: none !important;
-}
-
-.settings-panel-host [data-embed-root].is-embedded .embed-panel-body > * {
-  background: transparent !important;
-  box-shadow: none !important;
-  border: 0 !important;
-  padding: 0 !important;
-  margin: 0 !important;
-}
-
-.settings-panel-host [data-embed-root].is-embedded .embed-panel-body h2,
-.settings-panel-host [data-embed-root].is-embedded .embed-panel-body h3 {
-  font-size: 20px !important;
-  margin: 18px 0 10px !important;
-}
-
-.settings-panel-host [data-embed-root].is-embedded .embed-panel-body button,
-.settings-panel-host [data-embed-root].is-embedded .embed-panel-body .blue-button {
-  padding: 10px 16px !important;
-  font-size: 16px !important;
-  border-radius: 16px !important;
-  width: auto !important;
 }
