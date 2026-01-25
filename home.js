@@ -40,10 +40,10 @@ function persistParentSelection(viewerUserId, studioId, studentId) {
 
 const SWITCH_STUDENT_TIP_KEY = "aa_switch_student_tip_shown";
 
-function maybeShowSwitchStudentTip(mode) {
+function maybeShowSwitchStudentTip(mode, hasMultipleUsers = false) {
   const tip = qs("switchStudentTip");
   if (!tip) return;
-  if (mode !== "student") {
+  if (mode !== "student" || !hasMultipleUsers) {
     tip.style.display = "none";
     return;
   }
@@ -52,6 +52,7 @@ function maybeShowSwitchStudentTip(mode) {
     tip.style.display = "none";
     return;
   }
+  tip.textContent = "Click the avatar to switch users.";
   tip.style.display = "";
   localStorage.setItem(SWITCH_STUDENT_TIP_KEY, "true");
 }
@@ -556,7 +557,7 @@ async function init() {
   }
   initViewModeToggle();
 
-  maybeShowSwitchStudentTip(viewerContext.mode);
+  maybeShowSwitchStudentTip(viewerContext.mode, false);
 
   const authUserId = viewerContext.viewerUserId;
 
@@ -709,8 +710,9 @@ async function init() {
     return;
   }
 
-const profile = ensuredProfile || JSON.parse(raw);
-currentProfile = profile;
+  const storedProfile = raw ? safeParse(raw) : null;
+  const profile = storedProfile || ensuredProfile;
+  currentProfile = profile;
 
   if (viewerContext?.mode === "student") {
     clearParentSelection(viewerContext.viewerUserId, viewerContext.studioId);
@@ -728,11 +730,21 @@ currentProfile = profile;
   }
 
   const parentId = sessionData?.session?.user?.id;
-availableUsers = await loadAvailableUsers(parentId, profile);
-if (isParentReadOnly) {
-  availableUsers = filterParentViewerUsers(availableUsers);
-}
-initAvatarSwitcher(availableUsers);
+  availableUsers = await loadAvailableUsers(parentId, profile);
+  if (ensuredProfile && profile && String(ensuredProfile.id) !== String(profile.id)) {
+    const hasEnsured = availableUsers.some(
+      user => String(user.id) === String(ensuredProfile.id)
+    );
+    if (!hasEnsured) {
+      availableUsers.push(ensuredProfile);
+    }
+  }
+  availableUsers = uniqueUsers(availableUsers);
+  if (isParentReadOnly) {
+    availableUsers = filterParentViewerUsers(availableUsers);
+  }
+  initAvatarSwitcher(availableUsers);
+  maybeShowSwitchStudentTip(viewerContext.mode, availableUsers.length > 1);
 
   if (viewerContext?.mode === "parent") {
     const storedKey = getParentSelectionKey(viewerContext.studioId, viewerContext.viewerUserId);

@@ -265,7 +265,8 @@
   overflow-x: auto !important;
   overflow-y: visible !important;
   -webkit-overflow-scrolling: touch;
-  padding-bottom: 10px;
+  padding: 0 clamp(12px, 2vw, 24px) 10px;
+  box-sizing: border-box;
 }
 
 .settings-panel-host [data-embed-root].is-embedded table.manage-users-table {
@@ -286,6 +287,26 @@
 .settings-panel-host [data-embed-root].is-embedded table.manage-users-table td {
   padding: 10px 12px;
   white-space: nowrap;
+}
+
+.settings-panel-host [data-embed-root].is-embedded .manage-users-action {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.settings-panel-host [data-embed-root].is-embedded .manage-users-action input {
+  height: 48px;
+  width: 100%;
+  max-width: 360px;
+  border-radius: 14px;
+  border: 1px solid rgba(11, 79, 138, 0.25);
+  padding: 0 16px;
+  font-size: 1rem;
+  line-height: 1;
+  background: #ffffff;
+  box-shadow: none;
 }
 
 .settings-panel-host [data-embed-root].is-embedded th.actions-col {
@@ -337,6 +358,12 @@
   position: relative;
   left: 0;
   overflow: visible;
+  box-sizing: border-box;
+  padding-inline: clamp(12px, 3vw, 28px);
+  border: 1px solid rgba(11, 79, 138, 0.18);
+  border-radius: 24px;
+  background: #ffffff;
+  box-shadow: 0 16px 42px rgba(11, 79, 138, 0.16);
 }
 .studio-settings-page #panel-manage-users .settings-embed {
   width: 100%;
@@ -368,5 +395,8 @@
 .studio-settings-page #panel-invite-student {
   margin: 0;
   max-width: none;
-  background: transparent;
+  background: #ffffff;
+  border: 1px solid rgba(11, 79, 138, 0.18);
+  border-radius: 24px;
+  box-shadow: 0 16px 42px rgba(11, 79, 138, 0.16);
 }

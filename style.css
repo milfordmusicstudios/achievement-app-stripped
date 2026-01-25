@@ -2402,6 +2402,14 @@ body.settings-page .family-student-actions {
   flex-wrap: wrap;
 }
 
+body.settings-page .family-student-actions button[data-action="change-avatar"] {
+  padding: 6px 12px;
+  height: 36px;
+  font-size: 0.85rem;
+  min-width: 120px;
+  border-radius: 12px;
+}
+
 body.settings-page .blue-button.btn-rect {
   padding: 6px 12px;
   border-radius: 10px;

@@ -242,6 +242,52 @@ function ensureArray(value) {
   return Array.isArray(value) ? value : [value];
 }
 
+function buildUserNameMap(users) {
+  const map = new Map();
+  users.forEach(user => {
+    const first = user.firstName || user.first_name || "";
+    const last = user.lastName || user.last_name || "";
+    const fullName = `${first} ${last}`.trim();
+    if (fullName) {
+      map.set(String(user.id), fullName);
+    }
+  });
+  return map;
+}
+
+function getTeacherDisplayValue(entry, nameMap) {
+  if (entry === undefined || entry === null) return null;
+  if (typeof entry === "string" || typeof entry === "number") {
+    const key = String(entry);
+    return nameMap.get(key) || key;
+  }
+  if (typeof entry === "object") {
+    const first = entry.firstName || entry.first_name || "";
+    const last = entry.lastName || entry.last_name || "";
+    const name = `${first} ${last}`.trim();
+    if (name) return name;
+    if (entry.label) return entry.label;
+    if (entry.name) return entry.name;
+    if (entry.id) {
+      const key = String(entry.id);
+      return nameMap.get(key) || key;
+    }
+    return null;
+  }
+  return String(entry);
+}
+
+function applyTeacherDisplayNames(users) {
+  const nameMap = buildUserNameMap(users);
+  users.forEach(user => {
+    const teacherEntries = ensureArray(user.teachers);
+    const resolved = teacherEntries
+      .map(entry => getTeacherDisplayValue(entry, nameMap))
+      .filter(Boolean);
+    user.teachers = resolved.length ? resolved : teacherEntries;
+  });
+}
+
 function normalizeUser(entry, source = "member") {
   const userData = entry.users || entry;
   return {
@@ -299,6 +345,7 @@ async function loadUsers() {
       throw new Error("Manage Users: could not load users — check table names (users / studio_members).");
     }
   }
+  applyTeacherDisplayNames(allUsers);
 }
 
 async function initManageUsersPanel() {
