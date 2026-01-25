@@ -2404,10 +2404,15 @@ body.settings-page .family-student-actions {
 
 body.settings-page .family-student-actions button[data-action="change-avatar"] {
   padding: 6px 12px;
-  height: 36px;
-  font-size: 0.85rem;
-  min-width: 120px;
-  border-radius: 12px;
+  height: 32px;
+  font-size: 0.75rem;
+  min-width: 0;
+  border-radius: 10px;
+  letter-spacing: 0.2px;
+  border: 1px solid rgba(11, 79, 138, 0.25);
+  background: #ffffff;
+  color: #0b4f8a;
+  font-weight: 700;
 }
 
 body.settings-page .blue-button.btn-rect {

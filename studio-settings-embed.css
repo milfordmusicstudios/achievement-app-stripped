@@ -327,10 +327,10 @@
 
 /* Allow the Manage Users embed to break out of the accordion */
 .studio-settings-page .accordion-card[data-section="manage-users"] {
-  background: transparent;
-  border: 0;
-  border-radius: 0;
-  box-shadow: none;
+  background: #ffffff;
+  border: 1px solid rgba(11, 79, 138, 0.2);
+  border-radius: 18px;
+  box-shadow: 0 14px 38px rgba(16, 40, 73, 0.12);
   overflow: visible;
 }
 .studio-settings-page .accordion-card[data-section="manage-users"] .accordion-header {
@@ -351,19 +351,15 @@
   padding: 0;
 }
 .studio-settings-page #panel-manage-users {
-  width: 100vw;
+  width: calc(100vw - clamp(24px, 6vw, 48px));
   max-width: none;
-  margin-left: calc(50% - 50vw);
-  margin-right: calc(50% - 50vw);
+  margin-left: calc(50% - 50vw + clamp(12px, 3vw, 24px));
+  margin-right: calc(50% - 50vw + clamp(12px, 3vw, 24px));
   position: relative;
   left: 0;
   overflow: visible;
   box-sizing: border-box;
   padding-inline: clamp(12px, 3vw, 28px);
-  border: 1px solid rgba(11, 79, 138, 0.18);
-  border-radius: 24px;
-  background: #ffffff;
-  box-shadow: 0 16px 42px rgba(11, 79, 138, 0.16);
 }
 .studio-settings-page #panel-manage-users .settings-embed {
   width: 100%;
@@ -375,10 +371,11 @@
 
 /* Flatten invite embed so the blue card sits directly in the accordion */
 .studio-settings-page .accordion-card[data-section="invite-student"] {
-  background: transparent;
-  border: 0;
-  border-radius: 0;
-  box-shadow: none;
+  background: #ffffff;
+  border: 1px solid rgba(11, 79, 138, 0.2);
+  border-radius: 18px;
+  box-shadow: 0 14px 38px rgba(16, 40, 73, 0.12);
+  overflow: visible;
 }
 .studio-settings-page .accordion-card[data-section="invite-student"] .accordion-body {
   padding: 0;
@@ -395,8 +392,8 @@
 .studio-settings-page #panel-invite-student {
   margin: 0;
   max-width: none;
-  background: #ffffff;
-  border: 1px solid rgba(11, 79, 138, 0.18);
-  border-radius: 24px;
-  box-shadow: 0 16px 42px rgba(11, 79, 138, 0.16);
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
 }
