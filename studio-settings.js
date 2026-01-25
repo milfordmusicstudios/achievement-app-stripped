@@ -55,6 +55,9 @@ async function ensurePanelLoaded(sectionId) {
     }
     target.innerHTML = embedResult.html;
     target.dataset.loaded = "true";
+    if (sectionId === "manage-users" && typeof window.initManageUsersPanel === "function") {
+      window.initManageUsersPanel();
+    }
   } catch (err) {
     console.error(`[Studio] failed to load panel ${sectionId}`, err);
     target.textContent = "Failed to load content.";

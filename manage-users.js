@@ -1,1 +1,327 @@
-import { supabase } from "./supabaseClient.js";\nimport { ensureStudioContextAndRoute } from "./studio-routing.js";\nimport { getViewerContext } from "./utils.js";\n\nlet allUsers = [];\nlet currentPage = 1;\nconst usersPerPage = 25;\nlet searchQuery = "";\nlet sortColumn = "lastName";     // ✅ Default sort column\nlet sortDirection = 1;           // ✅ Ascending by default\n\nfunction normalizeRoleList(value) {\n  if (!value) return [];\n  if (Array.isArray(value)) return value.map(r => String(r).toLowerCase());\n  return [String(value).toLowerCase()];\n}\n\ndocument.addEventListener("DOMContentLoaded", async () => {\n  const routeResult = await ensureStudioContextAndRoute({ redirectHome: false });\n  if (routeResult?.redirected) return;\n\n  const viewerContext = await getViewerContext();\n  console.log("[AuthZ]", { page: "manage-users", roles: viewerContext.viewerRoles, studioId: viewerContext.studioId });\n  if (!viewerContext.isAdmin) {\n    alert("Access denied.");\n    window.location.href = "index.html";\n    return;\n  }\n\n  await fetchUsers();\n  document.getElementById("addUserBtn").addEventListener("click", openAddUserModal);\n  document.getElementById("normalizeStaffRolesBtn")?.addEventListener("click", normalizeStaffRoles);\n  setupSearchAndSort();\n  updateSortIndicators("lastName");  // ✅ Show arrow for default sort\n});\n\n// ✅ Fetch Users\nasync function fetchUsers() {\n  const { data, error } = await supabase.from("users").select("*").order("lastName");\n  if (error) return console.error("Error fetching users:", error);\n  allUsers = data;\n  renderUsers();\n}\n\nasync function normalizeStaffRoles() {\n  const updates = [];\n  allUsers.forEach(user => {\n    const roles = normalizeRoleList(user.roles);\n    if (roles.includes("admin") && !roles.includes("teacher")) {\n      const nextRoles = Array.from(new Set([...roles, "teacher"]));\n      updates.push({ id: user.id, roles: nextRoles });\n    }\n  });\n\n  if (updates.length === 0) {\n    alert("No staff roles needed normalization.");\n    return;\n  }\n\n  try {\n    await Promise.all(\n      updates.map(u => supabase.from("users").update({ roles: u.roles }).eq("id", u.id))\n    );\n    allUsers = allUsers.map(u => {\n      const update = updates.find(x => x.id === u.id);\n      return update ? { ...u, roles: update.roles } : u;\n    });\n    renderUsers();\n    alert(`Updated ${updates.length} user(s).`);\n  } catch (err) {\n    console.error("[NormalizeRoles] failed", err);\n    alert("Failed to normalize staff roles.");\n  }\n}\n\n// ✅ Filter & Sort\nfunction getFilteredAndSortedUsers() {\n  const query = searchQuery.trim().toLowerCase();\n\n  let filtered = allUsers.filter(u => {\n    const teacherNames = ((Array.isArray(u.teacherIds) ? u.teacherIds : [])).map(id => {\n      const teacher = allUsers.find(t => String(t.id) === String(id));\n      return teacher ? `${teacher.firstName} ${teacher.lastName}`.toLowerCase() : "";\n    }).join(" ");\n\n    const rolesText = Array.isArray(u.roles) ? u.roles.join(" ").toLowerCase() : String(u.roles || "").toLowerCase();\n    const instrumentText = Array.isArray(u.instrument) ? u.instrument.join(" ").toLowerCase() :\n      (typeof u.instrument === "string" ? u.instrument.toLowerCase() : "");\n\n    return (\n      String(u.firstName || "").toLowerCase().includes(query) ||\n      String(u.lastName || "").toLowerCase().includes(query) ||\n      String(u.email || "").toLowerCase().includes(query) ||\n      instrumentText.includes(query) ||\n      teacherNames.includes(query) ||\n      rolesText.includes(query)\n    );\n  });\n\n  if (sortColumn) {\n    filtered.sort((a, b) => {\n      let valA = a[sortColumn];\n      let valB = b[sortColumn];\n\n      // ✅ Numeric sort for points & level\n      if (["points", "level"].includes(sortColumn)) {\n        valA = Number(valA) || 0;\n        valB = Number(valB) || 0;\n        return (valA - valB) * sortDirection;\n      }\n\n      // ✅ Text sort for other fields\n      valA = String(valA || "").toLowerCase();\n      valB = String(valB || "").toLowerCase();\n      return valA > valB ? sortDirection : valA < valB ? -sortDirection : 0;\n    });\n  }\n  return filtered;\n}\n\n// ✅ Render Users Table\nfunction renderUsers() {\n  const tbody = document.getElementById("userTableBody");\n  tbody.innerHTML = "";\n\n  const start = (currentPage - 1) * usersPerPage;\n  const pageUsers = getFilteredAndSortedUsers().slice(start, start + usersPerPage);\n\n  pageUsers.forEach(user => {\n    const tr = document.createElement("tr");\n    tr.innerHTML = `\n      <td><input type="text" value="${user.firstName || ""}" onchange="updateField('${user.id}','firstName',this.value)"></td>\n      <td><input type="text" value="${user.lastName || ""}" onchange="updateField('${user.id}','lastName',this.value)"></td>\n      <td><input type="email" value="${user.email || ""}" onchange="updateField('${user.id}','email',this.value)"></td>\n      <td class="avatar-cell">\n        <img src="${user.avatarUrl || 'images/logos/default.png'}" class="avatar-preview">\n        <label class="upload-btn">Change\n          <input type="file" data-id="${user.id}" class="avatar-upload">\n        </label>\n      </td>\n      <td>${renderRoleTags(user)}</td>\n      <td>${renderTeacherTags(user)}</td>\n      <td><input type="text" value="${user.instrument || ""}" onchange="updateField('${user.id}','instrument',this.value)"></td>\n      <td>${user.points || 0}</td>\n      <td>${user.level || "—"}</td>\n    `;\n    tbody.appendChild(tr);\n  });\n\n  setupTagListeners();\n  setupAvatarUploads();\n  renderPagination();\n}\n\n// ✅ Auto-Save Field Updates\nwindow.updateField = async function(id, field, value) {\n  const user = allUsers.find(u => u.id === id);\n  if (!user) return;\n  user[field] = value;\n\n  const { error } = await supabase.from("users").update({ [field]: value }).eq("id", id);\n  if (error) console.error("Auto-save failed:", error);\n};\n\n// ✅ Render Tags\nfunction renderRoleTags(user) {\n  const roles = ["student", "teacher", "admin", "parent"];\n  const selected = Array.isArray(user.roles) ? user.roles : [user.roles].filter(Boolean);\n  return buildTagContainer(user.id, "roles", selected, roles);\n}\n\nfunction renderTeacherTags(user) {\n  const teacherList = allUsers.filter(u => u.roles?.includes("teacher") || u.roles?.includes("admin"));\n  const selected = Array.isArray(user.teacherIds) ? user.teacherIds.map(String) : [user.teacherIds].filter(Boolean).map(String);\n  return buildTagContainer(user.id, "teacherIds", selected, teacherList);\n}\n\n// ✅ Build Tag Container\nfunction buildTagContainer(userId, type, selected, options) {\n  const tags = (type === "roles"\n    ? selected\n    : selected.map(id => {\n        const t = allUsers.find(u => u.id === id);\n        return t ? { id, name: `${t.firstName} ${t.lastName}` } : null;\n      }).filter(Boolean));\n\n  const emptyTag = (type === "teacherIds" && tags.length === 0)\n    ? `<span class="tag tag-empty">None</span>`\n    : "";\n\n  const optionsHTML = (type === "roles"\n    ? options.filter(r => !selected.includes(r)).map(r => `<div class="tag-option" data-value="${r}">${r}</div>`)\n    : options.filter(t => !selected.includes(t.id)).map(t => `<div class="tag-option" data-value="${t.id}">${t.firstName} ${t.lastName}</div>`)).join("");\n\n  const tagsHTML = (type === "roles"\n    ? tags.map(r => `<span class="tag">${r}<span class="remove-tag" data-value="${r}">×</span></span>`).join("")\n    : tags.map(t => `<span class="tag">${t.name}<span class="remove-tag" data-value="${t.id}">×</span></span>`).join(""));\n\n  return `\n    <div class="tag-container" data-id="${userId}" data-type="${type}">\n      ${emptyTag}${tagsHTML}\n      <img src="images/icons/plus.png" class="tag-add-icon">\n      <div class="tag-options">${optionsHTML}</div>\n    </div>\n  `;\n}\n\n// ✅ Tag Listeners\nfunction setupTagListeners() {\ndocument.querySelectorAll(".tag-add-icon").forEach(icon => {\n  icon.addEventListener("click", e => {\n    const container = e.target.closest(".tag-container");\n    const options = container.querySelector(".tag-options");\n\n    // ✅ Get screen position of the icon\n    const rect = e.target.getBoundingClientRect();\n    options.style.top = rect.bottom + "px";\n    options.style.left = rect.left + "px";\noptions.classList.remove("show");\n\n    // ✅ Show dropdown\n    options.classList.toggle("show");\n  });\n});\ndocument.addEventListener("click", e => {\n  document.querySelectorAll(".tag-options.show").forEach(openMenu => {\n    // ✅ Close if click is outside the dropdown and not the plus icon\n    if (!openMenu.contains(e.target) && !e.target.classList.contains("tag-add-icon")) {\n      openMenu.classList.remove("show");\n    }\n  });\n});\n  const ensureEmptyTag = (container) => {\n    if (!container || container.dataset.type !== "teacherIds") return;\n    const hasTag = container.querySelectorAll(".tag:not(.tag-empty)").length > 0;\n    const emptyTag = container.querySelector(".tag-empty");\n    if (!hasTag && !emptyTag) {\n      const tag = document.createElement("span");\n      tag.className = "tag tag-empty";\n      tag.textContent = "None";\n      container.insertBefore(tag, container.querySelector(".tag-add-icon"));\n    } else if (hasTag && emptyTag) {\n      emptyTag.remove();\n    }\n  };\n  const bindRemove = (removeEl) => {\n    removeEl.addEventListener("click", async () => {\n      const tagEl = removeEl.closest(".tag");\n      const container = removeEl.closest(".tag-container");\n      if (!container) return;\n      const id = container.dataset.id;\n      const type = container.dataset.type;\n      const user = allUsers.find(u => u.id === id);\n      const value = removeEl.dataset.value;\n      if (!user) return;\n\n      user[type] = Array.isArray(user[type]) ? user[type].filter(v => String(v) !== String(value)) : [];\n      await supabase.from("users").update({ [type]: user[type] }).eq("id", id);\n      if (tagEl) tagEl.remove();\n      ensureEmptyTag(container);\n    });\n  };\n  document.querySelectorAll(".remove-tag").forEach(bindRemove);\n  document.querySelectorAll(".tag-option").forEach(opt => {\n    opt.addEventListener("click", async e => {\n      const container = e.target.closest(".tag-container");\n      const id = container.dataset.id;\n      const type = container.dataset.type;\n      const user = allUsers.find(u => u.id === id);\n      const value = e.target.dataset.value;\n\n      if (!Array.isArray(user[type])) user[type] = [];\n      if (!user[type].includes(value)) user[type].push(value);\n\n      await supabase.from("users").update({ [type]: user[type] }).eq("id", id);\n\n      e.target.remove();\n      const tagLabel = (type === "roles") ? value : (allUsers.find(t => t.id === value)?.firstName + " " + allUsers.find(t => t.id === value)?.lastName);\n      const newTag = document.createElement("span");\n      newTag.className = "tag";\n      newTag.innerHTML = `${tagLabel}<span class="remove-tag" data-value="${value}">×</span>`;\n      const emptyTag = container.querySelector(".tag-empty");\n      if (emptyTag) emptyTag.remove();\n      container.insertBefore(newTag, container.querySelector(".tag-add-icon"));\n\n      const removeEl = newTag.querySelector(".remove-tag");\n      if (removeEl) bindRemove(removeEl);\n    });\n  });\n}\n\n// ✅ Avatar Upload (Auto-Save)\nfunction setupAvatarUploads() {\n  document.querySelectorAll(".avatar-upload").forEach(input => {\n    input.addEventListener("change", async e => {\n      const file = e.target.files[0];\n      if (!file) return;\n      const userId = e.target.dataset.id;\n      const fileName = `${userId}-${Date.now()}.png`;\n      const { error: uploadError } = await supabase.storage.from("avatars").upload(fileName, file, { upsert: true });\n      if (uploadError) return alert("Avatar upload failed");\n      const { data: publicUrl } = supabase.storage.from("avatars").getPublicUrl(fileName);\n      await supabase.from("users").update({ avatarUrl: publicUrl.publicUrl }).eq("id", userId);\n      fetchUsers();\n    });\n  });\n}\n\n// ✅ Invite Modal\nfunction openAddUserModal() {\n  const modal = document.createElement("div");\n  modal.className = "modal-overlay";\n  modal.style.display = "flex";\n\n  modal.innerHTML = `\n    <div class="modal-box">\n      <h3>Invite New User</h3>\n      <label>First Name</label><input id="newFirstName" type="text">\n      <label>Last Name</label><input id="newLastName" type="text">\n      <label>Email</label><input id="newEmail" type="email">\n      <div class="modal-actions">\n        <button class="blue-button" id="sendInviteBtn">Send Invite Link</button>\n        <button class="blue-button" id="cancelUserBtn">Cancel</button>\n      </div>\n    </div>`;\n  document.body.appendChild(modal);\n\n  document.getElementById("cancelUserBtn").addEventListener("click", () => modal.remove());\n  document.getElementById("sendInviteBtn").addEventListener("click", () => sendInviteLink(modal));\n}\n\n// ✅ Invite Link\nfunction sendInviteLink(modal) {\n  const email = document.getElementById("newEmail").value.trim();\n  const firstName = document.getElementById("newFirstName").value.trim();\n  const lastName = document.getElementById("newLastName").value.trim();\n\n  if (!email) {\n    alert("Please provide an email.");\n    return;\n  }\n\n  const inviteLink = `https://achievement-app-stripped.vercel.app/signup.html?email=${encodeURIComponent(email)}`;\n  alert(`Invite link for ${firstName} ${lastName}: ${inviteLink}`);\n  modal.remove();\n}\n\n// ✅ Search & Sort Setup\nfunction setupSearchAndSort() {\n  document.getElementById("userSearch").addEventListener("input", e => {\n    searchQuery = e.target.value.toLowerCase();\n    currentPage = 1;\n    renderUsers();\n  });\n\n  document.querySelectorAll("#userHeaderTable th[data-sort]").forEach(th => {\n    th.style.cursor = "pointer";\n    th.addEventListener("click", () => {\n      const col = th.dataset.sort;\n      if (sortColumn === col) sortDirection *= -1;\n      else { sortColumn = col; sortDirection = 1; }\n      renderUsers();\n      updateSortIndicators(col);\n    });\n  });\n}\n\n// ✅ Update Sort Indicators\nfunction updateSortIndicators(active) {\n  document.querySelectorAll("#userHeaderTable th[data-sort]").forEach(th => {\n    th.classList.remove("asc", "desc");\n    if (th.dataset.sort === active) {\n      th.classList.add(sortDirection === 1 ? "asc" : "desc");\n    }\n  });\n}\n\n// ✅ Pagination\nfunction renderPagination() {\n  const controls = document.getElementById("paginationControls");\n  controls.innerHTML = "";\n  const totalPages = Math.ceil(getFilteredAndSortedUsers().length / usersPerPage);\n  for (let i = 1; i <= totalPages; i++) {\n    const btn = document.createElement("button");\n    btn.textContent = i;\n    if (i === currentPage) btn.classList.add("active");\n    btn.addEventListener("click", () => { currentPage = i; renderUsers(); });\n    controls.appendChild(btn);\n  }\n}
+import { supabase } from "./supabaseClient.js";
+import { getViewerContext } from "./utils.js";
+
+let allUsers = [];
+let searchQuery = "";
+let searchHandlerBound = false;
+let currentEditingRow = null;
+
+const editableFields = [
+  { field: "firstName", type: "text" },
+  { field: "lastName", type: "text" },
+  { field: "email", type: "email" }
+];
+
+const STATUS_LOADING = "Loading users…";
+
+function renderStatus(message, isError = false) {
+  const statusEl = document.getElementById("manageUsersStatus");
+  if (!statusEl) return;
+  statusEl.textContent = message;
+  statusEl.style.color = isError ? "#c62828" : "#0b4f8a";
+}
+
+function formatList(value) {
+  if (!value) return "—";
+  const list = Array.isArray(value) ? value : [value];
+  const normalized = list
+    .filter(Boolean)
+    .map(item => {
+      if (typeof item === "string") return item;
+      if (typeof item === "object") {
+        if (item.first_name || item.firstName || item.last_name || item.lastName) {
+          return `${item.first_name || item.firstName || ""} ${item.last_name || item.lastName || ""}`.trim();
+        }
+        if (item.label) return item.label;
+      }
+      return String(item);
+    })
+    .filter(Boolean);
+  return normalized.length ? normalized.join(", ") : "—";
+}
+
+function matchesSearch(user) {
+  const query = searchQuery.trim().toLowerCase();
+  if (!query) return true;
+  const first = (user.firstName || user.first_name || "").toLowerCase();
+  const last = (user.lastName || user.last_name || "").toLowerCase();
+  const email = (user.email || "").toLowerCase();
+  const roles = formatList(user.roles).toLowerCase();
+  const teachers = formatList(user.teachers).toLowerCase();
+  const instruments = formatList(user.instruments).toLowerCase();
+  return (
+    first.includes(query) ||
+    last.includes(query) ||
+    email.includes(query) ||
+    roles.includes(query) ||
+    teachers.includes(query) ||
+    instruments.includes(query)
+  );
+}
+
+function renderUsers() {
+  const tbody = document.getElementById("userTableBody");
+  if (!tbody) return;
+  tbody.innerHTML = "";
+  const filtered = allUsers.filter(matchesSearch);
+  if (filtered.length === 0) {
+    const tr = document.createElement("tr");
+    const td = document.createElement("td");
+    td.colSpan = 10;
+    td.textContent = "No users found.";
+    td.style.textAlign = "center";
+    tr.appendChild(td);
+    tbody.appendChild(tr);
+    renderStatus("Loaded 0 users");
+    return;
+  }
+  filtered.forEach(user => {
+    const tr = document.createElement("tr");
+    tr.dataset.userId = user.id;
+    editableFields.forEach(({ field, type }) => {
+      tr.appendChild(createEditableCell(user, field, type));
+    });
+    tr.appendChild(createAvatarCell(user));
+    tr.appendChild(createCell(formatList(user.roles)));
+    tr.appendChild(createCell(formatList(user.teachers)));
+    tr.appendChild(createCell(formatList(user.instruments)));
+    tr.appendChild(createCell(user.points));
+    tr.appendChild(createCell(user.level));
+    tr.appendChild(createActionsCell(tr));
+    tbody.appendChild(tr);
+  });
+  renderStatus(`Loaded ${filtered.length} user${filtered.length === 1 ? "" : "s"}`);
+}
+
+function createCell(value) {
+  const td = document.createElement("td");
+  td.textContent = value || "—";
+  return td;
+}
+
+function createEditableCell(user, field, type = "text") {
+  const td = document.createElement("td");
+  const span = document.createElement("span");
+  span.className = "cell-text";
+  span.dataset.field = field;
+  span.textContent = getUserFieldValue(user, field) || "—";
+  const input = document.createElement("input");
+  input.className = "cell-input";
+  input.dataset.field = field;
+  input.type = type;
+  input.value = getUserFieldValue(user, field);
+  input.hidden = true;
+  td.appendChild(span);
+  td.appendChild(input);
+  return td;
+}
+
+function getUserFieldValue(user, field) {
+  switch (field) {
+    case "firstName":
+      return user.firstName || user.first_name || "";
+    case "lastName":
+      return user.lastName || user.last_name || "";
+    case "email":
+      return user.email || "";
+    default:
+      return user[field] || "";
+  }
+}
+
+function createAvatarCell(user) {
+  const td = document.createElement("td");
+  const img = document.createElement("img");
+  img.className = "avatar-sm";
+  img.src = user.avatar || user.avatar_url || "images/logos/logo.png";
+  img.alt = `${user.firstName || user.first_name || "user"} avatar`;
+  td.appendChild(img);
+  return td;
+}
+
+function createActionsCell(row) {
+  const td = document.createElement("td");
+  td.className = "actions-cell";
+  const editBtn = document.createElement("button");
+  editBtn.type = "button";
+  editBtn.className = "blue-button edit-btn";
+  editBtn.textContent = "Edit";
+  const saveBtn = document.createElement("button");
+  saveBtn.type = "button";
+  saveBtn.className = "blue-button save-btn";
+  saveBtn.textContent = "Save";
+  saveBtn.hidden = true;
+  const cancelBtn = document.createElement("button");
+  cancelBtn.type = "button";
+  cancelBtn.className = "blue-button cancel-btn btn-ghost";
+  cancelBtn.textContent = "Cancel";
+  cancelBtn.hidden = true;
+  editBtn.addEventListener("click", () => enterEditMode(row));
+  saveBtn.addEventListener("click", () => saveRow(row));
+  cancelBtn.addEventListener("click", () => cancelEditMode(row));
+  td.appendChild(editBtn);
+  td.appendChild(saveBtn);
+  td.appendChild(cancelBtn);
+  return td;
+}
+
+function toggleActionButtons(row, editing) {
+  const editBtn = row.querySelector(".edit-btn");
+  const saveBtn = row.querySelector(".save-btn");
+  const cancelBtn = row.querySelector(".cancel-btn");
+  if (editBtn) editBtn.hidden = editing;
+  if (saveBtn) saveBtn.hidden = !editing;
+  if (cancelBtn) cancelBtn.hidden = !editing;
+}
+
+function enterEditMode(row) {
+  if (!row) return;
+  if (currentEditingRow && currentEditingRow !== row) {
+    cancelEditMode(currentEditingRow);
+  }
+  currentEditingRow = row;
+  row.classList.add("is-editing");
+  row.querySelectorAll(".cell-text").forEach(span => (span.hidden = true));
+  row.querySelectorAll(".cell-input").forEach(input => (input.hidden = false));
+  toggleActionButtons(row, true);
+}
+
+function cancelEditMode(row) {
+  if (!row) return;
+  const user = allUsers.find(u => String(u.id) === String(row.dataset.userId));
+  if (!user) return;
+  row.classList.remove("is-editing");
+  row.querySelectorAll(".cell-input").forEach(input => {
+    input.value = getUserFieldValue(user, input.dataset.field);
+    input.hidden = true;
+  });
+  row.querySelectorAll(".cell-text").forEach(span => {
+    span.textContent = getUserFieldValue(user, span.dataset.field) || "—";
+    span.hidden = false;
+  });
+  toggleActionButtons(row, false);
+  if (currentEditingRow === row) currentEditingRow = null;
+}
+
+async function saveRow(row) {
+  if (!row) return;
+  const userId = row.dataset.userId;
+  const user = allUsers.find(u => String(u.id) === String(userId));
+  if (!user) return;
+  const updates = {};
+  row.querySelectorAll(".cell-input").forEach(input => {
+    const field = input.dataset.field;
+    const newValue = input.value.trim();
+    const oldValue = getUserFieldValue(user, field);
+    if (newValue !== oldValue) {
+      updates[field] = newValue;
+    }
+  });
+  if (!Object.keys(updates).length) {
+    renderStatus("No changes to save.");
+    cancelEditMode(row);
+    return;
+  }
+  renderStatus("Saving…");
+  const { error } = await supabase.from("users").update(updates).eq("id", userId);
+  if (error) {
+    renderStatus("Save failed: " + error.message, true);
+    console.error(error);
+    return;
+  }
+  Object.assign(user, updates);
+  row.querySelectorAll(".cell-text").forEach(span => {
+    span.textContent = getUserFieldValue(user, span.dataset.field) || "—";
+  });
+  renderStatus("Saved.");
+  cancelEditMode(row);
+}
+
+function ensureArray(value) {
+  if (!value) return [];
+  return Array.isArray(value) ? value : [value];
+}
+
+function normalizeUser(entry, source = "member") {
+  const userData = entry.users || entry;
+  return {
+    id: userData.id || entry.user_id || entry.userId,
+    firstName: userData.first_name || userData.firstName || "",
+    lastName: userData.last_name || userData.lastName || "",
+    email: userData.email || "",
+    avatar: userData.avatar_url || userData.avatarUrl || userData.avatar || "",
+    roles: ensureArray(entry.roles || userData.roles),
+    teachers: ensureArray(entry.teachers || userData.teacherIds || userData.teachers),
+    instruments: ensureArray(entry.instruments || userData.instruments || userData.instrument),
+    points: userData.points ?? "",
+    level: userData.level ?? ""
+  };
+}
+
+async function fetchFromStudioMembers(studioId) {
+  const { data, error } = await supabase
+    .from("studio_members")
+    .select("user_id, roles, teachers, instruments, users:users(*)")
+    .eq("studio_id", studioId);
+  if (error) throw new Error("studio_members query failed: " + error.message);
+  return data.map(entry => normalizeUser(entry, "member"));
+}
+
+async function fetchFromUsers(studioId) {
+  const { data, error } = await supabase
+    .from("users")
+    .select("*")
+    .eq("studio_id", studioId);
+  if (error) throw new Error("users query failed: " + error.message);
+  return data.map(entry => normalizeUser(entry, "users"));
+}
+
+async function resolveStudioId() {
+  const viewerContext = await getViewerContext();
+  if (viewerContext?.studioId) return viewerContext.studioId;
+  const stored = localStorage.getItem("activeStudioId");
+  if (stored) return stored;
+  throw new Error("Studio ID not found in viewer context or storage.");
+}
+
+async function loadUsers() {
+  renderStatus(STATUS_LOADING);
+  const studioId = await resolveStudioId();
+  try {
+    allUsers = await fetchFromStudioMembers(studioId);
+  } catch (err) {
+    console.warn("[ManageUsers] studio_members unavailable:", err.message);
+  }
+  if (!allUsers.length) {
+    try {
+      allUsers = await fetchFromUsers(studioId);
+    } catch (err) {
+      throw new Error("Manage Users: could not load users — check table names (users / studio_members).");
+    }
+  }
+}
+
+async function initManageUsersPanel() {
+  const tableBody = document.getElementById("userTableBody");
+  const searchInput = document.getElementById("manageUsersSearch");
+  const statusEl = document.getElementById("manageUsersStatus");
+  if (!tableBody || !statusEl) return;
+  searchQuery = searchInput?.value || "";
+  try {
+    await loadUsers();
+    renderUsers();
+  } catch (err) {
+    console.error(err);
+    renderStatus(err.message, true);
+  }
+  if (searchInput && !searchHandlerBound) {
+    searchHandlerBound = true;
+    searchInput.addEventListener("input", event => {
+      searchQuery = event.target.value || "";
+      renderUsers();
+    });
+  }
+}
+
+window.initManageUsersPanel = initManageUsersPanel;
+document.addEventListener("DOMContentLoaded", initManageUsersPanel);

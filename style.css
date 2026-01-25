@@ -2996,6 +2996,19 @@ body.settings-page .settings-panel-host {
   min-width: 180px;
 }
 
+.manage-users-status {
+  font-size: 0.95rem;
+  color: #0b4f8a;
+  margin: 8px 0 12px;
+}
+
+.avatar-sm {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
 body.settings-page .section-head {
   display: flex;
   align-items: center;
