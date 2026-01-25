@@ -149,3 +149,41 @@
   align-items: center !important;
   gap: 10px !important;
 }
+
+/* ================================ */
+/* Embedded “Account Holder” Card Style */
+/* ================================ */
+
+.settings-panel-host {
+  --embed-card-bg: #ffffff;
+  --embed-card-border: rgba(0, 71, 125, 0.18);
+  --embed-card-radius: 26px;
+  --embed-card-pad: 22px;
+}
+
+.settings-panel-host [data-embed-root].is-embedded .embed-panel-body > :first-child,
+.settings-panel-host [data-embed-root].is-embedded .embed-panel-body > :nth-child(2) {
+  background: var(--embed-card-bg) !important;
+  border: 2px solid var(--embed-card-border) !important;
+  border-radius: var(--embed-card-radius) !important;
+  padding: var(--embed-card-pad) !important;
+  box-shadow: none !important;
+}
+
+.settings-panel-host [data-embed-root].is-embedded .embed-panel-body label {
+  display: block;
+  margin: 0 0 8px !important;
+}
+
+.settings-panel-host [data-embed-root].is-embedded .embed-panel-body .field,
+.settings-panel-host [data-embed-root].is-embedded .embed-panel-body .form-group {
+  margin: 0 0 18px !important;
+}
+
+.settings-panel-host [data-embed-root].is-embedded .embed-panel-body button,
+.settings-panel-host [data-embed-root].is-embedded .embed-panel-body .blue-button {
+  padding: 10px 18px !important;
+  font-size: 18px !important;
+  border-radius: 18px !important;
+  width: auto !important;
+}
