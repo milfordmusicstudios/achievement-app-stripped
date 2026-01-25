@@ -250,3 +250,11 @@
   font-size: 28px !important;
   margin: 18px 0 10px !important;
 }
+
+.settings-panel-host [data-embed-root].is-embedded .embed-pending {
+  background: #f5f9ff !important;
+  border: 2px solid rgba(0, 71, 125, 0.18) !important;
+  border-radius: 18px;
+  padding: 12px;
+  box-shadow: none !important;
+}

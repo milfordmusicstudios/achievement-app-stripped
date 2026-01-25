@@ -130,6 +130,12 @@ a.big-fun-btn {
   justify-content: center;
 }
 
+.pw-toggle svg {
+  width: 20px;
+  height: 20px;
+  stroke-width: 2;
+}
+
 button:focus-visible,
 a.nav-btn:focus-visible,
 a.big-fun-btn:focus-visible {
