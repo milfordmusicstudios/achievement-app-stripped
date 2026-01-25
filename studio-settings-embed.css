@@ -254,10 +254,18 @@
   margin: 18px 0 10px !important;
 }
 
+.settings-panel-host [data-embed-root].is-embedded .manage-users-panel,
+.settings-panel-host [data-embed-root].is-embedded .manage-users-table-wrap {
+  height: auto !important;
+  max-height: none !important;
+  overflow-y: visible !important;
+}
+
 .settings-panel-host [data-embed-root].is-embedded .manage-users-table-wrap {
   overflow-x: auto !important;
   overflow-y: visible !important;
   -webkit-overflow-scrolling: touch;
+  padding-bottom: 10px;
 }
 
 .settings-panel-host [data-embed-root].is-embedded table.manage-users-table {
@@ -294,4 +302,71 @@
   border-radius: 18px;
   padding: 12px;
   box-shadow: none !important;
+}
+
+/* Allow the Manage Users embed to break out of the accordion */
+.studio-settings-page .accordion-card[data-section="manage-users"] {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  overflow: visible;
+}
+.studio-settings-page .accordion-card[data-section="manage-users"] .accordion-header {
+  background: transparent;
+  border-bottom: 1px solid rgba(11, 79, 138, 0.12);
+}
+.studio-settings-page .accordion-card[data-section="manage-users"] .accordion-body {
+  padding: 0;
+  max-width: none;
+  overflow: visible;
+}
+.studio-settings-page .accordion-card[data-section="manage-users"] .accordion-panel-content {
+  padding: 0;
+  margin: 0;
+  width: 100%;
+}
+.studio-settings-page #panel-manage-users.settings-panel-host {
+  padding: 0;
+}
+.studio-settings-page #panel-manage-users {
+  width: 100vw;
+  max-width: none;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  position: relative;
+  left: 0;
+  overflow: visible;
+}
+.studio-settings-page #panel-manage-users .settings-embed {
+  width: 100%;
+}
+.studio-settings-page #panel-manage-users .embed-panel-body {
+  width: 100%;
+  max-width: none;
+}
+
+/* Flatten invite embed so the blue card sits directly in the accordion */
+.studio-settings-page .accordion-card[data-section="invite-student"] {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.studio-settings-page .accordion-card[data-section="invite-student"] .accordion-body {
+  padding: 0;
+  max-width: none;
+}
+.studio-settings-page .accordion-card[data-section="invite-student"] .accordion-panel-content {
+  padding: 0;
+  margin: 0;
+  width: 100%;
+}
+.studio-settings-page #panel-invite-student.settings-panel-host {
+  padding: 0;
+}
+.studio-settings-page #panel-invite-student {
+  margin: 0;
+  max-width: none;
+  background: transparent;
 }

@@ -28,12 +28,12 @@
   </main>
 
   <div data-embed-root class="settings-embed">
-      <div class="embed-panel-body embed-account-card">
+    <div class="embed-panel-body embed-account-card">
+      <div class="manage-users-panel">
         <div id="actionBar" class="manage-users-action">
           <input type="text" id="manageUsersSearch" placeholder="Search users by name or email" />
         </div>
-        <div id="manageUsersStatus" class="manage-users-status">Loading usersâ€¦</div>
-        <!-- Single Scrollable Table -->
+        <div id="manageUsersStatus" class="manage-users-status">Loading users…</div>
         <div id="usersScrollWrapper" class="manage-users-table-wrap">
           <table id="userHeaderTable" class="manage-users-table">
             <thead>
@@ -51,13 +51,12 @@
               </tr>
             </thead>
             <tbody id="userTableBody">
-          <!-- Rows inserted dynamically -->
-        </tbody>
-      </table>
-    </div>
-
-      <!-- Pagination -->
-      <div id="paginationControls"></div>
+              <!-- Rows inserted dynamically -->
+            </tbody>
+          </table>
+        </div>
+        <div id="paginationControls"></div>
+      </div>
     </div>
   </div>
 
