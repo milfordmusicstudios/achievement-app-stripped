@@ -94,3 +94,58 @@
   border: 1px solid rgba(0,0,0,.25) !important;
   box-shadow: none !important;
 }
+
+/* ================================ */
+/* Embedded panel “un-bloat” */
+/* ================================ */
+
+.settings-panel-host [data-embed-root].is-embedded .embed-panel-body {
+  padding: 0 !important;
+  margin: 0 !important;
+  max-width: 100% !important;
+}
+
+.settings-panel-host [data-embed-root].is-embedded .embed-panel-body .section,
+.settings-panel-host [data-embed-root].is-embedded .embed-panel-body .block,
+.settings-panel-host [data-embed-root].is-embedded .embed-panel-body .stack,
+.settings-panel-host [data-embed-root].is-embedded .embed-panel-body .card,
+.settings-panel-host [data-embed-root].is-embedded .embed-panel-body .settings-card,
+.settings-panel-host [data-embed-root].is-embedded .embed-panel-body .panel {
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+.settings-panel-host [data-embed-root].is-embedded h1,
+.settings-panel-host [data-embed-root].is-embedded h2 {
+  font-size: 22px !important;
+  margin: 14px 0 10px !important;
+}
+
+.settings-panel-host [data-embed-root].is-embedded h3 {
+  font-size: 18px !important;
+  margin: 12px 0 8px !important;
+}
+
+.settings-panel-host [data-embed-root].is-embedded button,
+.settings-panel-host [data-embed-root].is-embedded .blue-button,
+.settings-panel-host [data-embed-root].is-embedded .btn {
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  padding: 10px 16px !important;
+  font-size: 16px !important;
+  border-radius: 14px !important;
+}
+
+.settings-panel-host [data-embed-root].is-embedded .button-row,
+.settings-panel-host [data-embed-root].is-embedded .actions,
+.settings-panel-host [data-embed-root].is-embedded .cta,
+.settings-panel-host [data-embed-root].is-embedded .form-actions {
+  display: flex !important;
+  justify-content: flex-start !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
