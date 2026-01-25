@@ -146,6 +146,73 @@
   gap: 10px !important;
 }
 
+.settings-panel-host [data-embed-root].is-embedded .embed-panel-body .invite-card,
+.settings-panel-host [data-embed-root].is-embedded .embed-panel-body .form-card,
+.settings-panel-host [data-embed-root].is-embedded .embed-panel-body .card,
+.settings-panel-host [data-embed-root].is-embedded .embed-panel-body .panel {
+  border: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+}
+
+.settings-panel-host [data-embed-root].is-embedded .embed-account-card {
+  background: #fff !important;
+  border: 2px solid rgba(0, 71, 125, 0.14) !important;
+  border-radius: 22px !important;
+  padding: 0 !important;
+  overflow: hidden;
+}
+
+.settings-panel-host [data-embed-root].is-embedded .embed-row {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 16px;
+  align-items: center;
+  padding: 22px;
+}
+
+.settings-panel-host [data-embed-root].is-embedded .embed-label {
+  font-weight: 800;
+  font-size: 22px;
+  color: #003b66;
+}
+
+.settings-panel-host [data-embed-root].is-embedded .embed-field input,
+.settings-panel-host [data-embed-root].is-embedded .embed-field select {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+.settings-panel-host [data-embed-root].is-embedded .embed-divider {
+  height: 2px;
+  background: rgba(0, 71, 125, 0.10);
+}
+
+.settings-panel-host [data-embed-root].is-embedded .embed-actions {
+  padding: 18px 22px 8px;
+}
+
+.settings-panel-host [data-embed-root].is-embedded .embed-actions button,
+.settings-panel-host [data-embed-root].is-embedded .embed-actions .blue-button {
+  padding: 10px 16px !important;
+  font-size: 16px !important;
+  border-radius: 16px !important;
+  width: auto !important;
+}
+
+.settings-panel-host [data-embed-root].is-embedded .embed-subhead {
+  text-align: center;
+  font-size: 28px !important;
+  margin: 18px 0 10px !important;
+}
+
+.settings-panel-host [data-embed-root].is-embedded .embed-pending {
+  padding: 0 22px 22px;
+}
+
 /* ================================ */
 /* Embedded “Account Holder” Card Style */
 /* ================================ */
