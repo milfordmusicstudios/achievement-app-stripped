@@ -1499,17 +1499,17 @@ function renderStaffQuickLogShell() {
   mount.innerHTML = `
     <section class="home-staff staff-only" aria-label="Staff quick log">
       <form id="staffQuickLogForm" class="staff-card">
+        <label for="staffStudents">Students</label>
+        <select id="staffStudents" multiple required disabled>
+          <option value="">Loading...</option>
+        </select>
+
         <div class="ql-category-pop">
           <label for="staffCategory">Category</label>
           <select id="staffCategory" required disabled>
             <option value="">Loading...</option>
           </select>
         </div>
-
-        <label for="staffStudents">Students</label>
-        <select id="staffStudents" multiple required disabled>
-          <option value="">Loading...</option>
-        </select>
 
         <label>Dates</label>
         <button id="staffCalendarToggle" class="blue-button staff-calendar-toggle" type="button">

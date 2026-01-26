@@ -157,8 +157,12 @@
     }
 
     setStatus("Logged. ✅");
+    form?.reset();
+    if (studentSelect) studentSelect.value = "";
+    if (categorySelect) categorySelect.value = "";
     if (pointsInput) pointsInput.value = "";
     if (notesInput) notesInput.value = "";
+    defaultDate();
   }
 
   async function init() {

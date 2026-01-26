@@ -1083,7 +1083,7 @@ body.is-admin #roleBadgeTeacher {
 .toast {
   position: fixed;
   left: 50%;
-  bottom: 26px;
+  bottom: calc(var(--bottom-nav-h, 64px) + 12px);
   transform: translateX(-50%);
   background: rgba(0,0,0,0.82);
   color: #fff;
@@ -1092,7 +1092,7 @@ body.is-admin #roleBadgeTeacher {
   font-weight: 800;
   opacity: 0;
   transition: opacity 0.25s ease;
-  z-index: 9999;
+  z-index: 11000;
 }
 .toast.show { opacity: 1; }
 
