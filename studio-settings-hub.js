@@ -2,11 +2,40 @@ import { supabase } from "./supabaseClient.js";
 import { getViewerContext, getAuthUserId, getActiveStudioIdForUser } from "./utils.js";
 
 const PANEL_URLS = {
-  "manage-users": "manage-users.html",
-  "invite-student": "invite-student.html"
+  "manage-users": "manage-users.html"
 };
 
 const DEFAULT_STUDIO_LOGO = "images/logos/logo.png";
+
+function toggleInviteModal(open) {
+  const modal = document.getElementById("inviteUserModal");
+  if (!modal) return;
+  modal.classList.toggle("is-open", Boolean(open));
+  modal.setAttribute("aria-hidden", open ? "false" : "true");
+  if (open) {
+    const emailField = modal.querySelector("#inviteEmail");
+    emailField?.focus();
+  }
+}
+
+function setupInviteModal() {
+  const modal = document.getElementById("inviteUserModal");
+  if (!modal) return;
+  const openBtn = document.getElementById("inviteUserOpenBtn");
+  const closeBtn = document.getElementById("inviteUserCloseBtn");
+  openBtn?.addEventListener("click", () => toggleInviteModal(true));
+  closeBtn?.addEventListener("click", () => toggleInviteModal(false));
+  modal.addEventListener("click", event => {
+    if (event.target === modal) {
+      toggleInviteModal(false);
+    }
+  });
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape" && modal.classList.contains("is-open")) {
+      toggleInviteModal(false);
+    }
+  });
+}
 
 function extractEmbedHTML(fullHTML) {
   const parser = new DOMParser();
@@ -131,6 +160,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (logoEl) {
     logoEl.alt = studio?.name ? `${studio.name} logo` : "Studio logo";
   }
+
+  setupInviteModal();
 
   document.querySelectorAll(".accordion-card").forEach(card => {
     const header = card.querySelector(".accordion-header");

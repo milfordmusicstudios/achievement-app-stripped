@@ -33,16 +33,10 @@
               <button type="button" class="accordion-header" aria-expanded="false">Manage Users</button>
               <div class="accordion-body" hidden>
                 <div class="accordion-panel-content">
+                  <div class="manage-users-invite" style="margin-bottom:12px;">
+                    <button id="inviteUserOpenBtn" type="button" class="blue-button">Invite User</button>
+                  </div>
                   <div id="panel-manage-users" class="panel-root settings-panel-host" data-panel="manage-users"></div>
-                </div>
-              </div>
-            </div>
-
-            <div class="accordion-card" data-section="invite-student">
-              <button type="button" class="accordion-header" aria-expanded="false">Invite Student/Staff</button>
-              <div class="accordion-body" hidden>
-                <div class="accordion-panel-content">
-                  <div id="panel-invite-student" class="panel-root settings-panel-host" data-panel="invite-student"></div>
                 </div>
               </div>
             </div>
@@ -236,6 +230,62 @@
               </div>
             </div>
           </div>
+          <div id="inviteUserModal" class="modal-overlay" aria-hidden="true" role="dialog" aria-modal="true">
+            <div class="modal-card">
+              <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px;">
+                <h3 style="margin:0; font-size:20px;">Invite Student/Staff</h3>
+                <button
+                  id="inviteUserCloseBtn"
+                  type="button"
+                  aria-label="Close invite modal"
+                  style="border:none; background:rgba(11,79,138,0.1); border-radius:10px; padding:4px 10px; font-weight:900; cursor:pointer;"
+                >×</button>
+              </div>
+              <div class="modal-body" style="display:flex; flex-direction:column; gap:12px;">
+                <form id="inviteForm" class="settings-form" style="max-width:520px; width:100%;">
+                  <div class="embed-row">
+                    <div class="embed-label">Email</div>
+                    <div class="embed-field">
+                      <input id="inviteEmail" type="email" required />
+                    </div>
+                  </div>
+                  <div class="embed-divider"></div>
+                  <div class="embed-row">
+                    <div class="embed-label">Role</div>
+                    <div class="embed-field">
+                      <select id="inviteRole" required>
+                        <option value="">Select role</option>
+                        <option value="student">Student</option>
+                        <option value="parent">Parent</option>
+                        <option value="teacher">Teacher</option>
+                        <option value="admin">Admin</option>
+                      </select>
+                    </div>
+                  </div>
+                  <p id="inviteError" style="color:#c62828; display:none; margin-top:10px;"></p>
+                  <p id="inviteSuccess" style="color:#0b7a3a; display:none; margin-top:10px;"></p>
+                  <div class="embed-actions">
+                    <div class="button-row" style="margin-top:14px;">
+                      <button type="submit" class="blue-button">Create Invite</button>
+                    </div>
+                  </div>
+                </form>
+
+                <div id="inviteLinkBox" style="display:none; margin-top:16px;">
+                  <div style="font-weight:700; margin-bottom:6px;">Invite link</div>
+                  <input id="inviteLinkInput" type="text" readonly style="width:100%;" />
+                  <button id="copyInviteBtn" class="blue-button" type="button" style="margin-top:8px;">Copy invite link</button>
+                </div>
+
+                <h3 class="embed-subhead">Pending Invites</h3>
+                <div class="embed-pending">
+                  <div style="margin-top:24px;">
+                    <div id="pendingInvites" style="display:grid; gap:10px;"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </section>
       </div>
     </main>
@@ -249,5 +299,6 @@
   <script type="module" src="studio-settings.js"></script>
   <script type="module" src="studio-settings-hub.js"></script>
   <script type="module" src="manage-users.js"></script>
+  <script type="module" src="invite-staff.js"></script>
 </body>
 </html>
