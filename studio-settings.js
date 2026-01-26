@@ -19,6 +19,120 @@ function safeSetValue(id, value) {
   el.value = value ?? "";
 }
 
+const TOGGLE_IDS = [
+  "teacherCanLogPoints",
+  "teacherCanApproveLogs",
+  "teacherCanCreateChallenges",
+  "teacherChallengesRequireApproval",
+  "adminOnLogSubmitted",
+  "adminOnLogFlagged",
+  "adminOnLevelUp",
+  "badgesEnabled"
+];
+
+let createChallengesCheckbox;
+let approvalCheckbox;
+let approvalRow;
+let leaderboardStudioRadio;
+let leaderboardGlobalRadio;
+let scopeToggleButton;
+
+function updateChallengeUI() {
+  const enabled = createChallengesCheckbox?.checked;
+  if (approvalCheckbox) approvalCheckbox.disabled = !enabled;
+  if (approvalRow) {
+    approvalRow.classList.toggle("disabled-row", !enabled);
+  }
+}
+
+function updateGlobalToggleUI() {
+  const isGlobal = leaderboardGlobalRadio?.checked;
+  if (!scopeToggleButton) return;
+  scopeToggleButton.classList.toggle("enabled", Boolean(isGlobal));
+  scopeToggleButton.classList.toggle("disabled", !isGlobal);
+  scopeToggleButton.textContent = isGlobal ? "Allow Global View" : "Studio Only";
+  scopeToggleButton.setAttribute("aria-pressed", String(Boolean(isGlobal)));
+}
+
+function updateToggleButtonVisual(id) {
+  const checkbox = document.getElementById(id);
+  const button = document.querySelector(`[data-toggle-target="${id}"]`);
+  if (!checkbox || !button) return;
+  const enabled = Boolean(checkbox.checked);
+  button.classList.toggle("enabled", enabled);
+  button.classList.toggle("disabled", !enabled);
+  button.textContent = enabled ? "Enabled" : "Disabled";
+  button.setAttribute("aria-pressed", String(enabled));
+}
+
+function updateAllToggleButtons() {
+  TOGGLE_IDS.forEach(updateToggleButtonVisual);
+}
+
+function setupToggleButtons() {
+  TOGGLE_IDS.forEach(id => {
+    const checkbox = document.getElementById(id);
+    const button = document.querySelector(`[data-toggle-target="${id}"]`);
+    if (!checkbox || !button) return;
+    button.addEventListener("click", () => {
+      checkbox.checked = !checkbox.checked;
+      updateToggleButtonVisual(id);
+      if (id === "teacherCanCreateChallenges") {
+        updateChallengeUI();
+      }
+    });
+  });
+}
+
+function setupScopeToggle() {
+  scopeToggleButton = document.querySelector("[data-scope-toggle]");
+  leaderboardStudioRadio = document.getElementById("leaderboardStudioOnly");
+  leaderboardGlobalRadio = document.getElementById("leaderboardGlobal");
+  scopeToggleButton?.addEventListener("click", () => {
+    const currentlyGlobal = Boolean(leaderboardGlobalRadio?.checked);
+    if (currentlyGlobal) {
+      leaderboardStudioRadio && (leaderboardStudioRadio.checked = true);
+    } else {
+      leaderboardGlobalRadio && (leaderboardGlobalRadio.checked = true);
+    }
+    updateGlobalToggleUI();
+  });
+}
+
+function setupHintToggles() {
+  document.querySelectorAll(".hint-toggle").forEach(btn => {
+    const targetId = btn.dataset.hintTarget;
+    const hint = targetId && document.getElementById(targetId);
+    if (!hint) return;
+    btn.addEventListener("click", () => {
+      const visible = !hint.hasAttribute("hidden");
+      if (visible) {
+        hint.setAttribute("hidden", "");
+        btn.setAttribute("aria-expanded", "false");
+      } else {
+        hint.removeAttribute("hidden");
+        btn.setAttribute("aria-expanded", "true");
+      }
+    });
+  });
+}
+
+function refreshStudioFormInteractions() {
+  updateAllToggleButtons();
+  updateChallengeUI();
+  updateGlobalToggleUI();
+}
+
+function setupStudioFormInteractions() {
+  createChallengesCheckbox = document.getElementById("teacherCanCreateChallenges");
+  approvalCheckbox = document.getElementById("teacherChallengesRequireApproval");
+  approvalRow = document.getElementById("challengeApprovalRow");
+  setupToggleButtons();
+  setupScopeToggle();
+  setupHintToggles();
+  refreshStudioFormInteractions();
+}
+
 function handleSettings(settings = {}) {
   const permissions = settings.permissions || {};
   const challenges = settings.challenges || {};
@@ -46,17 +160,17 @@ function handleSettings(settings = {}) {
   safeCheck("adminOnLevelUp", notifications.adminOnLevelUp);
 
   safeCheck("badgesEnabled", badges.enabled);
+  refreshStudioFormInteractions();
 }
+
+const DEFAULT_STUDIO_PREVIEW = "images/logos/logo.png";
 
 function showPreview(url) {
   const preview = document.getElementById("studioLogoPreview");
   if (!preview) return;
-  if (url) {
-    preview.src = url;
-    preview.style.display = "block";
-  } else {
-    preview.style.display = "none";
-  }
+  const nextSrc = url || DEFAULT_STUDIO_PREVIEW;
+  preview.src = nextSrc;
+  preview.style.display = "block";
 }
 
 async function loadStudioSettings() {
@@ -98,4 +212,7 @@ async function loadStudioSettings() {
   }
 }
 
-document.addEventListener("DOMContentLoaded", loadStudioSettings);
+document.addEventListener("DOMContentLoaded", () => {
+  setupStudioFormInteractions();
+  loadStudioSettings();
+});

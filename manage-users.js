@@ -111,7 +111,32 @@ function createEditableCell(user, field, type = "text") {
   input.type = type;
   input.value = getUserFieldValue(user, field);
   input.hidden = true;
-  td.appendChild(span);
+
+  if (field === "firstName") {
+    const wrapper = document.createElement("div");
+    wrapper.className = "first-name-wrapper";
+    const pencilBtn = document.createElement("button");
+    pencilBtn.type = "button";
+    pencilBtn.className = "edit-pencil";
+    pencilBtn.setAttribute("aria-label", "Edit user");
+    pencilBtn.innerHTML = `
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M5 20h14" />
+        <path d="M17.4 4.6a2 2 0 0 1 2.8 2.8l-9.7 9.7H7v-4.5z" />
+      </svg>
+    `;
+    pencilBtn.addEventListener("click", event => {
+      event.preventDefault();
+      const row = td.closest("tr");
+      if (row) enterEditMode(row);
+    });
+    wrapper.appendChild(pencilBtn);
+    wrapper.appendChild(span);
+    td.appendChild(wrapper);
+  } else {
+    td.appendChild(span);
+  }
+
   td.appendChild(input);
   return td;
 }
@@ -142,10 +167,6 @@ function createAvatarCell(user) {
 function createActionsCell(row) {
   const td = document.createElement("td");
   td.className = "actions-cell";
-  const editBtn = document.createElement("button");
-  editBtn.type = "button";
-  editBtn.className = "blue-button edit-btn";
-  editBtn.textContent = "Edit";
   const saveBtn = document.createElement("button");
   saveBtn.type = "button";
   saveBtn.className = "blue-button save-btn";
@@ -156,22 +177,20 @@ function createActionsCell(row) {
   cancelBtn.className = "blue-button cancel-btn btn-ghost";
   cancelBtn.textContent = "Cancel";
   cancelBtn.hidden = true;
-  editBtn.addEventListener("click", () => enterEditMode(row));
   saveBtn.addEventListener("click", () => saveRow(row));
   cancelBtn.addEventListener("click", () => cancelEditMode(row));
-  td.appendChild(editBtn);
   td.appendChild(saveBtn);
   td.appendChild(cancelBtn);
   return td;
 }
 
 function toggleActionButtons(row, editing) {
-  const editBtn = row.querySelector(".edit-btn");
   const saveBtn = row.querySelector(".save-btn");
   const cancelBtn = row.querySelector(".cancel-btn");
-  if (editBtn) editBtn.hidden = editing;
+  const pencilBtn = row.querySelector(".edit-pencil");
   if (saveBtn) saveBtn.hidden = !editing;
   if (cancelBtn) cancelBtn.hidden = !editing;
+  if (pencilBtn) pencilBtn.hidden = editing;
 }
 
 function enterEditMode(row) {

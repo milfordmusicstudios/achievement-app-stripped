@@ -46,11 +46,13 @@
                   <div class="row-label">
                     <label for="studioLogoFile">Studio Logo</label>
                   </div>
-                  <div class="row-value" style="display:flex; flex-direction:column; gap:8px;">
-                    <input id="studioLogoFile" type="file" accept="image/*" />
-                    <img id="studioLogoPreview" alt="Studio logo preview" style="display:none; max-width:160px; border-radius:12px; border:1px solid rgba(0, 71, 125, 0.25);" />
-                    <button id="uploadLogoBtn" type="button" class="blue-button" style="width:auto !important; min-width:160px !important;">Upload Logo</button>
-                  </div>
+                <div class="row-value">
+                  <label for="studioLogoFile" class="logo-upload-area">
+                    <img id="studioLogoPreview" alt="Studio logo preview" style="display:none;" />
+                    <span class="logo-upload-text">Click to replace logo</span>
+                  </label>
+                  <input id="studioLogoFile" type="file" accept="image/*" hidden />
+                </div>
                   <div></div>
                 </div>
               </div>

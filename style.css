@@ -3118,6 +3118,40 @@ body.settings-page .edit-btn {
   font-weight: 800;
 }
 
+body.settings-page .first-name-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+body.settings-page .edit-pencil {
+  width: 30px;
+  height: 30px;
+  border-radius: 12px;
+  border: 1px solid #0b4f8a;
+  background: #ffffff;
+  color: #0b4f8a;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+  box-shadow: none;
+}
+
+body.settings-page .edit-pencil svg {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  fill: none;
+}
+
+body.settings-page .edit-pencil:hover {
+  border-color: #0b2272;
+  background: rgba(11, 79, 138, 0.1);
+}
+
 body.settings-page .settings-row.link-row {
   grid-template-columns: 1fr auto;
 }
@@ -3382,6 +3416,166 @@ body.settings-page .settings-error {
 body.settings-page .settings-hint {
   font-size: 13px;
   color: #4c6a88;
+}
+
+body.settings-page .studio-controls-form .settings-actions {
+  justify-content: center;
+  gap: 12px;
+}
+
+body.settings-page .studio-controls-form .blue-button {
+  min-width: 110px;
+  padding: 6px 16px;
+  font-size: 15px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+body.settings-page .studio-controls-form input[type="checkbox"],
+body.settings-page .studio-controls-form input[type="radio"] {
+  display: none !important;
+}
+
+body.settings-page .logo-upload-area {
+  border: 1px dashed rgba(0, 71, 125, 0.45);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+  background: #fff;
+  width: 100%;
+  max-width: 240px;
+}
+
+body.settings-page .logo-upload-area:hover {
+  border-color: rgba(11, 79, 138, 0.7);
+  box-shadow: 0 6px 14px rgba(11, 79, 138, 0.15);
+}
+
+body.settings-page .logo-upload-area img {
+  display: block;
+  width: 160px;
+  max-width: 100%;
+  max-height: 160px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 71, 125, 0.25);
+}
+
+body.settings-page .logo-upload-text {
+  font-size: 13px;
+  color: #4c6a88;
+}
+
+body.settings-page .studio-controls-form .toggle-button {
+  min-width: 105px;
+  padding: 4px 12px;
+  height: 32px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  background: #f0f4ff;
+  color: #0b4f8a;
+  transition: background 150ms ease, color 150ms ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+body.settings-page .studio-controls-form .toggle-button.enabled {
+  background: #0b4f8a;
+  color: #fff;
+}
+
+body.settings-page .studio-controls-form .toggle-button.disabled {
+  background: #dfe6f3;
+  color: #0b4f8a;
+}
+
+.studio-controls-form .toggle-row-value {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+body.settings-page .studio-controls-form .scope-toggle-btn {
+  min-width: 150px;
+  border-radius: 12px;
+  border: none;
+  padding: 8px 14px;
+  font-weight: 700;
+  cursor: pointer;
+  background: #dfe6f3;
+  color: #0b4f8a;
+  transition: background 150ms ease, color 150ms ease;
+}
+
+body.settings-page .studio-controls-form .scope-toggle-btn.active {
+  background: #0b4f8a;
+  color: #fff;
+}
+
+body.settings-page .studio-controls-form .scope-toggle-single {
+  min-width: 150px;
+  border-radius: 12px;
+  border: none;
+  padding: 6px 14px;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 150ms ease, color 150ms ease;
+}
+
+body.settings-page .studio-controls-form .scope-toggle-single.enabled {
+  background: #0b4f8a;
+  color: #fff;
+}
+
+body.settings-page .studio-controls-form .scope-toggle-single.disabled {
+  background: #dfe6f3;
+  color: #0b4f8a;
+}
+
+body.settings-page .studio-controls-form .settings-row.disabled-row {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+body.settings-page .studio-controls-form .settings-hint {
+  margin: 4px 14px 12px;
+  padding: 0 14px;
+  display: block;
+  max-width: 100%;
+}
+
+body.settings-page .studio-controls-form .hint-toggle {
+  margin-left: 6px;
+  padding: 2px 6px;
+  border-radius: 50%;
+  border: 1px solid rgba(11, 79, 138, 0.4);
+  background: rgba(255, 255, 255, 0.9);
+  color: #0b4f8a;
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+body.settings-page .studio-controls-form .settings-hint[hidden] {
+  display: none;
 }
 
 body.settings-page .danger-zone {

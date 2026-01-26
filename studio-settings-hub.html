@@ -51,15 +51,185 @@
               <button type="button" class="accordion-header" aria-expanded="false">Studio Controls</button>
               <div class="accordion-body" hidden>
                 <div class="accordion-panel-content">
-                  <div class="studio-placeholder">
-                    <p>Studio settings give you centralized control over how your studio shows up in the app.</p>
-                    <ul>
-                      <li>Studio name is shown above.</li>
-                      <li>Branding, schedules, and themes will land here soon.</li>
-                      <li>Contact support if you need immediate changes.</li>
-                    </ul>
-                    <div class="settings-actions" style="margin-top:12px;">
-                      <a class="blue-button btn-rect" href="studio-settings.html">Open Studio Settings</a>
+                  <div class="studio-controls-form">
+                    <section class="settings-section">
+                      <div class="section-head">
+                        <div class="section-title">Studio Identity</div>
+                      </div>
+                      <div class="settings-rows">
+                        <div class="settings-row">
+                          <div class="row-label">
+                            <label for="studioName">Studio Name</label>
+                          </div>
+                          <div class="row-value">
+                            <input id="studioName" type="text" class="settings-input" placeholder="Studio name" />
+                          </div>
+                          <div></div>
+                        </div>
+                        <div class="settings-row">
+                          <div class="row-label">
+                            <label for="studioEmail">Studio Email</label>
+                          </div>
+                          <div class="row-value">
+                            <input id="studioEmail" type="email" class="settings-input" placeholder="studio@example.com" />
+                          </div>
+                          <div></div>
+                        </div>
+                        <div class="settings-row">
+                          <div class="row-label">
+                            <label for="studioLogoFile">Studio Logo</label>
+                          </div>
+                        <div class="row-value">
+                          <label for="studioLogoFile" class="logo-upload-area">
+                            <img id="studioLogoPreview" alt="Studio logo preview" style="display:none;" />
+                            <span class="logo-upload-text">Click to replace logo</span>
+                          </label>
+                          <input id="studioLogoFile" type="file" accept="image/*" hidden />
+                        </div>
+                          <div></div>
+                        </div>
+                      </div>
+                    </section>
+
+                    <section class="settings-section">
+                      <div class="section-head">
+                        <div class="section-title">Permissions</div>
+                      </div>
+                      <div class="settings-rows">
+                        <div class="settings-row">
+                          <div class="row-label">
+                            <label for="teacherCanLogPoints">Teacher can log points</label>
+                          </div>
+                          <div class="row-value toggle-row-value">
+                            <button type="button" class="toggle-button disabled" data-toggle-target="teacherCanLogPoints" aria-pressed="false">Disabled</button>
+                            <input id="teacherCanLogPoints" type="checkbox" hidden />
+                          </div>
+                          <div></div>
+                        </div>
+                        <div class="settings-row">
+                          <div class="row-label">
+                            <label for="teacherCanApproveLogs">Teacher can approve logs</label>
+                          </div>
+                          <div class="row-value toggle-row-value">
+                            <button type="button" class="toggle-button disabled" data-toggle-target="teacherCanApproveLogs" aria-pressed="false">Disabled</button>
+                            <input id="teacherCanApproveLogs" type="checkbox" hidden />
+                          </div>
+                          <div></div>
+                        </div>
+                        <div class="settings-row">
+                          <div class="row-label">
+                            <label for="teacherCanCreateChallenges">Teacher can create challenges</label>
+                          </div>
+                          <div class="row-value toggle-row-value">
+                            <button type="button" class="toggle-button disabled" data-toggle-target="teacherCanCreateChallenges" aria-pressed="false">Disabled</button>
+                            <input id="teacherCanCreateChallenges" type="checkbox" hidden />
+                          </div>
+                          <div></div>
+                        </div>
+                        <div class="settings-row disabled-row" id="challengeApprovalRow">
+                          <div class="row-label">
+                            <label for="teacherChallengesRequireApproval">Teacher challenges require approval</label>
+                            <button type="button" class="hint-toggle" data-hint-target="hint-challenges" aria-expanded="false">?</button>
+                          </div>
+                          <div class="row-value toggle-row-value">
+                            <button type="button" class="toggle-button disabled" data-toggle-target="teacherChallengesRequireApproval" aria-pressed="false">Disabled</button>
+                            <input id="teacherChallengesRequireApproval" type="checkbox" hidden />
+                          </div>
+                          <div></div>
+                        </div>
+                        <div class="settings-hint" id="hint-challenges" hidden>
+                          When ON, teacher-created challenges require admin approval before going live.
+                        </div>
+                        <div class="settings-row leaderboard-toggle-row">
+                          <div class="row-label">
+                            <span>Leaderboard</span>
+                            <button type="button" class="hint-toggle" data-hint-target="hint-leaderboard" aria-expanded="false">?</button>
+                          </div>
+                          <div class="row-value" style="display:flex; flex-wrap:wrap; gap:12px; align-items:center;">
+                            <button
+                              type="button"
+                              class="toggle-button disabled scope-toggle-single"
+                              data-scope-toggle
+                              aria-pressed="false"
+                            >
+                              Studio Only
+                            </button>
+                            <input
+                              type="radio"
+                              name="leaderboardScope"
+                              id="leaderboardStudioOnly"
+                              value="studio_only"
+                              checked
+                              hidden
+                            />
+                            <input
+                              type="radio"
+                              name="leaderboardScope"
+                              id="leaderboardGlobal"
+                              value="global"
+                              hidden
+                            />
+                          </div>
+                          <div></div>
+                        </div>
+                        <div class="settings-hint" id="hint-leaderboard" hidden>
+                          Global is for future multi-studio mode and toggles a global view option for students.
+                        </div>
+                        <div class="settings-row">
+                          <div class="row-label">
+                            <label for="badgesEnabled">Badges</label>
+                          </div>
+                          <div class="row-value toggle-row-value">
+                            <button type="button" class="toggle-button disabled" data-toggle-target="badgesEnabled" aria-pressed="false">Disabled</button>
+                            <input id="badgesEnabled" type="checkbox" hidden />
+                          </div>
+                          <div></div>
+                        </div>
+                      </div>
+                    </section>
+
+                    <section class="settings-section">
+                      <div class="section-head">
+                        <div class="section-title">Notifications</div>
+                      </div>
+                      <div class="settings-rows">
+                        <div class="settings-row">
+                          <div class="row-label">
+                            <label for="adminOnLogSubmitted">Notify on log submitted</label>
+                          </div>
+                          <div class="row-value toggle-row-value">
+                            <button type="button" class="toggle-button disabled" data-toggle-target="adminOnLogSubmitted" aria-pressed="false">Disabled</button>
+                            <input id="adminOnLogSubmitted" type="checkbox" hidden />
+                          </div>
+                          <div></div>
+                        </div>
+                        <div class="settings-row">
+                          <div class="row-label">
+                            <label for="adminOnLogFlagged">Notify on log flagged</label>
+                          </div>
+                          <div class="row-value toggle-row-value">
+                            <button type="button" class="toggle-button disabled" data-toggle-target="adminOnLogFlagged" aria-pressed="false">Disabled</button>
+                            <input id="adminOnLogFlagged" type="checkbox" hidden />
+                          </div>
+                          <div></div>
+                        </div>
+                        <div class="settings-row">
+                          <div class="row-label">
+                            <label for="adminOnLevelUp">Notify on level up</label>
+                          </div>
+                          <div class="row-value toggle-row-value">
+                            <button type="button" class="toggle-button disabled" data-toggle-target="adminOnLevelUp" aria-pressed="false">Disabled</button>
+                            <input id="adminOnLevelUp" type="checkbox" hidden />
+                          </div>
+                          <div></div>
+                        </div>
+                      </div>
+                    </section>
+
+
+                    <div class="settings-actions" style="margin-top:24px;">
+                      <button id="saveStudioSettingsBtn" type="button" class="blue-button">Save</button>
+                      <div id="studioSettingsStatus" class="settings-hint" aria-live="polite"></div>
                     </div>
                   </div>
                 </div>
@@ -76,6 +246,7 @@
   <script src="config.js"></script>
   <script type="module" src="nav.js"></script>
   <script type="module" src="settings-tabs.js"></script>
+  <script type="module" src="studio-settings.js"></script>
   <script type="module" src="studio-settings-hub.js"></script>
   <script type="module" src="manage-users.js"></script>
 </body>
