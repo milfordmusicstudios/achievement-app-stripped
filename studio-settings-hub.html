@@ -33,8 +33,14 @@
               <button type="button" class="accordion-header" aria-expanded="false">Manage Users</button>
               <div class="accordion-body" hidden>
                 <div class="accordion-panel-content">
-                  <div class="manage-users-invite" style="margin-bottom:12px;">
-                    <button id="inviteUserOpenBtn" type="button" class="blue-button">Invite User</button>
+                  <div class="manage-users-invite">
+                    <button
+                      id="inviteUserOpenBtn"
+                      type="button"
+                      class="invite-user-trigger"
+                      aria-label="Invite User"
+                    >+</button>
+                    <span class="invite-user-label">invite User</span>
                   </div>
                   <div id="panel-manage-users" class="panel-root settings-panel-host" data-panel="manage-users"></div>
                 </div>

@@ -3673,3 +3673,39 @@ body.settings-page .slug,
 body.settings-page [data-studio-slug] {
   display: none !important;
 }
+
+.manage-users-invite {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.invite-user-trigger {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid #0b4e8f;
+  background: rgba(11, 79, 138, 0.07);
+  color: #0b4e8f;
+  font-size: 24px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.invite-user-trigger:hover,
+.invite-user-trigger:focus-visible {
+  background: rgba(11, 79, 138, 0.15);
+  border-color: #0b4e8f;
+}
+
+.invite-user-label {
+  font-size: 16px;
+  font-weight: 600;
+  color: #0b4e8f;
+  text-transform: none;
+}
