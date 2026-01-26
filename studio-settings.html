@@ -1,78 +1,218 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <title>Studio Settings | Achievement App</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="nav.css" />
-  <link rel="stylesheet" href="settings-tabs.css" />
-  <link rel="stylesheet" href="studio-settings-embed.css" />
 </head>
 <body class="app-shell app-bg bg-teal settings-page studio-settings-page">
   <div class="app-main">
     <div id="envBadge" class="env-badge" style="display:none;"></div>
-
     <main class="app">
       <div class="settings-wrap">
-        <div id="settings-tabs"></div>
-        <div class="settings-page-header">
-          <img id="studioLogo" class="studio-logo-header" src="images/logos/logo.png" alt="Studio logo" onerror="this.style.display='none'">
-          <h1 class="settings-title">Studio Settings</h1>
+        <div class="settings-actions" style="margin-bottom:16px; justify-content:flex-start;">
+          <a class="blue-button" href="home.html">Home</a>
         </div>
-        <section class="settings-section">
+        <section class="settings-card">
+          <div class="settings-card-body">
+            <h2 class="settings-title">Studio Settings</h2>
 
-          <div id="studioAccessNotice" class="settings-card studio-access-card" style="display:none;">
-            <div class="settings-card-body">
-              <p>Studio settings are available to admins only.</p>
-            </div>
-          </div>
-
-          <div id="studioSections" class="settings-accordion" style="display:none;">
-            <div class="accordion-card" data-section="manage-users">
-              <button type="button" class="accordion-header" aria-expanded="false">Manage Users</button>
-              <div class="accordion-body" hidden>
-                <div class="accordion-panel-content">
-        <div id="panel-manage-users" class="panel-root settings-panel-host" data-panel="manage-users"></div>
-                </div>
+            <section class="settings-section">
+              <div class="section-head">
+                <div class="section-title">Studio Identity</div>
               </div>
-            </div>
-
-            <div class="accordion-card" data-section="invite-student">
-              <button type="button" class="accordion-header" aria-expanded="false">Invite Student/Staff</button>
-              <div class="accordion-body" hidden>
-                <div class="accordion-panel-content">
-                  <div id="panel-invite-student" class="panel-root settings-panel-host" data-panel="invite-student"></div>
-                </div>
-              </div>
-            </div>
-
-            <div class="accordion-card" data-section="studio-settings">
-              <button type="button" class="accordion-header" aria-expanded="false">Studio Settings</button>
-              <div class="accordion-body" hidden>
-                <div class="accordion-panel-content">
-                  <div class="studio-placeholder">
-                    <p>Studio settings give you centralized control over how your studio shows up in the app.</p>
-                    <ul>
-                      <li>Studio name is shown above.</li>
-                      <li>Branding, schedules, and themes will land here soon.</li>
-                      <li>Contact support if you need immediate changes.</li>
-                    </ul>
+              <div class="settings-rows">
+                <div class="settings-row">
+                  <div class="row-label">
+                    <label for="studioName">Studio Name</label>
                   </div>
+                  <div class="row-value">
+                    <input id="studioName" type="text" class="settings-input" placeholder="Studio name" />
+                  </div>
+                  <div></div>
+                </div>
+                <div class="settings-row">
+                  <div class="row-label">
+                    <label for="studioEmail">Studio Email</label>
+                  </div>
+                  <div class="row-value">
+                    <input id="studioEmail" type="email" class="settings-input" placeholder="studio@example.com" />
+                  </div>
+                  <div></div>
+                </div>
+                <div class="settings-row">
+                  <div class="row-label">
+                    <label for="studioLogoFile">Studio Logo</label>
+                  </div>
+                  <div class="row-value" style="display:flex; flex-direction:column; gap:8px;">
+                    <input id="studioLogoFile" type="file" accept="image/*" />
+                    <img id="studioLogoPreview" alt="Studio logo preview" style="display:none; max-width:160px; border-radius:12px; border:1px solid rgba(0, 71, 125, 0.25);" />
+                    <button id="uploadLogoBtn" type="button" class="blue-button" style="width:auto !important; min-width:160px !important;">Upload Logo</button>
+                  </div>
+                  <div></div>
                 </div>
               </div>
+            </section>
+
+            <section class="settings-section">
+              <div class="section-head">
+                <div class="section-title">Permissions</div>
+              </div>
+              <div class="settings-rows">
+                <div class="settings-row">
+                  <div class="row-label">
+                    <label for="teacherCanLogPoints">Teacher can log points</label>
+                  </div>
+                  <div class="row-value" style="display:flex; align-items:center; gap:8px;">
+                    <input id="teacherCanLogPoints" type="checkbox" />
+                    <label for="teacherCanLogPoints">Enabled</label>
+                  </div>
+                  <div></div>
+                </div>
+                <div class="settings-row">
+                  <div class="row-label">
+                    <label for="teacherCanCreateChallenges">Teacher can create challenges</label>
+                  </div>
+                  <div class="row-value" style="display:flex; align-items:center; gap:8px;">
+                    <input id="teacherCanCreateChallenges" type="checkbox" />
+                    <label for="teacherCanCreateChallenges">Enabled</label>
+                  </div>
+                  <div></div>
+                </div>
+                <div class="settings-row">
+                  <div class="row-label">
+                    <label for="teacherCanApproveLogs">Teacher can approve logs</label>
+                  </div>
+                  <div class="row-value" style="display:flex; align-items:center; gap:8px;">
+                    <input id="teacherCanApproveLogs" type="checkbox" />
+                    <label for="teacherCanApproveLogs">Enabled</label>
+                  </div>
+                  <div></div>
+                </div>
+              </div>
+            </section>
+
+            <section class="settings-section">
+              <div class="section-head">
+                <div class="section-title">Challenges</div>
+              </div>
+              <div class="settings-rows">
+                <div class="settings-row">
+                  <div class="row-label">
+                    <label for="teacherChallengesRequireApproval">Teacher challenges require approval</label>
+                  </div>
+                  <div class="row-value" style="display:flex; align-items:center; gap:8px;">
+                    <input id="teacherChallengesRequireApproval" type="checkbox" />
+                    <label for="teacherChallengesRequireApproval">Enabled</label>
+                  </div>
+                  <div></div>
+                </div>
+                <div class="settings-hint">
+                  When ON, teacher-created challenges require admin approval before going live.
+                </div>
+              </div>
+            </section>
+
+            <section class="settings-section">
+              <div class="section-head">
+                <div class="section-title">Leaderboard Scope</div>
+              </div>
+              <div class="settings-rows">
+                <div class="settings-row">
+                  <div class="row-label">
+                    <span>Leaderboard Scope</span>
+                  </div>
+                  <div class="row-value" style="display:flex; flex-wrap:wrap; gap:12px;">
+                    <label style="display:flex; align-items:center; gap:6px;">
+                      <input type="radio" name="leaderboardScope" id="leaderboardStudioOnly" value="studio_only" checked />
+                      Studio only
+                    </label>
+                    <label style="display:flex; align-items:center; gap:6px;">
+                      <input type="radio" name="leaderboardScope" id="leaderboardGlobal" value="global" />
+                      Global
+                    </label>
+                  </div>
+                  <div></div>
+                </div>
+                <div class="settings-hint">
+                  Global is for future multi-studio mode.
+                </div>
+              </div>
+            </section>
+
+            <section class="settings-section">
+              <div class="section-head">
+                <div class="section-title">Notifications</div>
+                <div class="settings-hint">Admins only</div>
+              </div>
+              <div class="settings-rows">
+                <div class="settings-row">
+                  <div class="row-label">
+                    <label for="adminOnLogSubmitted">Notify on log submitted</label>
+                  </div>
+                  <div class="row-value" style="display:flex; align-items:center; gap:8px;">
+                    <input id="adminOnLogSubmitted" type="checkbox" />
+                    <label for="adminOnLogSubmitted">Enabled</label>
+                  </div>
+                  <div></div>
+                </div>
+                <div class="settings-row">
+                  <div class="row-label">
+                    <label for="adminOnLogFlagged">Notify on log flagged</label>
+                  </div>
+                  <div class="row-value" style="display:flex; align-items:center; gap:8px;">
+                    <input id="adminOnLogFlagged" type="checkbox" />
+                    <label for="adminOnLogFlagged">Enabled</label>
+                  </div>
+                  <div></div>
+                </div>
+                <div class="settings-row">
+                  <div class="row-label">
+                    <label for="adminOnLevelUp">Notify on level up</label>
+                  </div>
+                  <div class="row-value" style="display:flex; align-items:center; gap:8px;">
+                    <input id="adminOnLevelUp" type="checkbox" />
+                    <label for="adminOnLevelUp">Enabled</label>
+                  </div>
+                  <div></div>
+                </div>
+              </div>
+            </section>
+
+            <section class="settings-section">
+              <div class="section-head">
+                <div class="section-title">Badges</div>
+              </div>
+              <div class="settings-rows">
+                <div class="settings-row">
+                  <div class="row-label">
+                    <label for="badgesEnabled">Badges</label>
+                  </div>
+                  <div class="row-value" style="display:flex; align-items:center; gap:8px;">
+                    <input id="badgesEnabled" type="checkbox" />
+                    <label for="badgesEnabled">Enabled</label>
+                  </div>
+                  <div></div>
+                </div>
+              </div>
+            </section>
+
+            <div class="settings-actions" style="margin-top:24px;">
+              <button id="saveStudioSettingsBtn" type="button" class="blue-button">Save</button>
+              <div id="studioSettingsStatus" class="settings-hint" aria-live="polite"></div>
             </div>
           </div>
         </section>
       </div>
     </main>
+
+    <div id="toast" class="toast"></div>
   </div>
 
   <div id="app-bottom-nav"></div>
   <script src="config.js"></script>
   <script type="module" src="nav.js"></script>
-  <script type="module" src="settings-tabs.js"></script>
-  <script type="module" src="studio-settings.js"></script>
-  <script type="module" src="manage-users.js"></script>
 </body>
 </html>
