@@ -113,6 +113,29 @@
     });
   }
 
+  function resetQuickLogForm() {
+    const form = document.getElementById("quickLogForm");
+    if (!form) return;
+
+    form.reset();
+
+    const studentEl = document.getElementById("qlStudent");
+    const categoryEl = document.getElementById("qlCategory");
+    const pointsEl = document.getElementById("qlPoints");
+    const notesEl = document.getElementById("qlNotes");
+    const dateEl = document.getElementById("qlDate");
+
+    if (studentEl) studentEl.value = "";
+    if (categoryEl) categoryEl.value = "";
+    if (pointsEl) pointsEl.value = "";
+    if (notesEl) notesEl.value = "";
+    if (dateEl) dateEl.value = "";
+
+    document.querySelectorAll(".selected, .active").forEach(el =>
+      el.classList.remove("selected", "active")
+    );
+  }
+
   async function handleSubmit(event) {
     event.preventDefault();
     setStatus("");
@@ -157,11 +180,7 @@
     }
 
     setStatus("Logged. ✅");
-    form?.reset();
-    if (studentSelect) studentSelect.value = "";
-    if (categorySelect) categorySelect.value = "";
-    if (pointsInput) pointsInput.value = "";
-    if (notesInput) notesInput.value = "";
+    resetQuickLogForm();
     defaultDate();
   }
 
