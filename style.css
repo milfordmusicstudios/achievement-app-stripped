@@ -3709,3 +3709,98 @@ body.settings-page [data-studio-slug] {
   color: #0b4e8f;
   text-transform: none;
 }
+
+#inviteUserModal .blue-button,
+#inviteUserModal .revoke-btn {
+  height: 34px;
+  min-width: 100px;
+  padding: 0 14px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 34px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#inviteUserModal .blue-button.revoke-btn {
+  background: #999;
+  border-color: #999;
+}
+
+.subscription-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.subscription-panel .settings-section {
+  background: #fff;
+  border-radius: 16px;
+  padding: 18px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.07);
+}
+
+.subscription-payment {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.subscription-payment .subscription-value {
+  font-weight: 600;
+  color: #0b4f8a;
+}
+
+.subscription-payment-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 210px;
+}
+
+.plan-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.plan-card {
+  border-radius: 16px;
+  border: 1px solid rgba(11, 79, 138, 0.2);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: #fff;
+  box-shadow: 0 8px 16px rgba(16, 40, 73, 0.08);
+}
+
+.plan-card .plan-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: #0b4f8a;
+}
+
+.plan-card .plan-price {
+  font-size: 26px;
+  font-weight: 800;
+  color: #0b4f8a;
+}
+
+.plan-card .settings-hint {
+  margin: 0;
+  font-size: 13px;
+}
+
+.plan-card .blue-button {
+  width: 100%;
+  justify-content: center;
+}
+
+.plan-current {
+  outline: 4px solid #FFD54A;
+}

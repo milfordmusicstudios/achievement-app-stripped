@@ -47,11 +47,11 @@
               </div>
             </div>
 
-            <div class="accordion-card" data-section="studio-settings">
-              <button type="button" class="accordion-header" aria-expanded="false">Studio Controls</button>
+            <div class="accordion-card" data-section="studio-profile">
+              <button type="button" class="accordion-header" aria-expanded="false">Studio Profile</button>
               <div class="accordion-body" hidden>
                 <div class="accordion-panel-content">
-                  <div class="studio-controls-form">
+                  <div class="studio-profile-form">
                     <section class="settings-section">
                       <div class="section-head">
                         <div class="section-title">Studio Identity</div>
@@ -79,18 +79,27 @@
                           <div class="row-label">
                             <label for="studioLogoFile">Studio Logo</label>
                           </div>
-                        <div class="row-value">
-                          <label for="studioLogoFile" class="logo-upload-area">
-                            <img id="studioLogoPreview" alt="Studio logo preview" style="display:none;" />
-                            <span class="logo-upload-text">Click to replace logo</span>
-                          </label>
-                          <input id="studioLogoFile" type="file" accept="image/*" hidden />
-                        </div>
+                          <div class="row-value">
+                            <label for="studioLogoFile" class="logo-upload-area">
+                              <img id="studioLogoPreview" alt="Studio logo preview" style="display:none;" />
+                              <span class="logo-upload-text">Click to replace logo</span>
+                            </label>
+                            <input id="studioLogoFile" type="file" accept="image/*" hidden />
+                          </div>
                           <div></div>
                         </div>
                       </div>
                     </section>
+                  </div>
+                </div>
+              </div>
+            </div>
 
+            <div class="accordion-card" data-section="studio-settings">
+              <button type="button" class="accordion-header" aria-expanded="false">Rules &amp; Notifications</button>
+              <div class="accordion-body" hidden>
+                <div class="accordion-panel-content">
+                  <div class="studio-controls-form">
                     <section class="settings-section">
                       <div class="section-head">
                         <div class="section-title">Permissions</div>
@@ -231,6 +240,131 @@
                       <button id="saveStudioSettingsBtn" type="button" class="blue-button">Save</button>
                       <div id="studioSettingsStatus" class="settings-hint" aria-live="polite"></div>
                     </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="accordion-card" data-section="studio-subscription">
+              <button type="button" class="accordion-header" aria-expanded="false">Subscription</button>
+              <div class="accordion-body" hidden>
+                <div class="accordion-panel-content">
+                  <div class="subscription-panel">
+                    <section class="settings-section">
+                      <div class="section-head">
+                        <div class="section-title">Billing Contact Info</div>
+                      </div>
+                      <div class="settings-rows">
+                        <div class="settings-row">
+                          <div class="row-label">
+                            <label for="billingPhone">Billing Phone</label>
+                          </div>
+                          <div class="row-value">
+                            <input id="billingPhone" type="tel" class="settings-input" placeholder="(555) 123-4567" />
+                          </div>
+                          <div></div>
+                        </div>
+                        <div class="settings-row">
+                          <div class="row-label">
+                            <label for="billingAddress1">Address Line 1</label>
+                          </div>
+                          <div class="row-value">
+                            <input id="billingAddress1" type="text" class="settings-input" placeholder="123 Main St" />
+                          </div>
+                          <div></div>
+                        </div>
+                        <div class="settings-row">
+                          <div class="row-label">
+                            <label for="billingAddress2">Address Line 2</label>
+                          </div>
+                          <div class="row-value">
+                            <input id="billingAddress2" type="text" class="settings-input" placeholder="Suite 400" />
+                          </div>
+                          <div></div>
+                        </div>
+                        <div class="settings-row">
+                          <div class="row-label">
+                            <label for="billingCity">City</label>
+                          </div>
+                          <div class="row-value">
+                            <input id="billingCity" type="text" class="settings-input" placeholder="City" />
+                          </div>
+                          <div></div>
+                        </div>
+                        <div class="settings-row">
+                          <div class="row-label">
+                            <label for="billingState">State</label>
+                          </div>
+                          <div class="row-value">
+                            <input id="billingState" type="text" class="settings-input" placeholder="State" />
+                          </div>
+                          <div></div>
+                        </div>
+                        <div class="settings-row">
+                          <div class="row-label">
+                            <label for="billingZip">Zip</label>
+                          </div>
+                          <div class="row-value">
+                            <input id="billingZip" type="text" class="settings-input" placeholder="Zip code" />
+                          </div>
+                          <div></div>
+                        </div>
+                      </div>
+                    </section>
+
+                    <section class="settings-section">
+                      <div class="section-head">
+                        <div class="section-title">Payment Method (Stripe)</div>
+                      </div>
+                      <div class="subscription-payment">
+                        <div>
+                          <div class="row-label" style="margin-bottom:6px;">Payment Method</div>
+                          <div class="subscription-value">Not connected yet</div>
+                        </div>
+                        <div class="subscription-payment-actions">
+                          <button id="managePaymentBtn" type="button" class="blue-button" disabled>Manage Payment Method</button>
+                          <p class="settings-hint" style="margin-top:6px;">Connect Stripe to manage cards.</p>
+                        </div>
+                      </div>
+                    </section>
+
+                    <section class="settings-section">
+                      <div class="section-head">
+                        <div class="section-title">Membership Plan</div>
+                      </div>
+                      <p class="settings-hint" style="margin-bottom:12px;">
+                        All plans include full access to all features. Pricing is based only on the number of active students your studio supports.
+                      </p>
+                      <div class="plan-grid">
+                        <div class="plan-card plan-current">
+                          <div class="plan-name">Solo</div>
+                          <div class="plan-price">$20 / month</div>
+                          <div class="settings-hint" style="margin:0 0 6px;">Up to 50 students</div>
+                          <button type="button" class="blue-button" disabled>Your current membership</button>
+                        </div>
+                        <div class="plan-card">
+                          <div class="plan-name">Studio</div>
+                          <div class="plan-price">$40 / month</div>
+                          <div class="settings-hint" style="margin:0 0 6px;">Up to 100 students</div>
+                          <button type="button" class="blue-button" disabled>Update my membership</button>
+                          <p class="settings-hint">Coming soon</p>
+                        </div>
+                        <div class="plan-card">
+                          <div class="plan-name">Growth</div>
+                          <div class="plan-price">$120 / month</div>
+                          <div class="settings-hint" style="margin:0 0 6px;">Up to 300 students</div>
+                          <button type="button" class="blue-button" disabled>Update my membership</button>
+                          <p class="settings-hint">Coming soon</p>
+                        </div>
+                        <div class="plan-card">
+                          <div class="plan-name">Organization</div>
+                          <div class="plan-price">Custom pricing</div>
+                          <div class="settings-hint" style="margin:0 0 6px;">301+ students</div>
+                          <button type="button" class="blue-button" disabled>Contact us</button>
+                          <p class="settings-hint">For multi-location or school programs</p>
+                        </div>
+                      </div>
+                    </section>
                   </div>
                 </div>
               </div>
