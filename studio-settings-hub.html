@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Studio Settings | Achievement App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="nav.css" />
+  <link rel="stylesheet" href="settings-tabs.css" />
+  <link rel="stylesheet" href="studio-settings-embed.css" />
+</head>
+<body class="app-shell app-bg bg-teal settings-page studio-settings-page">
+  <div class="app-main">
+    <div id="envBadge" class="env-badge" style="display:none;"></div>
+
+    <main class="app">
+      <div class="settings-wrap">
+        <div id="settings-tabs"></div>
+        <div class="settings-page-header">
+          <img id="studioLogo" class="studio-logo-header" src="images/logos/logo.png" alt="Studio logo" onerror="this.style.display='none'">
+          <h1 class="settings-title">Studio Settings</h1>
+        </div>
+        <section class="settings-section">
+
+          <div id="studioAccessNotice" class="settings-card studio-access-card" style="display:none;">
+            <div class="settings-card-body">
+              <p>Studio settings are available to admins only.</p>
+            </div>
+          </div>
+
+          <div id="studioSections" class="settings-accordion" style="display:none;">
+            <div class="accordion-card" data-section="manage-users">
+              <button type="button" class="accordion-header" aria-expanded="false">Manage Users</button>
+              <div class="accordion-body" hidden>
+                <div class="accordion-panel-content">
+                  <div id="panel-manage-users" class="panel-root settings-panel-host" data-panel="manage-users"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="accordion-card" data-section="invite-student">
+              <button type="button" class="accordion-header" aria-expanded="false">Invite Student/Staff</button>
+              <div class="accordion-body" hidden>
+                <div class="accordion-panel-content">
+                  <div id="panel-invite-student" class="panel-root settings-panel-host" data-panel="invite-student"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="accordion-card" data-section="studio-settings">
+              <button type="button" class="accordion-header" aria-expanded="false">Studio Controls</button>
+              <div class="accordion-body" hidden>
+                <div class="accordion-panel-content">
+                  <div class="studio-placeholder">
+                    <p>Studio settings give you centralized control over how your studio shows up in the app.</p>
+                    <ul>
+                      <li>Studio name is shown above.</li>
+                      <li>Branding, schedules, and themes will land here soon.</li>
+                      <li>Contact support if you need immediate changes.</li>
+                    </ul>
+                    <div class="settings-actions" style="margin-top:12px;">
+                      <a class="blue-button btn-rect" href="studio-settings.html">Open Studio Settings</a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+    <div id="toast" class="toast"></div>
+  </div>
+
+  <div id="app-bottom-nav"></div>
+  <script src="config.js"></script>
+  <script type="module" src="nav.js"></script>
+  <script type="module" src="settings-tabs.js"></script>
+  <script type="module" src="studio-settings-hub.js"></script>
+  <script type="module" src="manage-users.js"></script>
+</body>
+</html>

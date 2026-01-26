@@ -16,7 +16,7 @@ const TAB_CONFIG = [
   {
     id: "studio",
     label: "Studio",
-    href: "studio-settings.html",
+    href: "studio-settings-hub.html",
     show: roles => roles.includes("admin")
   }
 ];
