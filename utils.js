@@ -148,19 +148,20 @@ export async function getViewerContext() {
   try {
     const { data: row, error: rowError } = await supabase
       .from("users")
-      .select("id, email, firstName, lastName, avatar_url")
+      .select("id, email, firstName, lastName, avatarUrl")
       .eq("id", viewerUserId)
       .single();
     if (rowError) throw rowError;
     if (row) {
       const firstName = row.firstName ?? row.first_name ?? "";
       const lastName = row.lastName ?? row.last_name ?? "";
+      const avatarUrl = row.avatarUrl ?? row.avatar_url ?? "";
       userRow = {
         ...row,
         firstName,
-        lastName
+        lastName,
+        avatarUrl
       };
-      
     }
   } catch (err) {
     console.warn("[ViewerContext] userRow fetch failed", err, { table: "users", userId: viewerUserId });
