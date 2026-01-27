@@ -12,6 +12,26 @@ const safeParse = value => {
   }
 };
 
+function resolveAvatarSrc(user) {
+  const candidates = [user?.avatarUrl, user?.avatar_url, user?.avatar];
+  for (const candidate of candidates) {
+    if (typeof candidate === "string" && candidate.trim()) {
+      return candidate.trim();
+    }
+  }
+  return "images/icons/default.png";
+}
+
+function normalizeUserRow(row) {
+  if (!row) return null;
+  return {
+    ...row,
+    firstName: row.firstName ?? row.first_name ?? null,
+    lastName: row.lastName ?? row.last_name ?? null,
+    avatarUrl: row.avatarUrl ?? row.avatar_url ?? null
+  };
+}
+
 let currentProfile = null;
 let availableUsers = [];
 let pendingPointsTotal = 0;
@@ -172,12 +192,8 @@ if (showWelcome) {
   qs('welcomeText').textContent = `Welcome, ${profile.firstName || 'Student'}!`;
 }
 const avatarImg = document.getElementById("avatarImg");
-const url = profile?.avatarUrl;
-
 if (avatarImg) {
-  avatarImg.src = (typeof url === "string" && url.trim())
-    ? url
-    : "images/icons/default.png";
+  avatarImg.src = resolveAvatarSrc(profile);
 }
 qs('levelBadgeImg').src = level.badge;
 
@@ -281,9 +297,7 @@ function renderAvatarMenu(users, activeId) {
     }
 
     const img = document.createElement("img");
-    const imgUrl = (typeof user.avatarUrl === "string" && user.avatarUrl.trim())
-      ? user.avatarUrl
-      : "images/icons/default.png";
+    const imgUrl = resolveAvatarSrc(user);
     img.src = imgUrl;
     img.alt = "";
     img.onerror = () => {
@@ -545,6 +559,8 @@ async function init() {
     window.location.href = "login.html";
     return;
   }
+
+  const viewerContextProfile = normalizeUserRow(viewerContext.userRow);
   if (viewerContext.mode === "unknown") {
     alert("Please finish setup before continuing.");
     window.location.href = "finish-setup.html";
@@ -704,14 +720,14 @@ async function init() {
 
   // 🔁 Active student must already be selected
   const raw = localStorage.getItem("loggedInUser");
-  if (!raw && !ensuredProfile) {
+  if (!raw && !ensuredProfile && !viewerContextProfile) {
     // Logged in parent, but no student selected yet
     window.location.href = "settings.html";
     return;
   }
 
   const storedProfile = raw ? safeParse(raw) : null;
-  const profile = storedProfile || ensuredProfile;
+  const profile = storedProfile || ensuredProfile || viewerContextProfile;
   currentProfile = profile;
 
   if (viewerContext?.mode === "student") {

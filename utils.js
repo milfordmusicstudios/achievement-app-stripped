@@ -66,6 +66,7 @@ export async function clearAppSessionCache(reason = "unknown") {
 export async function getViewerContext() {
   const { data: sessionData } = await supabase.auth.getSession();
   const viewerUserId = sessionData?.session?.user?.id || null;
+
   if (!viewerUserId) {
     return {
       viewerUserId: null,
@@ -76,7 +77,8 @@ export async function getViewerContext() {
       isParent: false,
       mode: "unknown",
       studioId: null,
-      activeProfileId: null
+      activeProfileId: null,
+      userRow: null
     };
   }
 
@@ -87,23 +89,34 @@ export async function getViewerContext() {
 
   const storedProfileId = getActiveProfileId();
   const effectiveProfileId = storedProfileId || viewerUserId;
-  let { data: viewerProfile, error } = await supabase
-    .from("users")
-    .select("roles, studio_id")
-    .eq("id", effectiveProfileId)
-    .single();
 
-  if (error) {
-    console.error("[ViewerContext] user lookup failed", error);
-  }
-  if (!viewerProfile && effectiveProfileId !== viewerUserId) {
-    const { data: fallbackProfile } = await supabase
+  let viewerProfile = null;
+  try {
+    const { data, error } = await supabase
       .from("users")
       .select("roles, studio_id")
-      .eq("id", viewerUserId)
+      .eq("id", effectiveProfileId)
       .single();
-    viewerProfile = fallbackProfile || null;
-    setActiveProfileId(viewerUserId);
+    if (error) throw error;
+    viewerProfile = data || null;
+  } catch (err) {
+    console.warn("[ViewerContext] user lookup failed", err, { table: "users", userId: effectiveProfileId });
+  }
+
+  if (!viewerProfile && effectiveProfileId !== viewerUserId) {
+    try {
+      const { data: fallbackProfile, error: fallbackError } = await supabase
+        .from("users")
+        .select("roles, studio_id")
+        .eq("id", viewerUserId)
+        .single();
+      if (!fallbackError) {
+        viewerProfile = fallbackProfile || null;
+        setActiveProfileId(viewerUserId);
+      }
+    } catch (err) {
+      console.warn("[ViewerContext] fallback user lookup failed", err, { table: "users", userId: viewerUserId });
+    }
   }
 
   if (!studioId && viewerProfile?.studio_id) {
@@ -131,6 +144,19 @@ export async function getViewerContext() {
     setActiveProfileId(activeProfileId);
   }
 
+  let userRow = null;
+  try {
+    const { data: row, error: rowError } = await supabase
+      .from("users")
+      .select("id, email, first_name, last_name, avatar_url")
+      .eq("id", viewerUserId)
+      .single();
+    if (rowError) throw rowError;
+    userRow = row || null;
+  } catch (err) {
+    console.warn("[ViewerContext] userRow fetch failed", err, { table: "users", userId: viewerUserId });
+  }
+
   return {
     viewerUserId,
     viewerRoles,
@@ -140,7 +166,8 @@ export async function getViewerContext() {
     isParent,
     mode,
     studioId,
-    activeProfileId
+    activeProfileId,
+    userRow
   };
 }
 
