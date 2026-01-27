@@ -2,6 +2,7 @@
 // Loads Supabase via ESM and exports a single shared client.
 // Requires: <script type="module" src="supabaseClient.js"></script>
 
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 // Determine env: config.js can set window.APP_ENV = "dev" | "prod" | "demo"
 const env = (
   window.APP_ENV ||
@@ -31,30 +32,19 @@ if (!finalConfig.url || !finalConfig.anonKey) {
   console.warn(`[Supabase] Missing config for env="${env}". Using DEV.`);
 }
 
-const createClientFactory =
-  window.supabase?.createClient ||
-  window.Supabase?.createClient ||
-  null;
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-if (!createClientFactory) {
-  console.warn("[Home] optional esm module unavailable; continuing without it");
-}
-
-const supabase = createClientFactory
-  ? createClientFactory(finalConfig.url, finalConfig.anonKey, {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-      },
-      global: {
-        headers: {
-          apikey: finalConfig.anonKey,
-        },
-      },
-    })
-  : null;
-
-export { supabase };
+export const supabase = createClient(finalConfig.url, finalConfig.anonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+  },
+  global: {
+    headers: {
+      apikey: finalConfig.anonKey,
+    },
+  },
+});
 
 // Optional: expose for debugging in console (do not overwrite window.supabase)
 window.sb = supabase;
