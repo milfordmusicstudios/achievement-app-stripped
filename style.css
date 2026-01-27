@@ -2128,6 +2128,29 @@ body.review-logs-page .logs-table-wrap {
   overflow: hidden;
 }
 
+body.review-logs-page .review-logs-error {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 16px;
+  background: #fff3f0;
+  border-bottom: 1px solid #f5c7ce;
+  color: #661d1f;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+body.review-logs-page .review-logs-error strong {
+  font-weight: 800;
+}
+
+body.review-logs-page .logs-empty-state {
+  padding: 32px 16px;
+  text-align: center;
+  font-weight: 700;
+  color: #0b4f8a;
+}
+
 body.review-logs-page #logsHeaderTable,
 body.review-logs-page #logsTable {
   width: 100%;

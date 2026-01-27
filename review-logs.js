@@ -2,6 +2,8 @@ import { supabase } from "./supabaseClient.js";
 import { getViewerContext, recalculateUserPoints } from './utils.js';
 import { ensureStudioContextAndRoute } from "./studio-routing.js";
 
+const DEBUG_REVIEW_LOGS = false;
+
 const categoryOptions = ["practice", "participation", "performance", "personal", "proficiency"];
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -17,10 +19,70 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   const viewerContext = await getViewerContext();
+  const reviewLogsErrorPanel = document.getElementById("reviewLogsErrorPanel");
+  const hideReviewLogsError = () => {
+    if (!reviewLogsErrorPanel) return;
+    reviewLogsErrorPanel.innerHTML = "";
+    reviewLogsErrorPanel.style.display = "none";
+  };
+  const showReviewLogsError = (message, error = null) => {
+    if (!reviewLogsErrorPanel) return;
+    const mainMessage = error?.message || message || "An error occurred while loading logs.";
+    const code = error?.code ?? error?.status ?? error?.statusCode ?? "N/A";
+    const userId = viewerContext?.viewerUserId || "Unknown";
+    const studioId = viewerContext?.studioId || "Unknown";
+    const roles = Array.isArray(viewerContext?.viewerRoles) && viewerContext.viewerRoles.length
+      ? viewerContext.viewerRoles.join(", ")
+      : "None";
+
+    reviewLogsErrorPanel.innerHTML = "";
+    const titleLine = document.createElement("div");
+    const titleStrong = document.createElement("strong");
+    titleStrong.textContent = mainMessage;
+    titleLine.appendChild(titleStrong);
+    reviewLogsErrorPanel.appendChild(titleLine);
+
+    const appendLine = (label, value) => {
+      const line = document.createElement("div");
+      const labelEl = document.createElement("strong");
+      labelEl.textContent = `${label}:`;
+      line.appendChild(labelEl);
+      const displayValue = value ?? "N/A";
+      line.appendChild(document.createTextNode(` ${displayValue}`));
+      reviewLogsErrorPanel.appendChild(line);
+    };
+
+    appendLine("Code", code);
+    appendLine("User ID", userId);
+    appendLine("Studio ID", studioId);
+    appendLine("Roles", roles);
+
+    if (DEBUG_REVIEW_LOGS && error) {
+      const detailText = error.details || error.hint || "";
+      if (detailText) {
+        const detailLine = document.createElement("div");
+        detailLine.style.fontSize = "12px";
+        detailLine.style.color = "#3b3b3b";
+        detailLine.textContent = `Details: ${detailText}`;
+        reviewLogsErrorPanel.appendChild(detailLine);
+      }
+    }
+
+    reviewLogsErrorPanel.style.display = "flex";
+  };
+
   console.log("[AuthZ]", { page: "review-logs", roles: viewerContext.viewerRoles, studioId: viewerContext.studioId });
   if (!viewerContext.isAdmin && !viewerContext.isTeacher) {
     alert("Access denied.");
     window.location.href = "index.html";
+    return;
+  }
+  if (!viewerContext.viewerUserId) {
+    showReviewLogsError("No active session detected. Please sign in again.");
+    return;
+  }
+  if (!viewerContext.studioId) {
+    showReviewLogsError("No studio selected for this account.");
     return;
   }
   const activeRole = viewerContext.isAdmin ? "admin" : "teacher";
@@ -64,15 +126,18 @@ document.addEventListener("DOMContentLoaded", async () => {
   };
 
   try {
+    hideReviewLogsError();
     const { data: logsData, error: logsError } = await supabase
       .from("logs")
       .select("*")
-      .order("date", { ascending: false });
+      .eq("studio_id", viewerContext.studioId)
+      .order("date", { ascending: false, nulls: "last" });
     if (logsError) throw logsError;
 
     const { data: usersData, error: usersError } = await supabase
       .from("users")
-      .select("id, firstName, lastName, teacherIds");
+      .select("id, firstName, lastName, teacherIds")
+      .eq("studio_id", viewerContext.studioId);
     if (usersError) throw usersError;
 
     users = usersData || [];
@@ -84,17 +149,18 @@ document.addEventListener("DOMContentLoaded", async () => {
         (users.find(u => String(u.id) === String(l.userId))?.lastName || "")
     }));
 
-  if (viewerContext.isTeacher && !viewerContext.isAdmin) {
-    const myStudents = users
-      .filter(u => Array.isArray(u.teacherIds) && u.teacherIds.map(String).includes(String(viewerContext.viewerUserId)))
-      .map(s => String(s.id));
-    allLogs = allLogs.filter(l => myStudents.includes(String(l.userId)));
-  }
+    if (viewerContext.isTeacher && !viewerContext.isAdmin) {
+      const myStudents = users
+        .filter(u => Array.isArray(u.teacherIds) && u.teacherIds.map(String).includes(String(viewerContext.viewerUserId)))
+        .map(s => String(s.id));
+      allLogs = allLogs.filter(l => myStudents.includes(String(l.userId)));
+    }
 
+    hideReviewLogsError();
     applyFilters();
   } catch (err) {
     console.error("[ERROR] Review Logs:", err);
-    alert("Failed to load logs.");
+    showReviewLogsError("Failed to load logs.", err);
   }
 
   // Search + Card Filter
@@ -234,6 +300,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   function renderLogsTable(list) {
     logsTableBody.innerHTML = "";
+    if (!allLogs.length) {
+      logsTableBody.innerHTML = `<tr><td colspan="7" class="logs-empty-state">No logs found yet.</td></tr>`;
+      document.getElementById("selectAll").checked = false;
+      updateBulkActionBarVisibility();
+      return;
+    }
     const start = (currentPage - 1) * logsPerPage;
     const end = start + logsPerPage;
     const pageLogs = list.slice(start, end);
