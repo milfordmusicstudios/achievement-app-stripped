@@ -12,6 +12,81 @@ const safeParse = value => {
   }
 };
 
+let AVAILABLE_PROFILES = [];
+let ACTIVE_PROFILE_ID = null;
+let avatarMenuHandler = null;
+let avatarMenuEventsBound = false;
+
+function setActiveProfileIdContext(id) {
+  ACTIVE_PROFILE_ID = id != null ? String(id) : null;
+}
+
+function setAvailableProfilesContext(profiles) {
+  AVAILABLE_PROFILES = Array.isArray(profiles) ? profiles : [];
+}
+
+function getProfileAvatarUrl(profile) {
+  if (!profile) return "";
+  return profile.avatarUrl || profile.avatar_url || profile.avatar || "";
+}
+
+function renderHomeAvatarFromActiveProfile() {
+  const img = document.querySelector("#avatarImg, #homeAvatar, #profileAvatar, .home-avatar img, img[data-home-avatar]");
+  if (!img) return;
+  const active = (AVAILABLE_PROFILES || []).find(p =>
+    (p?.id && ACTIVE_PROFILE_ID && String(p.id) === ACTIVE_PROFILE_ID) ||
+    (p?.user_id && ACTIVE_PROFILE_ID && String(p.user_id) === ACTIVE_PROFILE_ID)
+  ) || null;
+  const url = getProfileAvatarUrl(active);
+  if (url) {
+    img.src = url;
+  } else if (img.dataset?.placeholder) {
+    img.src = img.dataset.placeholder;
+  }
+  const name = active ? `${active.firstName || active.first_name || ""} ${active.lastName || active.last_name || ""}`.trim() : "";
+  img.alt = name || "Profile";
+}
+
+function bindAvatarMenu() {
+  const button = document.querySelector("#avatarSwitcher, #homeAvatarBtn, #profileAvatarBtn, .home-avatar, #homeAvatar");
+  const menu = qs("avatarMenu");
+  if (!button || !menu) return;
+  const canSwitch = Array.isArray(AVAILABLE_PROFILES) && AVAILABLE_PROFILES.length > 1;
+  button.classList.toggle("no-switch", !canSwitch);
+  button.style.cursor = canSwitch ? "pointer" : "default";
+
+  if (avatarMenuHandler) {
+    button.removeEventListener("click", avatarMenuHandler);
+    avatarMenuHandler = null;
+  }
+  if (canSwitch) {
+    avatarMenuHandler = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const isOpen = !menu.hidden;
+      if (isOpen) {
+        closeAvatarMenu();
+        return;
+      }
+      menu.hidden = false;
+      button.setAttribute("aria-expanded", "true");
+    };
+    button.addEventListener("click", avatarMenuHandler);
+  }
+
+  if (!avatarMenuEventsBound) {
+    document.addEventListener("click", (e) => {
+      if (!menu.hidden && !menu.contains(e.target) && !button.contains(e.target)) {
+        closeAvatarMenu();
+      }
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") closeAvatarMenu();
+    });
+    avatarMenuEventsBound = true;
+  }
+}
+
 function resolveAvatarSrc(user) {
   const candidates = [user?.avatarUrl, user?.avatar_url, user?.avatar];
   for (const candidate of candidates) {
@@ -509,40 +584,10 @@ async function switchUser(user) {
 }
 
 function initAvatarSwitcher(users) {
-  const button = qs("avatarSwitcher");
   const menu = qs("avatarMenu");
-  if (!button || !menu) return;
-
-  if (!users || users.length <= 1) {
-    button.classList.add("no-switch");
-    menu.hidden = true;
-    return;
-  }
-
+  if (!menu) return;
   renderAvatarMenu(users, currentProfile?.id);
   menu.hidden = true;
-
-  button.addEventListener("click", (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const isOpen = !menu.hidden;
-    if (isOpen) {
-      closeAvatarMenu();
-      return;
-    }
-    menu.hidden = false;
-    button.setAttribute("aria-expanded", "true");
-  });
-
-  document.addEventListener("click", (e) => {
-    if (!menu.hidden && !menu.contains(e.target) && !button.contains(e.target)) {
-      closeAvatarMenu();
-    }
-  });
-
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") closeAvatarMenu();
-  });
 }
 
 async function init() {
@@ -760,6 +805,11 @@ async function init() {
     availableUsers = filterParentViewerUsers(availableUsers);
   }
   initAvatarSwitcher(availableUsers);
+  setAvailableProfilesContext(availableUsers);
+  const resolvedActiveId = currentProfile?.id || activeProfileIdCurrent || authUserId;
+  setActiveProfileIdContext(resolvedActiveId);
+  renderHomeAvatarFromActiveProfile();
+  bindAvatarMenu();
   maybeShowSwitchStudentTip(viewerContext.mode, availableUsers.length > 1);
 
   if (viewerContext?.mode === "parent") {
