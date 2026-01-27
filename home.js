@@ -30,6 +30,15 @@ function getProfileAvatarUrl(profile) {
   return profile.avatarUrl || profile.avatar_url || profile.avatar || "";
 }
 
+async function safeViewerContext() {
+  try {
+    return await getViewerContext();
+  } catch (err) {
+    console.warn("[Home] viewer context unavailable; continuing without it", err);
+    return null;
+  }
+}
+
 function renderHomeAvatarFromActiveProfile() {
   const img = document.querySelector("#avatarImg, #homeAvatar, #profileAvatar, .home-avatar img, img[data-home-avatar]");
   if (!img) return;
@@ -565,12 +574,8 @@ async function switchUser(user) {
     return;
   }
 
-  let ctx = null;
-  try {
-    ctx = await getViewerContext();
-  } catch (err) {
-    console.warn("[SwitchUser] viewer context unavailable during switch", err);
-  }
+  const ctx = await safeViewerContext();
+  const targetId = String(user.id);
 
   if (ctx?.mode === "parent") {
     persistParentSelection(ctx.viewerUserId, ctx.studioId, user.id);
@@ -578,10 +583,10 @@ async function switchUser(user) {
     persistLastActiveStudent(ctx.viewerUserId, ctx.studioId, user.id);
   }
 
-  setActiveProfileId(user.id);
+  setActiveProfileId(targetId);
   localStorage.setItem("loggedInUser", JSON.stringify(user));
-  localStorage.setItem("activeStudentId", user.id);
-  console.debug(`[SwitchUser] switched to ${user.id} and reloading`);
+  localStorage.setItem("activeStudentId", targetId);
+  console.debug(`[SwitchUser] switched to ${targetId} and reloading`);
   closeAvatarMenu();
   location.href = "index.html";
 }
@@ -982,12 +987,7 @@ function updatePendingProgressFill() {
 }
 
 async function refreshActiveStudentData({ userId, fallbackProfile } = {}) {
-  let ctx = null;
-  try {
-    ctx = await getViewerContext();
-  } catch (err) {
-    console.warn("[Home] viewer context fetch failed; continuing without it", err);
-  }
+  const ctx = await safeViewerContext();
   const activeStudentId = userId || getActiveStudentIdForContext(ctx);
   if (!activeStudentId) {
     updateParentProgressState({ hasSelection: false });
