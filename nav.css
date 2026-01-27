@@ -11,7 +11,7 @@
   border-top: 1px solid rgba(11, 79, 138, 0.18);
   box-shadow: 0 -12px 24px rgba(0, 0, 0, 0.08);
   backdrop-filter: blur(6px);
-  z-index: 9999;
+  z-index: 800;
 }
 
 .bottom-nav {

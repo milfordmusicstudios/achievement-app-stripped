@@ -803,6 +803,14 @@ function closeStudentModal() {
   if (overlay) overlay.style.display = "none";
 }
 
+function resetModalScroll(modalEl) {
+  if (!modalEl) return;
+  const scroller =
+    modalEl.querySelector(".modal-content, .modal-body, .dialog-body, .sheet-body") ||
+    modalEl;
+  scroller.scrollTop = 0;
+}
+
 function openStudentModal({ title, bodyHtml, submitLabel, onSubmit }) {
   const overlay = qs("studentLogModalOverlay");
   const titleEl = qs("studentLogModalTitle");
@@ -831,6 +839,7 @@ function openStudentModal({ title, bodyHtml, submitLabel, onSubmit }) {
     if (e.target === overlay) closeStudentModal();
   };
   overlay.style.display = "flex";
+  resetModalScroll(overlay.querySelector(".modal"));
 }
 
 function setPracticeButtonState(button, logged) {

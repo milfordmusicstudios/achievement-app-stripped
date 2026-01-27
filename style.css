@@ -38,7 +38,8 @@ html, body {
 
 :root {
   --app-shell-bg: #f6f8fb;
-  --bottom-nav-h: 64px;
+  --bottom-nav-h: 72px;
+  --modal-safe-pad: 16px;
 }
 
 body.app-shell {
@@ -1061,13 +1062,28 @@ body.is-admin #roleBadgeTeacher {
 /* ===============================
    MODALS & TOASTS (Shared)
 ================================ */
-.modal-overlay {
+.modal-overlay,
+.modal-backdrop {
   position: fixed;
   inset: 0;
   background: rgba(0,0,0,0.4);
   display: none;
   align-items: center;
   justify-content: center;
+  z-index: 900;
+}
+
+.modal,
+.modal-content,
+.dialog,
+.sheet,
+.log-modal {
+  max-height: calc(100vh - var(--bottom-nav-h) - 16px);
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: calc(var(--bottom-nav-h) + var(--modal-safe-pad));
+  box-sizing: border-box;
+  position: relative;
   z-index: 1000;
 }
 
@@ -1080,10 +1096,17 @@ body.is-admin #roleBadgeTeacher {
   text-align: center;
 }
 
+.modal-actions,
+.dialog-actions,
+.form-actions,
+.log-actions {
+  pointer-events: auto;
+}
+
 .toast {
   position: fixed;
   left: 50%;
-  bottom: calc(var(--bottom-nav-h, 64px) + 12px);
+  bottom: calc(var(--bottom-nav-h) + 12px);
   transform: translateX(-50%);
   background: rgba(0,0,0,0.82);
   color: #fff;
@@ -1182,6 +1205,12 @@ body.student-home-page .modal-actions {
   display: flex;
   gap: 10px;
   margin-top: 12px;
+  position: sticky;
+  bottom: 0;
+  background: #fff;
+  padding-bottom: var(--modal-safe-pad);
+  pointer-events: auto;
+  z-index: 1000;
 }
 
 body.student-home-page .modal-actions .blue-button {
@@ -1208,6 +1237,10 @@ body.student-home-page .date-grid {
 body.student-home-page .calendar {
   display: grid;
   gap: 8px;
+  max-height: 320px;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: 12px;
 }
 
 body.student-home-page .calendar-header {
