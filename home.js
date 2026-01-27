@@ -565,22 +565,25 @@ async function switchUser(user) {
     return;
   }
 
-  const ctx = await getViewerContext();
+  let ctx = null;
+  try {
+    ctx = await getViewerContext();
+  } catch (err) {
+    console.warn("[SwitchUser] viewer context unavailable during switch", err);
+  }
+
   if (ctx?.mode === "parent") {
     persistParentSelection(ctx.viewerUserId, ctx.studioId, user.id);
   } else if (ctx?.viewerUserId) {
     persistLastActiveStudent(ctx.viewerUserId, ctx.studioId, user.id);
   }
+
   setActiveProfileId(user.id);
-  window.location.reload();
   localStorage.setItem("loggedInUser", JSON.stringify(user));
   localStorage.setItem("activeStudentId", user.id);
-  currentProfile = user;
-
-  await refreshActiveStudentData({ userId: user.id, fallbackProfile: user });
-  renderAvatarMenu(availableUsers, user.id);
-  syncParentViewerSelector(user.id);
+  console.debug(`[SwitchUser] switched to ${user.id} and reloading`);
   closeAvatarMenu();
+  location.href = "index.html";
 }
 
 function initAvatarSwitcher(users) {
@@ -979,7 +982,12 @@ function updatePendingProgressFill() {
 }
 
 async function refreshActiveStudentData({ userId, fallbackProfile } = {}) {
-  const ctx = await getViewerContext();
+  let ctx = null;
+  try {
+    ctx = await getViewerContext();
+  } catch (err) {
+    console.warn("[Home] viewer context fetch failed; continuing without it", err);
+  }
   const activeStudentId = userId || getActiveStudentIdForContext(ctx);
   if (!activeStudentId) {
     updateParentProgressState({ hasSelection: false });
