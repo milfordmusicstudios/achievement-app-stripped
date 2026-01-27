@@ -160,6 +160,7 @@ export async function getViewerContext() {
         firstName,
         lastName
       };
+      
     }
   } catch (err) {
     console.warn("[ViewerContext] userRow fetch failed", err, { table: "users", userId: viewerUserId });
