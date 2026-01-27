@@ -3,6 +3,7 @@
 // Requires: <script type="module" src="supabaseClient.js"></script>
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
 // Determine env: config.js can set window.APP_ENV = "dev" | "prod" | "demo"
 const env = (
   window.APP_ENV ||
@@ -31,8 +32,6 @@ const finalConfig =
 if (!finalConfig.url || !finalConfig.anonKey) {
   console.warn(`[Supabase] Missing config for env="${env}". Using DEV.`);
 }
-
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 export const supabase = createClient(finalConfig.url, finalConfig.anonKey, {
   auth: {
