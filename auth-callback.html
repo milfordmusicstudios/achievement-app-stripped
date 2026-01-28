@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Finishing sign-in | Achievement App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Inter", "Segoe UI", sans-serif;
+      background: #f4f7fb;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .callback-card {
+      background: white;
+      border-radius: 16px;
+      padding: 32px;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.15);
+      text-align: center;
+      width: min(420px, 90vw);
+    }
+    .callback-card h2 {
+      margin: 0;
+      color: #00477d;
+      margin-bottom: 12px;
+    }
+    .callback-card p {
+      color: #4d6470;
+      margin-top: 0;
+    }
+  </style>
+</head>
+<body>
+  <main class="callback-card">
+    <h2>Finishing sign-in…</h2>
+    <p>Please wait while we complete your sign-in link.</p>
+  </main>
+
+  <script type="module" src="config.js"></script>
+  <script type="module" src="supabaseClient.js"></script>
+  <script type="module" src="auth-callback.js"></script>
+</body>
+</html>

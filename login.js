@@ -16,22 +16,108 @@ window.cancelStudentSelect = function() {
   window.location.href = 'login.html';
 };
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 document.addEventListener("DOMContentLoaded", () => {
   console.log("DEBUG: login.js loaded");
 
   const form = document.getElementById('loginForm');
   const errorDisplay = document.getElementById('loginError');
+  const messageDisplay = document.getElementById('loginMessage');
+  const forgotButton = document.getElementById('forgotPasswordBtn');
+  const params = new URLSearchParams(window.location.search);
+
+  const showError = (text) => {
+    if (messageDisplay) {
+      messageDisplay.style.display = 'none';
+      messageDisplay.textContent = '';
+    }
+    if (errorDisplay) {
+      errorDisplay.style.display = 'block';
+      errorDisplay.textContent = text;
+    }
+  };
+
+  const showMessage = (text) => {
+    if (errorDisplay) {
+      errorDisplay.style.display = 'none';
+      errorDisplay.textContent = '';
+    }
+    if (messageDisplay) {
+      messageDisplay.style.display = 'block';
+      messageDisplay.textContent = text;
+    }
+  };
+
+  if (params.get('status') === 'reset-success') {
+    showMessage('Password updated. Please log in.');
+  }
+  if (params.get('flow') === 'guard') {
+    showError('Please sign in to continue.');
+  }
+  if (params.get('flow') === 'auth-callback' && params.get('error')) {
+    showError('We could not complete the link. Please try again.');
+  }
+
+  const resetUrl = `${window.location.origin}/auth-callback.html?next=reset-password`;
+  const emailInputGetter = () => document.getElementById('email');
+
+  const disableForgotButton = (state, text) => {
+    if (!forgotButton) return;
+    forgotButton.disabled = state;
+    forgotButton.textContent = text ?? 'Forgot password?';
+  };
+
+  const handleForgotPassword = async () => {
+    const emailInput = emailInputGetter();
+    const emailValue = emailInput?.value.trim().toLowerCase() ?? '';
+
+    if (!emailValue) {
+      showError('Enter your email to reset password.');
+      emailInput?.focus();
+      return;
+    }
+
+    if (!EMAIL_REGEX.test(emailValue)) {
+      showError('Please enter a valid email address.');
+      emailInput?.focus();
+      return;
+    }
+
+    disableForgotButton(true, 'Sending...');
+    try {
+      await supabase.auth.resetPasswordForEmail(emailValue, {
+        redirectTo: resetUrl,
+      });
+      showMessage('Password reset email sent. Check your inbox.');
+    } catch (error) {
+      console.error("[Login] reset password error", error);
+      showError(error?.message || 'Unable to send reset email.');
+    } finally {
+      setTimeout(() => disableForgotButton(false, 'Forgot password?'), 10000);
+    }
+  };
+
+  forgotButton?.addEventListener('click', handleForgotPassword);
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     console.log("DEBUG: Login form submitted");
 
-    const email = document.getElementById('loginEmail').value.trim().toLowerCase();
-    const password = document.getElementById('loginPassword').value;
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('loginPassword');
+    const email = emailInput?.value.trim().toLowerCase() ?? "";
+    const password = passwordInput?.value.trim() ?? "";
+
+    console.log(`[Login] email="${email}" pwLen=${password.length}`);
 
     if (!email || !password) {
-      errorDisplay.style.display = 'block';
-      errorDisplay.textContent = 'Please enter both email and password.';
+      showError('Please enter both email and password.');
+      return;
+    }
+
+    if (email.includes(" ") || !EMAIL_REGEX.test(email)) {
+      showError('Please enter a valid email address.');
       return;
     }
 
@@ -41,8 +127,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (error) {
       console.error("DEBUG: Login failed", error.message);
-      errorDisplay.style.display = 'block';
-      errorDisplay.textContent = 'Invalid email or password.';
+      showError('Invalid email or password.');
       return;
     }
 
@@ -57,8 +142,7 @@ document.addEventListener("DOMContentLoaded", () => {
     console.log("DEBUG: User fetch result", userData, fetchError);
 
     if (fetchError || !userData) {
-      errorDisplay.style.display = 'block';
-      errorDisplay.textContent = 'Error fetching user profile.';
+      showError('Error fetching user profile.');
       return;
     }
 

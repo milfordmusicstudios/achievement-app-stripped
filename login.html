@@ -12,8 +12,13 @@
     <h2>Achievement Awards</h2>
 
     <form id="loginForm">
-      <input type="email" id="loginEmail" placeholder="Email" required />
+      <input type="email" id="email" placeholder="Email" required autocomplete="email" inputmode="email" />
       <input type="password" id="loginPassword" placeholder="Password" required />
+      <div style="margin: 0 0 12px; text-align: right;">
+        <button type="button" id="forgotPasswordBtn" style="border:none; background:none; color:#00477d; text-decoration:underline; font-size:0.95rem; padding:0; cursor:pointer;">
+          Forgot password?
+        </button>
+      </div>
       <div style="display: flex; justify-content: center; gap: 10px; margin-top: 10px;">
         <button type="submit" class="blue-button">Login</button>
         <button type="button" class="blue-button" onclick="window.location.href='signup.html'">Sign Up</button>
@@ -21,6 +26,7 @@
     </form>
 
     <p id="loginError" style="color: red; display: none;">Invalid email or password.</p>
+    <p id="loginMessage" style="color: #0f7a34; display: none; font-weight: 600; margin-top: 6px;"></p>
   </main>
 
   <footer>
