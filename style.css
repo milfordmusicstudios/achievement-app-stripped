@@ -458,6 +458,14 @@ body.white-page button {
   justify-content: center;
   align-items: center;
   z-index: 1000;
+  padding: 1rem;
+  overflow-y: auto;
+}
+.modal .modal-content {
+  max-height: calc(100vh - 120px);
+  overflow: visible;
+  width: min(540px, 95vw);
+  box-sizing: border-box;
 }
 #categoryPreview {
   display: block;
@@ -2179,4 +2187,109 @@ body.leaderboard-page .leaderboard-title {
   height: 20px;
   display: block;
   stroke-width: 2;
+}
+
+/* Student selector component */
+.student-selector {
+  border: 1px solid #ced4da;
+  border-radius: 14px;
+  background: #fff;
+  padding: 6px 10px 8px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  font-family: "Inter", "Segoe UI", sans-serif;
+  position: relative;
+  width: 100%;
+  max-width: 360px;
+  z-index: 1050;
+}
+.student-selector .selected-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 28px;
+  margin-bottom: 4px;
+}
+.student-selector .selected-chips:empty {
+  display: none;
+  margin-bottom: 0;
+}
+.selector-actions {
+  margin-top: 6px;
+  font-size: 0.85rem;
+  text-align: right;
+}
+.selector-actions button {
+  border: none;
+  background: transparent;
+  color: #0f73de;
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 0;
+}
+.student-selector .selected-chips .student-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #e9f0ff;
+  color: #04233b;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.student-selector .selected-chips .student-chip button {
+  border: none;
+  background: transparent;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  color: #6b7280;
+}
+.student-selector input {
+  width: 100%;
+  border: none;
+  padding: 6px 0;
+  font-size: 1rem;
+  outline: none;
+}
+.student-selector .selector-results {
+  margin-top: 4px;
+  max-height: 240px;
+  overflow-y: auto;
+  border: 1px solid #d9dfe8;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 12px 28px rgba(15, 33, 61, 0.18);
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  z-index: 9999;
+  display: none;
+  scrollbar-width: none;
+}
+.student-selector .selector-results::-webkit-scrollbar {
+  width: 0;
+}
+.student-selector .selector-results .student-option {
+  padding: 8px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid #f1f3f6;
+  font-weight: 500;
+  color: #0f2753;
+}
+.student-selector .selector-results .student-option:last-child {
+  border-bottom: none;
+}
+.student-selector .selector-results .student-option:hover {
+  background: #eef3ff;
+}
+.student-selector .selector-results .student-option.selected {
+  background: #dfe8ff;
+}
+.student-selector .selector-results .student-placeholder {
+  padding: 10px 12px;
+  color: #6b7280;
+  font-size: 0.9rem;
 }

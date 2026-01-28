@@ -88,9 +88,18 @@
   background:rgba(0,0,0,0.6); z-index:10000; justify-content:center; align-items:center;">
   <div class="modal-content" style="background:white; padding:20px; border-radius:10px; width:90%; max-width:500px;">
     <h3 style="text-align:center; color:#00477d;">Quick Add Points</h3>
-    <div style="max-height:400px; overflow-y:auto; margin-bottom:10px;">
-      <label><b>Select Students:</b></label>
-      <div id="quickAddStudentsList" style="display:flex; flex-direction:column; gap:5px; margin:10px 0;"></div>
+    <div style="max-height:400px; overflow:visible; margin-bottom:10px;">
+      <label><b>By Students</b></label>
+      <div class="student-selector" id="quickAddStudentSelector" style="margin-top:6px;">
+        <div class="selected-chips" id="quickAddStudentChips"></div>
+        <input type="text" id="quickAddStudentSearch" placeholder="Student Search" autocomplete="off" />
+        <div class="selector-results" id="quickAddStudentResults">
+          <div class="student-placeholder">Start typing to find a student.</div>
+        </div>
+      </div>
+      <div class="selector-actions">
+        <button type="button" id="quickAddClearSearch">Clear search</button>
+      </div>
     </div>
 
     <label><b>Category:</b></label>

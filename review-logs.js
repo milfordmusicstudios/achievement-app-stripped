@@ -370,15 +370,110 @@ const quickAddModal = document.getElementById("quickAddModal");
 const quickAddCancel = document.getElementById("quickAddCancel");
 const quickAddSubmit = document.getElementById("quickAddSubmit");
 
-const quickAddStudentsList = document.getElementById("quickAddStudentsList");
+const quickAddStudentSearch = document.getElementById("quickAddStudentSearch");
+const quickAddStudentResults = document.getElementById("quickAddStudentResults");
+const quickAddStudentChips = document.getElementById("quickAddStudentChips");
 const quickAddCategory = document.getElementById("quickAddCategory");
 const quickAddDate = document.getElementById("quickAddDate");
 const quickAddPoints = document.getElementById("quickAddPoints");
 const quickAddNotes = document.getElementById("quickAddNotes");
+const quickAddClearBtn = document.getElementById("quickAddClearSearch");
+
+let quickAddStudentPool = [];
+const quickAddSelection = new Map();
+
+function formatStudentName(student) {
+  if (!student) return "";
+  const first = student.firstName || "";
+  const last = student.lastName || "";
+  const name = `${last}, ${first}`.trim();
+  return name.length ? name : `${first} ${last}`.trim();
+}
+
+function renderQuickAddStudentResults() {
+  if (!quickAddStudentResults) return;
+  const query = (quickAddStudentSearch?.value || "").trim().toLowerCase();
+  if (!query) {
+    quickAddStudentResults.style.display = "none";
+    return;
+  }
+
+  quickAddStudentResults.style.display = "block";
+
+  if (!quickAddStudentPool.length) {
+    quickAddStudentResults.innerHTML = `<div class="student-placeholder">Loading students...</div>`;
+    return;
+  }
+
+  const matches = quickAddStudentPool.filter(student => {
+    const full = `${student.firstName} ${student.lastName}`.trim().toLowerCase();
+    const reversed = `${student.lastName}, ${student.firstName}`.trim().toLowerCase();
+    return full.includes(query) || reversed.includes(query);
+  });
+
+  if (!matches.length) {
+    quickAddStudentResults.innerHTML = `<div class="student-placeholder">No matches</div>`;
+    return;
+  }
+
+  quickAddStudentResults.innerHTML = matches
+    .map(student => {
+      const name = formatStudentName(student);
+      const isSelected = quickAddSelection.has(String(student.id));
+      return `<div class="student-option ${isSelected ? "selected" : ""}" data-id="${student.id}">${name}</div>`;
+    })
+    .join("");
+}
+
+function updateQuickAddChips() {
+  if (!quickAddStudentChips) return;
+  if (!quickAddSelection.size) {
+    quickAddStudentChips.innerHTML = "";
+    return;
+  }
+  quickAddStudentChips.innerHTML = Array.from(quickAddSelection.values())
+    .map(student => {
+      const name = formatStudentName(student);
+      return `
+        <span class="student-chip">
+          ${name}
+          <button type="button" data-remove-student="${student.id}" aria-label="Remove ${name}">&times;</button>
+        </span>`;
+    })
+    .join("");
+}
+
+function toggleQuickAddStudent(student) {
+  if (!student) return;
+  const key = String(student.id);
+  if (quickAddSelection.has(key)) return;
+  quickAddSelection.set(key, student);
+  updateQuickAddChips();
+  renderQuickAddStudentResults();
+  if (quickAddStudentSearch) quickAddStudentSearch.value = "";
+  if (quickAddStudentResults) quickAddStudentResults.style.display = "none";
+}
+
+function resetQuickAddSelection() {
+  quickAddSelection.clear();
+  if (quickAddStudentSearch) quickAddStudentSearch.value = "";
+  updateQuickAddChips();
+  renderQuickAddStudentResults();
+}
+
+function resetQuickAddSearch() {
+  if (quickAddStudentSearch) quickAddStudentSearch.value = "";
+  resetQuickAddSelection();
+  if (quickAddStudentResults) {
+    quickAddStudentResults.style.display = "none";
+  }
+}
 
 if (quickAddBtn) {
   quickAddBtn.addEventListener("click", async () => {
     quickAddModal.style.display = "flex";
+    resetQuickAddSelection();
+    if (quickAddStudentSearch) quickAddStudentSearch.value = "";
     await loadQuickAddStudents();
     // Default date = today
     quickAddDate.value = new Date().toISOString().split("T")[0];
@@ -388,11 +483,38 @@ if (quickAddBtn) {
 if (quickAddCancel) {
   quickAddCancel.addEventListener("click", () => {
     quickAddModal.style.display = "none";
+    resetQuickAddSelection();
   });
 }
 
+quickAddStudentResults?.addEventListener("click", (event) => {
+  const option = event.target.closest(".student-option");
+  if (!option) return;
+  const student = quickAddStudentPool.find(s => String(s.id) === option.dataset.id);
+  toggleQuickAddStudent(student);
+});
+
+quickAddStudentSearch?.addEventListener("input", () => renderQuickAddStudentResults());
+
+quickAddStudentChips?.addEventListener("click", (event) => {
+  const removeButton = event.target.closest("button[data-remove-student]");
+  if (!removeButton) return;
+  const id = removeButton.dataset.removeStudent;
+  if (quickAddSelection.has(id)) {
+    quickAddSelection.delete(id);
+    updateQuickAddChips();
+    renderQuickAddStudentResults();
+  }
+});
+
+quickAddClearBtn?.addEventListener("click", () => {
+  resetQuickAddSearch();
+});
+
 async function loadQuickAddStudents() {
-  quickAddStudentsList.innerHTML = "<p>Loading students...</p>";
+  if (quickAddStudentResults) {
+    quickAddStudentResults.innerHTML = "<div class='student-placeholder'>Loading students...</div>";
+  }
 
   const user = JSON.parse(localStorage.getItem("loggedInUser"));
   const activeRole = localStorage.getItem("activeRole");
@@ -402,7 +524,9 @@ async function loadQuickAddStudents() {
     .select("id, firstName, lastName, roles, teacherIds");
 
   if (error) {
-    quickAddStudentsList.innerHTML = `<p>Error: ${error.message}</p>`;
+    if (quickAddStudentResults) {
+      quickAddStudentResults.innerHTML = `<div class="student-placeholder">Error: ${error.message}</div>`;
+    }
     return;
   }
 
@@ -417,26 +541,26 @@ async function loadQuickAddStudents() {
 
   filtered = filtered.sort((a, b) => `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`));
 
-  quickAddStudentsList.innerHTML = filtered
-    .map(s => `
-      <label style="display:flex; align-items:center; gap:8px;">
-        <input type="checkbox" class="quickAddStudent" value="${s.id}">
-        ${s.firstName} ${s.lastName}
-      </label>
-    `)
-    .join("");
+  quickAddStudentPool = filtered;
+  quickAddStudentSearch.value = "";
+  resetQuickAddSelection();
+  renderQuickAddStudentResults();
 }
 
 if (quickAddSubmit) {
   quickAddSubmit.addEventListener("click", async () => {
-    const selectedIds = Array.from(document.querySelectorAll(".quickAddStudent:checked")).map(cb => cb.value);
+    const selectedIds = Array.from(quickAddSelection.keys());
     const category = quickAddCategory.value;
     const date = quickAddDate.value;
     const points = quickAddPoints.value ? parseInt(quickAddPoints.value) : (category === "practice" ? 5 : 0);
     const notes = quickAddNotes.value.trim();
 
-    if (selectedIds.length === 0) return alert("Select at least one student.");
-    if (!category || !date) return alert("Please select a category and date.");
+    if (selectedIds.length === 0) {
+      return alert("Select at least one student.");
+    }
+    if (!category || !date) {
+      return alert("Please select a category and date.");
+    }
 
     const inserts = selectedIds.map(id => ({
       userId: id,
@@ -465,6 +589,7 @@ if (quickAddSubmit) {
 
     alert(`✅ Points added for ${selectedIds.length} student(s)!`);
     quickAddModal.style.display = "none";
+    resetQuickAddSelection();
     await new Promise(r => setTimeout(r, 300)); // short delay for backend sync
     location.reload(); // refresh logs
   });

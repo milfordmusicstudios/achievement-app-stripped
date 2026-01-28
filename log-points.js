@@ -11,13 +11,135 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   const categorySelect = document.getElementById("logCategory");
-  const studentSelect = document.getElementById("logStudent");
+  const studentRow = document.getElementById("logStudentRow");
+  const studentSearchInput = document.getElementById("logStudentSearch");
+  const studentResults = document.getElementById("logStudentResults");
+  const studentChips = document.getElementById("logStudentChips");
+  const studentHidden = document.getElementById("logStudent");
+  const clearLogStudentBtn = document.getElementById("clearLogStudent");
   const previewImage = document.getElementById("previewImage");
   const pointsInput = document.getElementById("logPoints");
   const notesInput = document.getElementById("logNote");
   const dateInput = document.getElementById("logDate");
   const submitBtn = document.querySelector("button[type='submit']");
   const cancelBtn = document.querySelector("button[type='button']");
+
+  let availableStudents = [];
+  const selectedStudents = new Map();
+
+  function formatStudentName(student) {
+    if (!student) return "";
+    const first = student.firstName || "";
+    const last = student.lastName || "";
+    const name = `${last}, ${first}`.trim();
+    return name.length ? name : `${first} ${last}`.trim();
+  }
+
+  function updateLogStudentHidden() {
+    if (!studentHidden) return;
+    studentHidden.value = Array.from(selectedStudents.keys()).join(",");
+  }
+
+  function renderLogStudentChips() {
+    if (!studentChips) return;
+    if (!selectedStudents.size) {
+      studentChips.innerHTML = "";
+      return;
+    }
+    studentChips.innerHTML = Array.from(selectedStudents.values())
+      .map(student => {
+        const name = formatStudentName(student);
+        return `
+        <span class="student-chip">
+          ${name}
+          <button type="button" data-remove-student="${student.id}" aria-label="Remove ${name}">&times;</button>
+        </span>`;
+      })
+      .join("");
+  }
+
+  function renderLogStudentResults() {
+    if (!studentResults) return;
+    const query = (studentSearchInput?.value || "").trim().toLowerCase();
+    if (!query) {
+      studentResults.style.display = "none";
+      return;
+    }
+
+    studentResults.style.display = "block";
+
+    if (!availableStudents.length) {
+      studentResults.innerHTML = `<div class="student-placeholder">Loading students...</div>`;
+      return;
+    }
+
+    const matches = availableStudents.filter(student => {
+      const full = `${student.firstName} ${student.lastName}`.trim().toLowerCase();
+      const reversed = `${student.lastName}, ${student.firstName}`.trim().toLowerCase();
+      return full.includes(query) || reversed.includes(query);
+    });
+
+    if (!matches.length) {
+      studentResults.innerHTML = `<div class="student-placeholder">No matches</div>`;
+      return;
+    }
+
+    studentResults.innerHTML = matches
+      .map(student => {
+        const name = formatStudentName(student);
+        const isSelected = selectedStudents.has(String(student.id));
+        return `<div class="student-option ${isSelected ? "selected" : ""}" data-id="${student.id}">${name}</div>`;
+      })
+      .join("");
+  }
+
+  function clearLogStudentSelection() {
+    selectedStudents.clear();
+    if (studentHidden) studentHidden.value = "";
+    if (studentChips) studentChips.innerHTML = "";
+    if (studentSearchInput) studentSearchInput.value = "";
+    renderLogStudentResults();
+  }
+
+  function clearLogStudentSearch() {
+    if (studentSearchInput) studentSearchInput.value = "";
+    clearLogStudentSelection();
+    if (studentResults) studentResults.style.display = "none";
+  }
+
+  function selectLogStudent(student) {
+    if (!student || !studentHidden) return;
+    const key = String(student.id);
+    if (selectedStudents.has(key)) return;
+    selectedStudents.set(key, student);
+    updateLogStudentHidden();
+    renderLogStudentChips();
+    if (studentSearchInput) studentSearchInput.value = "";
+    renderLogStudentResults();
+  }
+
+  studentResults?.addEventListener("click", (event) => {
+    const option = event.target.closest(".student-option");
+    if (!option) return;
+    const student = availableStudents.find(s => String(s.id) === option.dataset.id);
+    if (student) selectLogStudent(student);
+  });
+
+  studentSearchInput?.addEventListener("input", () => renderLogStudentResults());
+  studentSearchInput?.addEventListener("focus", () => renderLogStudentResults());
+
+  studentChips?.addEventListener("click", (event) => {
+    const removeButton = event.target.closest("button[data-remove-student]");
+    if (!removeButton) return;
+    const id = removeButton.dataset.removeStudent;
+    if (!id) return;
+    selectedStudents.delete(id);
+    updateLogStudentHidden();
+    renderLogStudentChips();
+    renderLogStudentResults();
+  });
+
+  clearLogStudentBtn?.addEventListener("click", clearLogStudentSearch);
 
   // ✅ Default date to today
   if (dateInput) {
@@ -27,8 +149,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // ✅ Hide student dropdown & points input for students
   if (!(activeRole === "admin" || activeRole === "teacher")) {
-    if (studentSelect) studentSelect.closest("tr").style.display = "none";
+    if (studentRow) studentRow.style.display = "none";
     if (pointsInput) pointsInput.closest("tr").style.display = "none";
+    clearLogStudentSelection();
   }
 
   // ✅ Show default category preview
@@ -81,44 +204,39 @@ categorySelect.addEventListener("change", () => {
   }
 
   // ✅ Populate students only for teachers/admins
-  if ((activeRole === "admin" || activeRole === "teacher") && studentSelect) {
+  if (activeRole === "admin" || activeRole === "teacher") {
     const { data: students, error: stuErr } = await supabase
       .from("users")
       .select("id, firstName, lastName, roles, teacherIds");
 
     if (stuErr) {
       console.error("Supabase error loading students:", stuErr.message);
+      availableStudents = [];
     } else if (students) {
-      const filtered = students.filter(s => {
-        const roles = Array.isArray(s.roles) ? s.roles : [s.roles];
-        const isStudent = roles.includes("student");
+      availableStudents = students
+        .filter(s => {
+          const roles = Array.isArray(s.roles) ? s.roles : [s.roles];
+          const isStudent = roles.includes("student");
 
-        if (activeRole === "admin") return isStudent;
-
-        if (activeRole === "teacher") {
-          const teacherList = Array.isArray(s.teacherIds) ? s.teacherIds : [];
-          return isStudent && teacherList.includes(user.id);
-        }
-
-        return false;
-      });
-
-      // ✅ Sort students alphabetically
-      const sorted = filtered.sort((a, b) => {
-        const nameA = `${a.firstName} ${a.lastName}`.toLowerCase();
-        const nameB = `${b.firstName} ${b.lastName}`.toLowerCase();
-        return nameA.localeCompare(nameB);
-      });
-
-      // ✅ Populate dropdown
-      studentSelect.innerHTML = "<option value=''>Select a student</option>";
-      sorted.forEach(s => {
-        const opt = document.createElement("option");
-        opt.value = s.id;
-        opt.textContent = `${s.firstName} ${s.lastName}`;
-        studentSelect.appendChild(opt);
-      });
+          if (activeRole === "admin") return isStudent;
+          if (activeRole === "teacher") {
+            const teacherList = Array.isArray(s.teacherIds) ? s.teacherIds : [];
+            return isStudent && teacherList.includes(user.id);
+          }
+          return false;
+        })
+        .sort((a, b) => {
+          const nameA = `${a.firstName} ${a.lastName}`.toLowerCase();
+          const nameB = `${b.firstName} ${b.lastName}`.toLowerCase();
+          return nameA.localeCompare(nameB);
+        });
+    } else {
+      availableStudents = [];
     }
+    renderLogStudentResults();
+  } else {
+    availableStudents = [];
+    renderLogStudentResults();
   }
 
   // ✅ Submit log
@@ -130,10 +248,14 @@ categorySelect.addEventListener("change", () => {
       const note = notesInput?.value.trim();
       const date = dateInput?.value;
 
-      const targetUser =
-        (activeRole === "admin" || activeRole === "teacher") && studentSelect.value
-          ? studentSelect.value
-          : user.id;
+      let targetUsers = [user.id];
+      if (activeRole === "admin" || activeRole === "teacher") {
+        targetUsers = Array.from(selectedStudents.keys());
+        if (!targetUsers.length) {
+          alert("Please select at least one student.");
+          return;
+        }
+      }
 
       let points = 5; // default for practice
       if (activeRole === "admin" || activeRole === "teacher") {
@@ -152,14 +274,15 @@ categorySelect.addEventListener("change", () => {
         status = "approved";
       }
 
-      const { error: logErr } = await supabase.from("logs").insert([{
-        userId: targetUser,
+      const inserts = targetUsers.map(id => ({
+        userId: id,
         category,
         notes: note,
         date,
         points,
         status
-      }]);
+      }));
+      const { error: logErr } = await supabase.from("logs").insert(inserts);
 
       if (logErr) {
         console.error("Failed to save log:", logErr.message);
@@ -168,7 +291,9 @@ categorySelect.addEventListener("change", () => {
       }
 
 // ✅ Recalculate user points & allow Level Up popup to trigger
-await recalculateUserPoints(targetUser);
+for (const id of targetUsers) {
+  await recalculateUserPoints(id);
+}
 
 // ✅ Wait a moment to ensure Level Up popup appears first
 await new Promise(resolve => setTimeout(resolve, 1500));
@@ -206,22 +331,24 @@ setTimeout(() => {
     });
   }
 
-  if (logMoreBtn) {
-    logMoreBtn.addEventListener("click", () => {
-      popup.remove();
-      document.getElementById("logForm").reset();
+      if (logMoreBtn) {
+        logMoreBtn.addEventListener("click", () => {
+          popup.remove();
+          document.getElementById("logForm").reset();
+          clearLogStudentSelection();
+          renderLogStudentResults();
 
-      // Reset date and hide fields if student
-      if (dateInput) {
-        const today = new Date().toISOString().split("T")[0];
-        dateInput.value = today;
+          // Reset date and hide fields if student
+          if (dateInput) {
+            const today = new Date().toISOString().split("T")[0];
+            dateInput.value = today;
+          }
+          if (!(activeRole === "admin" || activeRole === "teacher")) {
+            if (studentRow) studentRow.style.display = "none";
+            if (pointsInput) pointsInput.closest("tr").style.display = "none";
+          }
+        });
       }
-      if (!(activeRole === "admin" || activeRole === "teacher")) {
-        if (studentSelect) studentSelect.closest("tr").style.display = "none";
-        if (pointsInput) pointsInput.closest("tr").style.display = "none";
-      }
-    });
-  }
 }, 100);
     });
   }

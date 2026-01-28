@@ -14,11 +14,19 @@
 <form class="settings-form" id="logForm">
   <table style="width: 100%; border-collapse: collapse;">
     <!-- Row 1: Student -->
-    <tr>
+    <tr id="logStudentRow">
       <td colspan="2" style="padding: 10px;">
-        <select id="logStudent" class="white-input" style="width: 100%;">
-          <option value="">Select a student</option>
-        </select>
+        <div class="student-selector" id="logStudentSelector">
+          <div class="selected-chips" id="logStudentChips"></div>
+          <input type="text" id="logStudentSearch" placeholder="Student Search" autocomplete="off" />
+          <div class="selector-results" id="logStudentResults">
+            <div class="student-placeholder">Start typing to find a student.</div>
+          </div>
+        </div>
+        <div class="selector-actions">
+          <button type="button" id="clearLogStudent">Clear search</button>
+        </div>
+        <input type="hidden" id="logStudent" />
       </td>
     </tr>
 
