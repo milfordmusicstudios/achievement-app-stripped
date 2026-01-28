@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Manage Users | Achievement App</title>
   <link rel="stylesheet" href="style.css">
-  <script type="module" src="manage-users.js" defer></script>
 </head>
 <body class="manage-users">
 
@@ -48,7 +47,11 @@
   <div id="paginationControls"></div>
 </main>
 
-<script>
+  <script type="module" src="config.js"></script>
+  <script type="module" src="supabaseClient.js"></script>
+  <script type="module" src="manage-users.js"></script>
+
+  <script>
 function syncUserTableWidths() {
   const headerCells = document.querySelectorAll("#userHeaderTable th");
   const rowCells = document.querySelectorAll("#userHeaderTable tr:first-child td");

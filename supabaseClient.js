@@ -1,16 +1,70 @@
-// supabase.js
+// supabaseClient.js
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+import { APP_ENV, getSupabaseConfig } from "./config.js";
 
-const SUPABASE_URL = "https://wygdmapqwqjqrmrksaef.supabase.co";
+const STORAGE_KEY = "aa_last_env";
+const SUPABASE_KEY_PREFIX = "sb-";
+const SUPABASE_KEY_INDICATOR = "supabase";
 
-const SUPABASE_ANON_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind5Z2RtYXBxd3FqcXJtcmtzYWVmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMyODE2NDEsImV4cCI6MjA2ODg1NzY0MX0.LPkBdlfSc6V8dbQ6wTAJMPvm7PzQ1OxOraypdee7w2I";
+const { supabaseUrl, supabaseAnonKey } = getSupabaseConfig();
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error(`[Supabase] Missing credentials for env=${APP_ENV}`);
+}
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
   },
 });
 
-console.log("Supabase client initialized:", supabase);
+function shouldDropKey(key) {
+  if (!key) return false;
+  const normalized = key.toLowerCase();
+  return normalized.startsWith(SUPABASE_KEY_PREFIX) || normalized.includes(SUPABASE_KEY_INDICATOR);
+}
+
+async function sanitizeCachedAuth() {
+  try {
+    const storedKeys = [];
+    for (let i = 0; i < localStorage.length; i += 1) {
+      const key = localStorage.key(i);
+      if (shouldDropKey(key)) {
+        storedKeys.push(key);
+      }
+    }
+    storedKeys.forEach((key) => localStorage.removeItem(key));
+  } catch (error) {
+    console.warn("[Supabase] Clearing localStorage failed:", error);
+  }
+}
+
+async function enforceEnvConsistency() {
+  let previousEnv;
+  try {
+    previousEnv = sessionStorage.getItem(STORAGE_KEY);
+  } catch (error) {
+    console.warn("[Supabase] Unable to read sessionStorage:", error);
+  }
+
+  if (previousEnv && previousEnv !== APP_ENV) {
+    console.info(`[Supabase] env change (${previousEnv} -> ${APP_ENV}) detected, flushing auth cache.`);
+    try {
+      await supabase.auth.signOut({ scope: "local" });
+    } catch (error) {
+      console.warn("[Supabase] signOut before env switch failed:", error);
+    }
+    await sanitizeCachedAuth();
+  }
+
+  try {
+    sessionStorage.setItem(STORAGE_KEY, APP_ENV);
+  } catch (error) {
+    console.warn("[Supabase] Unable to persist env hint:", error);
+  }
+}
+
+await enforceEnvConsistency();
+console.info(`[Supabase] init env=${APP_ENV} host=${window.location.host}`);
+
+export { supabase };
