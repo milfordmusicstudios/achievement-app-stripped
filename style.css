@@ -40,6 +40,45 @@ body.tall-background {
   text-align: center;
 }
 
+/* Home: Announcement strip */
+.announce-strip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 14px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  background: rgba(255, 255, 255, 0.55);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+  max-width: 900px;
+  margin: 14px auto 18px;
+  color: inherit;
+  position: relative;
+}
+.announce-strip .announce-title {
+  font-weight: 700;
+}
+.announce-strip .announce-items {
+  opacity: 0.9;
+}
+@supports ((-webkit-backdrop-filter: blur(8px)) or (backdrop-filter: blur(8px))) {
+  .announce-strip {
+    background: rgba(255, 255, 255, 0.35);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+  }
+}
+@media (max-width: 520px) {
+  .announce-strip {
+    border-radius: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+    text-align: center;
+  }
+}
+}
+
+
 
 /* Logo */
 .logo {

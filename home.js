@@ -1,9 +1,17 @@
 import { supabase } from "./supabaseClient.js";
 import { recalculateUserPoints } from './utils.js';
 
+function setWhatsComingVisibility(role) {
+  const card = document.getElementById("whatsComingCard");
+  if (!card) return;
+  const normalized = (role || "").toLowerCase();
+  card.hidden = !(normalized === "teacher" || normalized === "admin");
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   const storedUser = JSON.parse(localStorage.getItem('loggedInUser'));
   const activeRole = localStorage.getItem('activeRole');
+  setWhatsComingVisibility(activeRole);
 
   if (!storedUser || !activeRole) {
     alert('You must be logged in.');
@@ -50,6 +58,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 function updateHomeUI(userData, activeRole, currentLevel, nextLevel) {
+  setWhatsComingVisibility(activeRole);
   const welcome = document.getElementById('welcomeTitle');
   if (welcome) {
     welcome.textContent = `Welcome, ${userData.firstName}!`;
