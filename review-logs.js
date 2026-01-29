@@ -200,7 +200,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   // Column Sorting
-  document.querySelectorAll("#logsHeaderTable th[data-sort]").forEach(th => {
+  document.querySelectorAll("#logsTable th[data-sort]").forEach(th => {
     th.style.cursor = "pointer";
     th.addEventListener("click", () => {
       const field = th.dataset.sort;

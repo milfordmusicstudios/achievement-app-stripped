@@ -48,23 +48,22 @@
 
     <div id="logsWrapper" class="logs-table-wrap">
       <div id="reviewLogsErrorPanel" class="review-logs-error" role="status" aria-live="polite" style="display:none;"></div>
-      <table id="logsHeaderTable">
-        <thead>
-          <tr>
-            <th><input type="checkbox" id="selectAll"></th>
-            <th data-sort="fullName">Student</th>
-            <th data-sort="category">Category</th>
-            <th data-sort="date">Date</th>
-            <th data-sort="points">Points</th>
-            <th>Note</th>
-            <th data-sort="status">Status</th>
-          </tr>
-        </thead>
-      </table>
-
-      <table id="logsTable">
-        <tbody id="logsTableBody"></tbody>
-      </table>
+      <div class="logs-scroll">
+        <table id="logsTable">
+          <thead>
+            <tr>
+              <th><input type="checkbox" id="selectAll"></th>
+              <th data-sort="fullName">Student</th>
+              <th data-sort="category">Category</th>
+              <th data-sort="date">Date</th>
+              <th data-sort="points">Points</th>
+              <th>Note</th>
+              <th data-sort="status">Status</th>
+            </tr>
+          </thead>
+          <tbody id="logsTableBody"></tbody>
+        </table>
+      </div>
     </div>
 
     <div id="bulkActionBar" class="bulk-action-bar" style="display:none;">
