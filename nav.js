@@ -52,7 +52,15 @@ function renderNav(role) {
   mount.appendChild(nav);
 }
 
+const AUTH_PAGES = new Set(["login.html", "signup.html", "forgot-password.html"]);
+
 document.addEventListener("DOMContentLoaded", async () => {
+  const current = getPathName();
+  if (AUTH_PAGES.has(current)) {
+    renderNav(resolveRoleFromStorage());
+    return;
+  }
+
   const role = await resolveRole();
   renderNav(role);
 });

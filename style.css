@@ -2151,13 +2151,14 @@ body.review-logs-page .logs-empty-state {
   color: #0b4f8a;
 }
 
-body.review-logs-page #logsHeaderTable,
-body.review-logs-page #logsTable {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-body.review-logs-page #logsHeaderTable th {
+  body.review-logs-page #logsHeaderTable,
+  body.review-logs-page #logsTable {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+  }
+  
+  body.review-logs-page #logsHeaderTable th {
   background: #f2f4f7;
   color: #00477d;
   font-weight: 800;
@@ -2168,11 +2169,125 @@ body.review-logs-page #logsHeaderTable th {
 
 body.review-logs-page #logsTable td {
   padding: 10px;
-  border-bottom: 1px solid rgba(11,79,138,0.1);
-  vertical-align: middle;
-}
+    border-bottom: 1px solid rgba(11,79,138,0.1);
+    vertical-align: middle;
+  }
 
-body.review-logs-page #logsTable tbody tr:nth-child(even) {
+  body.review-logs-page #logsHeaderTable th:nth-child(1),
+  body.review-logs-page #logsTable td:nth-child(1) {
+    width: 48px;
+  }
+
+  body.review-logs-page #logsHeaderTable th:nth-child(2),
+  body.review-logs-page #logsTable td:nth-child(2) {
+    min-width: 170px;
+  }
+
+  body.review-logs-page #logsHeaderTable th:nth-child(3),
+  body.review-logs-page #logsTable td:nth-child(3) {
+    width: 130px;
+  }
+
+  body.review-logs-page #logsHeaderTable th:nth-child(4),
+  body.review-logs-page #logsTable td:nth-child(4) {
+    width: 110px;
+  }
+
+  body.review-logs-page #logsHeaderTable th:nth-child(5),
+  body.review-logs-page #logsTable td:nth-child(5) {
+    width: 80px;
+  }
+
+  body.review-logs-page #logsHeaderTable th:nth-child(6),
+  body.review-logs-page #logsTable td:nth-child(6) {
+    min-width: 200px;
+  }
+
+  body.review-logs-page #logsHeaderTable th:nth-child(7),
+  body.review-logs-page #logsTable td:nth-child(7) {
+    min-width: 150px;
+    width: auto;
+  }
+  
+  body.review-logs-page #logsTable td:nth-child(5) input.edit-input {
+    max-width: 60px;
+    text-align: center;
+  }
+
+  body.review-logs-page #logsTable td:nth-child(6),
+  body.review-logs-page #logsTable textarea.edit-input {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  body.review-logs-page .date-cell {
+    padding: 0;
+  }
+
+  body.review-logs-page .date-wrapper {
+    position: relative;
+    width: 100%;
+    min-height: 44px;
+  }
+
+  body.review-logs-page .date-wrapper input.date-picker {
+    width: 100%;
+    border-radius: 10px;
+    padding: 10px;
+    border: 1px solid rgba(11,79,138,0.2);
+    background: transparent;
+    color: transparent;
+    text-align: center;
+  }
+
+  body.review-logs-page .date-wrapper .date-label {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    color: #0b4f8a;
+    pointer-events: none;
+  }
+
+  body.review-logs-page .date-wrapper input.date-picker:focus {
+    color: #0b4f8a;
+  }
+
+  body.review-logs-page .date-wrapper input.date-picker:focus + .date-label {
+    opacity: 0;
+  }
+
+  body.review-logs-page .category-cell {
+    padding: 0;
+  }
+
+  body.review-logs-page .category-cell select.edit-input {
+    border-radius: 10px;
+    border: 1px solid rgba(11,79,138,0.25);
+    box-shadow: inset 0 0 0 1px var(--cat-color, rgba(11,79,138,0.12));
+    color: #0b4f8a;
+    transition: border-color 150ms ease, box-shadow 150ms ease;
+  }
+
+  body.review-logs-page .category-cell select.edit-input:focus {
+    border-color: var(--cat-color, rgba(11,79,138,0.5));
+    box-shadow: inset 0 0 0 1px var(--cat-color, rgba(11,79,138,0.5));
+  }
+
+  body.review-logs-page .checkbox-cell {
+    width: 48px;
+    text-align: center;
+  }
+
+  body.review-logs-page .status-pill {
+    white-space: nowrap;
+    min-width: 140px;
+  }
+
+  body.review-logs-page #logsTable tbody tr:nth-child(even) {
   background: rgba(255,255,255,0.9);
 }
 
@@ -2304,31 +2419,6 @@ body.review-logs-page .summary-card.total .summary-value {
   color: #3090A8;
 }
 
-body.review-logs-page .cat-indicator {
-  display: inline-block;
-  width: 8px;
-  height: 22px;
-  border-radius: 999px;
-  margin-right: 8px;
-  vertical-align: middle;
-  background: rgba(11,79,138,0.18);
-}
-
-body.review-logs-page .cat-indicator[data-category="practice"] {
-  background: #C8F880;
-}
-body.review-logs-page .cat-indicator[data-category="participation"] {
-  background: #58E0E0;
-}
-body.review-logs-page .cat-indicator[data-category="performance"] {
-  background: #C868E0;
-}
-body.review-logs-page .cat-indicator[data-category="personal"] {
-  background: #F8B858;
-}
-body.review-logs-page .cat-indicator[data-category="proficiency"] {
-  background: #F890C8;
-}
 
 body.review-logs-page #logsTable select.status-pill[data-status="approved"] {
   background: #488038;

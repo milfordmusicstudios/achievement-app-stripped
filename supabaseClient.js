@@ -26,10 +26,20 @@ export function getSupabaseClient() {
 
   const { url, anon } = readConfig();
   if (!url || !anon) {
+    const configSource = window.SUPABASE_CONFIG_SOURCE || "none";
+    console.debug(`[Supabase] config source: ${configSource}`);
+    const isLocalHost =
+      typeof location !== "undefined" &&
+      (location.hostname.includes("localhost") || location.hostname.includes("127.0.0.1"));
     console.error(
       "[Supabase] Missing SUPABASE url/anonKey. Check config.js/env.",
       { urlPresent: !!url, anonPresent: !!anon }
     );
+    if (isLocalHost) {
+      console.info(
+        'Hint: run window.setSupabaseConfig("https://<project-ref>.supabase.co", "<anon-key>") once to save local values.'
+      );
+    }
     return null;
   }
 

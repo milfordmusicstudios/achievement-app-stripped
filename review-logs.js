@@ -5,6 +5,13 @@ import { ensureStudioContextAndRoute } from "./studio-routing.js";
 const DEBUG_REVIEW_LOGS = false;
 
 const categoryOptions = ["practice", "participation", "performance", "personal", "proficiency"];
+const categoryColors = {
+  practice: "#8dcb3d",
+  participation: "#58c1c7",
+  performance: "#c05df0",
+  personal: "#f3ab40",
+  proficiency: "#ff7099"
+};
 
 document.addEventListener("DOMContentLoaded", async () => {
   console.log("[DEBUG] Review Logs: Script loaded");
@@ -298,6 +305,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
+  function formatShortDate(value) {
+    if (!value) return "";
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed)) return "";
+    return parsed.toLocaleDateString("en-US", { month: "short", day: "2-digit" });
+  }
+
   function renderLogsTable(list) {
     logsTableBody.innerHTML = "";
     if (!allLogs.length) {
@@ -315,16 +329,21 @@ document.addEventListener("DOMContentLoaded", async () => {
       row.className = index % 2 === 0 ? "log-row-even" : "log-row-odd";
       const categoryKey = String(log.category || "").toLowerCase();
       row.innerHTML = `
-        <td><span class="cat-indicator" data-category="${categoryKey}"></span><input type="checkbox" class="select-log" data-id="${log.id}"></td>
+        <td class="checkbox-cell"><input type="checkbox" class="select-log" data-id="${log.id}"></td>
         <td>${log.fullName}</td>
-        <td>
+        <td class="category-cell" style="--cat-color:${categoryColors[categoryKey] || '#ccc'};">
           <select class="edit-input" data-id="${log.id}" data-field="category">
             ${categoryOptions.map(c =>
               `<option value="${c}" ${log.category?.toLowerCase() === c ? "selected" : ""}>${c}</option>`
             ).join("")}
           </select>
         </td>
-        <td><input type="date" class="edit-input" data-id="${log.id}" data-field="date" value="${(log.date || '').split('T')[0] || ''}"></td>
+        <td class="date-cell">
+          <div class="date-wrapper">
+            <input type="date" class="edit-input date-picker" data-id="${log.id}" data-field="date" value="${(log.date || '').split('T')[0] || ''}">
+            <span class="date-label">${formatShortDate(log.date)}</span>
+          </div>
+        </td>
         <td><input type="number" class="edit-input" data-id="${log.id}" data-field="points" value="${log.points ?? 0}"></td>
         <td><textarea class="edit-input" data-id="${log.id}" data-field="notes">${log.notes || ""}</textarea></td>
         <td>
@@ -366,6 +385,13 @@ document.addEventListener("DOMContentLoaded", async () => {
         // Normalize values
         if (field === "points") value = parseInt(value) || 0;
         if (field === "category") value = String(value).toLowerCase();
+        if (field === "date") {
+          const wrapper = e.target.closest(".date-wrapper");
+          const label = wrapper?.querySelector(".date-label");
+          if (label) {
+            label.textContent = formatShortDate(value);
+          }
+        }
 
         const { error } = await supabase.from("logs").update({ [field]: value }).eq("id", logId);
         if (error) {

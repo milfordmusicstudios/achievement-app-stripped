@@ -71,13 +71,49 @@ export async function clearAppSessionCache(reason = "unknown") {
   console.log(`[Cache] cleared ${reason}`);
 }
 
+const AUTH_PAGES = new Set(["login.html", "signup.html", "forgot-password.html"]);
+const REDIRECT_KEY = "didRedirectToLogin";
+let didWarnRedirect = false;
+
+function getCurrentPageName() {
+  if (typeof location === "undefined") return "";
+  const raw = location.pathname || "";
+  return (raw.split("/").pop() || "").toLowerCase();
+}
+
+function warnRedirectOnce() {
+  if (didWarnRedirect) return;
+  console.warn("[ViewerContext] no auth user; redirecting to login");
+  didWarnRedirect = true;
+}
+
+function attemptRedirectToLogin(isAuthPage) {
+  if (isAuthPage) return false;
+  if (typeof sessionStorage === "undefined") {
+    window.location.href = "login.html";
+    return true;
+  }
+  if (sessionStorage.getItem(REDIRECT_KEY)) {
+    return false;
+  }
+  sessionStorage.setItem(REDIRECT_KEY, "1");
+  window.location.href = "login.html";
+  return true;
+}
+
+function clearRedirectFlag() {
+  if (typeof sessionStorage === "undefined") return;
+  sessionStorage.removeItem(REDIRECT_KEY);
+}
+
 export async function getViewerContext() {
   let client;
   try {
     client = getSupabaseClient();
   } catch (err) {
     console.error("[ViewerContext] supabase client unavailable", err);
-    window.location.href = "login.html";
+    const currentPage = getCurrentPageName();
+    attemptRedirectToLogin(AUTH_PAGES.has(currentPage));
     return {
       viewerUserId: null,
       viewerRoles: [],
@@ -95,9 +131,11 @@ export async function getViewerContext() {
   const { data: sessionData } = await client.auth.getSession();
   const viewerUserId = sessionData?.session?.user?.id || null;
 
+  const currentPage = getCurrentPageName();
+  const isAuthPage = AUTH_PAGES.has(currentPage);
   if (!viewerUserId) {
-    console.warn("[ViewerContext] no auth user; redirecting to login");
-    window.location.href = "login.html";
+    warnRedirectOnce();
+    attemptRedirectToLogin(isAuthPage);
     return {
       viewerUserId: null,
       viewerRoles: [],
@@ -112,6 +150,7 @@ export async function getViewerContext() {
     };
   }
 
+  clearRedirectFlag();
   let studioId = localStorage.getItem("activeStudioId");
   if (!studioId) {
     studioId = await getActiveStudioIdForUser(viewerUserId);
