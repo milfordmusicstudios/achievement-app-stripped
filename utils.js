@@ -1,8 +1,16 @@
-import { supabase } from "./supabaseClient.js";
+import { supabase, getSupabaseClient } from "./supabaseClient.js";
 import { getActiveProfileId, setActiveProfileId } from "./active-profile.js";
 
 export async function getAuthUserId() {
-  const { data: authData } = await supabase.auth.getUser();
+  let client;
+  try {
+    client = getSupabaseClient();
+  } catch (err) {
+    console.warn("[Auth] supabase client unavailable", err);
+    return null;
+  }
+  const { data: authData, error } = await client.auth.getUser();
+  if (error) return null;
   return authData?.user?.id || null;
 }
 
@@ -64,10 +72,32 @@ export async function clearAppSessionCache(reason = "unknown") {
 }
 
 export async function getViewerContext() {
-  const { data: sessionData } = await supabase.auth.getSession();
+  let client;
+  try {
+    client = getSupabaseClient();
+  } catch (err) {
+    console.error("[ViewerContext] supabase client unavailable", err);
+    window.location.href = "login.html";
+    return {
+      viewerUserId: null,
+      viewerRoles: [],
+      isAdmin: false,
+      isTeacher: false,
+      isStudent: false,
+      isParent: false,
+      mode: "unknown",
+      studioId: null,
+      activeProfileId: null,
+      userRow: null
+    };
+  }
+
+  const { data: sessionData } = await client.auth.getSession();
   const viewerUserId = sessionData?.session?.user?.id || null;
 
   if (!viewerUserId) {
+    console.warn("[ViewerContext] no auth user; redirecting to login");
+    window.location.href = "login.html";
     return {
       viewerUserId: null,
       viewerRoles: [],
@@ -92,7 +122,7 @@ export async function getViewerContext() {
 
   let viewerProfile = null;
   try {
-    const { data, error } = await supabase
+    const { data, error } = await client
       .from("users")
       .select("roles, studio_id")
       .eq("id", effectiveProfileId)
@@ -105,7 +135,7 @@ export async function getViewerContext() {
 
   if (!viewerProfile && effectiveProfileId !== viewerUserId) {
     try {
-      const { data: fallbackProfile, error: fallbackError } = await supabase
+      const { data: fallbackProfile, error: fallbackError } = await client
         .from("users")
         .select("roles, studio_id")
         .eq("id", viewerUserId)
@@ -146,7 +176,7 @@ export async function getViewerContext() {
 
   let userRow = null;
   try {
-    const { data: row, error: rowError } = await supabase
+    const { data: row, error: rowError } = await client
       .from("users")
       .select("id, email, firstName, lastName, avatarUrl")
       .eq("id", viewerUserId)

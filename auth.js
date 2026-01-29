@@ -36,7 +36,7 @@ export async function getCurrentUser() {
  * Sign out and redirect to login.
  */
 export async function signOut() {
-  await supabase.auth.signOut();
+  await window.getSupabaseClient()?.auth.signOut();
   window.location.href = 'login.html';
 }
 

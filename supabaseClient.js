@@ -1,6 +1,4 @@
-// supabaseClient.js (ESM module)
-// Loads Supabase via the global client that the CDN script injects.
-// Requires: <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script> + <script type="module" src="supabaseClient.js"></script>
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // Determine env: config.js can set window.APP_ENV = "dev" | "prod" | "demo"
 const env = (
@@ -8,54 +6,93 @@ const env = (
   (location.hostname.includes("vercel.app") ? "dev" : "prod")
 ).toLowerCase();
 
-const SUPABASE_CONFIG = {
-  dev: {
-    url: "https://dtvcjmcstedudunjvbuv.supabase.co",
-    anonKey: "sb_publishable_x8CRqSl5wiZhIIGy1ozb5g_8l_cVpft",
+let _client = null;
+
+function readConfig() {
+  const cfg =
+    window.SUPABASE_CONFIG ||
+    window.APP_CONFIG?.supabase ||
+    window.CONFIG?.supabase ||
+    window.CONFIG ||
+    {};
+
+  const url = cfg.url || cfg.SUPABASE_URL || cfg.supabaseUrl || "";
+  const anon = cfg.anonKey || cfg.SUPABASE_ANON_KEY || cfg.supabaseAnonKey || "";
+  return { url, anon };
+}
+
+export function getSupabaseClient() {
+  if (_client) return _client;
+
+  const { url, anon } = readConfig();
+  if (!url || !anon) {
+    console.error(
+      "[Supabase] Missing SUPABASE url/anonKey. Check config.js/env.",
+      { urlPresent: !!url, anonPresent: !!anon }
+    );
+    return null;
+  }
+
+  _client = createClient(url, anon, {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+    },
+    global: {
+      headers: {
+        apikey: anon,
+      },
+    },
+  });
+  console.log(`[Supabase] client initialized (env=${env})`);
+  return _client;
+}
+
+const handler = {
+  get(_, prop) {
+    const client = getSupabaseClient();
+    if (!client) return undefined;
+    const value = client[prop];
+    return typeof value === "function" ? value.bind(client) : value;
   },
-  prod: {
-    url: "https://wygdmapqwqjqrmrksaef.supabase.co",
-    anonKey: "sb_publishable_x8CRqSl5wiZhIIGy1ozb5g_8l_cVpft",
+  set(_, prop, value) {
+    const client = getSupabaseClient();
+    if (!client) return true;
+    client[prop] = value;
+    return true;
   },
-  demo: {
-    url: "",
-    anonKey: "",
+  has(_, prop) {
+    const client = getSupabaseClient();
+    if (!client) return false;
+    return prop in client;
+  },
+  ownKeys() {
+    const client = getSupabaseClient();
+    if (!client) return [];
+    return Reflect.ownKeys(client);
+  },
+  getOwnPropertyDescriptor(_, prop) {
+    const client = getSupabaseClient();
+    if (!client) {
+      return undefined;
+    }
+    return (
+      Object.getOwnPropertyDescriptor(client, prop) || {
+        configurable: true,
+        enumerable: true,
+        value: client[prop],
+      }
+    );
   },
 };
 
-const selected = SUPABASE_CONFIG[env] || SUPABASE_CONFIG.dev;
-const finalConfig =
-  selected.url && selected.anonKey ? selected : SUPABASE_CONFIG.dev;
-
-if (!finalConfig.url || !finalConfig.anonKey) {
-  console.warn(`[Supabase] Missing config for env="${env}". Using DEV.`);
-}
-
-const createClientFactory =
-  window.supabase?.createClient || window.Supabase?.createClient || null;
-
-if (!createClientFactory) {
-  console.warn("[Home] optional supabase factory missing; continuing without it");
-}
-
-const supabase = createClientFactory
-  ? createClientFactory(finalConfig.url, finalConfig.anonKey, {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-      },
-      global: {
-        headers: {
-          apikey: finalConfig.anonKey,
-        },
-      },
-    })
-  : null;
-
-export { supabase };
+export const supabase = new Proxy({}, handler);
 
 // Optional: expose for debugging in console (do not overwrite window.supabase)
 window.sb = supabase;
+// Expose Supabase for non-module scripts (nav, utils, routing, logout)
+window.supabase = supabase;
+window.getSupabaseClient = getSupabaseClient;
 
 function renderEnvBadge() {
   const el = document.getElementById("envBadge");
@@ -68,5 +105,3 @@ function renderEnvBadge() {
 }
 
 document.addEventListener("DOMContentLoaded", renderEnvBadge);
-
-console.log(`[Supabase] client initialized (env=${env})`);

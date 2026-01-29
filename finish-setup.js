@@ -568,7 +568,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   logoutBtn?.addEventListener("click", async () => {
-    await supabase.auth.signOut();
+    await window.getSupabaseClient()?.auth.signOut();
     await clearAppSessionCache("logout");
     window.location.href = "login.html";
   });
