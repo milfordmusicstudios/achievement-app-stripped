@@ -1,12 +1,15 @@
 import { supabase } from "./supabaseClient.js";
 import { getAuthUserId, getViewerContext } from "./utils.js";
 import { clearActiveProfileId, getActiveProfileId, setActiveProfileId } from "./active-profile.js";
-import { applyTeacherOptionsToSelect, loadLinkedStudents, loadTeachersForStudio, normalizeTextArray, showToast } from "./settings-shared.js";
+import { applyTeacherOptionsToSelect, loadTeachersForStudio, normalizeTextArray, showToast } from "./settings-shared.js";
+import { getAccountProfiles, renderAccountProfileList, hasRole } from "./account-profiles.js";
 
 let authViewerId = null;
 let activeStudioId = null;
 let teacherOptions = [];
 let addStudentOpen = false;
+let viewerContextData = null;
+let familyProfiles = [];
 
 function setAddStudentError(message) {
   const errorEl = document.getElementById("addStudentError");
@@ -104,90 +107,121 @@ async function handleAddStudent() {
 
   showToast("Student added.");
   closeAddStudentModal();
-  await renderLinkedStudents(authViewerId, activeStudioId);
+  await renderFamilyProfiles();
 }
 
-async function renderLinkedStudents(parentId, studioId) {
+async function renderFamilyProfiles() {
   const list = document.getElementById("linkedStudentsList");
   const addMessage = document.getElementById("familyAddMessage");
   if (!list) return;
   if (addMessage) addMessage.textContent = "";
-  list.innerHTML = "<p class=\"empty-state\">Loading students...</p>";
+  list.innerHTML = "<p class=\"empty-state\">Loading users...</p>";
 
-  const students = await loadLinkedStudents(parentId, studioId);
-  const activeProfileId = getActiveProfileId();
-  const activeRow = students.find(s => String(s.id) === String(activeProfileId));
-
-  if (activeRow?.deactivated_at) {
-    const nextActive = students.find(s => !s.deactivated_at);
-    if (nextActive) {
-      setActiveProfileId(nextActive.id);
-      window.location.reload();
-      return;
-    }
-    clearActiveProfileId();
-  }
-
-  if (!students.length) {
+  const profiles = await getAccountProfiles(viewerContextData, { includeInactive: true });
+  familyProfiles = profiles;
+  if (!profiles.length) {
     list.innerHTML = "";
-    if (addMessage) addMessage.textContent = "No students linked to this account yet.";
+    if (addMessage) addMessage.textContent = "No users linked to this account yet.";
     return;
   }
 
-  if (addMessage) addMessage.textContent = "";
-
   list.innerHTML = "";
-  students.forEach(student => {
-    const isActive = !student.deactivated_at;
-    const isCurrent = String(student.id) === String(activeProfileId);
-    const name = `${student.firstName ?? ""} ${student.lastName ?? ""}`.trim() || "Student";
-    const avatarUrl = student.avatarUrl || "images/icons/default.png";
-
-    const row = document.createElement("div");
-    row.className = `family-student-row${isActive ? "" : " is-inactive"}${isCurrent ? " is-current" : ""}`;
-    row.dataset.studentId = student.id;
-    row.innerHTML = `
-      <div class="family-student-avatar" role="button" tabindex="0" data-id="${student.id}">
-        <img src="${avatarUrl}" alt="${name}">
-        <span class="family-avatar-hint">Click to replace avatar</span>
-      </div>
-      <div class="family-student-info">
-        <div class="family-student-name">${name}</div>
-        <div class="family-student-actions">
-          <input class="student-avatar-input" data-id="${student.id}" type="file" accept="image/*" style="display:none;">
-        </div>
-      </div>
-      <button class="status-toggle${isActive ? "" : " is-inactive"}" data-action="toggle-active" data-id="${student.id}" aria-pressed="${isActive}">
-        <span>Active</span>
-        <span>Inactive</span>
-      </button>
-    `;
-
-    list.appendChild(row);
+  renderAccountProfileList(list, profiles, {
+    activeProfileId: getActiveProfileId(),
+    renderItem: createFamilyRow,
+    emptyState: ""
   });
+
+  const studentProfiles = profiles.filter(profile => hasRole(profile, "student"));
+  if (addMessage) {
+    addMessage.textContent = studentProfiles.length ? "" : "No students linked to this account yet.";
+  }
+
+  attachFamilyRowHandlers();
+}
+
+function createFamilyRow(profile, ctx) {
+  const isStudent = hasRole(profile, "student");
+  const isInactive = Boolean(profile.deactivated_at);
+  const row = document.createElement("div");
+  const classNames = ["family-student-row"];
+  if (isInactive) classNames.push("is-inactive");
+  if (ctx.isActive) classNames.push("is-current");
+  row.className = classNames.join(" ");
+  row.dataset.profileId = profile.id;
+
+  const avatar = document.createElement("div");
+  avatar.className = "family-student-avatar";
+  avatar.setAttribute("role", "button");
+  avatar.setAttribute("tabindex", "0");
+  avatar.dataset.id = profile.id;
+  const image = document.createElement("img");
+  image.src = profile.avatarUrl || "images/icons/default.png";
+  image.alt = profile.label;
+  avatar.appendChild(image);
+  const hint = document.createElement("span");
+  hint.className = "family-avatar-hint";
+  hint.textContent = "Click to replace avatar";
+  avatar.appendChild(hint);
+
+  const info = document.createElement("div");
+  info.className = "family-student-info";
+  info.innerHTML = `
+    <div class="family-student-name">${profile.label}</div>
+    <div class="family-student-actions"></div>
+  `;
+
+  row.appendChild(avatar);
+  row.appendChild(info);
+
+  if (isStudent) {
+    const toggle = document.createElement("button");
+    toggle.type = "button";
+    toggle.className = `status-toggle${isInactive ? " is-inactive" : ""}`;
+    toggle.dataset.action = "toggle-active";
+    toggle.dataset.id = profile.id;
+    toggle.setAttribute("aria-pressed", (!isInactive).toString());
+    toggle.innerHTML = "<span>Active</span><span>Inactive</span>";
+    row.appendChild(toggle);
+
+    const input = document.createElement("input");
+    input.className = "student-avatar-input";
+    input.dataset.id = profile.id;
+    input.type = "file";
+    input.accept = "image/*";
+    input.style.display = "none";
+    row.appendChild(input);
+  }
+
+  return row;
+}
+
+function attachFamilyRowHandlers() {
+  const list = document.getElementById("linkedStudentsList");
+  if (!list) return;
 
   list.querySelectorAll("button[data-action=\"toggle-active\"]").forEach(btn => {
     btn.addEventListener("click", async (e) => {
       e.stopPropagation();
-      const studentId = btn.dataset.id;
-      if (!studentId) return;
+      const profileId = btn.dataset.id;
+      if (!profileId) return;
+      const target = familyProfiles.find(profile => String(profile.id) === String(profileId));
+      if (!target) return;
 
-      const target = students.find(s => String(s.id) === String(studentId));
-      const isActive = target && !target.deactivated_at;
-      const nextValue = isActive ? new Date().toISOString() : null;
+      const wasActive = !target.deactivated_at;
+      const nextValue = wasActive ? new Date().toISOString() : null;
       const { error } = await supabase
         .from("users")
         .update({ deactivated_at: nextValue })
-        .eq("id", studentId);
+        .eq("id", profileId);
       if (error) {
         console.error("[Family] failed to update student status", error);
         showToast("Failed to update student status.");
         return;
       }
-
-      if (isActive && String(studentId) === String(getActiveProfileId())) {
-        const refresh = await loadLinkedStudents(parentId, studioId);
-        const nextActive = refresh.find(s => !s.deactivated_at);
+      const studentId = profileId;
+      if (wasActive && String(studentId) === String(getActiveProfileId())) {
+        const nextActive = familyProfiles.find(p => hasRole(p, "student") && !p.deactivated_at && String(p.id) !== String(studentId));
         if (nextActive) {
           setActiveProfileId(nextActive.id);
         } else {
@@ -196,8 +230,7 @@ async function renderLinkedStudents(parentId, studioId) {
         window.location.reload();
         return;
       }
-
-      await renderLinkedStudents(parentId, studioId);
+      await renderFamilyProfiles();
     });
   });
 
@@ -260,11 +293,11 @@ async function renderLinkedStudents(parentId, studioId) {
   list.querySelectorAll(".family-student-row").forEach(row => {
     row.addEventListener("click", (e) => {
       if (e.target.closest("button") || e.target.closest("input")) return;
-      const studentId = row.dataset.studentId;
-      if (!studentId) return;
-      const student = students.find(s => String(s.id) === String(studentId));
-      if (student?.deactivated_at) return;
-      setActiveProfileId(studentId);
+      const profileId = row.dataset.profileId;
+      if (!profileId) return;
+      const profile = familyProfiles.find(p => String(p.id) === String(profileId));
+      if (!profile || profile.deactivated_at) return;
+      setActiveProfileId(profileId);
       window.location.reload();
     });
   });
@@ -277,11 +310,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  const viewerContext = await getViewerContext();
-  activeStudioId = viewerContext?.studioId || localStorage.getItem("activeStudioId");
+  viewerContextData = await getViewerContext();
+  activeStudioId = viewerContextData?.studioId || localStorage.getItem("activeStudioId");
   teacherOptions = await loadTeachersForStudio(activeStudioId);
 
-  await renderLinkedStudents(authViewerId, activeStudioId);
+  await renderFamilyProfiles();
 
   const addStudentBtn = document.getElementById("addStudentBtn");
   const addStudentCancel = document.getElementById("addStudentCancel");

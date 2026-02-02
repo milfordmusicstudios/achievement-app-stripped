@@ -544,6 +544,7 @@ body.is-admin #roleBadgeTeacher {
 /* Avatar */
 .identity-avatar {
   position: relative;
+  z-index: 30;
 }
 
 .avatar-button {
@@ -552,6 +553,8 @@ body.is-admin #roleBadgeTeacher {
   padding: 0;
   border-radius: 18px;
   cursor: pointer;
+  pointer-events: auto;
+  z-index: 31;
 }
 .avatar-button.no-switch {
   cursor: default;
@@ -581,7 +584,7 @@ body.is-admin #roleBadgeTeacher {
   padding: 6px;
   display: grid;
   gap: 6px;
-  z-index: 20;
+  z-index: 40;
 }
 .avatar-menu[hidden] {
   display: none;
@@ -3238,6 +3241,137 @@ body.settings-page .settings-panel-host {
   font-size: 0.95rem;
   color: #0b4f8a;
   margin: 8px 0 12px;
+}
+
+.manage-users-table-wrap {
+  overflow-x: auto;
+  border: 1px solid #d9e6f3;
+  border-radius: 16px;
+  padding: 0;
+  background: #fff;
+}
+
+.manage-users-table {
+  width: 100%;
+  border-collapse: collapse;
+  border-spacing: 0;
+  min-width: 960px;
+}
+
+.manage-users-table th,
+.manage-users-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid #e3eaf4;
+  vertical-align: middle;
+}
+
+.manage-users-table th {
+  font-weight: 700;
+  color: #0b3c66;
+  background: #e8effa;
+}
+
+ .cell-text {
+  display: block;
+  color: #1c2c45;
+  font-weight: 600;
+}
+
+.cell-input {
+  display: none;
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid #c9d9ef;
+  padding: 6px 10px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1c2c45;
+  background: #fff;
+}
+
+.manage-users-table tr.is-editing .cell-input:not([data-field="avatar"]) {
+  display: block;
+}
+
+.manage-users-table tr.is-editing .cell-text {
+  display: none;
+}
+
+.role-select,
+.teacher-select {
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid #c9d9ef;
+  padding: 6px 10px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1c2c45;
+  background: #fff;
+  min-height: auto;
+}
+
+.first-name-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.first-name-wrapper input.cell-input {
+  flex: 1;
+  max-width: 140px;
+}
+
+.edit-pencil {
+  width: auto;
+  height: auto;
+  border-radius: 50%;
+  border: none;
+  background: none;
+  color: #0b4f8a;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+  box-shadow: none;
+}
+
+.edit-pencil svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  fill: none;
+}
+
+.edit-pencil:hover {
+  color: #1d4e8d;
+}
+
+.avatar-preview {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  object-fit: cover;
+  cursor: pointer;
+}
+
+.avatar-preview:hover {
+  border-color: #0b67c2;
+}
+
+.actions-cell {
+  min-width: 160px;
+  display: flex;
+  gap: 8px;
+}
+
+.actions-cell .blue-button {
+  padding: 6px 12px;
+  height: 34px;
+  min-width: unset;
+  font-size: 0.9rem;
 }
 
 .avatar-sm {

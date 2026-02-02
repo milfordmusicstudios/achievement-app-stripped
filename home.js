@@ -2,6 +2,7 @@ import { supabase } from './supabaseClient.js';
 import { ensureStudioContextAndRoute } from './studio-routing.js';
 import { clearAppSessionCache, ensureUserRow, getAuthUserId, getViewerContext, renderActiveStudentHeader } from './utils.js';
 import { getActiveProfileId, setActiveProfileId, persistLastActiveStudent, getLastActiveStudent, clearLastActiveStudent } from './active-profile.js';
+import { getAccountProfiles, renderAccountProfileList, hasRole, loadLinkedStudentsForParent } from './account-profiles.js';
 
 const qs = id => document.getElementById(id);
 const safeParse = value => {
@@ -300,105 +301,12 @@ function getUserLabel(user) {
   return name || "Student";
 }
 
-function uniqueUsers(users) {
-  const map = new Map();
-  users.forEach(u => {
-    if (u && u.id && !map.has(u.id)) map.set(u.id, u);
-  });
-  return Array.from(map.values());
-}
-
-function filterParentViewerUsers(users) {
-  if (!Array.isArray(users)) return [];
-  return users.filter(user => {
-    const roles = Array.isArray(user.roles) ? user.roles : (user.role ? [user.role] : []);
-    if (!roles.length) return true;
-    const hasParent = roles.includes("parent");
-    const hasStudent = roles.includes("student");
-    return hasStudent || !hasParent;
-  });
-}
-
-async function loadAvailableUsers(parentId, fallbackProfile) {
-  let users = safeParse(localStorage.getItem("allUsers"));
-  if (!Array.isArray(users)) users = [];
-
-  if (isParentReadOnly && parentId) {
-    const { data, error } = await supabase
-      .from("users")
-      .select("*")
-      .eq("parent_uuid", parentId)
-      .is("deactivated_at", null)
-      .order("created_at", { ascending: true });
-
-    if (!error && Array.isArray(data)) {
-      users = data;
-      if (!users.length) {
-        await clearAppSessionCache("no parent_student_links");
-        return [];
-      }
-      localStorage.setItem("allUsers", JSON.stringify(users));
-    }
-  } else if (!users.length && parentId) {
-    const { data, error } = await supabase
-      .from("users")
-      .select("*")
-      .eq("parent_uuid", parentId)
-      .is("deactivated_at", null)
-      .order("created_at", { ascending: true });
-
-    if (!error && Array.isArray(data)) {
-      users = data;
-      localStorage.setItem("allUsers", JSON.stringify(users));
-    }
-  }
-
-  if (fallbackProfile && (!isParentReadOnly || users.length > 0)) users.push(fallbackProfile);
-  return uniqueUsers(users);
-}
-
 function closeAvatarMenu() {
   const menu = qs("avatarMenu");
   const button = qs("avatarSwitcher");
   if (!menu || !button) return;
   menu.hidden = true;
   button.setAttribute("aria-expanded", "false");
-}
-
-function renderAvatarMenu(users, activeId) {
-  const menu = qs("avatarMenu");
-  if (!menu) return;
-  menu.innerHTML = "";
-
-  users.forEach(user => {
-    const item = document.createElement("button");
-    item.type = "button";
-    item.className = "avatar-menu-item";
-    item.setAttribute("role", "menuitem");
-    if (user.id === activeId) {
-      item.classList.add("is-active");
-      item.setAttribute("aria-current", "true");
-    }
-
-    const img = document.createElement("img");
-    const imgUrl = resolveAvatarSrc(user);
-    img.src = imgUrl;
-    img.alt = "";
-    img.onerror = () => {
-      img.onerror = null;
-      img.src = "images/icons/default.png";
-    };
-
-    const label = document.createElement("span");
-    label.textContent = getUserLabel(user);
-
-    item.appendChild(img);
-    item.appendChild(label);
-    item.addEventListener("click", async () => {
-      await switchUser(user);
-    });
-    menu.appendChild(item);
-  });
 }
 
 function syncParentViewerSelector(activeId) {
@@ -419,7 +327,8 @@ function initParentViewerSelector(users, activeProfile, viewerUserId, studioId) 
     return;
   }
 
-  if (users.length === 0) {
+  const studentProfiles = users.filter(user => hasRole(user, "student"));
+  if (studentProfiles.length === 0) {
     select.innerHTML = "";
     const option = document.createElement("option");
     option.value = "";
@@ -434,27 +343,28 @@ function initParentViewerSelector(users, activeProfile, viewerUserId, studioId) 
   select.innerHTML = "";
   const key = getParentSelectionKey(studioId, viewerUserId);
   const stored = key ? localStorage.getItem(key) : null;
-  if (users.length > 1 && !stored) {
+  if (studentProfiles.length > 1 && !stored) {
     const placeholder = document.createElement("option");
     placeholder.value = "";
     placeholder.textContent = "Select a student";
     select.appendChild(placeholder);
   }
-  users.forEach(user => {
+  studentProfiles.forEach(user => {
     const option = document.createElement("option");
     option.value = user.id;
     option.textContent = getUserLabel(user);
     select.appendChild(option);
   });
 
-  const activeId = stored || activeProfile?.id || users[0]?.id;
+  const firstStudentId = studentProfiles[0]?.id;
+  const activeId = stored || activeProfile?.id || firstStudentId;
   if (activeId && !(users.length > 1 && !stored)) select.value = activeId;
-  select.disabled = users.length <= 1;
+  select.disabled = studentProfiles.length <= 1;
   row.style.display = "";
 
   select.onchange = async () => {
     if (!select.value) return;
-    const nextUser = users.find(u => String(u.id) === String(select.value));
+    const nextUser = studentProfiles.find(u => String(u.id) === String(select.value));
     if (nextUser) {
       persistParentSelection(viewerUserId, studioId, nextUser.id);
       updateParentProgressState({ hasSelection: true });
@@ -526,41 +436,6 @@ function setHomeMode(mode) {
   if (parentViewer) parentViewer.style.display = "none";
 }
 
-async function loadLinkedStudentsForParent(parentId, studioId) {
-  if (!parentId) return [];
-  let query = supabase
-    .from("parent_student_links")
-    .select("student_id")
-    .eq("parent_id", parentId);
-  if (studioId) {
-    query = query.eq("studio_id", studioId);
-  }
-
-  const { data: links, error } = await query;
-  if (error) {
-    console.error("[Home] parent_student_links fetch failed", error);
-    return [];
-  }
-  const studentIds = (links || []).map(l => l.student_id).filter(Boolean);
-  if (studentIds.length === 0) {
-    await clearAppSessionCache("no parent_student_links");
-    return [];
-  }
-
-  const { data: students, error: studentsErr } = await supabase
-    .from("users")
-    .select("id, firstName, lastName, roles, avatarUrl")
-    .in("id", studentIds)
-    .is("deactivated_at", null)
-    .order("lastName", { ascending: true })
-    .order("firstName", { ascending: true });
-  if (studentsErr) {
-    console.error("[Home] linked students fetch failed", studentsErr);
-    return [];
-  }
-  return Array.isArray(students) ? students : [];
-}
-
 async function refreshHomeForUser(profile) {
   const levelRow = await loadLevel(profile.level || 1);
   if (!levelRow) return;
@@ -594,7 +469,14 @@ async function switchUser(user) {
 function initAvatarSwitcher(users) {
   const menu = qs("avatarMenu");
   if (!menu) return;
-  renderAvatarMenu(users, currentProfile?.id);
+  renderAccountProfileList(menu, users, {
+    activeProfileId: currentProfile?.id,
+    onSelect: async (profile) => {
+      await switchUser(profile);
+    },
+    variant: "menu",
+    emptyState: "No account profiles found."
+  });
   menu.hidden = true;
 }
 
@@ -798,20 +680,10 @@ async function init() {
     }
   }
 
-  const parentId = sessionData?.session?.user?.id;
-  availableUsers = await loadAvailableUsers(parentId, profile);
-  if (ensuredProfile && profile && String(ensuredProfile.id) !== String(profile.id)) {
-    const hasEnsured = availableUsers.some(
-      user => String(user.id) === String(ensuredProfile.id)
-    );
-    if (!hasEnsured) {
-      availableUsers.push(ensuredProfile);
-    }
-  }
-  availableUsers = uniqueUsers(availableUsers);
-  if (isParentReadOnly) {
-    availableUsers = filterParentViewerUsers(availableUsers);
-  }
+  availableUsers = await getAccountProfiles(viewerContext, {
+    includeInactive: true,
+    fallbackProfile: ensuredProfile || profile
+  });
   initAvatarSwitcher(availableUsers);
   setAvailableProfilesContext(availableUsers);
   const resolvedActiveId = currentProfile?.id || activeProfileIdCurrent || authUserId;
@@ -821,10 +693,11 @@ async function init() {
   maybeShowSwitchStudentTip(viewerContext.mode, availableUsers.length > 1);
 
   if (viewerContext?.mode === "parent") {
+    const studentProfiles = availableUsers.filter(user => hasRole(user, "student"));
     const storedKey = getParentSelectionKey(viewerContext.studioId, viewerContext.viewerUserId);
     const stored = storedKey ? localStorage.getItem(storedKey) : null;
-    if (!stored && availableUsers.length === 1) {
-      persistParentSelection(viewerContext.viewerUserId, viewerContext.studioId, availableUsers[0].id);
+    if (!stored && studentProfiles.length === 1) {
+      persistParentSelection(viewerContext.viewerUserId, viewerContext.studioId, studentProfiles[0].id);
     }
   }
 

@@ -88,33 +88,4 @@ export function applyTeacherOptionsToSelect(selectEl, teacherOptions) {
   selectEl.disabled = false;
 }
 
-export async function loadLinkedStudents(parentId, studioId, options = {}) {
-  if (!parentId) return [];
-  const includeInactive = options.includeInactive !== false;
-  let query = supabase
-    .from("parent_student_links")
-    .select("student_id")
-    .eq("parent_id", parentId);
-  if (studioId) query = query.eq("studio_id", studioId);
-
-  const { data: links, error } = await query;
-  if (error) {
-    console.error("[Settings] parent_student_links fetch failed", error);
-    return [];
-  }
-  const ids = (links || []).map(l => l.student_id).filter(Boolean);
-  if (!ids.length) return [];
-
-  const { data: students, error: studentErr } = await supabase
-    .from("users")
-    .select("id, firstName, lastName, avatarUrl, deactivated_at")
-    .in("id", ids)
-    .order("lastName", { ascending: true })
-    .order("firstName", { ascending: true });
-  if (studentErr) {
-    console.error("[Settings] linked students fetch failed", studentErr);
-    return [];
-  }
-  const list = Array.isArray(students) ? students : [];
-  return includeInactive ? list : list.filter(s => !s.deactivated_at);
-}
+export { loadLinkedStudentsForParent as loadLinkedStudents } from "./account-profiles.js";

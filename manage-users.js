@@ -12,7 +12,17 @@ const editableFields = [
   { field: "email", type: "email" }
 ];
 
+const ROLE_FALLBACKS = ["admin", "teacher", "parent", "student", "guardian"];
+let roleOptions = [];
+let teacherOptions = [];
+
 const STATUS_LOADING = "Loading users…";
+const isDevMode = (() => {
+  if (typeof window === "undefined") return false;
+  const env = window.APP_ENV || "";
+  const host = window.location?.hostname || "";
+  return env === "dev" || host.includes("localhost") || host.includes("127.0.0.1");
+})();
 
 function renderStatus(message, isError = false) {
   const statusEl = document.getElementById("manageUsersStatus");
@@ -38,6 +48,47 @@ function formatList(value) {
     })
     .filter(Boolean);
   return normalized.length ? normalized.join(", ") : "—";
+}
+
+function normalizeArray(value) {
+  return ensureArray(value)
+    .map(item => (item === undefined || item === null ? "" : String(item).trim()))
+    .filter(Boolean);
+}
+
+function arraysEqual(a, b) {
+  const normA = normalizeArray(a).sort();
+  const normB = normalizeArray(b).sort();
+  if (normA.length !== normB.length) return false;
+  for (let i = 0; i < normA.length; i++) {
+    if (normA[i] !== normB[i]) return false;
+  }
+  return true;
+}
+
+function buildOptionLists(users) {
+  const roleSet = new Set();
+  const teacherMap = new Map();
+  users.forEach(user => {
+    ensureArray(user.roles).forEach(role => {
+      if (role) roleSet.add(role);
+    });
+    const hasTeacherRole = ensureArray(user.roles).some(
+      role => typeof role === "string" && role.toLowerCase() === "teacher"
+    );
+    if (hasTeacherRole) {
+      const label = `${user.firstName || user.first_name || ""} ${user.lastName || user.last_name || ""}`.trim() || user.email || "Teacher";
+      if (label) {
+        teacherMap.set(label, { value: label, label });
+      }
+    }
+  });
+  ROLE_FALLBACKS.forEach(role => roleSet.add(role));
+  roleOptions = Array.from(roleSet)
+    .filter(Boolean)
+    .map(role => ({ value: role, label: role }))
+    .sort((a, b) => a.label.localeCompare(b.label));
+  teacherOptions = Array.from(teacherMap.values()).sort((a, b) => a.label.localeCompare(b.label));
 }
 
 function matchesSearch(user) {
@@ -78,6 +129,7 @@ function renderUsers() {
   filtered.forEach(user => {
     const tr = document.createElement("tr");
     tr.dataset.userId = user.id;
+    if (user.memberKey) tr.dataset.memberKey = user.memberKey;
     editableFields.forEach(({ field, type }) => {
       tr.appendChild(createEditableCell(user, field, type));
     });
@@ -158,7 +210,7 @@ function createAvatarCell(user) {
   const td = document.createElement("td");
   const img = document.createElement("img");
   img.className = "avatar-sm";
-  img.src = user.avatar || user.avatar_url || "images/logos/logo.png";
+  img.src = user.avatarUrl || user.avatar || "images/logos/logo.png";
   img.alt = `${user.firstName || user.first_name || "user"} avatar`;
   td.appendChild(img);
   return td;
@@ -261,6 +313,52 @@ function ensureArray(value) {
   return Array.isArray(value) ? value : [value];
 }
 
+function getDisplayNameFromUser(user) {
+  const displayName = (user?.display_name || user?.displayName || "").trim();
+  const first = user?.first_name || user?.firstName || "";
+  const last = user?.last_name || user?.lastName || "";
+  const fullName = `${first} ${last}`.trim();
+  const email = user?.email || "";
+  return displayName || fullName || email || "Unknown";
+}
+
+function buildMemberKey(member) {
+  const studioId = member?.studio_id || member?.studioId || "";
+  const userId = member?.user_id || member?.userId || "";
+  return `${studioId}:${userId}`;
+}
+
+function buildMemberRow(member, user) {
+  const firstName = (user?.first_name || user?.firstName || "").trim();
+  const lastName = (user?.last_name || user?.lastName || "").trim();
+  const email = user?.email || "";
+  const avatar = user?.avatarUrl || "images/logos/logo.png";
+  const displayName = getDisplayNameFromUser(user);
+  const memberKey = buildMemberKey(member);
+  const teacherSource = ensureArray(user?.teacherIds);
+  const instrumentSource = ensureArray(user?.instrument);
+  return {
+    ...member,
+    id: user?.id || member.user_id || "",
+    firstName,
+    lastName,
+    email,
+    avatarUrl: avatar,
+    avatar,
+    roles: ensureArray(member.roles || user?.roles),
+    teachers: teacherSource,
+    instruments: instrumentSource,
+    points: user?.points ?? null,
+    level: user?.level ?? null,
+    instrument: instrumentSource,
+    user,
+    user_name: displayName,
+    user_email: email,
+    user_avatar_url: avatar,
+    memberKey
+  };
+}
+
 function buildUserNameMap(users) {
   const map = new Map();
   users.forEach(user => {
@@ -307,40 +405,6 @@ function applyTeacherDisplayNames(users) {
   });
 }
 
-function normalizeUser(entry, source = "member") {
-  const userData = entry.users || entry;
-  return {
-    id: userData.id || entry.user_id || entry.userId,
-    firstName: userData.first_name || userData.firstName || "",
-    lastName: userData.last_name || userData.lastName || "",
-    email: userData.email || "",
-    avatar: userData.avatar_url || userData.avatarUrl || userData.avatar || "",
-    roles: ensureArray(entry.roles || userData.roles),
-    teachers: ensureArray(entry.teachers || userData.teacherIds || userData.teachers),
-    instruments: ensureArray(entry.instruments || userData.instruments || userData.instrument),
-    points: userData.points ?? "",
-    level: userData.level ?? ""
-  };
-}
-
-async function fetchFromStudioMembers(studioId) {
-  const { data, error } = await supabase
-    .from("studio_members")
-    .select("user_id, roles, teachers, instruments, users:users(*)")
-    .eq("studio_id", studioId);
-  if (error) throw new Error("studio_members query failed: " + error.message);
-  return data.map(entry => normalizeUser(entry, "member"));
-}
-
-async function fetchFromUsers(studioId) {
-  const { data, error } = await supabase
-    .from("users")
-    .select("*")
-    .eq("studio_id", studioId);
-  if (error) throw new Error("users query failed: " + error.message);
-  return data.map(entry => normalizeUser(entry, "users"));
-}
-
 async function resolveStudioId() {
   const viewerContext = await getViewerContext();
   if (viewerContext?.studioId) return viewerContext.studioId;
@@ -352,19 +416,50 @@ async function resolveStudioId() {
 async function loadUsers() {
   renderStatus(STATUS_LOADING);
   const studioId = await resolveStudioId();
-  try {
-    allUsers = await fetchFromStudioMembers(studioId);
-  } catch (err) {
-    console.warn("[ManageUsers] studio_members unavailable:", err.message);
+
+  const { data: members, error: mErr } = await supabase
+    .from("studio_members")
+    .select("studio_id, user_id, roles, created_at, created_by")
+    .eq("studio_id", studioId);
+
+  if (mErr) {
+    renderStatus("Failed to load members: " + mErr.message, true);
+    console.error("[ManageUsers] studio_members query failed", mErr);
+    allUsers = [];
+    return [];
   }
-  if (!allUsers.length) {
-    try {
-      allUsers = await fetchFromUsers(studioId);
-    } catch (err) {
-      throw new Error("Manage Users: could not load users — check table names (users / studio_members).");
+
+  const memberList = Array.isArray(members) ? members : [];
+  const userIds = [...new Set(memberList.map(entry => entry.user_id).filter(Boolean))];
+  if (userIds.length === 0) {
+    renderStatus("No users yet");
+    allUsers = [];
+    return [];
+  }
+
+  let users = [];
+  if (userIds.length) {
+    const { data, error: uErr } = await supabase
+      .from("users")
+      .select("id,email,firstName,lastName,roles,avatarUrl,teacherIds,points,level,instrument,active,showonleaderboard,studio_id,parent_uuid")
+      .in("id", userIds);
+    if (uErr) {
+      console.warn("[ManageUsers] users query failed", uErr);
+    } else {
+      users = Array.isArray(data) ? data : [];
     }
   }
+
+  const usersById = new Map((users || []).map(u => [u.id, u]));
+  const rows = memberList.map(entry => buildMemberRow(entry, usersById.get(entry.user_id) || null));
+
+  if (isDevMode) {
+    console.debug("[ManageUsers] loaded members/users", { members: memberList.length, users: users?.length || 0 });
+  }
+
+  allUsers = rows;
   applyTeacherDisplayNames(allUsers);
+  return rows;
 }
 
 async function initManageUsersPanel() {
