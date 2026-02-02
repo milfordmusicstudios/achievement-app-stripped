@@ -102,6 +102,31 @@
         </div>
       </div>
     </section>
+    <section class="settings-section" id="passwordRecoveryCard" style="display:none;">
+      <div class="section-head">
+        <div class="section-title">Set a new password</div>
+      </div>
+      <div class="settings-hint" style="margin-bottom:12px;">You opened a password recovery link. Choose a new password.</div>
+
+      <label class="settings-label" for="recoveryNewPassword">New Password</label>
+      <div class="pw-field">
+        <input id="recoveryNewPassword" type="password" class="settings-input" placeholder="New Password" />
+        <button type="button" class="pw-toggle" data-target="recoveryNewPassword">Show</button>
+      </div>
+
+      <label class="settings-label" for="recoveryConfirmPassword">Confirm New Password</label>
+      <div class="pw-field">
+        <input id="recoveryConfirmPassword" type="password" class="settings-input" placeholder="Confirm New Password" />
+        <button type="button" class="pw-toggle" data-target="recoveryConfirmPassword">Show</button>
+      </div>
+
+      <div class="settings-hint">Minimum 8 characters. Use a mix of letters and numbers.</div>
+      <div id="passwordRecoveryError" class="settings-error" style="display:none;"></div>
+
+      <div class="settings-actions">
+        <button id="recoveryPasswordSaveBtn" type="button" class="blue-button">Set password</button>
+      </div>
+    </section>
   </div>
 </main>
 

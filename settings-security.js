@@ -7,6 +7,7 @@ let activeStudioId = null;
 let authProfile = null;
 let teacherOptions = [];
 let isAccountEditing = false;
+let isRecoveryMode = false;
 
 function getHighestRole(roles) {
   const priority = { admin: 3, teacher: 2, student: 1, parent: 0 };
@@ -26,6 +27,51 @@ function setPasswordError(message) {
   if (!errorEl) return;
   errorEl.textContent = message || "";
   errorEl.style.display = message ? "block" : "none";
+}
+
+function setRecoveryError(message) {
+  const errorEl = document.getElementById("passwordRecoveryError");
+  if (!errorEl) return;
+  errorEl.textContent = message || "";
+  errorEl.style.display = message ? "block" : "none";
+}
+
+function detectRecoveryFromUrl() {
+  try {
+    const query = new URLSearchParams(window.location.search);
+    if (query.get("type") === "recovery") return true;
+
+    const hash = (window.location.hash || "").replace(/^#/, "");
+    const hashParams = new URLSearchParams(hash);
+    if (hashParams.get("type") === "recovery") return true;
+  } catch (err) {
+    console.debug("[Settings] unable to detect recovery params", err);
+  }
+  return false;
+}
+
+function setRecoveryMode(enabled) {
+  if (isRecoveryMode === enabled) {
+    return;
+  }
+  isRecoveryMode = enabled;
+  const actionsCard = document.getElementById("actionsCard");
+  const recoveryCard = document.getElementById("passwordRecoveryCard");
+  if (actionsCard) actionsCard.style.display = enabled ? "none" : "";
+  if (recoveryCard) recoveryCard.style.display = enabled ? "" : "none";
+
+  const passwordBody = document.getElementById("passwordBody");
+  if (passwordBody && enabled) passwordBody.style.display = "none";
+
+  const recoveryFields = ["recoveryNewPassword", "recoveryConfirmPassword"];
+  if (!enabled) {
+    recoveryFields.forEach(id => {
+      const field = document.getElementById(id);
+      if (field) field.value = "";
+    });
+  }
+
+  setRecoveryError("");
 }
 
 function setAccountEditing(editing) {
@@ -139,6 +185,40 @@ async function savePasswordChange() {
   document.getElementById("passwordBody").style.display = "none";
 }
 
+async function handleRecoverySubmit() {
+  setRecoveryError("");
+  const newPassword = (document.getElementById("recoveryNewPassword")?.value || "").trim();
+  const confirmPassword = (document.getElementById("recoveryConfirmPassword")?.value || "").trim();
+
+  if (!newPassword || !confirmPassword) {
+    setRecoveryError("Please fill in both password fields.");
+    return;
+  }
+
+  if (newPassword.length < 8) {
+    setRecoveryError("Password must be at least 8 characters.");
+    return;
+  }
+
+  if (newPassword !== confirmPassword) {
+    setRecoveryError("New passwords do not match.");
+    return;
+  }
+
+  const { error } = await supabase.auth.updateUser({ password: newPassword });
+  if (error) {
+    console.error("[Settings] recovery password update failed", error);
+    setRecoveryError("Failed to update password.");
+    return;
+  }
+
+  showToast("Password updated. You're all set.");
+  setRecoveryMode(false);
+  setTimeout(() => {
+    window.location.href = "index.html";
+  }, 1400);
+}
+
 function wirePasswordToggles() {
   document.querySelectorAll(".pw-toggle").forEach(btn => {
     btn.addEventListener("click", () => {
@@ -153,6 +233,19 @@ function wirePasswordToggles() {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
+  const recoveryDetected = detectRecoveryFromUrl();
+  if (recoveryDetected) {
+    console.debug("[Settings] recovery mode detected via URL");
+    setRecoveryMode(true);
+  }
+
+  supabase.auth.onAuthStateChange(event => {
+    console.debug("[Settings] auth event:", event);
+    if (event === "PASSWORD_RECOVERY") {
+      setRecoveryMode(true);
+    }
+  });
+
   authUserId = await getAuthUserId();
   if (!authUserId) {
     window.location.replace("./login.html");
@@ -242,6 +335,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       passwordBody.style.display = "none";
       setPasswordError("");
     });
+  }
+
+  const recoverySaveBtn = document.getElementById("recoveryPasswordSaveBtn");
+  if (recoverySaveBtn) {
+    recoverySaveBtn.addEventListener("click", handleRecoverySubmit);
   }
 
   wirePasswordToggles();
