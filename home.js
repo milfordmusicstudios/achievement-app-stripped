@@ -1455,10 +1455,19 @@ function renderStaffQuickLogShell() {
   mount.innerHTML = `
     <section class="home-staff staff-only" aria-label="Staff quick log">
       <form id="staffQuickLogForm" class="staff-card">
-        <label for="staffStudents">Students</label>
-        <select id="staffStudents" multiple required disabled>
-          <option value="">Loading...</option>
-        </select>
+        <label for="staffStudentsSearch">Students</label>
+        <div id="staffStudentPicker" class="staff-student-picker">
+          <input
+            id="staffStudentsSearch"
+            type="text"
+            placeholder="Type a student name..."
+            autocomplete="off"
+            disabled
+          />
+          <div id="staffStudentsDropdown" class="staff-student-dropdown" hidden></div>
+          <div id="staffStudentsSelected" class="staff-student-selected" aria-live="polite"></div>
+          <select id="staffStudents" multiple disabled hidden aria-hidden="true"></select>
+        </div>
 
         <div class="ql-category-pop">
           <label for="staffCategory">Category</label>
@@ -1577,6 +1586,10 @@ async function initStaffQuickLog({ authUserId, studioId, roles }) {
 
   const categorySelect = document.getElementById('staffCategory');
   const studentSelect = document.getElementById('staffStudents');
+  const studentPicker = document.getElementById('staffStudentPicker');
+  const studentSearchInput = document.getElementById('staffStudentsSearch');
+  const studentDropdown = document.getElementById('staffStudentsDropdown');
+  const studentSelected = document.getElementById('staffStudentsSelected');
   const calendarEl = document.getElementById('staffCalendar');
   const monthLabel = document.getElementById('staffCalMonthLabel');
   const prevBtn = document.getElementById('staffCalPrev');
@@ -1589,6 +1602,98 @@ async function initStaffQuickLog({ authUserId, studioId, roles }) {
   const errorEl = document.getElementById('staffQuickLogError');
   const submitBtn = document.getElementById('staffQuickLogSubmit');
   const selectedDates = new Set();
+  const selectedStudentIds = new Set();
+
+  const getStudentName = (student) => {
+    const first = student?.firstName || '';
+    const last = student?.lastName || '';
+    return `${first} ${last}`.trim() || student?.email || 'Student';
+  };
+
+  const syncStudentSelect = () => {
+    if (!studentSelect) return;
+    Array.from(studentSelect.options).forEach((option) => {
+      option.selected = selectedStudentIds.has(String(option.value));
+    });
+  };
+
+  const renderSelectedStudents = (students) => {
+    if (!studentSelected) return;
+    studentSelected.innerHTML = '';
+    if (!selectedStudentIds.size) {
+      const empty = document.createElement('span');
+      empty.className = 'staff-student-empty';
+      empty.textContent = 'No students selected';
+      studentSelected.appendChild(empty);
+      return;
+    }
+
+    students
+      .filter((student) => selectedStudentIds.has(String(student.id)))
+      .forEach((student) => {
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'staff-student-chip';
+        chip.dataset.studentId = String(student.id);
+        chip.textContent = `${getStudentName(student)} x`;
+        chip.addEventListener('click', () => {
+          selectedStudentIds.delete(String(student.id));
+          syncStudentSelect();
+          renderSelectedStudents(students);
+          renderStudentDropdown(students);
+        });
+        studentSelected.appendChild(chip);
+      });
+  };
+
+  const renderStudentDropdown = (students) => {
+    if (!studentDropdown || !studentSearchInput) return;
+    const query = (studentSearchInput.value || '').trim().toLowerCase();
+    studentDropdown.innerHTML = '';
+
+    if (!query) {
+      studentDropdown.setAttribute('hidden', '');
+      return;
+    }
+
+    const matches = students.filter((student) =>
+      getStudentName(student).toLowerCase().includes(query)
+    );
+
+    if (!matches.length) {
+      const empty = document.createElement('div');
+      empty.className = 'staff-student-no-match';
+      empty.textContent = 'No matching students';
+      studentDropdown.appendChild(empty);
+      studentDropdown.removeAttribute('hidden');
+      return;
+    }
+
+    matches.forEach((student) => {
+      const id = String(student.id);
+      const item = document.createElement('button');
+      item.type = 'button';
+      item.className = 'staff-student-option';
+      item.dataset.studentId = id;
+      const isSelected = selectedStudentIds.has(id);
+      item.textContent = isSelected ? `Selected: ${getStudentName(student)}` : getStudentName(student);
+      if (isSelected) item.classList.add('is-selected');
+      item.addEventListener('click', () => {
+        if (selectedStudentIds.has(id)) {
+          selectedStudentIds.delete(id);
+        } else {
+          selectedStudentIds.add(id);
+        }
+        syncStudentSelect();
+        renderSelectedStudents(students);
+        renderStudentDropdown(students);
+        studentSearchInput.focus();
+      });
+      studentDropdown.appendChild(item);
+    });
+
+    studentDropdown.removeAttribute('hidden');
+  };
 
   const setError = (message) => {
     if (!errorEl) return;
@@ -1723,18 +1828,50 @@ async function initStaffQuickLog({ authUserId, studioId, roles }) {
 
   if (studentSelect) {
     if (!students.length) {
-      studentSelect.innerHTML = '<option value="">No students found</option>';
+      studentSelect.innerHTML = '';
       studentSelect.disabled = true;
+      if (studentSearchInput) {
+        studentSearchInput.value = '';
+        studentSearchInput.placeholder = 'No students found';
+        studentSearchInput.disabled = true;
+      }
+      if (studentDropdown) studentDropdown.setAttribute('hidden', '');
+      renderSelectedStudents([]);
     } else {
+      const sortedStudents = [...students].sort((a, b) => {
+        return getStudentName(a).localeCompare(getStudentName(b), undefined, { sensitivity: 'base' });
+      });
+
       studentSelect.disabled = false;
       studentSelect.innerHTML = '';
-      students.forEach(s => {
+      sortedStudents.forEach((s) => {
         const opt = document.createElement('option');
         opt.value = s.id;
-        const name = `${s.firstName || ''} ${s.lastName || ''}`.trim() || 'Student';
-        opt.textContent = name;
+        opt.textContent = getStudentName(s);
         studentSelect.appendChild(opt);
       });
+
+      if (studentSearchInput) {
+        studentSearchInput.disabled = false;
+        studentSearchInput.placeholder = 'Type a student name...';
+        studentSearchInput.addEventListener('input', () => renderStudentDropdown(sortedStudents));
+        studentSearchInput.addEventListener('focus', () => renderStudentDropdown(sortedStudents));
+      }
+
+      document.addEventListener('click', (event) => {
+        if (!studentPicker || !studentDropdown) return;
+        if (!studentPicker.contains(event.target)) {
+          studentDropdown.setAttribute('hidden', '');
+        }
+      });
+
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && studentDropdown) {
+          studentDropdown.setAttribute('hidden', '');
+        }
+      });
+
+      renderSelectedStudents(sortedStudents);
     }
   }
 
