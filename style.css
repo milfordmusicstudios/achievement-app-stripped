@@ -28,6 +28,16 @@
 ================================ */
 * { box-sizing: border-box; }
 
+* {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+*::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
 html, body {
   margin: 0;
   padding: 0;
@@ -2755,6 +2765,34 @@ body.settings-page .status-toggle:not(.is-inactive) span:last-child {
   opacity: 0.4;
 }
 
+body.settings-page .family-holder-status {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+}
+
+body.settings-page .status-toggle.status-toggle-disabled {
+  min-width: 176px;
+  border-color: rgba(110,124,139,0.35);
+  background: rgba(227,232,237,0.92);
+  color: #6f7d8d;
+  pointer-events: none;
+}
+
+body.settings-page .status-toggle.status-toggle-disabled span {
+  background: rgba(110,124,139,0.14);
+  color: #6f7d8d;
+  opacity: 0.9 !important;
+}
+
+body.settings-page .family-holder-status-note {
+  font-size: 11px;
+  line-height: 1.2;
+  color: #6f7d8d;
+  text-align: center;
+  font-weight: 700;
+}
+
 body.settings-page .pw-field {
   position: relative;
 }
@@ -2944,6 +2982,26 @@ body.leaderboard-page .leaderboard-count {
   color: #4c6a86;
   font-weight: 600;
   margin: 0;
+}
+
+body.leaderboard-page {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+body.leaderboard-page::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+body.leaderboard-page .leaderboard-scroll-wrapper {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+body.leaderboard-page .leaderboard-scroll-wrapper::-webkit-scrollbar {
+  width: 0;
+  height: 0;
 }
 
 body.leaderboard-page .level-row {

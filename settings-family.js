@@ -191,6 +191,22 @@ function createFamilyRow(profile, ctx) {
     input.accept = "image/*";
     input.style.display = "none";
     row.appendChild(input);
+  } else {
+    const holderStatus = document.createElement("div");
+    holderStatus.className = "family-holder-status";
+
+    const disabledToggle = document.createElement("div");
+    disabledToggle.className = "status-toggle status-toggle-disabled";
+    disabledToggle.setAttribute("aria-hidden", "true");
+    disabledToggle.innerHTML = "<span>Active</span><span>Inactive</span>";
+
+    const helper = document.createElement("div");
+    helper.className = "family-holder-status-note";
+    helper.textContent = "Account holder cannot be inactive";
+
+    holderStatus.appendChild(disabledToggle);
+    holderStatus.appendChild(helper);
+    row.appendChild(holderStatus);
   }
 
   return row;
