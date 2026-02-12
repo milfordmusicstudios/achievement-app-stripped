@@ -113,6 +113,8 @@ function matchesSearch(user) {
 function renderUsers() {
   const tbody = document.getElementById("userTableBody");
   if (!tbody) return;
+  currentEditingRow = null;
+  setGlobalEditingState(false);
   tbody.innerHTML = "";
   const filtered = allUsers.filter(matchesSearch);
   if (filtered.length === 0) {
@@ -182,14 +184,40 @@ function createEditableCell(user, field, type = "text") {
       const row = td.closest("tr");
       if (row) enterEditMode(row);
     });
+
+    const actions = document.createElement("div");
+    actions.className = "inline-edit-actions";
+    const saveBtn = document.createElement("button");
+    saveBtn.type = "button";
+    saveBtn.className = "mini-edit-btn save-btn";
+    saveBtn.textContent = "Save";
+    saveBtn.hidden = true;
+    saveBtn.addEventListener("click", () => {
+      const row = td.closest("tr");
+      if (row) saveRow(row);
+    });
+
+    const cancelBtn = document.createElement("button");
+    cancelBtn.type = "button";
+    cancelBtn.className = "mini-edit-btn cancel-btn";
+    cancelBtn.textContent = "Cancel";
+    cancelBtn.hidden = true;
+    cancelBtn.addEventListener("click", () => {
+      const row = td.closest("tr");
+      if (row) cancelEditMode(row);
+    });
+    actions.appendChild(saveBtn);
+    actions.appendChild(cancelBtn);
+
     wrapper.appendChild(pencilBtn);
+    wrapper.appendChild(actions);
     wrapper.appendChild(span);
+    wrapper.appendChild(input);
     td.appendChild(wrapper);
   } else {
     td.appendChild(span);
+    td.appendChild(input);
   }
-
-  td.appendChild(input);
   return td;
 }
 
@@ -218,22 +246,15 @@ function createAvatarCell(user) {
 
 function createActionsCell(row) {
   const td = document.createElement("td");
-  td.className = "actions-cell";
-  const saveBtn = document.createElement("button");
-  saveBtn.type = "button";
-  saveBtn.className = "blue-button save-btn";
-  saveBtn.textContent = "Save";
-  saveBtn.hidden = true;
-  const cancelBtn = document.createElement("button");
-  cancelBtn.type = "button";
-  cancelBtn.className = "blue-button cancel-btn btn-ghost";
-  cancelBtn.textContent = "Cancel";
-  cancelBtn.hidden = true;
-  saveBtn.addEventListener("click", () => saveRow(row));
-  cancelBtn.addEventListener("click", () => cancelEditMode(row));
-  td.appendChild(saveBtn);
-  td.appendChild(cancelBtn);
+  td.className = "actions-cell actions-cell-placeholder";
+  td.setAttribute("aria-hidden", "true");
   return td;
+}
+
+function setGlobalEditingState(isEditing) {
+  const table = document.getElementById("userHeaderTable");
+  if (!table) return;
+  table.classList.toggle("has-active-edit", Boolean(isEditing));
 }
 
 function toggleActionButtons(row, editing) {
@@ -255,6 +276,7 @@ function enterEditMode(row) {
   row.querySelectorAll(".cell-text").forEach(span => (span.hidden = true));
   row.querySelectorAll(".cell-input").forEach(input => (input.hidden = false));
   toggleActionButtons(row, true);
+  setGlobalEditingState(true);
 }
 
 function cancelEditMode(row) {
@@ -272,6 +294,7 @@ function cancelEditMode(row) {
   });
   toggleActionButtons(row, false);
   if (currentEditingRow === row) currentEditingRow = null;
+  setGlobalEditingState(false);
 }
 
 async function saveRow(row) {

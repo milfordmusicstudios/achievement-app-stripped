@@ -3365,6 +3365,18 @@ body.settings-page .settings-panel-host {
   min-width: 180px;
 }
 
+.settings-page .settings-embed button.edit-pencil {
+  width: 30px !important;
+  min-width: 30px !important;
+  max-width: 30px;
+  height: 30px !important;
+  border-radius: 50% !important;
+  padding: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
 .manage-users-status {
   font-size: 0.95rem;
   color: #0b4f8a;
@@ -3397,6 +3409,18 @@ body.settings-page .settings-panel-host {
   font-weight: 700;
   color: #0b3c66;
   background: #e8effa;
+}
+
+.manage-users-table th:nth-child(2),
+.manage-users-table td:nth-child(2) {
+  width: 118px;
+  max-width: 118px;
+}
+
+.manage-users-table th:nth-child(3),
+.manage-users-table td:nth-child(3) {
+  width: 190px;
+  max-width: 190px;
 }
 
  .cell-text {
@@ -3444,6 +3468,49 @@ body.settings-page .settings-panel-host {
   gap: 6px;
 }
 
+.inline-edit-actions {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.mini-edit-btn {
+  height: 24px;
+  min-width: 68px;
+  border: 1px solid #b7c9de;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #0b3c66;
+  font-size: 12px;
+  line-height: 1;
+  font-weight: 800;
+  padding: 0 10px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+.mini-edit-btn[hidden] {
+  display: none !important;
+}
+
+.mini-edit-btn:hover {
+  border-color: #8caed3;
+}
+
+.mini-edit-btn.save-btn {
+  background: #49b8ff;
+  border-color: #49b8ff;
+  color: #ffffff;
+}
+
+.mini-edit-btn.save-btn:hover {
+  background: #2fa7f4;
+  border-color: #2fa7f4;
+}
+
 .first-name-wrapper input.cell-input {
   flex: 1;
   max-width: 140px;
@@ -3462,6 +3529,10 @@ body.settings-page .settings-panel-host {
   padding: 0;
   cursor: pointer;
   box-shadow: none;
+}
+
+.edit-pencil[hidden] {
+  display: none !important;
 }
 
 .edit-pencil svg {
@@ -3490,9 +3561,8 @@ body.settings-page .settings-panel-host {
 }
 
 .actions-cell {
-  min-width: 160px;
-  display: flex;
-  gap: 8px;
+  width: 44px;
+  min-width: 44px;
 }
 
 .actions-cell .blue-button {
@@ -3603,12 +3673,22 @@ body.settings-page .first-name-wrapper {
   gap: 6px;
 }
 
+body.settings-page .settings-embed .mini-edit-btn {
+  width: 68px !important;
+  min-width: 68px !important;
+  max-width: 68px;
+  height: 24px !important;
+  padding: 0 !important;
+  border-radius: 10px !important;
+}
+
 body.settings-page .edit-pencil {
   width: 30px;
   height: 30px;
-  border-radius: 12px;
-  border: 1px solid #0b4f8a;
-  background: #ffffff;
+  min-width: 30px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
   color: #0b4f8a;
   display: inline-flex;
   align-items: center;
@@ -3627,8 +3707,26 @@ body.settings-page .edit-pencil svg {
 }
 
 body.settings-page .edit-pencil:hover {
-  border-color: #0b2272;
-  background: rgba(11, 79, 138, 0.1);
+  background: transparent;
+  color: #0b2272;
+}
+
+.manage-users-table tr.is-editing .edit-pencil {
+  display: none !important;
+}
+
+.manage-users-table.has-active-edit .edit-pencil {
+  display: none !important;
+}
+
+.manage-users-table tr.is-editing .cell-input[data-field="firstName"] {
+  max-width: 160px;
+}
+
+body.settings-page .manage-users-table tr.is-editing .cell-input[data-field="firstName"] {
+  width: 132px !important;
+  max-width: 132px !important;
+  min-width: 132px;
 }
 
 body.settings-page .settings-row.link-row {
