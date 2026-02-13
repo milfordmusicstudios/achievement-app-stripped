@@ -17,13 +17,15 @@ function getPageName() {
 function waitForSession(timeout = 2500) {
   return new Promise((resolve) => {
     const timer = setTimeout(() => {
-      unsubscribe();
+      subscription?.unsubscribe?.();
       resolve(null);
     }, timeout);
 
-    const unsubscribe = supabase.auth.onAuthStateChange((_event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       clearTimeout(timer);
-      unsubscribe();
+      subscription?.unsubscribe?.();
       resolve(session);
     });
   });
@@ -35,17 +37,31 @@ function redirectToLogin() {
   window.location.replace(`login.html?next=${nextParam}&flow=guard`);
 }
 
+async function forceReauth() {
+  try {
+    await supabase.auth.signOut({ scope: "local" });
+  } catch (error) {
+    console.error("[Auth Guard] Forced sign-out failed:", error);
+  }
+  redirectToLogin();
+}
+
 async function ensureSession() {
   const name = getPageName();
   if (PUBLIC_PAGES.has(name)) return;
 
-  const currentSession = await supabase.auth.getSession();
-  if (currentSession?.session) return;
+  try {
+    const currentSession = await supabase.auth.getSession();
+    if (currentSession?.data?.session) return;
 
-  const sessionViaEvent = await waitForSession();
-  if (sessionViaEvent?.session) return;
+    const sessionViaEvent = await waitForSession();
+    if (sessionViaEvent?.session) return;
 
-  redirectToLogin();
+    await forceReauth();
+  } catch (error) {
+    console.error("[Auth Guard] Session resolution failed:", error);
+    await forceReauth();
+  }
 }
 
 await ensureSession();

@@ -19,16 +19,27 @@ const redirectToHome = () => window.location.replace("index.html");
 const redirectToLogin = () =>
   window.location.replace("login.html?flow=auth-callback&error=missing_session");
 
+async function forceReauthToLogin() {
+  try {
+    await supabase.auth.signOut({ scope: "local" });
+  } catch (error) {
+    console.error("[Auth Callback] Forced sign-out failed:", error);
+  }
+  redirectToLogin();
+}
+
 function waitForSession(timeout = 3000) {
   return new Promise((resolve) => {
     const timer = setTimeout(() => {
-      unsubscribe();
+      subscription?.unsubscribe?.();
       resolve(null);
     }, timeout);
 
-    const unsubscribe = supabase.auth.onAuthStateChange((_event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       clearTimeout(timer);
-      unsubscribe();
+      subscription?.unsubscribe?.();
       resolve(session);
     });
   });
@@ -46,6 +57,7 @@ async function handleAuthRedirect() {
     }
   } catch (error) {
     console.error("[Auth Callback] Session lookup failed:", error);
+    return forceReauthToLogin();
   }
 
   const eventSession = await waitForSession();
@@ -53,7 +65,7 @@ async function handleAuthRedirect() {
     return redirectToHome();
   }
 
-  redirectToLogin();
+  return forceReauthToLogin();
 }
 
 handleAuthRedirect();
