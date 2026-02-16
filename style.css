@@ -192,6 +192,24 @@ a.big-fun-btn:focus-visible {
   margin: 4px 0 4px;
 }
 
+.staff-approval-notice {
+  border: 2px solid rgba(11,79,138,0.24);
+  background: #ffffff;
+  color: #0B4F8A;
+  border-radius: 14px;
+  padding: 8px 12px;
+  font-weight: 800;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: 0 8px 18px rgba(0,0,0,0.1);
+}
+
+.staff-approval-notice:hover,
+.staff-approval-notice:focus-visible {
+  background: #fff5bf;
+  border-color: rgba(11,79,138,0.42);
+}
+
 .studio-logo {
   max-width: 96px;
   width: 96px;

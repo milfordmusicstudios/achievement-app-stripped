@@ -121,6 +121,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   let currentPage = 1;
   let logsPerPage = 25;
   let activeCardFilter = "all";
+  const requestedFilter = new URLSearchParams(window.location.search).get("filter");
+  const normalizedRequestedFilter = requestedFilter === "needs-approval" ? "pending" : requestedFilter;
+  if (normalizedRequestedFilter === "pending" || normalizedRequestedFilter === "approved-today" || normalizedRequestedFilter === "needs info" || normalizedRequestedFilter === "all") {
+    activeCardFilter = normalizedRequestedFilter;
+  }
 
   const todayString = () => new Date().toISOString().split("T")[0];
   const isApprovedStatus = (value) => String(value || "").toLowerCase() === "approved";

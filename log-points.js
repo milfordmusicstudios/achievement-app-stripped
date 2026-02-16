@@ -60,8 +60,10 @@ const PREFILL_MODE = urlParams.get('mode');
   if (catErr) console.error("Error loading categories:", catErr.message);
 
   if (categories && categorySelect) {
+    const blockedCategoryNames = new Set(["practice_batch", "batch_practice"]);
+    const visibleCategories = categories.filter(cat => !blockedCategoryNames.has(String(cat?.name || "").toLowerCase()));
     categorySelect.innerHTML = "<option value=''>Category</option>";
-    categories.forEach(cat => {
+    visibleCategories.forEach(cat => {
       const opt = document.createElement("option");
       opt.value = cat.name;
       opt.dataset.icon = cat.icon;

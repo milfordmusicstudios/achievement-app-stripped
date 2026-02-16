@@ -639,6 +639,7 @@ async function init() {
         studioId: activeStudioId,
         roles: viewerContext.viewerRoles
       });
+      await updateStaffApprovalNotice(viewerContext);
     }
     applyParentReadOnlyUI();
   }
@@ -847,6 +848,76 @@ async function loadPendingPoints(userId) {
     logEmptyFetch("pending logs", userId);
   }
   pendingPointsTotal = (data || []).reduce((sum, log) => sum + (log.points || 0), 0);
+}
+
+async function loadPendingReviewCount(viewerContext) {
+  if (!viewerContext?.studioId) return 0;
+  const isAdmin = !!viewerContext?.isAdmin;
+  const isTeacher = !!viewerContext?.isTeacher;
+  if (!isAdmin && !isTeacher) return 0;
+
+  if (isAdmin) {
+    const { data, error } = await supabase
+      .from("logs")
+      .select("id")
+      .eq("studio_id", viewerContext.studioId)
+      .eq("status", "pending");
+    if (error) {
+      console.error("[Home] Failed to load pending review logs for admin", error);
+      return 0;
+    }
+    return Array.isArray(data) ? data.length : 0;
+  }
+
+  const { data: usersData, error: usersError } = await supabase
+    .from("users")
+    .select("id, teacherIds")
+    .eq("studio_id", viewerContext.studioId);
+  if (usersError) {
+    console.error("[Home] Failed to load teacher students for review count", usersError);
+    return 0;
+  }
+
+  const myStudentIds = (usersData || [])
+    .filter(u => Array.isArray(u.teacherIds) && u.teacherIds.map(String).includes(String(viewerContext.viewerUserId)))
+    .map(u => String(u.id));
+  if (!myStudentIds.length) return 0;
+
+  const { data: logsData, error: logsError } = await supabase
+    .from("logs")
+    .select("id")
+    .eq("studio_id", viewerContext.studioId)
+    .eq("status", "pending")
+    .in("userId", myStudentIds);
+  if (logsError) {
+    console.error("[Home] Failed to load teacher pending review logs", logsError);
+    return 0;
+  }
+  return Array.isArray(logsData) ? logsData.length : 0;
+}
+
+async function updateStaffApprovalNotice(viewerContext) {
+  const notice = qs("staffApprovalNotice");
+  if (!notice) return;
+
+  if (!viewerContext?.isAdmin && !viewerContext?.isTeacher) {
+    notice.style.display = "none";
+    return;
+  }
+
+  const pendingCount = await loadPendingReviewCount(viewerContext);
+  if (!pendingCount) {
+    notice.style.display = "none";
+    return;
+  }
+
+  notice.textContent = pendingCount === 1
+    ? "1 log needs approval. Tap to review."
+    : `${pendingCount} logs need approval. Tap to review.`;
+  notice.onclick = () => {
+    window.location.href = "review-logs.html?filter=pending";
+  };
+  notice.style.display = "";
 }
 
 function updatePendingProgressFill() {
@@ -1518,7 +1589,9 @@ async function loadCategoriesForStudio(studioId) {
     .select('id, name')
     .order('id', { ascending: true });
   if (error || !Array.isArray(data)) return { data: [], error };
-  return { data, error: null };
+  const blockedCategoryNames = new Set(["practice_batch", "batch_practice"]);
+  const filtered = data.filter(category => !blockedCategoryNames.has(String(category?.name || "").toLowerCase()));
+  return { data: filtered, error: null };
 }
 
 async function loadStudentsForStudio(studioId) {

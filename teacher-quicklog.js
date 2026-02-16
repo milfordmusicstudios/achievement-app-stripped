@@ -70,7 +70,10 @@
       return;
     }
 
-    (data || []).forEach(cat => {
+    const blockedCategoryNames = new Set(["practice_batch", "batch_practice"]);
+    (data || [])
+      .filter(cat => !blockedCategoryNames.has(String(cat?.name || "").toLowerCase()))
+      .forEach(cat => {
       const opt = document.createElement("option");
       opt.value = cat.name;
       opt.dataset.id = cat.id;
