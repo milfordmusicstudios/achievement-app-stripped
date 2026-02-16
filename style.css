@@ -2332,3 +2332,70 @@ body.leaderboard-page .leaderboard-title {
   color: #6b7280;
   font-size: 0.9rem;
 }
+.multi-date-calendar {
+  border: 1px solid #d6e3f0;
+  border-radius: 10px;
+  padding: 10px;
+  background: #f7fbff;
+}
+
+.multi-date-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.multi-date-title {
+  font-weight: 700;
+  color: #00477d;
+}
+
+.multi-date-nav {
+  border: none;
+  background: #3eb7f8;
+  color: #fff;
+  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+}
+
+.multi-date-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.multi-date-weekday {
+  font-size: 0.75rem;
+  text-align: center;
+  color: #6c7b88;
+  font-weight: 700;
+  user-select: none;
+}
+
+.multi-date-day {
+  border: 1px solid #d1dbe6;
+  background: #fff;
+  border-radius: 6px;
+  min-height: 34px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.multi-date-day.today {
+  border-color: #00477d;
+}
+
+.multi-date-day.selected {
+  background: #3eb7f8;
+  border-color: #3eb7f8;
+  color: #fff;
+  font-weight: 700;
+}
+
+.multi-date-day.placeholder {
+  visibility: hidden;
+  pointer-events: none;
+}

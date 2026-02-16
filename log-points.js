@@ -20,15 +20,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   const previewImage = document.getElementById("previewImage");
   const pointsInput = document.getElementById("logPoints");
   const notesInput = document.getElementById("logNote");
-  const dateInput = document.getElementById("logDate");
-  const addDateBtn = document.getElementById("addLogDate");
-  const dateChips = document.getElementById("logDateChips");
+  const logDateCalendar = document.getElementById("logDateCalendar");
+  const logDateSummary = document.getElementById("logDateSummary");
   const submitBtn = document.querySelector("button[type='submit']");
   const cancelBtn = document.querySelector("button[type='button']");
 
   let availableStudents = [];
   const selectedStudents = new Map();
-  const selectedDates = new Set();
 
   function formatStudentName(student) {
     if (!student) return "";
@@ -43,38 +41,103 @@ document.addEventListener("DOMContentLoaded", async () => {
     studentHidden.value = Array.from(selectedStudents.keys()).join(",");
   }
 
-  function renderDateChips() {
-    if (!dateChips) return;
-    if (!selectedDates.size) {
-      dateChips.innerHTML = "";
-      return;
+  function createMultiDateCalendar(container, summaryNode) {
+    const selectedDates = new Set();
+    const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    let currentMonthDate = new Date();
+    currentMonthDate.setDate(1);
+
+    function toDateKey(year, monthIndex, day) {
+      const mm = String(monthIndex + 1).padStart(2, "0");
+      const dd = String(day).padStart(2, "0");
+      return `${year}-${mm}-${dd}`;
     }
-    dateChips.innerHTML = Array.from(selectedDates)
-      .sort()
-      .map(date => `
-        <span class="student-chip">
-          ${date}
-          <button type="button" data-remove-date="${date}" aria-label="Remove ${date}">&times;</button>
-        </span>`)
-      .join("");
-  }
 
-  function addSelectedDate(dateValue) {
-    if (!dateValue) return;
-    selectedDates.add(dateValue);
-    renderDateChips();
-  }
+    function updateSummary() {
+      if (!summaryNode) return;
+      const dates = Array.from(selectedDates).sort();
+      summaryNode.textContent = dates.length
+        ? `${dates.length} date(s) selected: ${dates.join(", ")}`
+        : "Select one or more dates.";
+    }
 
-  function clearSelectedDates() {
-    selectedDates.clear();
-    renderDateChips();
-  }
+    function renderCalendar() {
+      if (!container) return;
+      const year = currentMonthDate.getFullYear();
+      const monthIndex = currentMonthDate.getMonth();
+      const firstDay = new Date(year, monthIndex, 1).getDay();
+      const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+      const todayKey = new Date().toISOString().split("T")[0];
+      const monthTitle = currentMonthDate.toLocaleString(undefined, { month: "long", year: "numeric" });
 
-  function getDatesForSubmit() {
-    const dates = new Set(selectedDates);
-    const currentPickerDate = dateInput?.value;
-    if (currentPickerDate) dates.add(currentPickerDate);
-    return Array.from(dates).sort();
+      const headerCells = weekDays.map(day => `<div class="multi-date-weekday">${day}</div>`).join("");
+      const emptyCells = Array.from({ length: firstDay }, () => `<button type="button" class="multi-date-day placeholder"></button>`).join("");
+      const dayCells = Array.from({ length: daysInMonth }, (_, index) => {
+        const day = index + 1;
+        const dateKey = toDateKey(year, monthIndex, day);
+        const isSelected = selectedDates.has(dateKey);
+        const isToday = dateKey === todayKey;
+        return `
+          <button
+            type="button"
+            class="multi-date-day ${isSelected ? "selected" : ""} ${isToday ? "today" : ""}"
+            data-date="${dateKey}"
+            aria-pressed="${isSelected ? "true" : "false"}"
+          >${day}</button>`;
+      }).join("");
+
+      container.innerHTML = `
+        <div class="multi-date-header">
+          <button type="button" class="multi-date-nav" data-nav="-1" aria-label="Previous month">&#9664;</button>
+          <div class="multi-date-title">${monthTitle}</div>
+          <button type="button" class="multi-date-nav" data-nav="1" aria-label="Next month">&#9654;</button>
+        </div>
+        <div class="multi-date-grid">
+          ${headerCells}
+          ${emptyCells}
+          ${dayCells}
+        </div>
+      `;
+
+      container.querySelectorAll("button[data-nav]").forEach(button => {
+        button.addEventListener("click", () => {
+          const direction = parseInt(button.dataset.nav, 10) || 0;
+          currentMonthDate.setMonth(currentMonthDate.getMonth() + direction);
+          renderCalendar();
+        });
+      });
+
+      container.querySelectorAll("button[data-date]").forEach(button => {
+        button.addEventListener("click", () => {
+          const dateKey = button.dataset.date;
+          if (!dateKey) return;
+          if (selectedDates.has(dateKey)) {
+            selectedDates.delete(dateKey);
+          } else {
+            selectedDates.add(dateKey);
+          }
+          updateSummary();
+          renderCalendar();
+        });
+      });
+    }
+
+    function resetToToday() {
+      const today = new Date();
+      const todayKey = today.toISOString().split("T")[0];
+      currentMonthDate = new Date(today.getFullYear(), today.getMonth(), 1);
+      selectedDates.clear();
+      selectedDates.add(todayKey);
+      updateSummary();
+      renderCalendar();
+    }
+
+    function getSelectedDates() {
+      return Array.from(selectedDates).sort();
+    }
+
+    resetToToday();
+    return { getSelectedDates, resetToToday };
   }
 
   function renderLogStudentChips() {
@@ -177,22 +240,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   clearLogStudentBtn?.addEventListener("click", clearLogStudentSearch);
-  addDateBtn?.addEventListener("click", () => addSelectedDate(dateInput?.value));
-  dateChips?.addEventListener("click", (event) => {
-    const removeButton = event.target.closest("button[data-remove-date]");
-    if (!removeButton) return;
-    const date = removeButton.dataset.removeDate;
-    if (!date) return;
-    selectedDates.delete(date);
-    renderDateChips();
-  });
-
-  // ✅ Default date to today
-  if (dateInput) {
-    const today = new Date().toISOString().split("T")[0];
-    dateInput.value = today;
-    addSelectedDate(today);
-  }
+  const logDatePicker = createMultiDateCalendar(logDateCalendar, logDateSummary);
 
   // ✅ Hide student dropdown & points input for students
   if (!(activeRole === "admin" || activeRole === "teacher")) {
@@ -293,7 +341,7 @@ categorySelect.addEventListener("change", () => {
 
       const category = categorySelect?.value;
       const note = notesInput?.value.trim();
-      const dates = getDatesForSubmit();
+      const dates = logDatePicker.getSelectedDates();
 
       let targetUsers = [user.id];
       if (activeRole === "admin" || activeRole === "teacher") {
@@ -427,12 +475,7 @@ setTimeout(() => {
           renderLogStudentResults();
 
           // Reset date and hide fields if student
-          if (dateInput) {
-            const today = new Date().toISOString().split("T")[0];
-            dateInput.value = today;
-            clearSelectedDates();
-            addSelectedDate(today);
-          }
+          logDatePicker.resetToToday();
           if (!(activeRole === "admin" || activeRole === "teacher")) {
             if (studentRow) studentRow.style.display = "none";
             if (pointsInput) pointsInput.closest("tr").style.display = "none";

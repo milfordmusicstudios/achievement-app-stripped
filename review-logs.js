@@ -374,16 +374,14 @@ const quickAddStudentSearch = document.getElementById("quickAddStudentSearch");
 const quickAddStudentResults = document.getElementById("quickAddStudentResults");
 const quickAddStudentChips = document.getElementById("quickAddStudentChips");
 const quickAddCategory = document.getElementById("quickAddCategory");
-const quickAddDate = document.getElementById("quickAddDate");
-const quickAddDateBtn = document.getElementById("quickAddDateBtn");
-const quickAddDateChips = document.getElementById("quickAddDateChips");
+const quickAddDateCalendar = document.getElementById("quickAddDateCalendar");
+const quickAddDateSummary = document.getElementById("quickAddDateSummary");
 const quickAddPoints = document.getElementById("quickAddPoints");
 const quickAddNotes = document.getElementById("quickAddNotes");
 const quickAddClearBtn = document.getElementById("quickAddClearSearch");
 
 let quickAddStudentPool = [];
 const quickAddSelection = new Map();
-const quickAddDates = new Set();
 
 function formatStudentName(student) {
   if (!student) return "";
@@ -472,51 +470,114 @@ function resetQuickAddSearch() {
   }
 }
 
-function renderQuickAddDateChips() {
-  if (!quickAddDateChips) return;
-  if (!quickAddDates.size) {
-    quickAddDateChips.innerHTML = "";
-    return;
+function createMultiDateCalendar(container, summaryNode) {
+  const selectedDates = new Set();
+  const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  let currentMonthDate = new Date();
+  currentMonthDate.setDate(1);
+
+  function toDateKey(year, monthIndex, day) {
+    const mm = String(monthIndex + 1).padStart(2, "0");
+    const dd = String(day).padStart(2, "0");
+    return `${year}-${mm}-${dd}`;
   }
-  quickAddDateChips.innerHTML = Array.from(quickAddDates)
-    .sort()
-    .map(date => `
-      <span class="student-chip">
-        ${date}
-        <button type="button" data-remove-quick-date="${date}" aria-label="Remove ${date}">&times;</button>
-      </span>`)
-    .join("");
+
+  function updateSummary() {
+    if (!summaryNode) return;
+    const dates = Array.from(selectedDates).sort();
+    summaryNode.textContent = dates.length
+      ? `${dates.length} date(s) selected: ${dates.join(", ")}`
+      : "Select one or more dates.";
+  }
+
+  function renderCalendar() {
+    if (!container) return;
+    const year = currentMonthDate.getFullYear();
+    const monthIndex = currentMonthDate.getMonth();
+    const firstDay = new Date(year, monthIndex, 1).getDay();
+    const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+    const todayKey = new Date().toISOString().split("T")[0];
+    const monthTitle = currentMonthDate.toLocaleString(undefined, { month: "long", year: "numeric" });
+
+    const headerCells = weekDays.map(day => `<div class="multi-date-weekday">${day}</div>`).join("");
+    const emptyCells = Array.from({ length: firstDay }, () => `<button type="button" class="multi-date-day placeholder"></button>`).join("");
+    const dayCells = Array.from({ length: daysInMonth }, (_, index) => {
+      const day = index + 1;
+      const dateKey = toDateKey(year, monthIndex, day);
+      const isSelected = selectedDates.has(dateKey);
+      const isToday = dateKey === todayKey;
+      return `
+        <button
+          type="button"
+          class="multi-date-day ${isSelected ? "selected" : ""} ${isToday ? "today" : ""}"
+          data-date="${dateKey}"
+          aria-pressed="${isSelected ? "true" : "false"}"
+        >${day}</button>`;
+    }).join("");
+
+    container.innerHTML = `
+      <div class="multi-date-header">
+        <button type="button" class="multi-date-nav" data-nav="-1" aria-label="Previous month">&#9664;</button>
+        <div class="multi-date-title">${monthTitle}</div>
+        <button type="button" class="multi-date-nav" data-nav="1" aria-label="Next month">&#9654;</button>
+      </div>
+      <div class="multi-date-grid">
+        ${headerCells}
+        ${emptyCells}
+        ${dayCells}
+      </div>
+    `;
+
+    container.querySelectorAll("button[data-nav]").forEach(button => {
+      button.addEventListener("click", () => {
+        const direction = parseInt(button.dataset.nav, 10) || 0;
+        currentMonthDate.setMonth(currentMonthDate.getMonth() + direction);
+        renderCalendar();
+      });
+    });
+
+    container.querySelectorAll("button[data-date]").forEach(button => {
+      button.addEventListener("click", () => {
+        const dateKey = button.dataset.date;
+        if (!dateKey) return;
+        if (selectedDates.has(dateKey)) {
+          selectedDates.delete(dateKey);
+        } else {
+          selectedDates.add(dateKey);
+        }
+        updateSummary();
+        renderCalendar();
+      });
+    });
+  }
+
+  function resetToToday() {
+    const today = new Date();
+    const todayKey = today.toISOString().split("T")[0];
+    currentMonthDate = new Date(today.getFullYear(), today.getMonth(), 1);
+    selectedDates.clear();
+    selectedDates.add(todayKey);
+    updateSummary();
+    renderCalendar();
+  }
+
+  function getSelectedDates() {
+    return Array.from(selectedDates).sort();
+  }
+
+  resetToToday();
+  return { getSelectedDates, resetToToday };
 }
 
-function addQuickAddDate(dateValue) {
-  if (!dateValue) return;
-  quickAddDates.add(dateValue);
-  renderQuickAddDateChips();
-}
-
-function resetQuickAddDates() {
-  quickAddDates.clear();
-  renderQuickAddDateChips();
-}
-
-function getQuickAddDatesForSubmit() {
-  const dates = new Set(quickAddDates);
-  const currentPickerDate = quickAddDate?.value;
-  if (currentPickerDate) dates.add(currentPickerDate);
-  return Array.from(dates).sort();
-}
+const quickAddDatePicker = createMultiDateCalendar(quickAddDateCalendar, quickAddDateSummary);
 
 if (quickAddBtn) {
   quickAddBtn.addEventListener("click", async () => {
     quickAddModal.style.display = "flex";
     resetQuickAddSelection();
-    resetQuickAddDates();
+    quickAddDatePicker.resetToToday();
     if (quickAddStudentSearch) quickAddStudentSearch.value = "";
     await loadQuickAddStudents();
-    // Default date = today
-    quickAddDate.value = new Date().toISOString().split("T")[0];
-    resetQuickAddDates();
-    addQuickAddDate(quickAddDate.value);
   });
 }
 
@@ -524,7 +585,7 @@ if (quickAddCancel) {
   quickAddCancel.addEventListener("click", () => {
     quickAddModal.style.display = "none";
     resetQuickAddSelection();
-    resetQuickAddDates();
+    quickAddDatePicker.resetToToday();
   });
 }
 
@@ -550,19 +611,6 @@ quickAddStudentChips?.addEventListener("click", (event) => {
 
 quickAddClearBtn?.addEventListener("click", () => {
   resetQuickAddSearch();
-});
-
-quickAddDateBtn?.addEventListener("click", () => {
-  addQuickAddDate(quickAddDate?.value);
-});
-
-quickAddDateChips?.addEventListener("click", (event) => {
-  const removeButton = event.target.closest("button[data-remove-quick-date]");
-  if (!removeButton) return;
-  const date = removeButton.dataset.removeQuickDate;
-  if (!date) return;
-  quickAddDates.delete(date);
-  renderQuickAddDateChips();
 });
 
 async function loadQuickAddStudents() {
@@ -605,7 +653,7 @@ if (quickAddSubmit) {
   quickAddSubmit.addEventListener("click", async () => {
     const selectedIds = Array.from(quickAddSelection.keys());
     const category = quickAddCategory.value;
-    const dates = getQuickAddDatesForSubmit();
+    const dates = quickAddDatePicker.getSelectedDates();
     const points = quickAddPoints.value ? parseInt(quickAddPoints.value) : (category === "practice" ? 5 : 0);
     const notes = quickAddNotes.value.trim();
 
@@ -646,7 +694,7 @@ if (quickAddSubmit) {
     alert(`✅ Points added for ${selectedIds.length} student(s)!`);
     quickAddModal.style.display = "none";
     resetQuickAddSelection();
-    resetQuickAddDates();
+    quickAddDatePicker.resetToToday();
     await new Promise(r => setTimeout(r, 300)); // short delay for backend sync
     location.reload(); // refresh logs
   });
