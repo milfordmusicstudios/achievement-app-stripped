@@ -38,7 +38,7 @@ async function loadLeaderboard() {
 
   try {
     const [{ data: users }, { data: levels }] = await Promise.all([
-      supabase.from("users").select("id, firstName, lastName, avatarUrl, roles, points, level"),
+      supabase.from("users").select("id, firstName, lastName, avatarUrl, roles, points, level, active"),
       supabase.from("levels").select("*").order("minPoints", { ascending: true })
     ]);
 
@@ -67,7 +67,8 @@ async function loadLeaderboard() {
 
       (users || []).forEach(user => {
         const isStudent = Array.isArray(user.roles) ? user.roles.includes("student") : user.roles === "student";
-        if (!isStudent || user.level !== level.id) return;
+        const isActive = user.active !== false;
+        if (!isStudent || !isActive || user.level !== level.id) return;
 
         const span = Math.max(1, (level.maxPoints - level.minPoints));
         const percent = ((Number(user.points) - level.minPoints) / span) * 100;

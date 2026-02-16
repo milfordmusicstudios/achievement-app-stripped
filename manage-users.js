@@ -95,6 +95,14 @@ function renderUsers() {
         </label>
       </td>
       <td>${renderRoleTags(user)}</td>
+      <td>
+        <input
+          type="checkbox"
+          ${user.active !== false ? "checked" : ""}
+          ${(Array.isArray(user.roles) ? user.roles : [user.roles]).includes("student") ? "" : "disabled"}
+          onchange="updateActiveStatus('${user.id}', this.checked)"
+        >
+      </td>
       <td>${renderTeacherTags(user)}</td>
       <td><input type="text" value="${user.instrument || ""}" onchange="updateField('${user.id}','instrument',this.value)"></td>
       <td>${user.points || 0}</td>
@@ -116,6 +124,23 @@ window.updateField = async function(id, field, value) {
 
   const { error } = await supabase.from("users").update({ [field]: value }).eq("id", id);
   if (error) console.error("Auto-save failed:", error);
+};
+
+window.updateActiveStatus = async function(id, isActive) {
+  const user = allUsers.find(u => u.id === id);
+  if (!user) return;
+  user.active = Boolean(isActive);
+
+  const { error } = await supabase
+    .from("users")
+    .update({ active: Boolean(isActive) })
+    .eq("id", id);
+
+  if (error) {
+    console.error("Failed to update active status:", error);
+    alert("Unable to update active status.");
+    await fetchUsers();
+  }
 };
 
 // ✅ Render Tags

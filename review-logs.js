@@ -621,7 +621,7 @@ async function loadQuickAddStudents() {
 
   const { data: students, error } = await supabase
     .from("users")
-    .select("id, firstName, lastName, roles, teacherIds");
+    .select("id, firstName, lastName, roles, teacherIds, active");
 
   if (error) {
     if (quickAddStudentResults) {
@@ -633,9 +633,10 @@ async function loadQuickAddStudents() {
   let filtered = students.filter(s => {
     const roles = Array.isArray(s.roles) ? s.roles : [s.roles];
     const isStudent = roles.includes("student");
-    if (activeRole === "admin") return isStudent;
+    const isActive = s.active !== false;
+    if (activeRole === "admin") return isStudent && isActive;
     if (activeRole === "teacher")
-      return isStudent && Array.isArray(s.teacherIds) && s.teacherIds.includes(user.id);
+      return isStudent && isActive && Array.isArray(s.teacherIds) && s.teacherIds.includes(user.id);
     return false;
   });
 

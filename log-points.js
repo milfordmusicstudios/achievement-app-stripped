@@ -300,7 +300,7 @@ categorySelect.addEventListener("change", () => {
   if (activeRole === "admin" || activeRole === "teacher") {
     const { data: students, error: stuErr } = await supabase
       .from("users")
-      .select("id, firstName, lastName, roles, teacherIds");
+      .select("id, firstName, lastName, roles, teacherIds, active");
 
     if (stuErr) {
       console.error("Supabase error loading students:", stuErr.message);
@@ -310,11 +310,12 @@ categorySelect.addEventListener("change", () => {
         .filter(s => {
           const roles = Array.isArray(s.roles) ? s.roles : [s.roles];
           const isStudent = roles.includes("student");
+          const isActive = s.active !== false;
 
-          if (activeRole === "admin") return isStudent;
+          if (activeRole === "admin") return isStudent && isActive;
           if (activeRole === "teacher") {
             const teacherList = Array.isArray(s.teacherIds) ? s.teacherIds : [];
-            return isStudent && teacherList.includes(user.id);
+            return isStudent && isActive && teacherList.includes(user.id);
           }
           return false;
         })
