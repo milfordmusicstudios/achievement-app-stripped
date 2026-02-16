@@ -11,6 +11,13 @@ function normalizeEmail(value) {
   return String(value || "").trim().toLowerCase();
 }
 
+function formatRoleLabel(roleHint) {
+  const role = String(roleHint || "").trim().toLowerCase();
+  if (!role) return "role";
+  if (role === "parent" || role === "guardian" || role === "parent/guardian") return "parent/guardian";
+  return role;
+}
+
 async function loadPendingInvites(studioId) {
   const container = document.getElementById("pendingInvites");
   if (!container) return;
@@ -42,7 +49,7 @@ async function loadPendingInvites(studioId) {
     row.style.borderRadius = "12px";
     row.style.border = "1px solid rgba(11,79,138,0.18)";
     row.innerHTML = `
-      <div><b>${invite.invited_email}</b> (${invite.role_hint || "role"})</div>
+      <div><b>${invite.invited_email}</b> (${formatRoleLabel(invite.role_hint)})</div>
       <div style="font-size:12px; color:#555;">Expires: ${invite.expires_at ? new Date(invite.expires_at).toLocaleString() : "n/a"}</div>
       <div style="font-size:12px; margin-top:6px;">
         <a href="${inviteLink}">${inviteLink}</a>

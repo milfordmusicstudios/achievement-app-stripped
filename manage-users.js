@@ -4,25 +4,25 @@ import { getViewerContext } from "./utils.js";
 let allUsers = [];
 let searchQuery = "";
 let searchHandlerBound = false;
+let tagPickerOutsideCloseBound = false;
 let currentEditingRow = null;
+let sortField = "firstName";
+let sortDirection = "asc";
 
-const editableFields = [
+const editableTextFields = [
   { field: "firstName", type: "text" },
   { field: "lastName", type: "text" },
   { field: "email", type: "email" }
 ];
 
-const ROLE_FALLBACKS = ["admin", "teacher", "parent", "student", "guardian"];
+const ROLE_FALLBACKS = ["admin", "teacher", "parent", "student"];
+const INSTRUMENT_FALLBACKS = ["piano", "voice", "violin", "guitar", "drums"];
+
 let roleOptions = [];
 let teacherOptions = [];
+let instrumentOptions = [];
 
-const STATUS_LOADING = "Loading users…";
-const isDevMode = (() => {
-  if (typeof window === "undefined") return false;
-  const env = window.APP_ENV || "";
-  const host = window.location?.hostname || "";
-  return env === "dev" || host.includes("localhost") || host.includes("127.0.0.1");
-})();
+const STATUS_LOADING = "Loading users...";
 
 function renderStatus(message, isError = false) {
   const statusEl = document.getElementById("manageUsersStatus");
@@ -31,23 +31,9 @@ function renderStatus(message, isError = false) {
   statusEl.style.color = isError ? "#c62828" : "#0b4f8a";
 }
 
-function formatList(value) {
-  if (!value) return "—";
-  const list = Array.isArray(value) ? value : [value];
-  const normalized = list
-    .filter(Boolean)
-    .map(item => {
-      if (typeof item === "string") return item;
-      if (typeof item === "object") {
-        if (item.first_name || item.firstName || item.last_name || item.lastName) {
-          return `${item.first_name || item.firstName || ""} ${item.last_name || item.lastName || ""}`.trim();
-        }
-        if (item.label) return item.label;
-      }
-      return String(item);
-    })
-    .filter(Boolean);
-  return normalized.length ? normalized.join(", ") : "—";
+function ensureArray(value) {
+  if (!value) return [];
+  return Array.isArray(value) ? value : [value];
 }
 
 function normalizeArray(value) {
@@ -66,188 +52,565 @@ function arraysEqual(a, b) {
   return true;
 }
 
+function getTeacherLabelById(id) {
+  const match = teacherOptions.find(opt => String(opt.value) === String(id));
+  return match?.label || String(id || "");
+}
+
+function formatList(value) {
+  if (!value) return "-";
+  const list = Array.isArray(value) ? value : [value];
+  const normalized = list
+    .map(item => (item === undefined || item === null ? "" : String(item).trim()))
+    .filter(Boolean);
+  return normalized.length ? normalized.join(", ") : "-";
+}
+
+function getUserFieldValue(user, field) {
+  switch (field) {
+    case "firstName":
+      return user.firstName || "";
+    case "lastName":
+      return user.lastName || "";
+    case "email":
+      return user.email || "";
+    case "roles":
+      return ensureArray(user.roles);
+    case "teacherIds":
+      return ensureArray(user.teacherIds);
+    case "instrument":
+      return ensureArray(user.instrument);
+    default:
+      return user[field] || "";
+  }
+}
+
+function getDisplayValue(user, field) {
+  if (field === "roles") {
+    const roles = ensureArray(getUserFieldValue(user, "roles"))
+      .map(role => String(role || "").toLowerCase())
+      .map(role => (role === "parent" || role === "guardian" ? "parent/guardian" : role));
+    return formatList(roles);
+  }
+  if (field === "teacherIds") {
+    const teacherNames = ensureArray(getUserFieldValue(user, "teacherIds")).map(getTeacherLabelById);
+    return formatList(teacherNames);
+  }
+  if (field === "instrument") return formatList(getUserFieldValue(user, "instrument"));
+  if (field === "points" || field === "level") return user[field] ?? "-";
+  if (field === "active") return user.deactivated_at ? "Inactive" : "Active";
+  return getUserFieldValue(user, field) || "-";
+}
+
+function setInputValueFromUser(input, user) {
+  const field = input.dataset.field;
+  if (!field) return;
+  if (input instanceof HTMLElement && input.classList.contains("tag-picker")) {
+    const selected = normalizeArray(getUserFieldValue(user, field));
+    input.dataset.selected = JSON.stringify(selected);
+    input.dataset.open = "false";
+    renderTagPicker(input);
+    return;
+  }
+  if (input instanceof HTMLSelectElement && input.multiple) {
+    const selected = normalizeArray(getUserFieldValue(user, field));
+    Array.from(input.options).forEach(opt => {
+      opt.selected = selected.includes(String(opt.value));
+    });
+    return;
+  }
+  input.value = String(getUserFieldValue(user, field) || "");
+}
+
 function buildOptionLists(users) {
   const roleSet = new Set();
   const teacherMap = new Map();
+  const instrumentSet = new Set();
+
   users.forEach(user => {
     ensureArray(user.roles).forEach(role => {
-      if (role) roleSet.add(role);
+      const raw = String(role || "").trim().toLowerCase();
+      const value = raw === "guardian" || raw === "parent/guardian" ? "parent" : raw;
+      if (value) roleSet.add(value);
     });
-    const hasTeacherRole = ensureArray(user.roles).some(
-      role => typeof role === "string" && role.toLowerCase() === "teacher"
-    );
-    if (hasTeacherRole) {
-      const label = `${user.firstName || user.first_name || ""} ${user.lastName || user.last_name || ""}`.trim() || user.email || "Teacher";
-      if (label) {
-        teacherMap.set(label, { value: label, label });
-      }
-    }
+    ensureArray(user.instrument).forEach(inst => {
+      const value = String(inst || "").trim();
+      if (value) instrumentSet.add(value);
+    });
   });
+
   ROLE_FALLBACKS.forEach(role => roleSet.add(role));
+  INSTRUMENT_FALLBACKS.forEach(inst => instrumentSet.add(inst));
+
+  users.forEach(user => {
+    const hasTeacherRole = ensureArray(user.roles).some(role => String(role || "").toLowerCase() === "teacher");
+    if (!hasTeacherRole || !user.id) return;
+    const label = `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.email || "Teacher";
+    teacherMap.set(String(user.id), { value: String(user.id), label });
+  });
+
   roleOptions = Array.from(roleSet)
-    .filter(Boolean)
-    .map(role => ({ value: role, label: role }))
+    .filter(role => role !== "guardian")
+    .map(role => ({
+      value: role,
+      label: role === "parent" ? "parent/guardian" : role
+    }))
     .sort((a, b) => a.label.localeCompare(b.label));
+
   teacherOptions = Array.from(teacherMap.values()).sort((a, b) => a.label.localeCompare(b.label));
+
+  instrumentOptions = Array.from(instrumentSet)
+    .map(instrument => ({ value: instrument, label: instrument }))
+    .sort((a, b) => a.label.localeCompare(b.label));
 }
 
 function matchesSearch(user) {
   const query = searchQuery.trim().toLowerCase();
   if (!query) return true;
-  const first = (user.firstName || user.first_name || "").toLowerCase();
-  const last = (user.lastName || user.last_name || "").toLowerCase();
+
+  const first = (user.firstName || "").toLowerCase();
+  const last = (user.lastName || "").toLowerCase();
   const email = (user.email || "").toLowerCase();
   const roles = formatList(user.roles).toLowerCase();
-  const teachers = formatList(user.teachers).toLowerCase();
-  const instruments = formatList(user.instruments).toLowerCase();
+  const teachers = formatList(ensureArray(user.teacherIds).map(getTeacherLabelById)).toLowerCase();
+  const instruments = formatList(user.instrument).toLowerCase();
+  const activeLabel = getDisplayValue(user, "active").toLowerCase();
+
   return (
     first.includes(query) ||
     last.includes(query) ||
     email.includes(query) ||
     roles.includes(query) ||
     teachers.includes(query) ||
-    instruments.includes(query)
+    instruments.includes(query) ||
+    activeLabel.includes(query)
   );
 }
 
-function renderUsers() {
-  const tbody = document.getElementById("userTableBody");
-  if (!tbody) return;
-  currentEditingRow = null;
-  setGlobalEditingState(false);
-  tbody.innerHTML = "";
-  const filtered = allUsers.filter(matchesSearch);
-  if (filtered.length === 0) {
-    const tr = document.createElement("tr");
-    const td = document.createElement("td");
-    td.colSpan = 10;
-    td.textContent = "No users found.";
-    td.style.textAlign = "center";
-    tr.appendChild(td);
-    tbody.appendChild(tr);
-    renderStatus("Loaded 0 users");
-    return;
+function isNumericSortField(field) {
+  return field === "points" || field === "level";
+}
+
+function getSortValue(user, field) {
+  if (!user || !field) return "";
+  if (field === "roles") return getDisplayValue(user, "roles").toLowerCase();
+  if (field === "teacherIds") return getDisplayValue(user, "teacherIds").toLowerCase();
+  if (field === "instrument") return getDisplayValue(user, "instrument").toLowerCase();
+  if (isNumericSortField(field)) {
+    const numeric = Number(user[field]);
+    return Number.isFinite(numeric) ? numeric : null;
   }
-  filtered.forEach(user => {
-    const tr = document.createElement("tr");
-    tr.dataset.userId = user.id;
-    if (user.memberKey) tr.dataset.memberKey = user.memberKey;
-    editableFields.forEach(({ field, type }) => {
-      tr.appendChild(createEditableCell(user, field, type));
-    });
-    tr.appendChild(createAvatarCell(user));
-    tr.appendChild(createCell(formatList(user.roles)));
-    tr.appendChild(createCell(formatList(user.teachers)));
-    tr.appendChild(createCell(formatList(user.instruments)));
-    tr.appendChild(createCell(user.points));
-    tr.appendChild(createCell(user.level));
-    tr.appendChild(createActionsCell(tr));
-    tbody.appendChild(tr);
+  return String(user[field] ?? "").toLowerCase();
+}
+
+function compareUsers(a, b, field) {
+  const left = getSortValue(a, field);
+  const right = getSortValue(b, field);
+
+  if (isNumericSortField(field)) {
+    if (left === null && right === null) return 0;
+    if (left === null) return 1;
+    if (right === null) return -1;
+    return left - right;
+  }
+
+  const cmp = String(left).localeCompare(String(right), undefined, { sensitivity: "base" });
+  if (cmp !== 0) return cmp;
+  return String(a?.id ?? "").localeCompare(String(b?.id ?? ""), undefined, { sensitivity: "base" });
+}
+
+function getSortedUsers(users) {
+  if (!Array.isArray(users)) return [];
+  const sorted = [...users].sort((a, b) => compareUsers(a, b, sortField));
+  if (sortDirection === "desc") sorted.reverse();
+  return sorted;
+}
+
+function updateSortHeaderState() {
+  const headers = document.querySelectorAll("#userHeaderTable th[data-sort]");
+  headers.forEach(header => {
+    const field = header.dataset.sort;
+    const isActive = field === sortField;
+    header.style.cursor = "pointer";
+    header.tabIndex = 0;
+    header.setAttribute("aria-sort", isActive ? (sortDirection === "asc" ? "ascending" : "descending") : "none");
+    header.title = isActive
+      ? `Sorted ${sortDirection}. Click to sort ${sortDirection === "asc" ? "descending" : "ascending"}.`
+      : "Click to sort.";
   });
-  renderStatus(`Loaded ${filtered.length} user${filtered.length === 1 ? "" : "s"}`);
+}
+
+function handleSortHeaderInteraction(field) {
+  if (!field) return;
+  if (sortField === field) {
+    sortDirection = sortDirection === "asc" ? "desc" : "asc";
+  } else {
+    sortField = field;
+    sortDirection = "asc";
+  }
+  updateSortHeaderState();
+  renderUsers();
+}
+
+function bindSortHeaders() {
+  const headers = document.querySelectorAll("#userHeaderTable th[data-sort]");
+  headers.forEach(header => {
+    if (header.dataset.sortBound === "true") return;
+    const field = header.dataset.sort;
+    header.dataset.sortBound = "true";
+    header.addEventListener("click", () => handleSortHeaderInteraction(field));
+    header.addEventListener("keydown", event => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      event.preventDefault();
+      handleSortHeaderInteraction(field);
+    });
+  });
+  updateSortHeaderState();
 }
 
 function createCell(value) {
   const td = document.createElement("td");
-  td.textContent = value || "—";
+  td.textContent = value || "-";
   return td;
 }
 
-function createEditableCell(user, field, type = "text") {
+function createEditableTextCell(user, field, type = "text") {
   const td = document.createElement("td");
+
   const span = document.createElement("span");
   span.className = "cell-text";
   span.dataset.field = field;
-  span.textContent = getUserFieldValue(user, field) || "—";
+  span.textContent = getDisplayValue(user, field);
+
   const input = document.createElement("input");
   input.className = "cell-input";
   input.dataset.field = field;
   input.type = type;
-  input.value = getUserFieldValue(user, field);
   input.hidden = true;
+  setInputValueFromUser(input, user);
 
-  if (field === "firstName") {
-    const wrapper = document.createElement("div");
-    wrapper.className = "first-name-wrapper";
-    const pencilBtn = document.createElement("button");
-    pencilBtn.type = "button";
-    pencilBtn.className = "edit-pencil";
-    pencilBtn.setAttribute("aria-label", "Edit user");
-    pencilBtn.innerHTML = `
-      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <path d="M5 20h14" />
-        <path d="M17.4 4.6a2 2 0 0 1 2.8 2.8l-9.7 9.7H7v-4.5z" />
-      </svg>
-    `;
-    pencilBtn.addEventListener("click", event => {
-      event.preventDefault();
-      const row = td.closest("tr");
-      if (row) enterEditMode(row);
-    });
-
-    const actions = document.createElement("div");
-    actions.className = "inline-edit-actions";
-    const saveBtn = document.createElement("button");
-    saveBtn.type = "button";
-    saveBtn.className = "mini-edit-btn save-btn";
-    saveBtn.textContent = "Save";
-    saveBtn.hidden = true;
-    saveBtn.addEventListener("click", () => {
-      const row = td.closest("tr");
-      if (row) saveRow(row);
-    });
-
-    const cancelBtn = document.createElement("button");
-    cancelBtn.type = "button";
-    cancelBtn.className = "mini-edit-btn cancel-btn";
-    cancelBtn.textContent = "Cancel";
-    cancelBtn.hidden = true;
-    cancelBtn.addEventListener("click", () => {
-      const row = td.closest("tr");
-      if (row) cancelEditMode(row);
-    });
-    actions.appendChild(saveBtn);
-    actions.appendChild(cancelBtn);
-
-    wrapper.appendChild(pencilBtn);
-    wrapper.appendChild(actions);
-    wrapper.appendChild(span);
-    wrapper.appendChild(input);
-    td.appendChild(wrapper);
-  } else {
+  if (field !== "firstName") {
     td.appendChild(span);
     td.appendChild(input);
+    return td;
   }
+
+  const wrapper = document.createElement("div");
+  wrapper.className = "first-name-wrapper";
+
+  const pencilBtn = document.createElement("button");
+  pencilBtn.type = "button";
+  pencilBtn.className = "edit-pencil";
+  pencilBtn.setAttribute("aria-label", "Edit user");
+  pencilBtn.innerHTML = `
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M5 20h14" />
+      <path d="M17.4 4.6a2 2 0 0 1 2.8 2.8l-9.7 9.7H7v-4.5z" />
+    </svg>
+  `;
+  pencilBtn.addEventListener("click", event => {
+    event.preventDefault();
+    const row = td.closest("tr");
+    if (row) enterEditMode(row);
+  });
+
+  const actions = document.createElement("div");
+  actions.className = "inline-edit-actions";
+
+  const saveBtn = document.createElement("button");
+  saveBtn.type = "button";
+  saveBtn.className = "mini-edit-btn save-btn row-save-btn";
+  saveBtn.textContent = "Save";
+  saveBtn.hidden = true;
+  saveBtn.addEventListener("click", () => {
+    const row = td.closest("tr");
+    if (row) saveRow(row);
+  });
+
+  const cancelBtn = document.createElement("button");
+  cancelBtn.type = "button";
+  cancelBtn.className = "mini-edit-btn cancel-btn row-cancel-btn";
+  cancelBtn.textContent = "Cancel";
+  cancelBtn.hidden = true;
+  cancelBtn.addEventListener("click", () => {
+    const row = td.closest("tr");
+    if (row) cancelEditMode(row);
+  });
+
+  actions.appendChild(saveBtn);
+  actions.appendChild(cancelBtn);
+  wrapper.appendChild(pencilBtn);
+  wrapper.appendChild(actions);
+  wrapper.appendChild(span);
+  wrapper.appendChild(input);
+  td.appendChild(wrapper);
   return td;
 }
 
-function getUserFieldValue(user, field) {
-  switch (field) {
-    case "firstName":
-      return user.firstName || user.first_name || "";
-    case "lastName":
-      return user.lastName || user.last_name || "";
-    case "email":
-      return user.email || "";
-    default:
-      return user[field] || "";
+function createMultiSelectCell(user, field, options, cssClass) {
+  const td = document.createElement("td");
+
+  const span = document.createElement("span");
+  span.className = "cell-text";
+  span.dataset.field = field;
+  span.textContent = getDisplayValue(user, field);
+
+  const picker = document.createElement("div");
+  picker.className = `cell-input tag-picker ${cssClass || ""}`.trim();
+  picker.dataset.field = field;
+  picker.dataset.valueType = "array";
+  picker.dataset.selected = "[]";
+  picker.dataset.open = "false";
+  picker.dataset.allowCustom = field === "instrument" ? "true" : "false";
+  picker.hidden = true;
+
+  picker._options = options.map(option => ({ value: String(option.value), label: String(option.label) }));
+
+  const tags = document.createElement("div");
+  tags.className = "tag-picker-tags";
+
+  const list = document.createElement("div");
+  list.className = "tag-picker-list";
+
+  picker.appendChild(tags);
+  picker.appendChild(list);
+  setInputValueFromUser(picker, user);
+
+  picker.addEventListener("click", event => {
+    event.stopPropagation();
+
+    const target = event.target instanceof Element
+      ? event.target
+      : event.target?.parentElement;
+    if (!target) return;
+
+    if (target.closest("input.tag-picker-custom-input")) return;
+
+    const addBtn = event.target.closest("button[data-action='add-option']");
+    if (addBtn) {
+      const selected = getTagPickerSelected(picker);
+      const value = String(addBtn.dataset.value || "");
+      if (!selected.includes(value)) selected.push(value);
+      picker.dataset.selected = JSON.stringify(selected);
+      picker.dataset.open = "false";
+      renderTagPicker(picker);
+      return;
+    }
+
+    const removeBtn = event.target.closest("button[data-action='remove-tag']");
+    if (removeBtn) {
+      const selected = getTagPickerSelected(picker).filter(value => value !== String(removeBtn.dataset.value || ""));
+      picker.dataset.selected = JSON.stringify(selected);
+      picker.dataset.open = "false";
+      renderTagPicker(picker);
+      return;
+    }
+
+    const addCustomBtn = event.target.closest("button[data-action='add-custom']");
+    if (addCustomBtn) {
+      const input = picker.querySelector(".tag-picker-custom-input");
+      const raw = String(input?.value || "").trim();
+      if (!raw) return;
+
+      const optionsList = Array.isArray(picker._options) ? picker._options : [];
+      const existing = optionsList.find(option => String(option.label).toLowerCase() === raw.toLowerCase());
+      const value = existing ? String(existing.value) : raw;
+      if (!existing) {
+        optionsList.push({ value, label: raw });
+        picker._options = optionsList.sort((a, b) => String(a.label).localeCompare(String(b.label)));
+      }
+
+      const selected = getTagPickerSelected(picker);
+      if (!selected.includes(value)) selected.push(value);
+      picker.dataset.selected = JSON.stringify(selected);
+      if (input) input.value = "";
+      picker.dataset.open = "false";
+      renderTagPicker(picker);
+      return;
+    }
+
+    const nextOpen = picker.dataset.open !== "true";
+    if (nextOpen) closeAllTagPickers(picker);
+    picker.dataset.open = nextOpen ? "true" : "false";
+    renderTagPicker(picker);
+  });
+
+  td.appendChild(span);
+  td.appendChild(picker);
+  return td;
+}
+
+function getTagPickerSelected(picker) {
+  try {
+    const parsed = JSON.parse(picker.dataset.selected || "[]");
+    return Array.isArray(parsed) ? parsed.map(item => String(item)) : [];
+  } catch {
+    return [];
   }
+}
+
+function getTagLabel(picker, value) {
+  const options = Array.isArray(picker._options) ? picker._options : [];
+  const match = options.find(option => String(option.value) === String(value));
+  return match?.label || String(value);
+}
+
+function closeAllTagPickers(exceptPicker = null) {
+  document.querySelectorAll(".tag-picker[data-open='true']").forEach(picker => {
+    if (picker === exceptPicker) return;
+    picker.dataset.open = "false";
+    renderTagPicker(picker);
+  });
+}
+
+function renderTagPicker(picker) {
+  if (!picker) return;
+  const selected = getTagPickerSelected(picker);
+  const tagsEl = picker.querySelector(".tag-picker-tags");
+  const listEl = picker.querySelector(".tag-picker-list");
+  if (!tagsEl || !listEl) return;
+
+  tagsEl.innerHTML = "";
+  const isOpen = picker.dataset.open === "true";
+  if (!isOpen) {
+    const summary = document.createElement("span");
+    summary.className = "tag-picker-empty";
+    if (!selected.length) {
+      summary.textContent = "Select...";
+    } else if (selected.length === 1) {
+      summary.textContent = getTagLabel(picker, selected[0]);
+    } else {
+      summary.textContent = `${selected.length} selected`;
+    }
+    tagsEl.appendChild(summary);
+  } else if (!selected.length) {
+    const emptyTag = document.createElement("span");
+    emptyTag.className = "tag-picker-empty";
+    emptyTag.textContent = "No selections yet";
+    tagsEl.appendChild(emptyTag);
+  } else {
+    selected.forEach(value => {
+      const tag = document.createElement("span");
+      tag.className = "tag-pill";
+      tag.textContent = getTagLabel(picker, value);
+      const removeBtn = document.createElement("button");
+      removeBtn.type = "button";
+      removeBtn.dataset.action = "remove-tag";
+      removeBtn.dataset.value = value;
+      removeBtn.setAttribute("aria-label", `Remove ${getTagLabel(picker, value)}`);
+      removeBtn.textContent = "x";
+      tag.appendChild(removeBtn);
+      tagsEl.appendChild(tag);
+    });
+  }
+
+  const available = (picker._options || []).filter(option => !selected.includes(String(option.value)));
+  listEl.innerHTML = "";
+  if (picker.dataset.allowCustom === "true") {
+    const customWrap = document.createElement("div");
+    customWrap.className = "tag-picker-custom";
+
+    const customInput = document.createElement("input");
+    customInput.type = "text";
+    customInput.placeholder = "Add new instrument";
+    customInput.className = "tag-picker-custom-input";
+    customInput.addEventListener("keydown", event => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        const addBtn = customWrap.querySelector("button[data-action='add-custom']");
+        if (addBtn) addBtn.click();
+      }
+    });
+
+    const addCustomBtn = document.createElement("button");
+    addCustomBtn.type = "button";
+    addCustomBtn.className = "tag-picker-custom-btn";
+    addCustomBtn.dataset.action = "add-custom";
+    addCustomBtn.textContent = "Add";
+
+    customWrap.appendChild(customInput);
+    customWrap.appendChild(addCustomBtn);
+    listEl.appendChild(customWrap);
+  }
+  if (!available.length) {
+    const empty = document.createElement("div");
+    empty.className = "tag-picker-empty";
+    empty.textContent = "All options selected";
+    listEl.appendChild(empty);
+  } else {
+    available.forEach(option => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "tag-picker-option";
+      button.dataset.action = "add-option";
+      button.dataset.value = String(option.value);
+      button.textContent = option.label;
+      listEl.appendChild(button);
+    });
+  }
+
+  listEl.hidden = !isOpen;
+  listEl.style.display = isOpen ? "flex" : "none";
 }
 
 function createAvatarCell(user) {
   const td = document.createElement("td");
+
   const img = document.createElement("img");
-  img.className = "avatar-sm";
-  img.src = user.avatarUrl || user.avatar || "images/logos/logo.png";
-  img.alt = `${user.firstName || user.first_name || "user"} avatar`;
+  img.className = "avatar-sm avatar-preview";
+  img.src = user.avatarUrl || user.avatar || "images/icons/default.png";
+  img.alt = `${user.firstName || "user"} avatar`;
+  img.title = "Click to upload avatar";
+
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = "image/*";
+  input.className = "avatar-upload-input";
+  input.dataset.field = "avatarUrl";
+  input.hidden = true;
+
+  const triggerUpload = () => input.click();
+  img.addEventListener("click", triggerUpload);
+  img.addEventListener("keydown", event => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      triggerUpload();
+    }
+  });
+  img.setAttribute("tabindex", "0");
+
+  input.addEventListener("change", async () => {
+    const file = input.files?.[0];
+    if (!file) return;
+    await uploadAvatarForUser(user, file, img);
+    input.value = "";
+  });
+
   td.appendChild(img);
+  td.appendChild(input);
   return td;
 }
 
-function createActionsCell(row) {
+function updateActiveButton(button, isActive) {
+  if (!button) return;
+  button.textContent = isActive ? "Active" : "Inactive";
+  button.classList.toggle("save-btn", isActive);
+  button.classList.toggle("cancel-btn", !isActive);
+}
+
+function createActionsCell(user) {
   const td = document.createElement("td");
-  td.className = "actions-cell actions-cell-placeholder";
-  td.setAttribute("aria-hidden", "true");
+  td.className = "actions-cell";
+
+  const toggle = document.createElement("button");
+  toggle.type = "button";
+  toggle.className = "mini-edit-btn";
+  updateActiveButton(toggle, !user.deactivated_at);
+  toggle.addEventListener("click", async () => {
+    await toggleUserActive(user, toggle);
+  });
+
+  td.appendChild(toggle);
   return td;
 }
 
@@ -258,8 +621,8 @@ function setGlobalEditingState(isEditing) {
 }
 
 function toggleActionButtons(row, editing) {
-  const saveBtn = row.querySelector(".save-btn");
-  const cancelBtn = row.querySelector(".cancel-btn");
+  const saveBtn = row.querySelector(".row-save-btn");
+  const cancelBtn = row.querySelector(".row-cancel-btn");
   const pencilBtn = row.querySelector(".edit-pencil");
   if (saveBtn) saveBtn.hidden = !editing;
   if (cancelBtn) cancelBtn.hidden = !editing;
@@ -271,25 +634,32 @@ function enterEditMode(row) {
   if (currentEditingRow && currentEditingRow !== row) {
     cancelEditMode(currentEditingRow);
   }
+  const user = allUsers.find(entry => String(entry.id) === String(row.dataset.userId));
+  if (!user) return;
+
   currentEditingRow = row;
   row.classList.add("is-editing");
+  row.querySelectorAll(".cell-input").forEach(input => {
+    setInputValueFromUser(input, user);
+    if (input.dataset.field !== "avatarUrl") input.hidden = false;
+  });
   row.querySelectorAll(".cell-text").forEach(span => (span.hidden = true));
-  row.querySelectorAll(".cell-input").forEach(input => (input.hidden = false));
   toggleActionButtons(row, true);
   setGlobalEditingState(true);
 }
 
 function cancelEditMode(row) {
   if (!row) return;
-  const user = allUsers.find(u => String(u.id) === String(row.dataset.userId));
+  const user = allUsers.find(entry => String(entry.id) === String(row.dataset.userId));
   if (!user) return;
+
   row.classList.remove("is-editing");
   row.querySelectorAll(".cell-input").forEach(input => {
-    input.value = getUserFieldValue(user, input.dataset.field);
+    setInputValueFromUser(input, user);
     input.hidden = true;
   });
   row.querySelectorAll(".cell-text").forEach(span => {
-    span.textContent = getUserFieldValue(user, span.dataset.field) || "—";
+    span.textContent = getDisplayValue(user, span.dataset.field);
     span.hidden = false;
   });
   toggleActionButtons(row, false);
@@ -297,135 +667,188 @@ function cancelEditMode(row) {
   setGlobalEditingState(false);
 }
 
+function getInputValue(input) {
+  if (input instanceof HTMLElement && input.classList.contains("tag-picker")) {
+    return getTagPickerSelected(input);
+  }
+  if (input instanceof HTMLSelectElement && input.multiple) {
+    return Array.from(input.selectedOptions).map(option => option.value);
+  }
+  return String(input.value || "").trim();
+}
+
 async function saveRow(row) {
   if (!row) return;
   const userId = row.dataset.userId;
-  const user = allUsers.find(u => String(u.id) === String(userId));
+  const user = allUsers.find(entry => String(entry.id) === String(userId));
   if (!user) return;
-  const updates = {};
+
+  const userUpdates = {};
+  let roleUpdates = null;
+
   row.querySelectorAll(".cell-input").forEach(input => {
     const field = input.dataset.field;
-    const newValue = input.value.trim();
+    if (!field || field === "avatarUrl") return;
+
+    const newValue = getInputValue(input);
     const oldValue = getUserFieldValue(user, field);
-    if (newValue !== oldValue) {
-      updates[field] = newValue;
+
+    if (Array.isArray(newValue) || Array.isArray(oldValue)) {
+      if (arraysEqual(newValue, oldValue)) return;
+      if (field === "roles") {
+        roleUpdates = normalizeArray(newValue)
+          .map(role => String(role || "").toLowerCase())
+          .map(role => (role === "guardian" || role === "parent/guardian" ? "parent" : role))
+          .filter((role, index, list) => role && list.indexOf(role) === index);
+      } else {
+        userUpdates[field] = normalizeArray(newValue);
+      }
+      return;
     }
+
+    if (String(newValue) === String(oldValue || "")) return;
+    userUpdates[field] = newValue;
   });
-  if (!Object.keys(updates).length) {
+
+  if (!Object.keys(userUpdates).length && !roleUpdates) {
     renderStatus("No changes to save.");
     cancelEditMode(row);
     return;
   }
-  renderStatus("Saving…");
-  const { error } = await supabase.from("users").update(updates).eq("id", userId);
+
+  renderStatus("Saving...");
+
+  if (Object.keys(userUpdates).length) {
+    const { error } = await supabase.from("users").update(userUpdates).eq("id", userId);
+    if (error) {
+      renderStatus("Save failed: " + error.message, true);
+      return;
+    }
+  }
+
+  if (roleUpdates) {
+    const { error: memberErr } = await supabase
+      .from("studio_members")
+      .update({ roles: roleUpdates })
+      .eq("studio_id", user.studio_id)
+      .eq("user_id", userId);
+    if (memberErr) {
+      renderStatus("Save failed: " + memberErr.message, true);
+      return;
+    }
+
+    const { error: userRoleErr } = await supabase
+      .from("users")
+      .update({ roles: roleUpdates })
+      .eq("id", userId);
+    if (userRoleErr) {
+      renderStatus("Save failed: " + userRoleErr.message, true);
+      return;
+    }
+    userUpdates.roles = roleUpdates;
+  }
+
+  Object.assign(user, userUpdates);
+  buildOptionLists(allUsers);
+  renderUsers();
+  renderStatus("Saved.");
+}
+
+async function toggleUserActive(user, button) {
+  if (!user?.id) return;
+  const currentlyActive = !user.deactivated_at;
+  const nextDeactivatedAt = currentlyActive ? new Date().toISOString() : null;
+  const nextActiveFlag = !currentlyActive;
+
+  const { error } = await supabase
+    .from("users")
+    .update({ deactivated_at: nextDeactivatedAt, active: nextActiveFlag })
+    .eq("id", user.id);
   if (error) {
-    renderStatus("Save failed: " + error.message, true);
-    console.error(error);
+    renderStatus("Failed to update active status: " + error.message, true);
     return;
   }
-  Object.assign(user, updates);
-  row.querySelectorAll(".cell-text").forEach(span => {
-    span.textContent = getUserFieldValue(user, span.dataset.field) || "—";
-  });
-  renderStatus("Saved.");
-  cancelEditMode(row);
+
+  user.deactivated_at = nextDeactivatedAt;
+  user.active = nextActiveFlag;
+
+  updateActiveButton(button, nextActiveFlag);
+  renderStatus(nextActiveFlag ? "User activated." : "User deactivated.");
 }
 
-function ensureArray(value) {
-  if (!value) return [];
-  return Array.isArray(value) ? value : [value];
-}
+async function uploadAvatarForUser(user, file, imgEl) {
+  if (!user?.id || !file) return;
+  renderStatus("Uploading avatar...");
 
-function getDisplayNameFromUser(user) {
-  const displayName = (user?.display_name || user?.displayName || "").trim();
-  const first = user?.first_name || user?.firstName || "";
-  const last = user?.last_name || user?.lastName || "";
-  const fullName = `${first} ${last}`.trim();
-  const email = user?.email || "";
-  return displayName || fullName || email || "Unknown";
-}
+  try {
+    const bucket = "avatars";
+    const filePath = `${user.id}/avatar.png`;
 
-function buildMemberKey(member) {
-  const studioId = member?.studio_id || member?.studioId || "";
-  const userId = member?.user_id || member?.userId || "";
-  return `${studioId}:${userId}`;
-}
+    const { error: uploadErr } = await supabase
+      .storage
+      .from(bucket)
+      .upload(filePath, file, { upsert: true, contentType: file.type });
+    if (uploadErr) throw uploadErr;
 
-function buildMemberRow(member, user) {
-  const firstName = (user?.first_name || user?.firstName || "").trim();
-  const lastName = (user?.last_name || user?.lastName || "").trim();
-  const email = user?.email || "";
-  const avatar = user?.avatarUrl || "images/logos/logo.png";
-  const displayName = getDisplayNameFromUser(user);
-  const memberKey = buildMemberKey(member);
-  const teacherSource = ensureArray(user?.teacherIds);
-  const instrumentSource = ensureArray(user?.instrument);
-  return {
-    ...member,
-    id: user?.id || member.user_id || "",
-    firstName,
-    lastName,
-    email,
-    avatarUrl: avatar,
-    avatar,
-    roles: ensureArray(member.roles || user?.roles),
-    teachers: teacherSource,
-    instruments: instrumentSource,
-    points: user?.points ?? null,
-    level: user?.level ?? null,
-    instrument: instrumentSource,
-    user,
-    user_name: displayName,
-    user_email: email,
-    user_avatar_url: avatar,
-    memberKey
-  };
-}
+    const { data } = supabase.storage.from(bucket).getPublicUrl(filePath);
+    const publicUrl = data?.publicUrl;
+    if (!publicUrl) throw new Error("Unable to get avatar URL");
 
-function buildUserNameMap(users) {
-  const map = new Map();
-  users.forEach(user => {
-    const first = user.firstName || user.first_name || "";
-    const last = user.lastName || user.last_name || "";
-    const fullName = `${first} ${last}`.trim();
-    if (fullName) {
-      map.set(String(user.id), fullName);
-    }
-  });
-  return map;
-}
+    const { error: dbErr } = await supabase
+      .from("users")
+      .update({ avatarUrl: publicUrl })
+      .eq("id", user.id);
+    if (dbErr) throw dbErr;
 
-function getTeacherDisplayValue(entry, nameMap) {
-  if (entry === undefined || entry === null) return null;
-  if (typeof entry === "string" || typeof entry === "number") {
-    const key = String(entry);
-    return nameMap.get(key) || key;
+    user.avatarUrl = publicUrl;
+    if (imgEl) imgEl.src = `${publicUrl}?v=${Date.now()}`;
+    renderStatus("Avatar updated.");
+  } catch (error) {
+    renderStatus("Avatar upload failed: " + (error.message || "Unknown error"), true);
   }
-  if (typeof entry === "object") {
-    const first = entry.firstName || entry.first_name || "";
-    const last = entry.lastName || entry.last_name || "";
-    const name = `${first} ${last}`.trim();
-    if (name) return name;
-    if (entry.label) return entry.label;
-    if (entry.name) return entry.name;
-    if (entry.id) {
-      const key = String(entry.id);
-      return nameMap.get(key) || key;
-    }
-    return null;
-  }
-  return String(entry);
 }
 
-function applyTeacherDisplayNames(users) {
-  const nameMap = buildUserNameMap(users);
-  users.forEach(user => {
-    const teacherEntries = ensureArray(user.teachers);
-    const resolved = teacherEntries
-      .map(entry => getTeacherDisplayValue(entry, nameMap))
-      .filter(Boolean);
-    user.teachers = resolved.length ? resolved : teacherEntries;
+function renderUsers() {
+  const tbody = document.getElementById("userTableBody");
+  if (!tbody) return;
+
+  currentEditingRow = null;
+  setGlobalEditingState(false);
+  tbody.innerHTML = "";
+
+  const filtered = getSortedUsers(allUsers.filter(matchesSearch));
+  if (!filtered.length) {
+    const tr = document.createElement("tr");
+    const td = document.createElement("td");
+    td.colSpan = 10;
+    td.textContent = "No users found.";
+    td.style.textAlign = "center";
+    tr.appendChild(td);
+    tbody.appendChild(tr);
+    renderStatus("Loaded 0 users");
+    return;
+  }
+
+  filtered.forEach(user => {
+    const tr = document.createElement("tr");
+    tr.dataset.userId = String(user.id || "");
+    tr.classList.toggle("is-inactive", Boolean(user.deactivated_at));
+
+    editableTextFields.forEach(({ field, type }) => {
+      tr.appendChild(createEditableTextCell(user, field, type));
+    });
+    tr.appendChild(createAvatarCell(user));
+    tr.appendChild(createMultiSelectCell(user, "roles", roleOptions, "role-select"));
+    tr.appendChild(createMultiSelectCell(user, "teacherIds", teacherOptions, "teacher-select"));
+    tr.appendChild(createMultiSelectCell(user, "instrument", instrumentOptions, "instrument-select"));
+    tr.appendChild(createCell(getDisplayValue(user, "points")));
+    tr.appendChild(createCell(getDisplayValue(user, "level")));
+    tr.appendChild(createActionsCell(user));
+
+    tbody.appendChild(tr);
   });
+
+  renderStatus(`Loaded ${filtered.length} user${filtered.length === 1 ? "" : "s"}`);
 }
 
 async function resolveStudioId() {
@@ -433,56 +856,66 @@ async function resolveStudioId() {
   if (viewerContext?.studioId) return viewerContext.studioId;
   const stored = localStorage.getItem("activeStudioId");
   if (stored) return stored;
-  throw new Error("Studio ID not found in viewer context or storage.");
+  throw new Error("Studio ID not found.");
+}
+
+function buildUserRow(member, user) {
+  const normalizedRoles = ensureArray(member?.roles || user?.roles)
+    .map(role => String(role || "").toLowerCase())
+    .map(role => (role === "guardian" || role === "parent/guardian" ? "parent" : role))
+    .filter((role, index, list) => role && list.indexOf(role) === index);
+  return {
+    id: user?.id || member?.user_id || "",
+    studio_id: member?.studio_id || user?.studio_id || "",
+    firstName: user?.firstName || "",
+    lastName: user?.lastName || "",
+    email: user?.email || "",
+    avatarUrl: user?.avatarUrl || "",
+    roles: normalizedRoles,
+    teacherIds: ensureArray(user?.teacherIds),
+    instrument: ensureArray(user?.instrument),
+    points: user?.points ?? null,
+    level: user?.level ?? null,
+    active: user?.active ?? true,
+    deactivated_at: user?.deactivated_at || null
+  };
 }
 
 async function loadUsers() {
   renderStatus(STATUS_LOADING);
   const studioId = await resolveStudioId();
 
-  const { data: members, error: mErr } = await supabase
+  const { data: members, error: membersError } = await supabase
     .from("studio_members")
-    .select("studio_id, user_id, roles, created_at, created_by")
+    .select("studio_id, user_id, roles")
     .eq("studio_id", studioId);
-
-  if (mErr) {
-    renderStatus("Failed to load members: " + mErr.message, true);
-    console.error("[ManageUsers] studio_members query failed", mErr);
+  if (membersError) {
     allUsers = [];
-    return [];
+    renderStatus("Failed to load members: " + membersError.message, true);
+    return;
   }
 
   const memberList = Array.isArray(members) ? members : [];
-  const userIds = [...new Set(memberList.map(entry => entry.user_id).filter(Boolean))];
-  if (userIds.length === 0) {
-    renderStatus("No users yet");
+  const userIds = [...new Set(memberList.map(member => member.user_id).filter(Boolean))];
+  if (!userIds.length) {
     allUsers = [];
-    return [];
+    renderStatus("No users yet");
+    return;
   }
 
-  let users = [];
-  if (userIds.length) {
-    const { data, error: uErr } = await supabase
-      .from("users")
-      .select("id,email,firstName,lastName,roles,avatarUrl,teacherIds,points,level,instrument,active,showonleaderboard,studio_id,parent_uuid")
-      .in("id", userIds);
-    if (uErr) {
-      console.warn("[ManageUsers] users query failed", uErr);
-    } else {
-      users = Array.isArray(data) ? data : [];
-    }
+  const { data: users, error: usersError } = await supabase
+    .from("users")
+    .select("id,email,firstName,lastName,roles,avatarUrl,teacherIds,points,level,instrument,active,deactivated_at,studio_id")
+    .in("id", userIds);
+  if (usersError) {
+    allUsers = [];
+    renderStatus("Failed to load users: " + usersError.message, true);
+    return;
   }
 
-  const usersById = new Map((users || []).map(u => [u.id, u]));
-  const rows = memberList.map(entry => buildMemberRow(entry, usersById.get(entry.user_id) || null));
-
-  if (isDevMode) {
-    console.debug("[ManageUsers] loaded members/users", { members: memberList.length, users: users?.length || 0 });
-  }
-
-  allUsers = rows;
-  applyTeacherDisplayNames(allUsers);
-  return rows;
+  const usersById = new Map((users || []).map(user => [String(user.id), user]));
+  allUsers = memberList.map(member => buildUserRow(member, usersById.get(String(member.user_id))));
+  buildOptionLists(allUsers);
 }
 
 async function initManageUsersPanel() {
@@ -490,19 +923,33 @@ async function initManageUsersPanel() {
   const searchInput = document.getElementById("manageUsersSearch");
   const statusEl = document.getElementById("manageUsersStatus");
   if (!tableBody || !statusEl) return;
+  bindSortHeaders();
+
   searchQuery = searchInput?.value || "";
   try {
     await loadUsers();
+    updateSortHeaderState();
     renderUsers();
-  } catch (err) {
-    console.error(err);
-    renderStatus(err.message, true);
+  } catch (error) {
+    renderStatus(error.message || "Failed to initialize manage users.", true);
   }
+
   if (searchInput && !searchHandlerBound) {
     searchHandlerBound = true;
     searchInput.addEventListener("input", event => {
       searchQuery = event.target.value || "";
       renderUsers();
+    });
+  }
+
+  if (!tagPickerOutsideCloseBound) {
+    tagPickerOutsideCloseBound = true;
+    document.addEventListener("click", event => {
+      const target = event.target instanceof Element
+        ? event.target
+        : event.target?.parentElement;
+      if (target?.closest(".tag-picker")) return;
+      closeAllTagPickers();
     });
   }
 }

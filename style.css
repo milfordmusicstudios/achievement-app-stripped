@@ -3418,7 +3418,7 @@ body.settings-page .settings-panel-host {
 
 .manage-users-table th,
 .manage-users-table td {
-  padding: 12px 14px;
+  padding: 10px 12px;
   border-bottom: 1px solid #e3eaf4;
   vertical-align: middle;
 }
@@ -3459,7 +3459,7 @@ body.settings-page .settings-panel-host {
   background: #fff;
 }
 
-.manage-users-table tr.is-editing .cell-input:not([data-field="avatar"]) {
+.manage-users-table tr.is-editing .cell-input {
   display: block;
 }
 
@@ -3468,7 +3468,8 @@ body.settings-page .settings-panel-host {
 }
 
 .role-select,
-.teacher-select {
+.teacher-select,
+.instrument-select {
   width: 100%;
   border-radius: 10px;
   border: 1px solid #c9d9ef;
@@ -3478,6 +3479,204 @@ body.settings-page .settings-panel-host {
   color: #1c2c45;
   background: #fff;
   min-height: auto;
+}
+
+body.manage-users .tag-picker,
+.manage-users-panel .tag-picker {
+  position: relative;
+  border: 1px solid #b8cde6;
+  border-radius: 8px;
+  padding: 3px;
+  background: #ffffff;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.75);
+}
+
+body.manage-users .tag-picker[data-open="true"],
+.manage-users-panel .tag-picker[data-open="true"] {
+  border-color: #6ea6de;
+  box-shadow: 0 0 0 2px rgba(110, 166, 222, 0.2), inset 0 0 0 1px rgba(255,255,255,0.75);
+}
+
+body.manage-users .tag-picker-trigger,
+.manage-users-panel .tag-picker-trigger {
+  width: 100%;
+  min-width: 0;
+  min-height: 24px;
+  height: 24px;
+  border: 1px solid #c6d9ef;
+  border-radius: 6px;
+  background: #f4f9ff;
+  color: #0b3c66;
+  font-weight: 700;
+  font-size: 12px;
+  padding: 0 8px;
+  line-height: 1;
+}
+
+body.manage-users .tag-picker-tags,
+.manage-users-panel .tag-picker-tags {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 4px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  min-height: 24px;
+  max-height: 28px;
+  scrollbar-width: thin;
+  cursor: pointer;
+}
+
+body.manage-users .tag-picker[data-open="true"] .tag-picker-tags,
+.manage-users-panel .tag-picker[data-open="true"] .tag-picker-tags {
+  max-height: 120px;
+}
+
+body.manage-users .tag-picker-empty,
+.manage-users-panel .tag-picker-empty {
+  color: #6d7f95;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 24px;
+  white-space: nowrap;
+}
+
+body.manage-users .tag-pill,
+.manage-users-panel .tag-pill {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border: 1px solid #b9d4f2;
+  border-radius: 8px;
+  background: #eaf4ff;
+  color: #0b3c66;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 3px 8px;
+  width: 100%;
+  max-width: none;
+  white-space: normal;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 0 0 auto;
+}
+
+body.manage-users .tag-pill button,
+.manage-users-panel .tag-pill button {
+  all: unset;
+  width: auto;
+  min-width: 0;
+  color: #0b3c66;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  line-height: 1;
+  opacity: 0.85;
+}
+
+body.manage-users .tag-picker-list,
+.manage-users-panel .tag-picker-list {
+  position: static;
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  margin-top: 6px;
+  z-index: 120;
+  border: 1px solid #b9d4f2;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 6px 14px rgba(7, 28, 52, 0.12);
+  max-height: 190px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 4px;
+}
+
+body.manage-users .tag-picker-list[hidden],
+.manage-users-panel .tag-picker-list[hidden] {
+  display: none !important;
+}
+
+body.manage-users .tag-picker-option,
+.manage-users-panel .tag-picker-option {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  text-align: left;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: #f4f9ff;
+  color: #0b3c66;
+  font-weight: 700;
+  font-size: 15px;
+  padding: 5px 6px;
+  cursor: pointer;
+  white-space: normal;
+  line-height: 1.2;
+}
+
+body.manage-users .tag-picker-option:hover,
+.manage-users-panel .tag-picker-option:hover {
+  background: #e5f2ff;
+  border-color: #bfd9f7;
+}
+
+body.manage-users .tag-picker-custom,
+.manage-users-panel .tag-picker-custom {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 3px;
+  margin-bottom: 2px;
+}
+
+body.manage-users .tag-picker-custom-input,
+.manage-users-panel .tag-picker-custom-input {
+  border: 1px solid #c9d9ef;
+  border-radius: 6px;
+  min-height: 24px;
+  height: 24px;
+  padding: 3px 6px;
+  font-size: 15px;
+}
+
+.manage-users-table tr.is-editing .tag-picker-empty,
+.manage-users-table tr.is-editing .tag-pill,
+.manage-users-table tr.is-editing .tag-picker-option,
+.manage-users-table tr.is-editing .tag-picker-custom-input {
+  font-size: 18px !important;
+  line-height: 1.25;
+}
+
+body.manage-users .tag-picker-custom-btn,
+.manage-users-panel .tag-picker-custom-btn {
+  border: 1px solid #b9d4f2;
+  border-radius: 6px;
+  background: #eaf4ff;
+  color: #0b3c66;
+  font-size: 11px;
+  font-weight: 700;
+  height: 24px;
+  padding: 0 7px;
+  cursor: pointer;
+}
+
+.manage-users-table tbody tr:nth-child(odd) {
+  background: #ffffff;
+}
+
+.manage-users-table tbody tr:nth-child(even) {
+  background: #f7fbff;
+}
+
+.manage-users-table tbody tr:hover {
+  background: #eef6ff;
+}
+
+.manage-users-table tr.is-inactive {
+  opacity: 0.72;
 }
 
 .first-name-wrapper {
