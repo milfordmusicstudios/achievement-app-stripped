@@ -52,7 +52,12 @@
     <!-- Row 3: Date -->
     <tr>
       <td colspan="2" style="padding: 10px;">
-        <input type="date" id="logDate" class="white-input" required style="width: 100%;" />
+        <div style="display:flex; gap:10px; align-items:center;">
+          <input type="date" id="logDate" class="white-input" style="width: 100%;" />
+          <button type="button" id="addLogDate" class="blue-button">Add Date</button>
+        </div>
+        <div class="selected-chips" id="logDateChips" style="margin-top:8px;"></div>
+        <div style="margin-top:6px; font-size:0.85rem; color:#00477d;">Points entered below will be applied to every selected date.</div>
       </td>
     </tr>
 

@@ -113,7 +113,12 @@
     </select>
 
     <label><b>Date:</b></label>
-    <input type="date" id="quickAddDate" class="white-input" style="width:100%; margin-bottom:10px;" />
+    <div style="display:flex; gap:10px; align-items:center; margin-bottom:8px;">
+      <input type="date" id="quickAddDate" class="white-input" style="width:100%;" />
+      <button type="button" id="quickAddDateBtn" class="blue-button">Add Date</button>
+    </div>
+    <div class="selected-chips" id="quickAddDateChips" style="margin-bottom:10px;"></div>
+    <div style="margin:-6px 0 10px 0; font-size:0.85rem; color:#00477d;">Points entered below will be applied to every selected date.</div>
 
     <label><b>Points:</b></label>
     <input type="number" id="quickAddPoints" class="white-input" placeholder="Enter points" style="width:100%; margin-bottom:10px;" />

@@ -375,12 +375,15 @@ const quickAddStudentResults = document.getElementById("quickAddStudentResults")
 const quickAddStudentChips = document.getElementById("quickAddStudentChips");
 const quickAddCategory = document.getElementById("quickAddCategory");
 const quickAddDate = document.getElementById("quickAddDate");
+const quickAddDateBtn = document.getElementById("quickAddDateBtn");
+const quickAddDateChips = document.getElementById("quickAddDateChips");
 const quickAddPoints = document.getElementById("quickAddPoints");
 const quickAddNotes = document.getElementById("quickAddNotes");
 const quickAddClearBtn = document.getElementById("quickAddClearSearch");
 
 let quickAddStudentPool = [];
 const quickAddSelection = new Map();
+const quickAddDates = new Set();
 
 function formatStudentName(student) {
   if (!student) return "";
@@ -469,14 +472,51 @@ function resetQuickAddSearch() {
   }
 }
 
+function renderQuickAddDateChips() {
+  if (!quickAddDateChips) return;
+  if (!quickAddDates.size) {
+    quickAddDateChips.innerHTML = "";
+    return;
+  }
+  quickAddDateChips.innerHTML = Array.from(quickAddDates)
+    .sort()
+    .map(date => `
+      <span class="student-chip">
+        ${date}
+        <button type="button" data-remove-quick-date="${date}" aria-label="Remove ${date}">&times;</button>
+      </span>`)
+    .join("");
+}
+
+function addQuickAddDate(dateValue) {
+  if (!dateValue) return;
+  quickAddDates.add(dateValue);
+  renderQuickAddDateChips();
+}
+
+function resetQuickAddDates() {
+  quickAddDates.clear();
+  renderQuickAddDateChips();
+}
+
+function getQuickAddDatesForSubmit() {
+  const dates = new Set(quickAddDates);
+  const currentPickerDate = quickAddDate?.value;
+  if (currentPickerDate) dates.add(currentPickerDate);
+  return Array.from(dates).sort();
+}
+
 if (quickAddBtn) {
   quickAddBtn.addEventListener("click", async () => {
     quickAddModal.style.display = "flex";
     resetQuickAddSelection();
+    resetQuickAddDates();
     if (quickAddStudentSearch) quickAddStudentSearch.value = "";
     await loadQuickAddStudents();
     // Default date = today
     quickAddDate.value = new Date().toISOString().split("T")[0];
+    resetQuickAddDates();
+    addQuickAddDate(quickAddDate.value);
   });
 }
 
@@ -484,6 +524,7 @@ if (quickAddCancel) {
   quickAddCancel.addEventListener("click", () => {
     quickAddModal.style.display = "none";
     resetQuickAddSelection();
+    resetQuickAddDates();
   });
 }
 
@@ -509,6 +550,19 @@ quickAddStudentChips?.addEventListener("click", (event) => {
 
 quickAddClearBtn?.addEventListener("click", () => {
   resetQuickAddSearch();
+});
+
+quickAddDateBtn?.addEventListener("click", () => {
+  addQuickAddDate(quickAddDate?.value);
+});
+
+quickAddDateChips?.addEventListener("click", (event) => {
+  const removeButton = event.target.closest("button[data-remove-quick-date]");
+  if (!removeButton) return;
+  const date = removeButton.dataset.removeQuickDate;
+  if (!date) return;
+  quickAddDates.delete(date);
+  renderQuickAddDateChips();
 });
 
 async function loadQuickAddStudents() {
@@ -551,25 +605,27 @@ if (quickAddSubmit) {
   quickAddSubmit.addEventListener("click", async () => {
     const selectedIds = Array.from(quickAddSelection.keys());
     const category = quickAddCategory.value;
-    const date = quickAddDate.value;
+    const dates = getQuickAddDatesForSubmit();
     const points = quickAddPoints.value ? parseInt(quickAddPoints.value) : (category === "practice" ? 5 : 0);
     const notes = quickAddNotes.value.trim();
 
     if (selectedIds.length === 0) {
       return alert("Select at least one student.");
     }
-    if (!category || !date) {
-      return alert("Please select a category and date.");
+    if (!category || !dates.length) {
+      return alert("Please select a category and at least one date.");
     }
 
-    const inserts = selectedIds.map(id => ({
-      userId: id,
-      category,
-      notes,
-      date,
-      points,
-      status: "approved"
-    }));
+    const inserts = selectedIds.flatMap(id =>
+      dates.map(date => ({
+        userId: id,
+        category,
+        notes,
+        date,
+        points,
+        status: "approved"
+      }))
+    );
 
     const { error } = await supabase.from("logs").insert(inserts);
     if (error) {
@@ -590,6 +646,7 @@ if (quickAddSubmit) {
     alert(`✅ Points added for ${selectedIds.length} student(s)!`);
     quickAddModal.style.display = "none";
     resetQuickAddSelection();
+    resetQuickAddDates();
     await new Promise(r => setTimeout(r, 300)); // short delay for backend sync
     location.reload(); // refresh logs
   });

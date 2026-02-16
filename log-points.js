@@ -21,11 +21,14 @@ document.addEventListener("DOMContentLoaded", async () => {
   const pointsInput = document.getElementById("logPoints");
   const notesInput = document.getElementById("logNote");
   const dateInput = document.getElementById("logDate");
+  const addDateBtn = document.getElementById("addLogDate");
+  const dateChips = document.getElementById("logDateChips");
   const submitBtn = document.querySelector("button[type='submit']");
   const cancelBtn = document.querySelector("button[type='button']");
 
   let availableStudents = [];
   const selectedStudents = new Map();
+  const selectedDates = new Set();
 
   function formatStudentName(student) {
     if (!student) return "";
@@ -38,6 +41,40 @@ document.addEventListener("DOMContentLoaded", async () => {
   function updateLogStudentHidden() {
     if (!studentHidden) return;
     studentHidden.value = Array.from(selectedStudents.keys()).join(",");
+  }
+
+  function renderDateChips() {
+    if (!dateChips) return;
+    if (!selectedDates.size) {
+      dateChips.innerHTML = "";
+      return;
+    }
+    dateChips.innerHTML = Array.from(selectedDates)
+      .sort()
+      .map(date => `
+        <span class="student-chip">
+          ${date}
+          <button type="button" data-remove-date="${date}" aria-label="Remove ${date}">&times;</button>
+        </span>`)
+      .join("");
+  }
+
+  function addSelectedDate(dateValue) {
+    if (!dateValue) return;
+    selectedDates.add(dateValue);
+    renderDateChips();
+  }
+
+  function clearSelectedDates() {
+    selectedDates.clear();
+    renderDateChips();
+  }
+
+  function getDatesForSubmit() {
+    const dates = new Set(selectedDates);
+    const currentPickerDate = dateInput?.value;
+    if (currentPickerDate) dates.add(currentPickerDate);
+    return Array.from(dates).sort();
   }
 
   function renderLogStudentChips() {
@@ -140,11 +177,21 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   clearLogStudentBtn?.addEventListener("click", clearLogStudentSearch);
+  addDateBtn?.addEventListener("click", () => addSelectedDate(dateInput?.value));
+  dateChips?.addEventListener("click", (event) => {
+    const removeButton = event.target.closest("button[data-remove-date]");
+    if (!removeButton) return;
+    const date = removeButton.dataset.removeDate;
+    if (!date) return;
+    selectedDates.delete(date);
+    renderDateChips();
+  });
 
   // ✅ Default date to today
   if (dateInput) {
     const today = new Date().toISOString().split("T")[0];
     dateInput.value = today;
+    addSelectedDate(today);
   }
 
   // ✅ Hide student dropdown & points input for students
@@ -246,7 +293,7 @@ categorySelect.addEventListener("change", () => {
 
       const category = categorySelect?.value;
       const note = notesInput?.value.trim();
-      const date = dateInput?.value;
+      const dates = getDatesForSubmit();
 
       let targetUsers = [user.id];
       if (activeRole === "admin" || activeRole === "teacher") {
@@ -263,8 +310,8 @@ categorySelect.addEventListener("change", () => {
         if (!isNaN(enteredPoints)) points = enteredPoints;
       }
 
-      if (!category || !date) {
-        alert("Please complete category and date.");
+      if (!category || !dates.length) {
+        alert("Please complete category and select at least one date.");
         return;
       }
 
@@ -274,14 +321,16 @@ categorySelect.addEventListener("change", () => {
         status = "approved";
       }
 
-      const inserts = targetUsers.map(id => ({
-        userId: id,
-        category,
-        notes: note,
-        date,
-        points,
-        status
-      }));
+      const inserts = targetUsers.flatMap(id =>
+        dates.map(date => ({
+          userId: id,
+          category,
+          notes: note,
+          date,
+          points,
+          status
+        }))
+      );
 
       // Block only the current submission when an identical log already exists.
       // This does not retroactively alter existing rows.
@@ -291,7 +340,7 @@ categorySelect.addEventListener("change", () => {
         .select("userId, category, notes, date, points")
         .in("userId", targetUsers)
         .eq("category", category)
-        .eq("date", date)
+        .in("date", dates)
         .eq("points", points);
 
       if (duplicateCheckErr) {
@@ -300,22 +349,23 @@ categorySelect.addEventListener("change", () => {
         return;
       }
 
-      const duplicateUserIds = new Set(
-        (existingLogs || [])
-          .filter(log => (log.notes || "") === normalizedNote)
-          .map(log => String(log.userId))
-      );
+      const duplicateEntries = (existingLogs || [])
+        .filter(log => (log.notes || "") === normalizedNote)
+        .map(log => ({ userId: String(log.userId), date: String(log.date || "").split("T")[0] }));
 
-      if (duplicateUserIds.size) {
+      if (duplicateEntries.length) {
+        const duplicateUserIds = new Set(duplicateEntries.map(entry => entry.userId));
+        const duplicateDates = Array.from(new Set(duplicateEntries.map(entry => entry.date))).sort();
+        const dateSuffix = duplicateDates.length ? ` on: ${duplicateDates.join(", ")}` : "";
         if (activeRole === "admin" || activeRole === "teacher") {
           const duplicateNames = targetUsers
             .filter(id => duplicateUserIds.has(String(id)))
             .map(id => formatStudentName(selectedStudents.get(String(id)) || { id }))
             .filter(Boolean);
           const nameText = duplicateNames.length ? ` for: ${duplicateNames.join(", ")}` : "";
-          alert(`This entry has already been logged${nameText}.`);
+          alert(`This entry has already been logged${nameText}${dateSuffix}.`);
         } else {
-          alert("This entry has already been logged.");
+          alert(`This entry has already been logged${dateSuffix}.`);
         }
         return;
       }
@@ -380,6 +430,8 @@ setTimeout(() => {
           if (dateInput) {
             const today = new Date().toISOString().split("T")[0];
             dateInput.value = today;
+            clearSelectedDates();
+            addSelectedDate(today);
           }
           if (!(activeRole === "admin" || activeRole === "teacher")) {
             if (studentRow) studentRow.style.display = "none";
