@@ -282,6 +282,44 @@ categorySelect.addEventListener("change", () => {
         points,
         status
       }));
+
+      // Block only the current submission when an identical log already exists.
+      // This does not retroactively alter existing rows.
+      const normalizedNote = note || "";
+      const { data: existingLogs, error: duplicateCheckErr } = await supabase
+        .from("logs")
+        .select("userId, category, notes, date, points")
+        .in("userId", targetUsers)
+        .eq("category", category)
+        .eq("date", date)
+        .eq("points", points);
+
+      if (duplicateCheckErr) {
+        console.error("Failed duplicate check:", duplicateCheckErr.message);
+        alert("Unable to validate duplicates right now. Please try again.");
+        return;
+      }
+
+      const duplicateUserIds = new Set(
+        (existingLogs || [])
+          .filter(log => (log.notes || "") === normalizedNote)
+          .map(log => String(log.userId))
+      );
+
+      if (duplicateUserIds.size) {
+        if (activeRole === "admin" || activeRole === "teacher") {
+          const duplicateNames = targetUsers
+            .filter(id => duplicateUserIds.has(String(id)))
+            .map(id => formatStudentName(selectedStudents.get(String(id)) || { id }))
+            .filter(Boolean);
+          const nameText = duplicateNames.length ? ` for: ${duplicateNames.join(", ")}` : "";
+          alert(`This entry has already been logged${nameText}.`);
+        } else {
+          alert("This entry has already been logged.");
+        }
+        return;
+      }
+
       const { error: logErr } = await supabase.from("logs").insert(inserts);
 
       if (logErr) {
