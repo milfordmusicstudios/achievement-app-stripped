@@ -2401,6 +2401,13 @@ body.leaderboard-page .leaderboard-title {
   font-size: 0.9rem;
 }
 
+body.white-page .multi-date-day {
+  background: #fff;
+  color: #00477d;
+  margin: 0;
+  padding: 0;
+}
+
 .multi-date-day.today {
   border-color: #00477d;
 }
@@ -2410,6 +2417,11 @@ body.leaderboard-page .leaderboard-title {
   border-color: #3eb7f8;
   color: #fff;
   font-weight: 700;
+}
+
+body.white-page .multi-date-day.selected {
+  background: #3eb7f8;
+  color: #fff;
 }
 
 .multi-date-day.placeholder {

@@ -553,10 +553,8 @@ function createMultiDateCalendar(container, summaryNode) {
 
   function resetToToday() {
     const today = new Date();
-    const todayKey = today.toISOString().split("T")[0];
     currentMonthDate = new Date(today.getFullYear(), today.getMonth(), 1);
     selectedDates.clear();
-    selectedDates.add(todayKey);
     updateSummary();
     renderCalendar();
   }
