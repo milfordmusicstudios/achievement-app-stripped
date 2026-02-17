@@ -1,5 +1,7 @@
 import { supabase } from "./supabaseClient.js";
-import { createChallenge, deleteChallenge, listStaffChallenges, updateChallenge } from "./challenges-api.js";
+import { createChallenge, deleteChallenge, updateChallenge } from "./challenges-api.js";
+
+let staffChallengesEscBound = false;
 
 function toDateInputValue(dateObj) {
   const y = dateObj.getFullYear();
@@ -131,38 +133,26 @@ function ensureModals() {
     document.body.appendChild(overlay);
   }
 
-  if (!document.getElementById("activeChallengesOverlay")) {
+  if (!document.getElementById("staffChallengesOverlay")) {
     const overlay = document.createElement("div");
-    overlay.id = "activeChallengesOverlay";
+    overlay.id = "staffChallengesOverlay";
     overlay.className = "modal-overlay";
     overlay.style.display = "none";
     overlay.innerHTML = `
       <div class="modal staff-challenge-modal">
         <div class="modal-header">
-          <div class="modal-title">Active challenges</div>
-          <button id="activeChallengesCloseBtn" class="modal-close" type="button">x</button>
+          <div class="modal-title">Challenges</div>
+          <button id="staffChallengesCloseBtn" class="modal-close" type="button">x</button>
         </div>
         <div class="modal-body">
-          <div id="activeChallengesList" class="challenge-active-list"></div>
+          <div class="staff-challenges-modal-tabs">
+            <button id="staffChallengesTabActive" type="button" class="student-challenges-tab is-active">Active</button>
+            <button id="staffChallengesTabEnded" type="button" class="student-challenges-tab">Ended</button>
+          </div>
+          <div id="staffChallengesModalList" class="challenge-active-list"></div>
         </div>
-      </div>
-    `;
-    document.body.appendChild(overlay);
-  }
-
-  if (!document.getElementById("endedChallengesOverlay")) {
-    const overlay = document.createElement("div");
-    overlay.id = "endedChallengesOverlay";
-    overlay.className = "modal-overlay";
-    overlay.style.display = "none";
-    overlay.innerHTML = `
-      <div class="modal staff-challenge-modal">
-        <div class="modal-header">
-          <div class="modal-title">Ended challenges</div>
-          <button id="endedChallengesCloseBtn" class="modal-close" type="button">x</button>
-        </div>
-        <div class="modal-body">
-          <div id="endedChallengesList" class="challenge-active-list"></div>
+        <div class="modal-actions">
+          <button id="staffChallengesFooterCloseBtn" type="button" class="blue-button">Close</button>
         </div>
       </div>
     `;
@@ -188,20 +178,11 @@ function ensureModals() {
 }
 
 export async function initStaffChallengesUI({ studioId, user, roles, showToast }) {
-  const createHeaderBtn = document.getElementById("challengeCreateBtn");
+  const createHeaderBtn = document.getElementById("btnNewChallenge") || document.getElementById("challengeCreateBtn");
   const activeHeaderBtn = document.getElementById("challengeActiveBtn");
-  if (!createHeaderBtn || !activeHeaderBtn) return;
-  const quicklogActions = createHeaderBtn.parentElement;
-  let endedHeaderBtn = document.getElementById("challengeEndedBtn");
-  if (!endedHeaderBtn && quicklogActions) {
-    endedHeaderBtn = document.createElement("button");
-    endedHeaderBtn.id = "challengeEndedBtn";
-    endedHeaderBtn.type = "button";
-    endedHeaderBtn.className = "link-btn";
-    endedHeaderBtn.hidden = true;
-    endedHeaderBtn.textContent = "Ended";
-    quicklogActions.appendChild(endedHeaderBtn);
-  }
+  const endedHeaderBtn = document.getElementById("challengeEndedBtn");
+  const ribbon = document.getElementById("staffChallengesRibbonStrip");
+  if (!createHeaderBtn || !activeHeaderBtn || !endedHeaderBtn) return;
 
   const resolvedStudioId = String(studioId || "").trim();
   const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -215,18 +196,19 @@ export async function initStaffChallengesUI({ studioId, user, roles, showToast }
   if (!resolvedStudioId || !user?.id || !isStaff(roles)) {
     createHeaderBtn.hidden = true;
     activeHeaderBtn.hidden = true;
-    if (endedHeaderBtn) endedHeaderBtn.hidden = true;
+    endedHeaderBtn.hidden = true;
+    if (ribbon) ribbon.style.display = "none";
     return;
   }
 
   ensureModals();
   createHeaderBtn.hidden = false;
-  activeHeaderBtn.hidden = true;
-  if (endedHeaderBtn) endedHeaderBtn.hidden = true;
+  activeHeaderBtn.hidden = false;
+  endedHeaderBtn.hidden = false;
+  if (ribbon) ribbon.style.display = "";
 
   const createOverlay = document.getElementById("createChallengeOverlay");
-  const activeOverlay = document.getElementById("activeChallengesOverlay");
-  const endedOverlay = document.getElementById("endedChallengesOverlay");
+  const staffChallengesOverlay = document.getElementById("staffChallengesOverlay");
   const detailOverlay = document.getElementById("challengeDetailOverlay");
 
   let users = [];
@@ -254,16 +236,18 @@ export async function initStaffChallengesUI({ studioId, user, roles, showToast }
   const cancelBtn = document.getElementById("challengeCancelBtn");
   const closeBtn = document.getElementById("createChallengeCloseBtn");
   const errorEl = document.getElementById("challengeCreateError");
-  const activeList = document.getElementById("activeChallengesList");
-  const activeCloseBtn = document.getElementById("activeChallengesCloseBtn");
-  const endedList = document.getElementById("endedChallengesList");
-  const endedCloseBtn = document.getElementById("endedChallengesCloseBtn");
+  const challengesModalList = document.getElementById("staffChallengesModalList");
+  const challengesCloseBtn = document.getElementById("staffChallengesCloseBtn");
+  const challengesFooterCloseBtn = document.getElementById("staffChallengesFooterCloseBtn");
+  const challengesTabActiveBtn = document.getElementById("staffChallengesTabActive");
+  const challengesTabEndedBtn = document.getElementById("staffChallengesTabEnded");
   const detailBody = document.getElementById("challengeDetailBody");
   const detailCloseBtn = document.getElementById("challengeDetailCloseBtn");
   let activeChallengesRows = [];
   let endedChallengesRows = [];
-  let activeUsersById = new Map();
   let editingChallengeId = null;
+  let currentChallengesTab = "active";
+  let lastModalTrigger = null;
 
   const setError = (message = "") => {
     if (!errorEl) return;
@@ -288,12 +272,12 @@ export async function initStaffChallengesUI({ studioId, user, roles, showToast }
     setError("");
   };
 
-  const hideActiveModal = () => {
-    if (activeOverlay) activeOverlay.style.display = "none";
-  };
-
-  const hideEndedModal = () => {
-    if (endedOverlay) endedOverlay.style.display = "none";
+  const hideChallengesModal = () => {
+    if (staffChallengesOverlay) staffChallengesOverlay.style.display = "none";
+    if (lastModalTrigger instanceof HTMLElement) {
+      lastModalTrigger.focus();
+    }
+    lastModalTrigger = null;
   };
 
   const hideDetailModal = () => {
@@ -532,6 +516,7 @@ export async function initStaffChallengesUI({ studioId, user, roles, showToast }
 
   const renderChallengeDetail = (row, mode) => {
     const parsed = splitCategoryFromDescription(row?.description);
+    const isActiveMode = mode === "active";
     if (!detailBody) return;
     detailBody.innerHTML = `
       <div class="challenge-detail-block">
@@ -544,28 +529,40 @@ export async function initStaffChallengesUI({ studioId, user, roles, showToast }
         <div class="challenge-detail-desc">${escapeHtml(String(parsed.description || "No description provided."))}</div>
       </div>
       <div class="modal-actions">
+        ${isActiveMode ? '<button id="challengeDetailEditBtn" type="button" class="blue-button">Edit</button>' : ""}
+        ${isActiveMode ? '<button id="challengeDetailDeactivateBtn" type="button" class="blue-button">Deactivate</button>' : ""}
+        ${isActiveMode ? '<button id="challengeDetailDeleteBtn" type="button" class="blue-button btn-ghost">Delete</button>' : ""}
         ${mode === "ended" ? '<button id="challengeDetailCopyBtn" type="button" class="blue-button">Copy challenge</button>' : ""}
         <button id="challengeDetailBackToListBtn" type="button" class="blue-button">Back to ${mode === "ended" ? "ended" : "active"} list</button>
       </div>
     `;
-    hideActiveModal();
-    hideEndedModal();
+    hideChallengesModal();
     if (detailOverlay) detailOverlay.style.display = "flex";
     document.getElementById("challengeDetailBackToListBtn")?.addEventListener("click", () => {
       hideDetailModal();
-      if (mode === "ended") {
-        if (endedOverlay) endedOverlay.style.display = "flex";
-      } else if (activeOverlay) {
-        activeOverlay.style.display = "flex";
-      }
+      currentChallengesTab = mode === "ended" ? "ended" : "active";
+      renderChallengesTabButtons();
+      openChallengesModalForTab(currentChallengesTab);
     });
     document.getElementById("challengeDetailCopyBtn")?.addEventListener("click", async () => {
       hideDetailModal();
       await openCreateModal(row);
     });
+    document.getElementById("challengeDetailEditBtn")?.addEventListener("click", async () => {
+      hideDetailModal();
+      await openEditModal(row);
+    });
+    document.getElementById("challengeDetailDeleteBtn")?.addEventListener("click", async () => {
+      await handleDeleteChallenge(row);
+      hideDetailModal();
+    });
+    document.getElementById("challengeDetailDeactivateBtn")?.addEventListener("click", async () => {
+      await handleDeactivateChallenge(row);
+    });
   };
 
   const openEditModal = async (row) => {
+    hideChallengesModal();
     await openCreateModal(row, { mode: "edit" });
   };
 
@@ -576,64 +573,95 @@ export async function initStaffChallengesUI({ studioId, user, roles, showToast }
       await deleteChallenge(challengeId);
       if (typeof showToast === "function") showToast("Challenge deleted");
       await loadHeaderCounts();
-      if (activeOverlay?.style.display === "flex") await openActiveModal();
+      if (staffChallengesOverlay?.style.display === "flex") {
+        await openChallengesModalForTab(currentChallengesTab);
+      }
     } catch (error) {
       console.error("[ChallengesUI] delete failed", error);
       if (typeof showToast === "function") showToast("Couldn't delete challenge.");
     }
   };
 
-  const loadChallengeList = async ({ mode, listEl }) => {
-    if (!listEl) return 0;
+  const handleDeactivateChallenge = async (row) => {
+    const challengeId = String(row?.id || "");
+    if (!challengeId) return;
+    try {
+      const { error } = await supabase.rpc("deactivate_teacher_challenge", {
+        p_challenge_id: challengeId
+      });
+      if (error) throw error;
+
+      if (typeof showToast === "function") showToast("Challenge deactivated");
+      await loadHeaderCounts();
+      hideDetailModal();
+      await openChallengesModalForTab(currentChallengesTab);
+    } catch (error) {
+      console.error("[ChallengesUI] deactivate failed", error);
+      if (typeof showToast === "function") showToast("Couldn't deactivate challenge.");
+    }
+  };
+
+  const loadChallengeList = async ({ mode, listEl, render = true }) => {
+    if (render && !listEl) return 0;
     if (!ensureValidStudioId()) return 0;
-    const previousHtml = listEl.innerHTML;
-    listEl.innerHTML = "Loading...";
-    const today = toDateInputValue(new Date());
-    const isEnded = mode === "ended";
+    const previousHtml = render && listEl ? listEl.innerHTML : "";
+    if (render && listEl) listEl.innerHTML = "Loading...";
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const isEndedTab = mode === "ended";
 
     let rpcRows = [];
     try {
-      rpcRows = await listStaffChallenges(resolvedStudioId);
+      const { data, error } = await supabase.rpc("list_teacher_challenges_with_counts_for_staff", {
+        p_studio_id: resolvedStudioId
+      });
+      if (error) throw error;
+      rpcRows = Array.isArray(data) ? data : [];
     } catch (error) {
       console.error(`[ChallengesUI] failed to load ${mode} challenges`, error);
       if (typeof showToast === "function") showToast("Couldn't load challenges.");
-      listEl.innerHTML = previousHtml || `<div class="staff-student-no-match">Unable to load ${mode} challenges.</div>`;
+      if (render && listEl) {
+        listEl.innerHTML = previousHtml || `<div class="staff-student-no-match">Unable to load ${mode} challenges.</div>`;
+      }
       return 0;
     }
 
     const rows = rpcRows.filter(row => {
-      const endDate = String(row?.end_date || "");
-      if (!endDate) return false;
-      return isEnded ? endDate < today : endDate >= today;
+      const end = row?.end_date ? new Date(`${row.end_date}T00:00:00`) : null;
+      const ended = (row?.is_active === false) || (!!end && end < today);
+      return isEndedTab ? ended : !ended;
     });
 
     if (mode === "active") activeChallengesRows = rows;
     if (mode === "ended") endedChallengesRows = rows;
 
     if (!rows.length) {
-      listEl.innerHTML = `<div class="staff-student-no-match">No ${mode} challenges yet.</div>`;
+      if (render && listEl) {
+        listEl.innerHTML = `<div class="staff-student-no-match">No ${mode} challenges yet.</div>`;
+      }
       return 0;
     }
 
+    if (!render || !listEl) return rows.length;
+
     listEl.innerHTML = rows.map(row => `
-      <div class="challenge-active-row" data-challenge-id="${String(row.id || "")}" data-mode="${mode}">
+      <div class="challenge-active-row challenge-active-row-btn" data-challenge-id="${String(row.id || "")}" data-mode="${mode}">
         <div class="challenge-active-row-top">
-          <div class="challenge-active-title">${escapeHtml(String(row.title || "Untitled challenge"))}</div>
-          <div class="challenge-active-date">${isEnded ? "Ended" : "Ends"} ${escapeHtml(String(row.end_date || ""))}</div>
+          <div class="challenge-active-title-wrap">
+            <div class="challenge-active-title">${escapeHtml(String(row.title || "Untitled challenge"))}</div>
+            ${row?.is_active === false ? '<span class="challenge-inactive-pill">Inactive</span>' : ""}
+          </div>
+          <div class="challenge-active-date">${isEndedTab ? "Ended" : "Ends"} ${escapeHtml(String(row.end_date || ""))}</div>
         </div>
-        <div class="challenge-active-meta">Assigned to ${Number(row.assignment_count || 0)} students</div>
-        <div class="challenge-row-actions">
-          <button type="button" class="challenge-row-action-btn" data-open-id="${String(row.id || "")}" data-open-mode="${mode}">Open</button>
-          ${mode === "active" ? `<button type="button" class="challenge-row-action-btn" data-edit-id="${String(row.id || "")}">Edit</button>
-          <button type="button" class="challenge-row-action-btn is-danger" data-delete-id="${String(row.id || "")}">Delete</button>` : ""}
-        </div>
+        <div class="challenge-active-meta">Assigned to ${Number(row.total_assigned || 0)} students</div>
+        <div class="challenge-active-meta">New: ${Number(row.new_count || 0)} • Active: ${Number(row.active_count || 0)} • Pending: ${Number(row.completed_pending_count || 0)} • Completed: ${Number(row.completed_count || 0)}</div>
       </div>
     `).join("");
 
-    listEl.querySelectorAll("[data-open-id]").forEach(button => {
-      button.addEventListener("click", () => {
-        const challengeId = String(button.getAttribute("data-open-id") || "");
-        const rowMode = String(button.getAttribute("data-open-mode") || "active");
+    listEl.querySelectorAll("[data-challenge-id]").forEach(card => {
+      card.addEventListener("click", () => {
+        const challengeId = String(card.getAttribute("data-challenge-id") || "");
+        const rowMode = String(card.getAttribute("data-mode") || "active");
         const sourceRows = rowMode === "ended" ? endedChallengesRows : activeChallengesRows;
         const row = sourceRows.find(entry => String(entry?.id || "") === challengeId);
         if (!row) return;
@@ -641,69 +669,91 @@ export async function initStaffChallengesUI({ studioId, user, roles, showToast }
       });
     });
 
-    listEl.querySelectorAll("[data-edit-id]").forEach(button => {
-      button.addEventListener("click", async () => {
-        const challengeId = String(button.getAttribute("data-edit-id") || "");
-        const row = activeChallengesRows.find(entry => String(entry?.id || "") === challengeId);
-        if (!row) return;
-        await openEditModal(row);
-      });
-    });
-
-    listEl.querySelectorAll("[data-delete-id]").forEach(button => {
-      button.addEventListener("click", async () => {
-        const challengeId = String(button.getAttribute("data-delete-id") || "");
-        const row = activeChallengesRows.find(entry => String(entry?.id || "") === challengeId);
-        if (!row) return;
-        await handleDeleteChallenge(row);
-      });
-    });
-
     return rows.length;
   };
 
   const loadHeaderCounts = async () => {
-    const activeCount = await loadChallengeList({ mode: "active", listEl: activeList });
-    activeHeaderBtn.hidden = activeCount <= 0;
+    const activeCount = await loadChallengeList({ mode: "active", listEl: challengesModalList, render: false });
+    activeHeaderBtn.hidden = false;
     activeHeaderBtn.textContent = `Active (${activeCount})`;
-    if (endedHeaderBtn) {
-      const endedCount = await loadChallengeList({ mode: "ended", listEl: endedList });
-      endedHeaderBtn.hidden = endedCount <= 0;
-      endedHeaderBtn.textContent = `Ended (${endedCount})`;
+    const endedCount = await loadChallengeList({ mode: "ended", listEl: challengesModalList, render: false });
+    endedHeaderBtn.hidden = false;
+    endedHeaderBtn.textContent = `Ended (${endedCount})`;
+    if (ribbon) {
+      ribbon.classList.toggle("has-challenges", activeCount > 0);
+      ribbon.classList.toggle("no-challenges", activeCount <= 0);
     }
   };
 
-  const openActiveModal = async () => {
-    await loadChallengeList({ mode: "active", listEl: activeList });
-    if (activeOverlay) activeOverlay.style.display = "flex";
+  const renderChallengesTabButtons = () => {
+    challengesTabActiveBtn?.classList.toggle("is-active", currentChallengesTab === "active");
+    challengesTabEndedBtn?.classList.toggle("is-active", currentChallengesTab === "ended");
+    activeHeaderBtn?.classList.toggle("is-active", currentChallengesTab === "active");
+    endedHeaderBtn?.classList.toggle("is-active", currentChallengesTab === "ended");
   };
 
-  const openEndedModal = async () => {
-    await loadChallengeList({ mode: "ended", listEl: endedList });
-    if (endedOverlay) endedOverlay.style.display = "flex";
+  const openChallengesModalForTab = async (tab) => {
+    currentChallengesTab = tab === "ended" ? "ended" : "active";
+    renderChallengesTabButtons();
+    await loadChallengeList({ mode: currentChallengesTab, listEl: challengesModalList, render: true });
+    if (staffChallengesOverlay) {
+      staffChallengesOverlay.style.display = "flex";
+      const closeTarget = challengesCloseBtn || challengesFooterCloseBtn;
+      if (closeTarget) closeTarget.focus();
+    }
   };
 
-  createHeaderBtn.addEventListener("click", openCreateModal);
-  activeHeaderBtn.addEventListener("click", openActiveModal);
-  endedHeaderBtn?.addEventListener("click", openEndedModal);
+  createHeaderBtn.addEventListener("click", async event => {
+    lastModalTrigger = event.currentTarget instanceof HTMLElement ? event.currentTarget : null;
+    hideChallengesModal();
+    await openCreateModal();
+  });
+  activeHeaderBtn.addEventListener("click", async event => {
+    lastModalTrigger = event.currentTarget instanceof HTMLElement ? event.currentTarget : null;
+    await openChallengesModalForTab("active");
+  });
+  endedHeaderBtn.addEventListener("click", async event => {
+    lastModalTrigger = event.currentTarget instanceof HTMLElement ? event.currentTarget : null;
+    await openChallengesModalForTab("ended");
+  });
+  challengesTabActiveBtn?.addEventListener("click", async () => {
+    await openChallengesModalForTab("active");
+  });
+  challengesTabEndedBtn?.addEventListener("click", async () => {
+    await openChallengesModalForTab("ended");
+  });
   cancelBtn?.addEventListener("click", hideCreateModal);
   closeBtn?.addEventListener("click", hideCreateModal);
-  activeCloseBtn?.addEventListener("click", hideActiveModal);
-  endedCloseBtn?.addEventListener("click", hideEndedModal);
+  challengesCloseBtn?.addEventListener("click", hideChallengesModal);
+  challengesFooterCloseBtn?.addEventListener("click", hideChallengesModal);
   detailCloseBtn?.addEventListener("click", hideDetailModal);
 
   createOverlay?.addEventListener("click", event => {
     if (event.target === createOverlay) hideCreateModal();
   });
-  activeOverlay?.addEventListener("click", event => {
-    if (event.target === activeOverlay) hideActiveModal();
-  });
-  endedOverlay?.addEventListener("click", event => {
-    if (event.target === endedOverlay) hideEndedModal();
+  staffChallengesOverlay?.addEventListener("click", event => {
+    if (event.target === staffChallengesOverlay) hideChallengesModal();
   });
   detailOverlay?.addEventListener("click", event => {
     if (event.target === detailOverlay) hideDetailModal();
   });
+  if (!staffChallengesEscBound) {
+    document.addEventListener("keydown", event => {
+      if (event.key !== "Escape") return;
+      if (detailOverlay?.style.display === "flex") {
+        hideDetailModal();
+        return;
+      }
+      if (createOverlay?.style.display === "flex") {
+        hideCreateModal();
+        return;
+      }
+      if (staffChallengesOverlay?.style.display === "flex") {
+        hideChallengesModal();
+      }
+    });
+    staffChallengesEscBound = true;
+  }
 
   titleInput?.addEventListener("input", updateCreateEnabled);
   pointsInput?.addEventListener("input", updateCreateEnabled);

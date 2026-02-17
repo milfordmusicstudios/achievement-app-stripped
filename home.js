@@ -379,9 +379,11 @@ function applyParentReadOnlyUI() {
   const notice = qs("parentReadOnlyNotice");
   const controls = qs("studentLoggingControls");
   const staffMount = qs("staffQuickLogMount");
+  const staffRibbon = qs("staffChallengesRibbon");
   if (notice) notice.style.display = isParentReadOnly ? "block" : "none";
   if (controls) controls.style.display = isParentReadOnly ? "none" : "";
   if (staffMount) staffMount.style.display = isParentReadOnly ? "none" : "";
+  if (staffRibbon) staffRibbon.style.display = isParentReadOnly ? "none" : "";
 
   const modalLogPractice = qs("modalLogPractice");
   const modalLogOther = qs("modalLogOther");
@@ -635,6 +637,7 @@ async function init() {
     }
 
     if (isStaff) {
+      renderStaffChallengesRibbon();
       renderStaffQuickLogShell();
       const studioId = activeStudioId;
       console.log("[ChallengesUI] init studioId =", studioId);
@@ -1542,6 +1545,23 @@ function openMemorizationModal({ userId, category, label, notesRequired, notesPr
   }
 }
 
+function renderStaffChallengesRibbon() {
+  const mount = document.getElementById('staffChallengesRibbon');
+  if (!mount) return;
+  mount.innerHTML = `
+    <div id="staffChallengesRibbonStrip" class="staff-challenges-ribbon no-challenges" aria-label="Staff challenges ribbon">
+      <div class="ribbon-left">
+        <div class="ribbon-title">Challenges</div>
+        <div class="ribbon-tabs">
+          <button id="challengeActiveBtn" class="ribbon-tab is-active" data-tab="active" type="button">Active (0)</button>
+          <button id="challengeEndedBtn" class="ribbon-tab" data-tab="ended" type="button">Ended (0)</button>
+        </div>
+      </div>
+      <button class="ribbon-cta" id="btnNewChallenge" type="button">+ New</button>
+    </div>
+  `;
+}
+
 function renderStaffQuickLogShell() {
   const mount = document.getElementById('staffQuickLogMount');
   if (!mount) return;
@@ -1550,10 +1570,6 @@ function renderStaffQuickLogShell() {
       <form id="staffQuickLogForm" class="staff-card">
         <div class="quicklog-header-row">
           <div class="quicklog-title">Quick Log</div>
-          <div class="quicklog-actions">
-            <button id="challengeCreateBtn" type="button" class="pill-btn">+ Challenge</button>
-            <button id="challengeActiveBtn" type="button" class="link-btn" hidden>Active</button>
-          </div>
         </div>
         <label for="staffStudentsSearch">Students</label>
         <div id="staffStudentPicker" class="staff-student-picker">
