@@ -4,6 +4,7 @@ import { clearAppSessionCache, ensureUserRow, getAuthUserId, getViewerContext, r
 import { getActiveProfileId, setActiveProfileId, persistLastActiveStudent, getLastActiveStudent, clearLastActiveStudent } from './active-profile.js';
 import { getAccountProfiles, renderAccountProfileList, hasRole, loadLinkedStudentsForParent } from './account-profiles.js';
 import { initStaffChallengesUI } from './challenges-ui.js';
+import { initStudentChallengesUI } from './challenges-student-ui.js';
 
 const qs = id => document.getElementById(id);
 const safeParse = value => {
@@ -731,6 +732,12 @@ initParentViewerSelector(availableUsers, profile, viewerContext.viewerUserId, vi
 
 await refreshActiveStudentData({ fallbackProfile: profile });
 if (!isStaffUser && !isParentReadOnly) {
+  await initStudentChallengesUI({
+    studioId: viewerContext.studioId || localStorage.getItem("activeStudioId"),
+    user: { id: viewerContext.viewerUserId },
+    roles: viewerContext.viewerRoles || [],
+    showToast
+  });
   await initStudentLogActions();
 }
 }
@@ -1538,8 +1545,14 @@ function renderStaffQuickLogShell() {
   if (!mount) return;
   mount.innerHTML = `
     <section class="home-staff staff-only" aria-label="Staff quick log">
-      <div id="staffChallengesRibbonMount" class="staff-challenges-ribbon-wrap"></div>
       <form id="staffQuickLogForm" class="staff-card">
+        <div class="quicklog-header-row">
+          <div class="quicklog-title">Quick Log</div>
+          <div class="quicklog-actions">
+            <button id="challengeCreateBtn" type="button" class="pill-btn">+ Challenge</button>
+            <button id="challengeActiveBtn" type="button" class="link-btn" hidden>Active</button>
+          </div>
+        </div>
         <label for="staffStudentsSearch">Students</label>
         <div id="staffStudentPicker" class="staff-student-picker">
           <input

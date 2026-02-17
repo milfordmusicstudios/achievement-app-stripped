@@ -92,7 +92,7 @@ function ensureModals() {
         </div>
         <div class="modal-actions">
           <button id="challengeCancelBtn" type="button" class="blue-button">Cancel</button>
-          <button id="challengeCreateBtn" type="button" class="blue-button">Create challenge</button>
+          <button id="challengeCreateSubmitBtn" type="button" class="blue-button">Create challenge</button>
         </div>
       </div>
     `;
@@ -120,37 +120,37 @@ function ensureModals() {
 }
 
 export async function initStaffChallengesUI({ studioId, user, roles, showToast }) {
-  const mount = document.getElementById("staffChallengesRibbonMount");
-  if (!mount) return;
+  const createHeaderBtn = document.getElementById("challengeCreateBtn");
+  const activeHeaderBtn = document.getElementById("challengeActiveBtn");
+  if (!createHeaderBtn || !activeHeaderBtn) return;
 
-  if (!studioId || !user?.id || !isStaff(roles)) {
-    mount.innerHTML = "";
+  const resolvedStudioId = String(studioId || "").trim();
+  const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const ensureValidStudioId = () => {
+    if (uuidPattern.test(resolvedStudioId)) return true;
+    console.error("[ChallengesUI] invalid studioId:", resolvedStudioId);
+    if (typeof showToast === "function") showToast("Studio not selected; cannot load challenges.");
+    return false;
+  };
+
+  if (!resolvedStudioId || !user?.id || !isStaff(roles)) {
+    createHeaderBtn.hidden = true;
+    activeHeaderBtn.hidden = true;
     return;
   }
 
   ensureModals();
+  createHeaderBtn.hidden = false;
+  activeHeaderBtn.hidden = true;
 
   const createOverlay = document.getElementById("createChallengeOverlay");
   const activeOverlay = document.getElementById("activeChallengesOverlay");
-  const createBtnId = "staffCreateChallengeBtn";
-  const activeBtnId = "staffActiveChallengesBtn";
 
   let users = [];
   let students = [];
   let teachers = [];
   const selectedStudentIds = new Set();
   let endTouched = false;
-  let activeLinkVisible = false;
-
-  mount.innerHTML = `
-    <div class="staff-challenges-ribbon">
-      <button id="${createBtnId}" type="button" class="blue-button">Create a Challenge</button>
-      <button id="${activeBtnId}" type="button" class="blue-button btn-ghost" style="display:none;">Active challenges</button>
-    </div>
-  `;
-
-  const createRibbonBtn = document.getElementById(createBtnId);
-  const activeRibbonBtn = document.getElementById(activeBtnId);
 
   const titleInput = document.getElementById("challengeTitleInput");
   const pointsInput = document.getElementById("challengePointsInput");
@@ -164,7 +164,7 @@ export async function initStaffChallengesUI({ studioId, user, roles, showToast }
   const startInput = document.getElementById("challengeStartDateInput");
   const endInput = document.getElementById("challengeEndDateInput");
   const descriptionInput = document.getElementById("challengeDescriptionInput");
-  const createActionBtn = document.getElementById("challengeCreateBtn");
+  const createActionBtn = document.getElementById("challengeCreateSubmitBtn");
   const cancelBtn = document.getElementById("challengeCancelBtn");
   const closeBtn = document.getElementById("createChallengeCloseBtn");
   const errorEl = document.getElementById("challengeCreateError");
@@ -217,11 +217,10 @@ export async function initStaffChallengesUI({ studioId, user, roles, showToast }
       studentChips.innerHTML = `<span class="staff-student-empty">No students selected</span>`;
       return;
     }
-    const chipsHtml = ids.map(id => {
+    studentChips.innerHTML = ids.map(id => {
       const student = students.find(entry => String(entry.id) === String(id));
       return `<button type="button" class="staff-student-chip challenge-chip" data-student-id="${id}">${getUserLabel(student)} x</button>`;
     }).join("");
-    studentChips.innerHTML = chipsHtml;
   };
 
   const renderStudentDropdown = () => {
@@ -229,11 +228,7 @@ export async function initStaffChallengesUI({ studioId, user, roles, showToast }
     const query = String(studentSearchInput.value || "").trim().toLowerCase();
     const filtered = students
       .filter(student => !selectedStudentIds.has(String(student.id)))
-      .filter(student => {
-        if (!query) return true;
-        const label = getUserLabel(student).toLowerCase();
-        return label.includes(query);
-      })
+      .filter(student => !query || getUserLabel(student).toLowerCase().includes(query))
       .sort((a, b) => getUserLabel(a).localeCompare(getUserLabel(b), undefined, { sensitivity: "base" }));
 
     if (!filtered.length) {
@@ -254,10 +249,7 @@ export async function initStaffChallengesUI({ studioId, user, roles, showToast }
     const assignmentType = getAssignType();
     if (teacherField) teacherField.style.display = assignmentType === "teacher_students" ? "" : "none";
     if (studentsField) studentsField.style.display = assignmentType === "selected_students" ? "" : "none";
-
-    if (assignmentType !== "selected_students" && studentDropdown) {
-      studentDropdown.hidden = true;
-    }
+    if (assignmentType !== "selected_students" && studentDropdown) studentDropdown.hidden = true;
   };
 
   const isFormValid = () => {
@@ -268,17 +260,14 @@ export async function initStaffChallengesUI({ studioId, user, roles, showToast }
     const assignmentType = getAssignType();
     if (!title) return false;
     if (!Number.isFinite(points) || points < 0) return false;
-    if (!startDate || !endDate) return false;
-    if (endDate < startDate) return false;
-
+    if (!startDate || !endDate || endDate < startDate) return false;
     if (assignmentType === "teacher_students" && !getTeacherDefaultId()) return false;
     if (assignmentType === "selected_students" && selectedStudentIds.size === 0) return false;
     return true;
   };
 
   const updateCreateEnabled = () => {
-    if (!createActionBtn) return;
-    createActionBtn.disabled = !isFormValid();
+    if (createActionBtn) createActionBtn.disabled = !isFormValid();
   };
 
   const resetCreateForm = () => {
@@ -297,14 +286,14 @@ export async function initStaffChallengesUI({ studioId, user, roles, showToast }
   };
 
   const fetchUsers = async () => {
+    if (!ensureValidStudioId()) throw new Error("Invalid studio id");
     const { data, error } = await supabase
       .from("users")
       .select("id, firstName, lastName, email, roles, active, deactivated_at, studio_id")
-      .eq("studio_id", studioId)
+      .eq("studio_id", resolvedStudioId)
       .eq("active", true)
       .is("deactivated_at", null);
     if (error) throw error;
-
     users = Array.isArray(data) ? data : [];
     students = users.filter(entry => parseRoles(entry.roles).includes("student"));
     teachers = users.filter(entry => {
@@ -325,7 +314,6 @@ export async function initStaffChallengesUI({ studioId, user, roles, showToast }
       teacherLocked.textContent = `Teacher: ${getUserLabel(self || user)}`;
       return;
     }
-
     teacherSelect.style.display = "";
     teacherLocked.style.display = "none";
     teacherSelect.disabled = false;
@@ -349,27 +337,33 @@ export async function initStaffChallengesUI({ studioId, user, roles, showToast }
   };
 
   const loadActiveChallenges = async () => {
-    if (!activeList) return;
+    if (!activeList) return 0;
+    if (!ensureValidStudioId()) return 0;
+    const previousHtml = activeList.innerHTML;
     activeList.innerHTML = "Loading...";
 
     const today = toDateInputValue(new Date());
     const { data, error } = await supabase
       .from("teacher_challenges")
       .select("id, title, end_date")
-      .eq("studio_id", studioId)
+      .eq("studio_id", resolvedStudioId)
       .gte("end_date", today)
       .order("end_date", { ascending: true })
       .order("created_at", { ascending: false });
 
     if (error) {
-      activeList.innerHTML = `<div class="staff-student-no-match">Unable to load active challenges.</div>`;
-      return;
+      console.error("[ChallengesUI] failed to load active challenges", error);
+      if (typeof showToast === "function") showToast("Couldn't load challenges.");
+      activeList.innerHTML = previousHtml || `<div class="staff-student-no-match">Unable to load active challenges.</div>`;
+      return 0;
     }
 
     const rows = Array.isArray(data) ? data : [];
     if (!rows.length) {
       activeList.innerHTML = `<div class="staff-student-no-match">No active challenges yet.</div>`;
-      return;
+      activeHeaderBtn.hidden = true;
+      activeHeaderBtn.textContent = "Active";
+      return 0;
     }
 
     activeList.innerHTML = rows.map(row => `
@@ -378,6 +372,9 @@ export async function initStaffChallengesUI({ studioId, user, roles, showToast }
         <div class="challenge-active-date">Ends ${String(row.end_date || "")}</div>
       </div>
     `).join("");
+    activeHeaderBtn.hidden = false;
+    activeHeaderBtn.textContent = `Active (${rows.length})`;
+    return rows.length;
   };
 
   const openActiveModal = async () => {
@@ -385,8 +382,8 @@ export async function initStaffChallengesUI({ studioId, user, roles, showToast }
     if (activeOverlay) activeOverlay.style.display = "flex";
   };
 
-  createRibbonBtn?.addEventListener("click", openCreateModal);
-  activeRibbonBtn?.addEventListener("click", openActiveModal);
+  createHeaderBtn.addEventListener("click", openCreateModal);
+  activeHeaderBtn.addEventListener("click", openActiveModal);
   cancelBtn?.addEventListener("click", hideCreateModal);
   closeBtn?.addEventListener("click", hideCreateModal);
   activeCloseBtn?.addEventListener("click", hideActiveModal);
@@ -402,9 +399,7 @@ export async function initStaffChallengesUI({ studioId, user, roles, showToast }
   pointsInput?.addEventListener("input", updateCreateEnabled);
   teacherSelect?.addEventListener("change", updateCreateEnabled);
   startInput?.addEventListener("change", () => {
-    if (!endTouched && startInput?.value && endInput) {
-      endInput.value = addDays(startInput.value, 30);
-    }
+    if (!endTouched && startInput?.value && endInput) endInput.value = addDays(startInput.value, 30);
     updateCreateEnabled();
   });
   endInput?.addEventListener("change", () => {
@@ -423,14 +418,10 @@ export async function initStaffChallengesUI({ studioId, user, roles, showToast }
     renderStudentDropdown();
     updateCreateEnabled();
   });
-  studentSearchInput?.addEventListener("focus", () => {
-    renderStudentDropdown();
-  });
+  studentSearchInput?.addEventListener("focus", renderStudentDropdown);
 
   studentDropdown?.addEventListener("click", event => {
-    const button = event.target instanceof Element
-      ? event.target.closest(".challenge-student-option")
-      : null;
+    const button = event.target instanceof Element ? event.target.closest(".challenge-student-option") : null;
     if (!button) return;
     const studentId = String(button.getAttribute("data-student-id") || "");
     if (!studentId) return;
@@ -442,9 +433,7 @@ export async function initStaffChallengesUI({ studioId, user, roles, showToast }
   });
 
   studentChips?.addEventListener("click", event => {
-    const button = event.target instanceof Element
-      ? event.target.closest(".challenge-chip")
-      : null;
+    const button = event.target instanceof Element ? event.target.closest(".challenge-chip") : null;
     if (!button) return;
     const studentId = String(button.getAttribute("data-student-id") || "");
     if (!studentId) return;
@@ -457,9 +446,7 @@ export async function initStaffChallengesUI({ studioId, user, roles, showToast }
   document.addEventListener("click", event => {
     const target = event.target instanceof Element ? event.target : null;
     if (!target) return;
-    if (!target.closest(".challenge-student-picker") && studentDropdown) {
-      studentDropdown.hidden = true;
-    }
+    if (!target.closest(".challenge-student-picker") && studentDropdown) studentDropdown.hidden = true;
   });
 
   createActionBtn?.addEventListener("click", async () => {
@@ -471,7 +458,7 @@ export async function initStaffChallengesUI({ studioId, user, roles, showToast }
 
     const assignmentType = getAssignType();
     const payload = {
-      studioId,
+      studioId: resolvedStudioId,
       title: String(titleInput?.value || "").trim(),
       description: String(descriptionInput?.value || "").trim() || null,
       points: Number(pointsInput?.value),
@@ -484,10 +471,9 @@ export async function initStaffChallengesUI({ studioId, user, roles, showToast }
 
     createActionBtn.disabled = true;
     try {
+      if (!ensureValidStudioId()) return;
       await createChallenge(payload);
       hideCreateModal();
-      activeLinkVisible = true;
-      if (activeRibbonBtn) activeRibbonBtn.style.display = activeLinkVisible ? "" : "none";
       if (typeof showToast === "function") showToast("Challenge created");
       await loadActiveChallenges();
     } catch (error) {
@@ -500,4 +486,5 @@ export async function initStaffChallengesUI({ studioId, user, roles, showToast }
   updateAssignFields();
   renderStudentChips();
   updateCreateEnabled();
+  await loadActiveChallenges();
 }
