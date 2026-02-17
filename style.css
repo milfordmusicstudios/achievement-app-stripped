@@ -1124,6 +1124,104 @@ body.is-admin #roleBadgeTeacher {
   margin-top: 18px;
 }
 
+.staff-challenges-ribbon-wrap {
+  margin-bottom: 10px;
+}
+
+.staff-challenges-ribbon {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.staff-challenges-ribbon .blue-button {
+  min-width: 0;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 12px;
+}
+
+.staff-challenge-modal {
+  width: min(620px, calc(100vw - 24px));
+}
+
+.challenge-radio-group {
+  display: grid;
+  gap: 6px;
+}
+
+.challenge-radio-group label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: #0b4f8a;
+  font-weight: 600;
+}
+
+.challenge-helper {
+  margin-top: 6px;
+  color: #4a607a;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.challenge-date-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.challenge-student-picker {
+  position: relative;
+}
+
+.challenge-student-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 120;
+  background: #fff;
+  border: 2px solid rgba(11,79,138,0.18);
+  border-radius: 12px;
+  box-shadow: 0 10px 24px rgba(0,0,0,0.16);
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.challenge-student-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.challenge-active-list {
+  display: grid;
+  gap: 8px;
+}
+
+.challenge-active-row {
+  border: 1px solid rgba(11,79,138,0.16);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: rgba(255,255,255,0.8);
+}
+
+.challenge-active-title {
+  color: #0b4f8a;
+  font-weight: 800;
+}
+
+.challenge-active-date {
+  margin-top: 3px;
+  color: #5f738d;
+  font-size: 13px;
+  font-weight: 600;
+}
+
 .admin-dashboard .admin-action-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));

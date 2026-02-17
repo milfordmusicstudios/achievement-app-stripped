@@ -3,6 +3,7 @@ import { ensureStudioContextAndRoute } from './studio-routing.js';
 import { clearAppSessionCache, ensureUserRow, getAuthUserId, getViewerContext, renderActiveStudentHeader } from './utils.js';
 import { getActiveProfileId, setActiveProfileId, persistLastActiveStudent, getLastActiveStudent, clearLastActiveStudent } from './active-profile.js';
 import { getAccountProfiles, renderAccountProfileList, hasRole, loadLinkedStudentsForParent } from './account-profiles.js';
+import { initStaffChallengesUI } from './challenges-ui.js';
 
 const qs = id => document.getElementById(id);
 const safeParse = value => {
@@ -634,6 +635,18 @@ async function init() {
 
     if (isStaff) {
       renderStaffQuickLogShell();
+      const studioId = activeStudioId;
+      console.log("[ChallengesUI] init studioId =", studioId);
+      await initStaffChallengesUI({
+        studioId,
+        user: {
+          id: authUserId,
+          isAdmin: !!viewerContext.isAdmin,
+          isTeacher: !!viewerContext.isTeacher
+        },
+        roles: viewerContext.viewerRoles || [],
+        showToast
+      });
       await initStaffQuickLog({
         authUserId,
         studioId: activeStudioId,
@@ -1525,6 +1538,7 @@ function renderStaffQuickLogShell() {
   if (!mount) return;
   mount.innerHTML = `
     <section class="home-staff staff-only" aria-label="Staff quick log">
+      <div id="staffChallengesRibbonMount" class="staff-challenges-ribbon-wrap"></div>
       <form id="staffQuickLogForm" class="staff-card">
         <label for="staffStudentsSearch">Students</label>
         <div id="staffStudentPicker" class="staff-student-picker">
