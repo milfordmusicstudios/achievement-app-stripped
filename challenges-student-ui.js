@@ -1,5 +1,5 @@
 import { supabase } from "./supabaseClient.js";
-import { fetchMyChallengeAssignments, updateAssignmentStatus } from "./challenges-api.js";
+import { completeChallengeAndCreateLog, fetchMyChallengeAssignments, updateAssignmentStatus } from "./challenges-api.js";
 
 function localToday() {
   const now = new Date();
@@ -16,9 +16,18 @@ function toDateText(value) {
 function badgeText(status) {
   if (status === "new") return "New";
   if (status === "active") return "Active";
+  if (status === "completed_pending") return "Pending approval";
+  if (status === "pending_review" || status === "pending") return "Pending approval";
   if (status === "completed") return "Completed";
   if (status === "dismissed") return "Dismissed";
   return status || "Unknown";
+}
+
+function badgeClass(row) {
+  if (row?.expired) return "is-expired";
+  if (row?.status === "completed_pending" || row?.status === "pending_review" || row?.status === "pending") return "is-pending";
+  if (row?.status === "completed") return "is-completed";
+  return "";
 }
 
 function ensureStudentChallengeModals() {
@@ -60,15 +69,22 @@ function ensureStudentChallengeModals() {
   }
 }
 
-export async function initStudentChallengesUI({ studioId, user, roles, showToast }) {
+export async function initStudentChallengesUI({ studioId, studentId, roles, showToast }) {
   const noticeMount = document.getElementById("studentChallengesNoticeMount");
   const subtleMount = document.getElementById("studentChallengesSubtleMount");
   if (!noticeMount || !subtleMount) return;
 
   const studio = String(studioId || "").trim();
-  const studentId = String(user?.id || "").trim();
+  const targetStudentId = String(studentId || "").trim();
   const isStudent = Array.isArray(roles) && roles.map(r => String(r || "").toLowerCase()).includes("student");
-  if (!studio || !studentId || !isStudent) {
+  if (!studio || !isStudent) {
+    noticeMount.innerHTML = "";
+    subtleMount.innerHTML = "";
+    return;
+  }
+  if (!targetStudentId) {
+    console.error("[StudentChallengesUI] missing studentId");
+    if (typeof showToast === "function") showToast("No student selected.");
     noticeMount.innerHTML = "";
     subtleMount.innerHTML = "";
     return;
@@ -111,7 +127,7 @@ export async function initStudentChallengesUI({ studioId, user, roles, showToast
     const buckets = {
       new: mapped.filter(entry => entry.status === "new" && entry.inWindow && entry.today >= entry.start),
       active: mapped.filter(entry => entry.status === "active" && entry.inWindow),
-      completed: mapped.filter(entry => entry.status === "completed"),
+      completed: mapped.filter(entry => entry.status === "completed" || entry.status === "completed_pending" || entry.status === "pending_review" || entry.status === "pending"),
       dismissed: mapped.filter(entry => entry.status === "dismissed"),
       expired: mapped.filter(entry => entry.expired)
     };
@@ -198,7 +214,7 @@ export async function initStudentChallengesUI({ studioId, user, roles, showToast
         <button type="button" class="student-challenge-row" data-assignment-id="${row.id}">
           <div class="student-challenge-row-top">
             <div class="student-challenge-title">${String(row.challenge.title || "Untitled challenge")}</div>
-            <span class="student-challenge-badge ${row.expired ? "is-expired" : ""}">${row.expired ? "Expired" : badgeText(row.status)}</span>
+            <span class="student-challenge-badge ${badgeClass(row)}">${row.expired ? "Expired" : badgeText(row.status)}</span>
           </div>
           <div class="student-challenge-meta">${Number(row.challenge.points || 0)} points</div>
           <div class="student-challenge-meta">Ends ${toDateText(row.end)}</div>
@@ -226,7 +242,22 @@ export async function initStudentChallengesUI({ studioId, user, roles, showToast
   };
 
   const refreshAll = async () => {
-    assignments = await fetchMyChallengeAssignments(studio, studentId);
+    assignments = await fetchMyChallengeAssignments(studio, targetStudentId);
+    const { buckets } = derive();
+    const newVisible = buckets.new;
+    const activeVisible = buckets.active;
+    const completed = buckets.completed;
+    const dismissed = buckets.dismissed;
+    const expired = buckets.expired;
+    console.log("[StudentChallengesUI] counts", {
+      total: assignments.length,
+      newVisible: newVisible.length,
+      activeVisible: activeVisible.length,
+      completed: completed.length,
+      dismissed: dismissed.length,
+      expired: expired.length,
+    });
+
     const creatorIds = Array.from(new Set(
       assignments
         .map(row => row?.teacher_challenges?.created_by)
@@ -270,6 +301,7 @@ export async function initStudentChallengesUI({ studioId, user, roles, showToast
     const isCompleted = row.status === "completed";
     const isNew = row.status === "new";
     const isActive = row.status === "active";
+    const isPendingReview = row.status === "completed_pending" || row.status === "pending_review" || row.status === "pending";
     const isDismissed = row.status === "dismissed";
     const canReactivate = isDismissed && row.inWindow && row.today >= row.start;
     const canAccept = isNew && !isExpired && row.today >= row.start && row.today <= row.end;
@@ -285,11 +317,12 @@ export async function initStudentChallengesUI({ studioId, user, roles, showToast
         <p>${String(challenge.description || "No instructions provided.")}</p>
         ${isExpired ? '<div class="student-challenge-status-note">Expired</div>' : ""}
         ${isCompleted ? `<div class="student-challenge-status-note">Completed ${String(row.completed_at || "").replace("T", " ").slice(0, 16)}</div>` : ""}
+        ${isPendingReview ? '<div class="student-challenge-status-note">Pending teacher approval</div>' : ""}
         <div class="modal-actions">
           <button id="challengeDetailBackBtn" type="button" class="blue-button">Back</button>
           ${canAccept ? '<button id="challengeDetailAcceptBtn" type="button" class="blue-button">Accept</button>' : ""}
           ${canDismiss ? '<button id="challengeDetailDismissBtn" type="button" class="blue-button btn-ghost">Decline & dismiss</button>' : ""}
-          ${canComplete ? '<button id="challengeDetailCompleteBtn" type="button" class="blue-button">Mark complete</button>' : ""}
+          ${canComplete ? '<button id="challengeDetailCompleteBtn" type="button" class="blue-button">Yes, I completed it</button>' : ""}
           ${isDismissed ? `<button id="challengeDetailReactivateBtn" type="button" class="blue-button"${canReactivate ? "" : " disabled"}>Reactivate</button>` : ""}
         </div>
       </div>
@@ -307,7 +340,20 @@ export async function initStudentChallengesUI({ studioId, user, roles, showToast
       doStatusUpdate(row.id, "dismissed", "Challenge dismissed");
     });
     detailBody.querySelector("#challengeDetailCompleteBtn")?.addEventListener("click", () => {
-      doStatusUpdate(row.id, "completed", "Challenge completed!");
+      (async () => {
+        try {
+          await completeChallengeAndCreateLog(row.id, targetStudentId, row.today);
+          if (typeof showToast === "function") showToast("Awesome — sent to your teacher for approval!");
+          setDetailOpen(false);
+          await refreshAll();
+          activeTab = "completed";
+          renderListModal();
+          setListOpen(true);
+        } catch (error) {
+          console.error("[StudentChallenges] complete bridge failed", error);
+          if (typeof showToast === "function") showToast("Couldn't submit challenge completion.");
+        }
+      })();
     });
     detailBody.querySelector("#challengeDetailReactivateBtn")?.addEventListener("click", () => {
       if (!canReactivate) return;

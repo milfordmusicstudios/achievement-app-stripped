@@ -732,9 +732,11 @@ initParentViewerSelector(availableUsers, profile, viewerContext.viewerUserId, vi
 
 await refreshActiveStudentData({ fallbackProfile: profile });
 if (!isStaffUser && !isParentReadOnly) {
+  const studentId = String(currentProfile?.id || activeProfileIdCurrent || "").trim();
+  console.log("[StudentChallengesUI] init studentId =", studentId);
   await initStudentChallengesUI({
     studioId: viewerContext.studioId || localStorage.getItem("activeStudioId"),
-    user: { id: viewerContext.viewerUserId },
+    studentId,
     roles: viewerContext.viewerRoles || [],
     showToast
   });

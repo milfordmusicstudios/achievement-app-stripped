@@ -26,6 +26,17 @@ export async function updateAssignmentStatus(assignmentId, status) {
   if (error) throw error;
 }
 
+export async function completeChallengeAndCreateLog(assignmentId, studentId, logDate) {
+  const { data, error } = await supabase.rpc("complete_challenge_and_create_log", {
+    p_assignment_id: assignmentId,
+    p_student_id: studentId,
+    p_log_date: logDate ?? null
+  });
+
+  if (error) throw error;
+  return data;
+}
+
 export async function fetchMyChallengeAssignments(studioId, studentId) {
   const targetStudentId = String(studentId || "").trim();
   if (!targetStudentId) return [];

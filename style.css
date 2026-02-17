@@ -1192,18 +1192,55 @@ body.is-admin #roleBadgeTeacher {
   width: min(620px, calc(100vw - 24px));
 }
 
-.challenge-radio-group {
+.staff-challenge-modal .modal-body {
   display: grid;
-  gap: 6px;
+  gap: 12px;
 }
 
-.challenge-radio-group label {
+.staff-challenge-modal .modal-field {
+  margin: 0;
+}
+
+.staff-challenge-modal .modal-field label {
+  display: block;
+  margin: 0 0 6px;
+  text-align: left;
+  font-size: 14px;
+  font-weight: 700;
+  color: #0b4f8a;
+}
+
+.staff-challenge-modal .modal-field input,
+.staff-challenge-modal .modal-field select,
+.staff-challenge-modal .modal-field textarea {
+  width: 100%;
+  font-size: 15px;
+}
+
+.challenge-radio-group {
+  display: grid;
+  gap: 8px;
+}
+
+.challenge-radio-group .challenge-radio-option {
   display: flex;
   align-items: center;
   gap: 8px;
   margin: 0;
   color: #0b4f8a;
+  font-size: 14px;
   font-weight: 600;
+}
+
+.challenge-radio-group .challenge-radio-option input[type="radio"] {
+  margin: 0;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+}
+
+.challenge-radio-group .challenge-radio-option span {
+  line-height: 1.3;
 }
 
 .challenge-helper {
@@ -1256,6 +1293,19 @@ body.is-admin #roleBadgeTeacher {
   background: rgba(255,255,255,0.8);
 }
 
+.challenge-active-row-btn {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+
+.challenge-active-row-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
 .challenge-active-title {
   color: #0b4f8a;
   font-weight: 800;
@@ -1266,6 +1316,62 @@ body.is-admin #roleBadgeTeacher {
   color: #5f738d;
   font-size: 13px;
   font-weight: 600;
+}
+
+.challenge-active-meta {
+  margin-top: 4px;
+  color: #4e6380;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.challenge-active-names {
+  color: #2f4864;
+}
+
+.challenge-detail-block {
+  display: grid;
+  gap: 6px;
+}
+
+.challenge-detail-title {
+  color: #0b4f8a;
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.challenge-detail-meta {
+  color: #4f6682;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.challenge-detail-desc {
+  margin-top: 6px;
+  padding: 10px 12px;
+  border: 1px solid rgba(11,79,138,0.16);
+  border-radius: 10px;
+  color: #2f4158;
+  white-space: pre-wrap;
+}
+
+.challenge-detail-subhead {
+  margin-top: 8px;
+  color: #0b4f8a;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.challenge-detail-list {
+  color: #2f4864;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+@media (max-width: 720px) {
+  .challenge-date-row {
+    grid-template-columns: 1fr;
+  }
 }
 
 #studentChallengesNoticeMount {
@@ -1376,6 +1482,18 @@ body.is-admin #roleBadgeTeacher {
   background: rgba(198,40,40,0.1);
   border-color: rgba(198,40,40,0.25);
   color: #9a1d1d;
+}
+
+.student-challenge-badge.is-pending {
+  background: rgba(255, 193, 7, 0.2);
+  border-color: rgba(255, 193, 7, 0.45);
+  color: #7a5900;
+}
+
+.student-challenge-badge.is-completed {
+  background: rgba(46, 125, 50, 0.14);
+  border-color: rgba(46, 125, 50, 0.35);
+  color: #1f5a24;
 }
 
 .student-challenge-empty {
