@@ -26,11 +26,9 @@ export async function updateAssignmentStatus(assignmentId, status) {
   if (error) throw error;
 }
 
-export async function fetchMyChallengeAssignments(studioId) {
-  const { data: authData, error: authError } = await supabase.auth.getUser();
-  if (authError) throw authError;
-  const authUserId = authData?.user?.id || null;
-  if (!authUserId) return [];
+export async function fetchMyChallengeAssignments(studioId, studentId) {
+  const targetStudentId = String(studentId || "").trim();
+  if (!targetStudentId) return [];
 
   const { data, error } = await supabase
     .from("teacher_challenge_assignments")
@@ -53,7 +51,7 @@ export async function fetchMyChallengeAssignments(studioId) {
       )
     `)
     .eq("studio_id", studioId)
-    .eq("student_id", authUserId)
+    .eq("student_id", targetStudentId)
     .order("created_at", { ascending: false });
 
   if (error) throw error;

@@ -66,8 +66,9 @@ export async function initStudentChallengesUI({ studioId, user, roles, showToast
   if (!noticeMount || !subtleMount) return;
 
   const studio = String(studioId || "").trim();
+  const studentId = String(user?.id || "").trim();
   const isStudent = Array.isArray(roles) && roles.map(r => String(r || "").toLowerCase()).includes("student");
-  if (!studio || !user?.id || !isStudent) {
+  if (!studio || !studentId || !isStudent) {
     noticeMount.innerHTML = "";
     subtleMount.innerHTML = "";
     return;
@@ -225,7 +226,7 @@ export async function initStudentChallengesUI({ studioId, user, roles, showToast
   };
 
   const refreshAll = async () => {
-    assignments = await fetchMyChallengeAssignments(studio);
+    assignments = await fetchMyChallengeAssignments(studio, studentId);
     const creatorIds = Array.from(new Set(
       assignments
         .map(row => row?.teacher_challenges?.created_by)
