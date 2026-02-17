@@ -1,5 +1,5 @@
 import { supabase } from "./supabaseClient.js";
-import { createChallenge } from "./challenges-api.js";
+import { createChallenge, deleteChallenge, listStaffChallenges, updateChallenge } from "./challenges-api.js";
 
 function toDateInputValue(dateObj) {
   const y = dateObj.getFullYear();
@@ -150,6 +150,25 @@ function ensureModals() {
     document.body.appendChild(overlay);
   }
 
+  if (!document.getElementById("endedChallengesOverlay")) {
+    const overlay = document.createElement("div");
+    overlay.id = "endedChallengesOverlay";
+    overlay.className = "modal-overlay";
+    overlay.style.display = "none";
+    overlay.innerHTML = `
+      <div class="modal staff-challenge-modal">
+        <div class="modal-header">
+          <div class="modal-title">Ended challenges</div>
+          <button id="endedChallengesCloseBtn" class="modal-close" type="button">x</button>
+        </div>
+        <div class="modal-body">
+          <div id="endedChallengesList" class="challenge-active-list"></div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+  }
+
   if (!document.getElementById("challengeDetailOverlay")) {
     const overlay = document.createElement("div");
     overlay.id = "challengeDetailOverlay";
@@ -172,6 +191,17 @@ export async function initStaffChallengesUI({ studioId, user, roles, showToast }
   const createHeaderBtn = document.getElementById("challengeCreateBtn");
   const activeHeaderBtn = document.getElementById("challengeActiveBtn");
   if (!createHeaderBtn || !activeHeaderBtn) return;
+  const quicklogActions = createHeaderBtn.parentElement;
+  let endedHeaderBtn = document.getElementById("challengeEndedBtn");
+  if (!endedHeaderBtn && quicklogActions) {
+    endedHeaderBtn = document.createElement("button");
+    endedHeaderBtn.id = "challengeEndedBtn";
+    endedHeaderBtn.type = "button";
+    endedHeaderBtn.className = "link-btn";
+    endedHeaderBtn.hidden = true;
+    endedHeaderBtn.textContent = "Ended";
+    quicklogActions.appendChild(endedHeaderBtn);
+  }
 
   const resolvedStudioId = String(studioId || "").trim();
   const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -185,15 +215,18 @@ export async function initStaffChallengesUI({ studioId, user, roles, showToast }
   if (!resolvedStudioId || !user?.id || !isStaff(roles)) {
     createHeaderBtn.hidden = true;
     activeHeaderBtn.hidden = true;
+    if (endedHeaderBtn) endedHeaderBtn.hidden = true;
     return;
   }
 
   ensureModals();
   createHeaderBtn.hidden = false;
   activeHeaderBtn.hidden = true;
+  if (endedHeaderBtn) endedHeaderBtn.hidden = true;
 
   const createOverlay = document.getElementById("createChallengeOverlay");
   const activeOverlay = document.getElementById("activeChallengesOverlay");
+  const endedOverlay = document.getElementById("endedChallengesOverlay");
   const detailOverlay = document.getElementById("challengeDetailOverlay");
 
   let users = [];
@@ -217,15 +250,20 @@ export async function initStaffChallengesUI({ studioId, user, roles, showToast }
   const endInput = document.getElementById("challengeEndDateInput");
   const descriptionInput = document.getElementById("challengeDescriptionInput");
   const createActionBtn = document.getElementById("challengeCreateSubmitBtn");
+  const createModalTitle = createOverlay?.querySelector(".modal-title");
   const cancelBtn = document.getElementById("challengeCancelBtn");
   const closeBtn = document.getElementById("createChallengeCloseBtn");
   const errorEl = document.getElementById("challengeCreateError");
   const activeList = document.getElementById("activeChallengesList");
   const activeCloseBtn = document.getElementById("activeChallengesCloseBtn");
+  const endedList = document.getElementById("endedChallengesList");
+  const endedCloseBtn = document.getElementById("endedChallengesCloseBtn");
   const detailBody = document.getElementById("challengeDetailBody");
   const detailCloseBtn = document.getElementById("challengeDetailCloseBtn");
   let activeChallengesRows = [];
+  let endedChallengesRows = [];
   let activeUsersById = new Map();
+  let editingChallengeId = null;
 
   const setError = (message = "") => {
     if (!errorEl) return;
@@ -254,6 +292,10 @@ export async function initStaffChallengesUI({ studioId, user, roles, showToast }
     if (activeOverlay) activeOverlay.style.display = "none";
   };
 
+  const hideEndedModal = () => {
+    if (endedOverlay) endedOverlay.style.display = "none";
+  };
+
   const hideDetailModal = () => {
     if (detailOverlay) detailOverlay.style.display = "none";
   };
@@ -263,6 +305,12 @@ export async function initStaffChallengesUI({ studioId, user, roles, showToast }
     if (startInput) startInput.value = today;
     if (endInput) endInput.value = addDays(today, 30);
     endTouched = false;
+  };
+
+  const clearDates = () => {
+    if (startInput) startInput.value = "";
+    if (endInput) endInput.value = "";
+    endTouched = true;
   };
 
   const getTeacherDefaultId = () => {
@@ -312,6 +360,14 @@ export async function initStaffChallengesUI({ studioId, user, roles, showToast }
     if (assignmentType !== "selected_students" && studentDropdown) studentDropdown.hidden = true;
   };
 
+  const setAssignmentControlsDisabled = (disabled) => {
+    document.querySelectorAll("input[name='challengeAssignType']").forEach(input => {
+      input.disabled = disabled;
+    });
+    if (teacherSelect) teacherSelect.disabled = disabled || (user?.isTeacher && !user?.isAdmin);
+    if (studentSearchInput) studentSearchInput.disabled = disabled;
+  };
+
   const isFormValid = () => {
     const title = String(titleInput?.value || "").trim();
     const points = Number(pointsInput?.value);
@@ -323,6 +379,7 @@ export async function initStaffChallengesUI({ studioId, user, roles, showToast }
     if (!Number.isFinite(points) || points < 0) return false;
     if (!category) return false;
     if (!startDate || !endDate || endDate < startDate) return false;
+    if (editingChallengeId) return true;
     if (assignmentType === "teacher_students" && !getTeacherDefaultId()) return false;
     if (assignmentType === "selected_students" && selectedStudentIds.size === 0) return false;
     return true;
@@ -333,6 +390,7 @@ export async function initStaffChallengesUI({ studioId, user, roles, showToast }
   };
 
   const resetCreateForm = () => {
+    editingChallengeId = null;
     if (titleInput) titleInput.value = "";
     if (pointsInput) pointsInput.value = "5";
     if (categorySelect) categorySelect.value = "";
@@ -340,10 +398,13 @@ export async function initStaffChallengesUI({ studioId, user, roles, showToast }
     document.querySelectorAll("input[name='challengeAssignType']").forEach(input => {
       input.checked = input.value === "whole_studio";
     });
+    setAssignmentControlsDisabled(false);
     selectedStudentIds.clear();
     renderStudentChips();
     setDefaultDates();
     updateAssignFields();
+    if (createActionBtn) createActionBtn.textContent = "Create challenge";
+    if (createModalTitle) createModalTitle.textContent = "Create a Challenge";
     updateCreateEnabled();
     setError("");
   };
@@ -371,6 +432,8 @@ export async function initStaffChallengesUI({ studioId, user, roles, showToast }
       .select("name")
       .order("id", { ascending: true });
 
+    const blockedCategoryNames = new Set(["practice_batch", "batch_practice"]);
+
     if (error) {
       console.warn("[ChallengesUI] categories fetch failed; using fallback options", error);
       categories = ["Technique", "Theory", "Performance", "Creativity", "Practice"];
@@ -379,6 +442,7 @@ export async function initStaffChallengesUI({ studioId, user, roles, showToast }
         ? data
             .map(row => String(row?.name || "").trim())
             .filter(Boolean)
+            .filter(name => !blockedCategoryNames.has(name.toLowerCase()))
         : [];
     }
 
@@ -411,12 +475,53 @@ export async function initStaffChallengesUI({ studioId, user, roles, showToast }
       .join("");
   };
 
-  const openCreateModal = async () => {
+  const applyCreatePrefill = (sourceRow, { clearDateFields = true } = {}) => {
+    if (!sourceRow) return;
+    const parsed = splitCategoryFromDescription(sourceRow?.description);
+    if (titleInput) titleInput.value = String(sourceRow?.title || "");
+    if (pointsInput) pointsInput.value = String(Number(sourceRow?.points || 0));
+    if (descriptionInput) descriptionInput.value = String(parsed.description || "");
+    if (categorySelect) {
+      const categoryValue = String(parsed.category || "").trim();
+      if (categoryValue) {
+        const hasOption = Array.from(categorySelect.options).some(option => String(option.value || "") === categoryValue);
+        if (!hasOption) {
+          const option = document.createElement("option");
+          option.value = categoryValue;
+          option.textContent = categoryValue;
+          categorySelect.appendChild(option);
+        }
+        categorySelect.value = categoryValue;
+      }
+    }
+
+    if (!clearDateFields) {
+      if (startInput) startInput.value = String(sourceRow?.start_date || "");
+      if (endInput) endInput.value = String(sourceRow?.end_date || "");
+      endTouched = true;
+    } else {
+      // Copying should never auto-submit for past dates.
+      clearDates();
+    }
+    renderStudentChips();
+    updateAssignFields();
+    updateCreateEnabled();
+  };
+
+  const openCreateModal = async (prefillRow = null, options = {}) => {
     try {
       await fetchUsers();
       await fetchCategories();
       populateTeacherField();
       resetCreateForm();
+      const mode = String(options?.mode || "create");
+      if (mode === "edit" && prefillRow?.id) {
+        editingChallengeId = String(prefillRow.id);
+        if (createModalTitle) createModalTitle.textContent = "Edit Challenge";
+        if (createActionBtn) createActionBtn.textContent = "Save changes";
+        setAssignmentControlsDisabled(true);
+      }
+      if (prefillRow) applyCreatePrefill(prefillRow, { clearDateFields: mode !== "edit" });
       if (createOverlay) createOverlay.style.display = "flex";
       titleInput?.focus();
     } catch (error) {
@@ -425,148 +530,166 @@ export async function initStaffChallengesUI({ studioId, user, roles, showToast }
     }
   };
 
-  const loadActiveChallenges = async () => {
-    if (!activeList) return 0;
+  const renderChallengeDetail = (row, mode) => {
+    const parsed = splitCategoryFromDescription(row?.description);
+    if (!detailBody) return;
+    detailBody.innerHTML = `
+      <div class="challenge-detail-block">
+        <div class="challenge-detail-title">${escapeHtml(String(row?.title || "Untitled challenge"))}</div>
+        <div class="challenge-detail-meta">${Number(row?.points || 0)} points</div>
+        <div class="challenge-detail-meta">Start: ${escapeHtml(String(row?.start_date || ""))}</div>
+        <div class="challenge-detail-meta">End: ${escapeHtml(String(row?.end_date || ""))}</div>
+        <div class="challenge-detail-meta">Assigned to ${Number(row?.assignment_count || 0)} students</div>
+        ${parsed.category ? `<div class="challenge-detail-meta">Category: ${escapeHtml(parsed.category)}</div>` : ""}
+        <div class="challenge-detail-desc">${escapeHtml(String(parsed.description || "No description provided."))}</div>
+      </div>
+      <div class="modal-actions">
+        ${mode === "ended" ? '<button id="challengeDetailCopyBtn" type="button" class="blue-button">Copy challenge</button>' : ""}
+        <button id="challengeDetailBackToListBtn" type="button" class="blue-button">Back to ${mode === "ended" ? "ended" : "active"} list</button>
+      </div>
+    `;
+    hideActiveModal();
+    hideEndedModal();
+    if (detailOverlay) detailOverlay.style.display = "flex";
+    document.getElementById("challengeDetailBackToListBtn")?.addEventListener("click", () => {
+      hideDetailModal();
+      if (mode === "ended") {
+        if (endedOverlay) endedOverlay.style.display = "flex";
+      } else if (activeOverlay) {
+        activeOverlay.style.display = "flex";
+      }
+    });
+    document.getElementById("challengeDetailCopyBtn")?.addEventListener("click", async () => {
+      hideDetailModal();
+      await openCreateModal(row);
+    });
+  };
+
+  const openEditModal = async (row) => {
+    await openCreateModal(row, { mode: "edit" });
+  };
+
+  const handleDeleteChallenge = async (row) => {
+    const challengeId = String(row?.id || "");
+    if (!challengeId) return;
+    try {
+      await deleteChallenge(challengeId);
+      if (typeof showToast === "function") showToast("Challenge deleted");
+      await loadHeaderCounts();
+      if (activeOverlay?.style.display === "flex") await openActiveModal();
+    } catch (error) {
+      console.error("[ChallengesUI] delete failed", error);
+      if (typeof showToast === "function") showToast("Couldn't delete challenge.");
+    }
+  };
+
+  const loadChallengeList = async ({ mode, listEl }) => {
+    if (!listEl) return 0;
     if (!ensureValidStudioId()) return 0;
-    const previousHtml = activeList.innerHTML;
-    activeList.innerHTML = "Loading...";
-
+    const previousHtml = listEl.innerHTML;
+    listEl.innerHTML = "Loading...";
     const today = toDateInputValue(new Date());
-    const { data, error } = await supabase
-      .from("teacher_challenges")
-      .select("id, title, description, points, assignment_type, assignment_teacher_id, start_date, end_date, created_by, created_at, teacher_challenge_assignments(student_id,status)")
-      .eq("studio_id", resolvedStudioId)
-      .gte("end_date", today)
-      .order("end_date", { ascending: true })
-      .order("created_at", { ascending: false });
+    const isEnded = mode === "ended";
 
-    if (error) {
-      console.error("[ChallengesUI] failed to load active challenges", error);
+    let rpcRows = [];
+    try {
+      rpcRows = await listStaffChallenges(resolvedStudioId);
+    } catch (error) {
+      console.error(`[ChallengesUI] failed to load ${mode} challenges`, error);
       if (typeof showToast === "function") showToast("Couldn't load challenges.");
-      activeList.innerHTML = previousHtml || `<div class="staff-student-no-match">Unable to load active challenges.</div>`;
+      listEl.innerHTML = previousHtml || `<div class="staff-student-no-match">Unable to load ${mode} challenges.</div>`;
       return 0;
     }
 
-    const rows = Array.isArray(data) ? data : [];
-    activeChallengesRows = rows;
+    const rows = rpcRows.filter(row => {
+      const endDate = String(row?.end_date || "");
+      if (!endDate) return false;
+      return isEnded ? endDate < today : endDate >= today;
+    });
+
+    if (mode === "active") activeChallengesRows = rows;
+    if (mode === "ended") endedChallengesRows = rows;
+
     if (!rows.length) {
-      activeList.innerHTML = `<div class="staff-student-no-match">No active challenges yet.</div>`;
-      activeHeaderBtn.hidden = true;
-      activeHeaderBtn.textContent = "Active";
+      listEl.innerHTML = `<div class="staff-student-no-match">No ${mode} challenges yet.</div>`;
       return 0;
     }
 
-    const userIds = Array.from(new Set(rows.flatMap(row => {
-      const ids = [];
-      if (row?.created_by) ids.push(String(row.created_by));
-      if (row?.assignment_teacher_id) ids.push(String(row.assignment_teacher_id));
-      const assignments = Array.isArray(row?.teacher_challenge_assignments) ? row.teacher_challenge_assignments : [];
-      assignments.forEach(item => {
-        if (item?.student_id) ids.push(String(item.student_id));
-      });
-      return ids;
-    })));
+    listEl.innerHTML = rows.map(row => `
+      <div class="challenge-active-row" data-challenge-id="${String(row.id || "")}" data-mode="${mode}">
+        <div class="challenge-active-row-top">
+          <div class="challenge-active-title">${escapeHtml(String(row.title || "Untitled challenge"))}</div>
+          <div class="challenge-active-date">${isEnded ? "Ended" : "Ends"} ${escapeHtml(String(row.end_date || ""))}</div>
+        </div>
+        <div class="challenge-active-meta">Assigned to ${Number(row.assignment_count || 0)} students</div>
+        <div class="challenge-row-actions">
+          <button type="button" class="challenge-row-action-btn" data-open-id="${String(row.id || "")}" data-open-mode="${mode}">Open</button>
+          ${mode === "active" ? `<button type="button" class="challenge-row-action-btn" data-edit-id="${String(row.id || "")}">Edit</button>
+          <button type="button" class="challenge-row-action-btn is-danger" data-delete-id="${String(row.id || "")}">Delete</button>` : ""}
+        </div>
+      </div>
+    `).join("");
 
-    if (userIds.length) {
-      const { data: usersData } = await supabase
-        .from("users")
-        .select("id, firstName, lastName, email")
-        .in("id", userIds);
-      activeUsersById = new Map((Array.isArray(usersData) ? usersData : []).map(row => [String(row.id), row]));
-    } else {
-      activeUsersById = new Map();
-    }
-
-    activeList.innerHTML = rows.map(row => {
-      const assignments = Array.isArray(row?.teacher_challenge_assignments) ? row.teacher_challenge_assignments : [];
-      const assignedCount = assignments.length;
-      const activatedNames = assignments
-        .filter(item => String(item?.status || "") === "active")
-        .map(item => getUserLabel(activeUsersById.get(String(item?.student_id || ""))))
-        .filter(Boolean);
-      const activatedPreview = activatedNames.length
-        ? activatedNames.slice(0, 4).join(", ") + (activatedNames.length > 4 ? ` +${activatedNames.length - 4} more` : "")
-        : "None yet";
-
-      return `
-        <button type="button" class="challenge-active-row challenge-active-row-btn" data-challenge-id="${String(row.id || "")}">
-          <div class="challenge-active-row-top">
-            <div class="challenge-active-title">${escapeHtml(String(row.title || "Untitled challenge"))}</div>
-            <div class="challenge-active-date">Ends ${escapeHtml(String(row.end_date || ""))}</div>
-          </div>
-          <div class="challenge-active-meta">Assigned: ${assignedCount}</div>
-          <div class="challenge-active-meta">Activated: ${activatedNames.length}</div>
-          <div class="challenge-active-meta challenge-active-names">Students: ${escapeHtml(activatedPreview)}</div>
-        </button>
-      `;
-    }).join("");
-
-    activeList.querySelectorAll("[data-challenge-id]").forEach(button => {
+    listEl.querySelectorAll("[data-open-id]").forEach(button => {
       button.addEventListener("click", () => {
-        const challengeId = String(button.getAttribute("data-challenge-id") || "");
-        const row = activeChallengesRows.find(entry => String(entry?.id || "") === challengeId);
+        const challengeId = String(button.getAttribute("data-open-id") || "");
+        const rowMode = String(button.getAttribute("data-open-mode") || "active");
+        const sourceRows = rowMode === "ended" ? endedChallengesRows : activeChallengesRows;
+        const row = sourceRows.find(entry => String(entry?.id || "") === challengeId);
         if (!row) return;
-        const parsed = splitCategoryFromDescription(row?.description);
-        const assignments = Array.isArray(row?.teacher_challenge_assignments) ? row.teacher_challenge_assignments : [];
-        const assignedStudents = assignments
-          .map(item => getUserLabel(activeUsersById.get(String(item?.student_id || ""))))
-          .filter(Boolean)
-          .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
-        const activatedStudents = assignments
-          .filter(item => String(item?.status || "") === "active")
-          .map(item => getUserLabel(activeUsersById.get(String(item?.student_id || ""))))
-          .filter(Boolean)
-          .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
-        const createdByName = getUserLabel(activeUsersById.get(String(row?.created_by || ""))) || "Staff";
-        const teacherName = row?.assignment_teacher_id
-          ? getUserLabel(activeUsersById.get(String(row.assignment_teacher_id)))
-          : "";
-
-        if (!detailBody) return;
-        detailBody.innerHTML = `
-          <div class="challenge-detail-block">
-            <div class="challenge-detail-title">${escapeHtml(String(row?.title || "Untitled challenge"))}</div>
-            <div class="challenge-detail-meta">${Number(row?.points || 0)} points</div>
-            <div class="challenge-detail-meta">Type: ${escapeHtml(formatAssignmentType(row?.assignment_type))}</div>
-            <div class="challenge-detail-meta">Start: ${escapeHtml(String(row?.start_date || ""))}</div>
-            <div class="challenge-detail-meta">End: ${escapeHtml(String(row?.end_date || ""))}</div>
-            <div class="challenge-detail-meta">Created by: ${escapeHtml(createdByName)}</div>
-            ${teacherName ? `<div class="challenge-detail-meta">Teacher: ${escapeHtml(teacherName)}</div>` : ""}
-            ${parsed.category ? `<div class="challenge-detail-meta">Category: ${escapeHtml(parsed.category)}</div>` : ""}
-            <div class="challenge-detail-desc">${escapeHtml(String(parsed.description || "No description provided."))}</div>
-            <div class="challenge-detail-subhead">Assigned students (${assignedStudents.length})</div>
-            <div class="challenge-detail-list">${assignedStudents.length ? escapeHtml(assignedStudents.join(", ")) : "None"}</div>
-            <div class="challenge-detail-subhead">Activated students (${activatedStudents.length})</div>
-            <div class="challenge-detail-list">${activatedStudents.length ? escapeHtml(activatedStudents.join(", ")) : "None yet"}</div>
-          </div>
-          <div class="modal-actions">
-            <button id="challengeDetailBackToListBtn" type="button" class="blue-button">Back to active list</button>
-          </div>
-        `;
-        hideActiveModal();
-        if (detailOverlay) detailOverlay.style.display = "flex";
-        document.getElementById("challengeDetailBackToListBtn")?.addEventListener("click", () => {
-          hideDetailModal();
-          if (activeOverlay) activeOverlay.style.display = "flex";
-        });
+        renderChallengeDetail(row, rowMode);
       });
     });
 
-    activeHeaderBtn.hidden = false;
-    activeHeaderBtn.textContent = `Active (${rows.length})`;
+    listEl.querySelectorAll("[data-edit-id]").forEach(button => {
+      button.addEventListener("click", async () => {
+        const challengeId = String(button.getAttribute("data-edit-id") || "");
+        const row = activeChallengesRows.find(entry => String(entry?.id || "") === challengeId);
+        if (!row) return;
+        await openEditModal(row);
+      });
+    });
+
+    listEl.querySelectorAll("[data-delete-id]").forEach(button => {
+      button.addEventListener("click", async () => {
+        const challengeId = String(button.getAttribute("data-delete-id") || "");
+        const row = activeChallengesRows.find(entry => String(entry?.id || "") === challengeId);
+        if (!row) return;
+        await handleDeleteChallenge(row);
+      });
+    });
+
     return rows.length;
   };
 
+  const loadHeaderCounts = async () => {
+    const activeCount = await loadChallengeList({ mode: "active", listEl: activeList });
+    activeHeaderBtn.hidden = activeCount <= 0;
+    activeHeaderBtn.textContent = `Active (${activeCount})`;
+    if (endedHeaderBtn) {
+      const endedCount = await loadChallengeList({ mode: "ended", listEl: endedList });
+      endedHeaderBtn.hidden = endedCount <= 0;
+      endedHeaderBtn.textContent = `Ended (${endedCount})`;
+    }
+  };
+
   const openActiveModal = async () => {
-    await loadActiveChallenges();
+    await loadChallengeList({ mode: "active", listEl: activeList });
     if (activeOverlay) activeOverlay.style.display = "flex";
+  };
+
+  const openEndedModal = async () => {
+    await loadChallengeList({ mode: "ended", listEl: endedList });
+    if (endedOverlay) endedOverlay.style.display = "flex";
   };
 
   createHeaderBtn.addEventListener("click", openCreateModal);
   activeHeaderBtn.addEventListener("click", openActiveModal);
+  endedHeaderBtn?.addEventListener("click", openEndedModal);
   cancelBtn?.addEventListener("click", hideCreateModal);
   closeBtn?.addEventListener("click", hideCreateModal);
   activeCloseBtn?.addEventListener("click", hideActiveModal);
+  endedCloseBtn?.addEventListener("click", hideEndedModal);
   detailCloseBtn?.addEventListener("click", hideDetailModal);
 
   createOverlay?.addEventListener("click", event => {
@@ -574,6 +697,9 @@ export async function initStaffChallengesUI({ studioId, user, roles, showToast }
   });
   activeOverlay?.addEventListener("click", event => {
     if (event.target === activeOverlay) hideActiveModal();
+  });
+  endedOverlay?.addEventListener("click", event => {
+    if (event.target === endedOverlay) hideEndedModal();
   });
   detailOverlay?.addEventListener("click", event => {
     if (event.target === detailOverlay) hideDetailModal();
@@ -662,12 +788,23 @@ export async function initStaffChallengesUI({ studioId, user, roles, showToast }
     createActionBtn.disabled = true;
     try {
       if (!ensureValidStudioId()) return;
-      await createChallenge(payload);
+      if (editingChallengeId) {
+        await updateChallenge({
+          challengeId: editingChallengeId,
+          title: payload.title,
+          description: payload.description,
+          points: payload.points,
+          startDate: payload.startDate,
+          endDate: payload.endDate
+        });
+      } else {
+        await createChallenge(payload);
+      }
       hideCreateModal();
-      if (typeof showToast === "function") showToast("Challenge created");
-      await loadActiveChallenges();
+      if (typeof showToast === "function") showToast(editingChallengeId ? "Challenge updated" : "Challenge created");
+      await loadHeaderCounts();
     } catch (error) {
-      setError(error?.message || "Unable to create challenge");
+      setError(error?.message || (editingChallengeId ? "Unable to update challenge" : "Unable to create challenge"));
     } finally {
       createActionBtn.disabled = !isFormValid();
     }
@@ -676,5 +813,5 @@ export async function initStaffChallengesUI({ studioId, user, roles, showToast }
   updateAssignFields();
   renderStudentChips();
   updateCreateEnabled();
-  await loadActiveChallenges();
+  await loadHeaderCounts();
 }

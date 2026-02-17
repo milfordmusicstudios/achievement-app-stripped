@@ -1,5 +1,8 @@
 import { supabase } from "./supabaseClient.js";
-import { completeChallengeAndCreateLog, fetchMyChallengeAssignments, updateAssignmentStatus } from "./challenges-api.js";
+import { fetchMyChallengeAssignments, updateAssignmentStatus } from "./challenges-api.js";
+
+const NEW_BANNER_SEEN_KEY = "studentChallengesNewBannerSeen";
+const NEW_BANNER_OPENED_KEY = "studentChallengesNewBannerOpened";
 
 function localToday() {
   const now = new Date();
@@ -14,12 +17,11 @@ function toDateText(value) {
 }
 
 function badgeText(status) {
-  if (status === "new") return "New";
+  if (status === "new" || status === "dismissed") return "Inactive";
   if (status === "active") return "Active";
   if (status === "completed_pending") return "Pending approval";
   if (status === "pending_review" || status === "pending") return "Pending approval";
   if (status === "completed") return "Completed";
-  if (status === "dismissed") return "Dismissed";
   return status || "Unknown";
 }
 
@@ -102,7 +104,7 @@ export async function initStudentChallengesUI({ studioId, studentId, roles, show
 
   let assignments = [];
   let usersById = new Map();
-  let activeTab = "new";
+  let activeTab = "current";
 
   const setListOpen = (open) => {
     if (listOverlay) listOverlay.style.display = open ? "flex" : "none";
@@ -124,56 +126,62 @@ export async function initStudentChallengesUI({ studioId, studentId, roles, show
       return { ...row, challenge, start, end, status, inWindow, expired, today };
     });
 
-    const buckets = {
-      new: mapped.filter(entry => entry.status === "new" && entry.inWindow && entry.today >= entry.start),
-      active: mapped.filter(entry => entry.status === "active" && entry.inWindow),
-      completed: mapped.filter(entry => entry.status === "completed" || entry.status === "completed_pending" || entry.status === "pending_review" || entry.status === "pending"),
-      dismissed: mapped.filter(entry => entry.status === "dismissed"),
-      expired: mapped.filter(entry => entry.expired)
-    };
-    return { mapped, buckets };
+    const completed = mapped.filter(entry => entry.status === "completed" || entry.status === "completed_pending" || entry.status === "pending_review" || entry.status === "pending");
+    const current = mapped.filter(entry =>
+      (entry.status === "new" || entry.status === "active" || entry.status === "dismissed") &&
+      entry.inWindow &&
+      !entry.expired
+    );
+    const newVisible = mapped.filter(entry => entry.status === "new" && entry.inWindow && entry.today >= entry.start);
+    const activeVisible = mapped.filter(entry => entry.status === "active" && entry.inWindow);
+    const expired = mapped.filter(entry => entry.expired);
+    return { mapped, buckets: { current, completed, expired, newVisible, activeVisible } };
+  };
+
+  const markNewBannerOpened = () => {
+    sessionStorage.setItem(NEW_BANNER_OPENED_KEY, "1");
+  };
+
+  const openListAt = (tabKey) => {
+    activeTab = tabKey;
+    markNewBannerOpened();
+    renderListModal();
+    renderHomeSurface();
+    setListOpen(true);
   };
 
   const renderHomeSurface = () => {
     const { buckets } = derive();
-    const newCount = buckets.new.length;
-    const activeCount = buckets.active.length;
+    const newCount = buckets.newVisible.length;
+    const activeCount = buckets.activeVisible.length;
     const completedCount = buckets.completed.length;
+    const formatCountLabel = (count, singular, plural) => `${count} ${count === 1 ? singular : plural}`;
 
     if (newCount > 0) {
+      const shouldAnimate = !sessionStorage.getItem(NEW_BANNER_SEEN_KEY);
+      const wasOpened = !!sessionStorage.getItem(NEW_BANNER_OPENED_KEY);
+      sessionStorage.setItem(NEW_BANNER_SEEN_KEY, "1");
       noticeMount.innerHTML = `
-        <button id="studentChallengesNoticeBtn" type="button" class="student-challenges-notice-card">
-          You have ${newCount} new Teacher Challenges! Tap to view.
+        <button id="studentChallengesNoticeBtn" type="button" class="student-challenges-notice-banner${shouldAnimate ? " is-enter" : ""}${wasOpened ? " is-soft" : ""}">
+          <span class="student-challenges-notice-title">&#10024; You have ${newCount} NEW Teacher Challenges!</span>
+          <span class="student-challenges-notice-subtext">Tap to view.</span>
         </button>
       `;
       subtleMount.innerHTML = "";
-      const btn = document.getElementById("studentChallengesNoticeBtn");
-      btn?.addEventListener("click", () => {
-        activeTab = "new";
-        renderListModal();
-        setListOpen(true);
-      });
+      document.getElementById("studentChallengesNoticeBtn")?.addEventListener("click", () => openListAt("current"));
       return;
     }
 
-    noticeMount.innerHTML = "";
+    noticeMount.innerHTML = `<div class="student-challenges-notice-spacer" aria-hidden="true"></div>`;
     if (activeCount > 0) {
-      subtleMount.innerHTML = `<button id="studentChallengesSubtleBtn" type="button" class="student-challenges-subtle-link">Active challenges (${activeCount})</button>`;
-      document.getElementById("studentChallengesSubtleBtn")?.addEventListener("click", () => {
-        activeTab = "active";
-        renderListModal();
-        setListOpen(true);
-      });
+      subtleMount.innerHTML = `<button id="studentChallengesSubtleBtn" type="button" class="student-challenges-pill-link">${formatCountLabel(activeCount, "Active Challenge", "Active Challenges")}</button>`;
+      document.getElementById("studentChallengesSubtleBtn")?.addEventListener("click", () => openListAt("current"));
       return;
     }
 
     if (completedCount > 0) {
       subtleMount.innerHTML = `<button id="studentChallengesSubtleBtn" type="button" class="student-challenges-subtle-link">Completed challenges (${completedCount})</button>`;
-      document.getElementById("studentChallengesSubtleBtn")?.addEventListener("click", () => {
-        activeTab = "completed";
-        renderListModal();
-        setListOpen(true);
-      });
+      document.getElementById("studentChallengesSubtleBtn")?.addEventListener("click", () => openListAt("completed"));
       return;
     }
 
@@ -183,10 +191,8 @@ export async function initStudentChallengesUI({ studioId, studentId, roles, show
   const getTabRows = () => {
     const { buckets } = derive();
     return [
-      { key: "new", label: "New", rows: buckets.new },
-      { key: "active", label: "Active", rows: buckets.active },
+      { key: "current", label: "Current", rows: buckets.current },
       { key: "completed", label: "Completed", rows: buckets.completed },
-      { key: "dismissed", label: "Dismissed", rows: buckets.dismissed },
       { key: "expired", label: "Expired", rows: buckets.expired }
     ];
   };
@@ -194,7 +200,7 @@ export async function initStudentChallengesUI({ studioId, studentId, roles, show
   const renderListModal = () => {
     if (!tabsEl || !listEl) return;
     const tabRows = getTabRows();
-    if (!tabRows.some(tab => tab.key === activeTab)) activeTab = "new";
+    if (!tabRows.some(tab => tab.key === activeTab)) activeTab = "current";
 
     tabsEl.innerHTML = tabRows.map(tab => `
       <button
@@ -206,32 +212,69 @@ export async function initStudentChallengesUI({ studioId, studentId, roles, show
       </button>
     `).join("");
 
-    const current = tabRows.find(tab => tab.key === activeTab) || tabRows[0];
-    if (!current.rows.length) {
+    const currentTab = tabRows.find(tab => tab.key === activeTab) || tabRows[0];
+    if (!currentTab.rows.length) {
       listEl.innerHTML = `<div class="student-challenge-empty">No challenges in this tab.</div>`;
     } else {
-      listEl.innerHTML = current.rows.map(row => `
-        <button type="button" class="student-challenge-row" data-assignment-id="${row.id}">
-          <div class="student-challenge-row-top">
-            <div class="student-challenge-title">${String(row.challenge.title || "Untitled challenge")}</div>
-            <span class="student-challenge-badge ${badgeClass(row)}">${row.expired ? "Expired" : badgeText(row.status)}</span>
+      listEl.innerHTML = currentTab.rows.map(row => {
+        const isCurrent = currentTab.key === "current";
+        const isActiveRow = row.status === "active";
+        return `
+          <div class="student-challenge-row" data-assignment-id="${row.id}">
+            <div class="student-challenge-row-top">
+              <div class="student-challenge-title">${String(row.challenge.title || "Untitled challenge")}</div>
+              ${isCurrent
+                ? `<button
+                    type="button"
+                    class="student-challenge-switch ${isActiveRow ? "is-active" : "is-inactive"}"
+                    data-toggle-assignment-id="${row.id}"
+                    data-next-status="${isActiveRow ? "dismissed" : "active"}"
+                    aria-label="Set challenge ${isActiveRow ? "inactive" : "active"}"
+                    aria-pressed="${isActiveRow ? "true" : "false"}"
+                  >${isActiveRow ? "Active" : "Inactive"}</button>`
+                : `<span class="student-challenge-badge ${badgeClass(row)}">${row.expired ? "Expired" : badgeText(row.status)}</span>`}
+            </div>
+            <div class="student-challenge-meta">${Number(row.challenge.points || 0)} points</div>
+            <div class="student-challenge-meta">Ends ${toDateText(row.end)}</div>
           </div>
-          <div class="student-challenge-meta">${Number(row.challenge.points || 0)} points</div>
-          <div class="student-challenge-meta">Ends ${toDateText(row.end)}</div>
-        </button>
-      `).join("");
+        `;
+      }).join("");
     }
 
     tabsEl.querySelectorAll("[data-tab]").forEach(btn => {
       btn.addEventListener("click", () => {
-        activeTab = String(btn.getAttribute("data-tab") || "new");
+        activeTab = String(btn.getAttribute("data-tab") || "current");
         renderListModal();
       });
     });
 
-    listEl.querySelectorAll("[data-assignment-id]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const id = String(btn.getAttribute("data-assignment-id") || "");
+    listEl.querySelectorAll("[data-toggle-assignment-id]").forEach(btn => {
+      btn.addEventListener("click", async event => {
+        event.stopPropagation();
+        const id = String(btn.getAttribute("data-toggle-assignment-id") || "");
+        const nextStatus = String(btn.getAttribute("data-next-status") || "");
+        const row = assignments.find(entry => String(entry.id) === id);
+        if (!row || !nextStatus) return;
+        try {
+          if (String(row.status || "") === "dismissed" && nextStatus === "active") {
+            await updateAssignmentStatus(id, "new");
+          }
+          await updateAssignmentStatus(id, nextStatus);
+          await refreshAll();
+          renderListModal();
+          setListOpen(true);
+        } catch (error) {
+          console.error("[StudentChallenges] toggle failed", error);
+          if (typeof showToast === "function") showToast("Couldn't update challenge status.");
+        }
+      });
+    });
+
+    listEl.querySelectorAll("[data-assignment-id]").forEach(rowEl => {
+      rowEl.addEventListener("click", event => {
+        const target = event.target instanceof Element ? event.target : null;
+        if (target?.closest(".student-challenge-switch")) return;
+        const id = String(rowEl.getAttribute("data-assignment-id") || "");
         const row = assignments.find(entry => String(entry.id) === id);
         if (!row) return;
         setListOpen(false);
@@ -244,18 +287,13 @@ export async function initStudentChallengesUI({ studioId, studentId, roles, show
   const refreshAll = async () => {
     assignments = await fetchMyChallengeAssignments(studio, targetStudentId);
     const { buckets } = derive();
-    const newVisible = buckets.new;
-    const activeVisible = buckets.active;
-    const completed = buckets.completed;
-    const dismissed = buckets.dismissed;
-    const expired = buckets.expired;
     console.log("[StudentChallengesUI] counts", {
       total: assignments.length,
-      newVisible: newVisible.length,
-      activeVisible: activeVisible.length,
-      completed: completed.length,
-      dismissed: dismissed.length,
-      expired: expired.length,
+      newVisible: buckets.newVisible.length,
+      activeVisible: buckets.activeVisible.length,
+      current: buckets.current.length,
+      completed: buckets.completed.length,
+      expired: buckets.expired.length
     });
 
     const creatorIds = Array.from(new Set(
@@ -278,13 +316,6 @@ export async function initStudentChallengesUI({ studioId, studentId, roles, show
     if (listOverlay?.style.display === "flex") renderListModal();
   };
 
-  const doStatusUpdate = async (assignmentId, nextStatus, successMessage) => {
-    await updateAssignmentStatus(assignmentId, nextStatus);
-    if (typeof showToast === "function") showToast(successMessage);
-    setDetailOpen(false);
-    await refreshAll();
-  };
-
   const renderDetailModal = (raw) => {
     if (!detailBody) return;
     const { mapped } = derive();
@@ -299,14 +330,7 @@ export async function initStudentChallengesUI({ studioId, studentId, roles, show
     const teacherName = creator ? `${creator.firstName || ""} ${creator.lastName || ""}`.trim() || "Teacher" : "Teacher";
     const isExpired = row.expired;
     const isCompleted = row.status === "completed";
-    const isNew = row.status === "new";
-    const isActive = row.status === "active";
     const isPendingReview = row.status === "completed_pending" || row.status === "pending_review" || row.status === "pending";
-    const isDismissed = row.status === "dismissed";
-    const canReactivate = isDismissed && row.inWindow && row.today >= row.start;
-    const canAccept = isNew && !isExpired && row.today >= row.start && row.today <= row.end;
-    const canDismiss = isNew && !isExpired;
-    const canComplete = isActive && !isExpired;
 
     detailBody.innerHTML = `
       <div class="student-challenge-detail">
@@ -320,10 +344,6 @@ export async function initStudentChallengesUI({ studioId, studentId, roles, show
         ${isPendingReview ? '<div class="student-challenge-status-note">Pending teacher approval</div>' : ""}
         <div class="modal-actions">
           <button id="challengeDetailBackBtn" type="button" class="blue-button">Back</button>
-          ${canAccept ? '<button id="challengeDetailAcceptBtn" type="button" class="blue-button">Accept</button>' : ""}
-          ${canDismiss ? '<button id="challengeDetailDismissBtn" type="button" class="blue-button btn-ghost">Decline & dismiss</button>' : ""}
-          ${canComplete ? '<button id="challengeDetailCompleteBtn" type="button" class="blue-button">Yes, I completed it</button>' : ""}
-          ${isDismissed ? `<button id="challengeDetailReactivateBtn" type="button" class="blue-button"${canReactivate ? "" : " disabled"}>Reactivate</button>` : ""}
         </div>
       </div>
     `;
@@ -332,32 +352,6 @@ export async function initStudentChallengesUI({ studioId, studentId, roles, show
       setDetailOpen(false);
       renderListModal();
       setListOpen(true);
-    });
-    detailBody.querySelector("#challengeDetailAcceptBtn")?.addEventListener("click", () => {
-      doStatusUpdate(row.id, "active", "Challenge accepted");
-    });
-    detailBody.querySelector("#challengeDetailDismissBtn")?.addEventListener("click", () => {
-      doStatusUpdate(row.id, "dismissed", "Challenge dismissed");
-    });
-    detailBody.querySelector("#challengeDetailCompleteBtn")?.addEventListener("click", () => {
-      (async () => {
-        try {
-          await completeChallengeAndCreateLog(row.id, targetStudentId, row.today);
-          if (typeof showToast === "function") showToast("Awesome — sent to your teacher for approval!");
-          setDetailOpen(false);
-          await refreshAll();
-          activeTab = "completed";
-          renderListModal();
-          setListOpen(true);
-        } catch (error) {
-          console.error("[StudentChallenges] complete bridge failed", error);
-          if (typeof showToast === "function") showToast("Couldn't submit challenge completion.");
-        }
-      })();
-    });
-    detailBody.querySelector("#challengeDetailReactivateBtn")?.addEventListener("click", () => {
-      if (!canReactivate) return;
-      doStatusUpdate(row.id, "new", "Challenge reactivated");
     });
   };
 

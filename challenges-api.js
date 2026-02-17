@@ -68,3 +68,30 @@ export async function fetchMyChallengeAssignments(studioId, studentId) {
   if (error) throw error;
   return Array.isArray(data) ? data : [];
 }
+
+export async function listStaffChallenges(studioId) {
+  const { data, error } = await supabase.rpc("list_teacher_challenges_for_staff", {
+    p_studio_id: studioId
+  });
+  if (error) throw error;
+  return Array.isArray(data) ? data : [];
+}
+
+export async function updateChallenge(payload) {
+  const { error } = await supabase.rpc("update_teacher_challenge", {
+    p_challenge_id: payload?.challengeId ?? null,
+    p_title: payload?.title ?? null,
+    p_description: payload?.description ?? null,
+    p_points: payload?.points ?? null,
+    p_start_date: payload?.startDate ?? null,
+    p_end_date: payload?.endDate ?? null
+  });
+  if (error) throw error;
+}
+
+export async function deleteChallenge(challengeId) {
+  const { error } = await supabase.rpc("delete_teacher_challenge", {
+    p_challenge_id: challengeId
+  });
+  if (error) throw error;
+}
