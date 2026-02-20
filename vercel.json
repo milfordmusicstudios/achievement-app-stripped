@@ -1,5 +1,18 @@
-{
+﻿{
   "redirects": [
+    {
+      "source": "/Summer",
+      "has": [
+        { "type": "host", "value": "milfordmusic.com" }
+      ],
+      "destination": "https://awards.milfordmusic.com/summer.html",
+      "permanent": true
+    },
+    {
+      "source": "/Summer",
+      "destination": "/summer.html",
+      "permanent": false
+    },
     {
       "source": "/(.*)",
       "has": [
