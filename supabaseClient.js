@@ -3,6 +3,7 @@ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 import { APP_ENV, getSupabaseConfig } from "./config.js";
 
 const STORAGE_KEY = "aa_last_env";
+const AUTH_FLOW_TYPE_KEY = "aa_auth_flow_type";
 const SUPABASE_KEY_PREFIX = "sb-";
 const SUPABASE_KEY_INDICATOR = "supabase";
 
@@ -29,6 +30,18 @@ function readTokensFromHash() {
 }
 
 async function ingestSessionFromHash() {
+  const rawHash = (window.location.hash || "").replace(/^#/, "");
+  const hashParams = new URLSearchParams(rawHash);
+  const flowType = (hashParams.get("type") || "").toLowerCase();
+
+  if (flowType) {
+    try {
+      sessionStorage.setItem(AUTH_FLOW_TYPE_KEY, flowType);
+    } catch (error) {
+      console.warn("[Supabase] Unable to persist auth flow hint:", error);
+    }
+  }
+
   const tokens = readTokensFromHash();
   if (!tokens) return false;
 
