@@ -170,3 +170,83 @@ end;
 $$;
 
 grant execute on function public.delete_teacher_challenge(uuid) to authenticated;
+
+create or replace function public.approve_teacher_challenge_completion(
+  p_assignment_id uuid,
+  p_log_id uuid
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_caller_id uuid := auth.uid();
+  v_assignment record;
+  v_is_admin boolean := false;
+  v_is_teacher boolean := false;
+begin
+  if v_caller_id is null then
+    raise exception 'Not authenticated';
+  end if;
+
+  if p_assignment_id is null or p_log_id is null then
+    raise exception 'Missing assignment or log id';
+  end if;
+
+  select
+    a.id,
+    a.student_id,
+    a.status,
+    a.studio_id,
+    c.id as challenge_id
+  into v_assignment
+  from public.teacher_challenge_assignments a
+  join public.teacher_challenges c
+    on c.id = a.challenge_id
+  where a.id = p_assignment_id
+  for update;
+
+  if not found then
+    raise exception 'Assignment not found: %', p_assignment_id;
+  end if;
+
+  v_is_admin := public.has_any_studio_role(
+    v_assignment.studio_id,
+    v_caller_id,
+    array['admin']::text[]
+  );
+  v_is_teacher := public.has_any_studio_role(
+    v_assignment.studio_id,
+    v_caller_id,
+    array['teacher']::text[]
+  );
+
+  if not v_is_admin and not v_is_teacher then
+    raise exception 'Not allowed to approve challenge completion';
+  end if;
+
+  if v_assignment.status not in ('pending_review', 'pending') then
+    raise exception 'Assignment is not pending review';
+  end if;
+
+  update public.logs
+  set status = 'approved'
+  where id = p_log_id
+    and studio_id = v_assignment.studio_id
+    and "userId" = v_assignment.student_id
+    and status = 'pending';
+
+  if not found then
+    raise exception 'Pending log not found for assignment';
+  end if;
+
+  update public.teacher_challenge_assignments
+  set
+    status = 'completed',
+    completed_at = coalesce(completed_at, now())
+  where id = v_assignment.id;
+end;
+$$;
+
+grant execute on function public.approve_teacher_challenge_completion(uuid, uuid) to authenticated;

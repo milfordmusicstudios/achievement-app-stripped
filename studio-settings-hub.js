@@ -5,7 +5,7 @@ const PANEL_URLS = {
   "manage-users": "manage-users.html"
 };
 
-const DEFAULT_STUDIO_LOGO = "images/logos/logo.png";
+const DEFAULT_STUDIO_LOGO = "images/logos/amplified.png";
 
 function toggleInviteModal(open) {
   const modal = document.getElementById("inviteUserModal");

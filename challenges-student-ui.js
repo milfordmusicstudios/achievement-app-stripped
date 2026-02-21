@@ -32,6 +32,18 @@ function badgeClass(row) {
   return "";
 }
 
+function setStudentChallengeToggleVisual(button, isActive) {
+  if (!(button instanceof HTMLElement)) return;
+  const textEl = button.querySelector(".student-challenge-switch-text");
+  if (textEl) textEl.textContent = isActive ? "Active" : "Inactive";
+  button.classList.toggle("is-active", isActive);
+  button.classList.toggle("is-inactive", !isActive);
+  button.setAttribute("aria-pressed", isActive ? "true" : "false");
+  button.setAttribute("aria-label", `Set challenge ${isActive ? "inactive" : "active"}`);
+  button.setAttribute("data-next-status", isActive ? "dismissed" : "active");
+  button.setAttribute("data-state-label", isActive ? "Active" : "Inactive");
+}
+
 function ensureStudentChallengeModals() {
   if (!document.getElementById("studentChallengesListOverlay")) {
     const overlay = document.createElement("div");
@@ -231,7 +243,8 @@ export async function initStudentChallengesUI({ studioId, studentId, roles, show
                     data-next-status="${isActiveRow ? "dismissed" : "active"}"
                     aria-label="Set challenge ${isActiveRow ? "inactive" : "active"}"
                     aria-pressed="${isActiveRow ? "true" : "false"}"
-                  >${isActiveRow ? "Active" : "Inactive"}</button>`
+                    data-state-label="${isActiveRow ? "Active" : "Inactive"}"
+                  ><span class="student-challenge-switch-thumb" aria-hidden="true"></span><span class="student-challenge-switch-text">${isActiveRow ? "Active" : "Inactive"}</span></button>`
                 : `<span class="student-challenge-badge ${badgeClass(row)}">${row.expired ? "Expired" : badgeText(row.status)}</span>`}
             </div>
             <div class="student-challenge-meta">${Number(row.challenge.points || 0)} points</div>
@@ -255,15 +268,19 @@ export async function initStudentChallengesUI({ studioId, studentId, roles, show
         const nextStatus = String(btn.getAttribute("data-next-status") || "");
         const row = assignments.find(entry => String(entry.id) === id);
         if (!row || !nextStatus) return;
+        const wasActive = String(row.status || "") === "active";
+        setStudentChallengeToggleVisual(btn, !wasActive);
         try {
           if (String(row.status || "") === "dismissed" && nextStatus === "active") {
             await updateAssignmentStatus(id, "new");
           }
           await updateAssignmentStatus(id, nextStatus);
+          row.status = nextStatus;
           await refreshAll();
           renderListModal();
           setListOpen(true);
         } catch (error) {
+          setStudentChallengeToggleVisual(btn, wasActive);
           console.error("[StudentChallenges] toggle failed", error);
           if (typeof showToast === "function") showToast("Couldn't update challenge status.");
         }

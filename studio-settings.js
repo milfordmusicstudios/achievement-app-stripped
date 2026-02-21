@@ -163,7 +163,7 @@ function handleSettings(settings = {}) {
   refreshStudioFormInteractions();
 }
 
-const DEFAULT_STUDIO_PREVIEW = "images/logos/logo.png";
+const DEFAULT_STUDIO_PREVIEW = "images/logos/amplified.png";
 
 function showPreview(url) {
   const preview = document.getElementById("studioLogoPreview");

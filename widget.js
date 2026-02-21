@@ -20,7 +20,7 @@
   container.innerHTML = `
     <div style="background:white; max-width:400px; width:90%; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.2); padding:20px;" class="white-page">
       <main class="app">
-        <img src="https://achievement-app-stripped.vercel.app/images/logos/logo.png" 
+        <img src="https://achievement-app-stripped.vercel.app/images/logos/amplified.png" 
              alt="App Logo" class="logo" />
         <h2 class="welcome-title" style="color:#3eb7f8; text-align:center;">Achievement Awards</h2>
 

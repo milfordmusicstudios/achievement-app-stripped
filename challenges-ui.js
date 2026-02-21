@@ -151,9 +151,6 @@ function ensureModals() {
           </div>
           <div id="staffChallengesModalList" class="challenge-active-list"></div>
         </div>
-        <div class="modal-actions">
-          <button id="staffChallengesFooterCloseBtn" type="button" class="blue-button">Close</button>
-        </div>
       </div>
     `;
     document.body.appendChild(overlay);
@@ -165,12 +162,62 @@ function ensureModals() {
     overlay.className = "modal-overlay";
     overlay.style.display = "none";
     overlay.innerHTML = `
-      <div class="modal staff-challenge-modal">
-        <div class="modal-header">
+      <div class="modal staff-challenge-modal challenge-detail-modal">
+        <div class="modal-header challenge-detail-modal-header">
+          <button id="challengeDetailHeaderBackBtn" type="button" class="challenge-action-link challenge-action-link-header">&larr; Back to active</button>
           <div class="modal-title">Challenge details</div>
-          <button id="challengeDetailCloseBtn" class="modal-close" type="button">x</button>
+          <div class="challenge-detail-header-actions">
+            <button id="challengeDetailMoreBtn" class="challenge-header-menu-trigger" type="button" aria-haspopup="true" aria-expanded="false" aria-label="More actions">...</button>
+            <div id="challengeDetailMoreMenu" class="challenge-header-menu" hidden>
+              <button id="challengeDetailDeleteMenuBtn" type="button" class="challenge-header-menu-item is-destructive">Delete challenge</button>
+            </div>
+            <button id="challengeDetailCloseBtn" class="modal-close" type="button" aria-label="Close">x</button>
+          </div>
         </div>
         <div id="challengeDetailBody" class="modal-body"></div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+  }
+
+  if (!document.getElementById("challengeConfirmOverlay")) {
+    const overlay = document.createElement("div");
+    overlay.id = "challengeConfirmOverlay";
+    overlay.className = "modal-overlay";
+    overlay.style.display = "none";
+    overlay.innerHTML = `
+      <div class="modal challenge-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="challengeConfirmTitle">
+        <div class="challenge-confirm-head">
+          <div id="challengeConfirmTitle" class="challenge-confirm-title">Confirm action</div>
+        </div>
+        <div id="challengeConfirmBody" class="challenge-confirm-body"></div>
+        <div class="challenge-confirm-actions">
+          <button id="challengeConfirmCancelBtn" type="button" class="challenge-action-btn is-secondary">Cancel</button>
+          <button id="challengeConfirmOkBtn" type="button" class="challenge-action-btn is-destructive">Delete challenge</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+  }
+
+  if (!document.getElementById("challengeLogReviewOverlay")) {
+    const overlay = document.createElement("div");
+    overlay.id = "challengeLogReviewOverlay";
+    overlay.className = "modal-overlay";
+    overlay.style.display = "none";
+    overlay.innerHTML = `
+      <div class="modal challenge-log-review-modal" role="dialog" aria-modal="true" aria-labelledby="challengeLogReviewTitle">
+        <div class="modal-header">
+          <div id="challengeLogReviewTitle" class="modal-title">Review student log</div>
+          <button id="challengeLogReviewCloseBtn" class="modal-close" type="button" aria-label="Close">x</button>
+        </div>
+        <div class="modal-body">
+          <div id="challengeLogReviewBody" class="challenge-log-review-body"></div>
+        </div>
+        <div class="challenge-log-review-actions">
+          <button id="challengeLogReviewCancelBtn" type="button" class="challenge-action-btn is-secondary">Cancel</button>
+          <button id="challengeLogReviewApproveBtn" type="button" class="challenge-action-btn is-primary">Approve log</button>
+        </div>
       </div>
     `;
     document.body.appendChild(overlay);
@@ -238,16 +285,32 @@ export async function initStaffChallengesUI({ studioId, user, roles, showToast }
   const errorEl = document.getElementById("challengeCreateError");
   const challengesModalList = document.getElementById("staffChallengesModalList");
   const challengesCloseBtn = document.getElementById("staffChallengesCloseBtn");
-  const challengesFooterCloseBtn = document.getElementById("staffChallengesFooterCloseBtn");
   const challengesTabActiveBtn = document.getElementById("staffChallengesTabActive");
   const challengesTabEndedBtn = document.getElementById("staffChallengesTabEnded");
   const detailBody = document.getElementById("challengeDetailBody");
+  const detailHeaderBackBtn = document.getElementById("challengeDetailHeaderBackBtn");
+  const detailMoreBtn = document.getElementById("challengeDetailMoreBtn");
+  const detailMoreMenu = document.getElementById("challengeDetailMoreMenu");
+  const detailDeleteMenuBtn = document.getElementById("challengeDetailDeleteMenuBtn");
   const detailCloseBtn = document.getElementById("challengeDetailCloseBtn");
+  const confirmOverlay = document.getElementById("challengeConfirmOverlay");
+  const confirmTitleEl = document.getElementById("challengeConfirmTitle");
+  const confirmBodyEl = document.getElementById("challengeConfirmBody");
+  const confirmCancelBtn = document.getElementById("challengeConfirmCancelBtn");
+  const confirmOkBtn = document.getElementById("challengeConfirmOkBtn");
+  const logReviewOverlay = document.getElementById("challengeLogReviewOverlay");
+  const logReviewBody = document.getElementById("challengeLogReviewBody");
+  const logReviewCloseBtn = document.getElementById("challengeLogReviewCloseBtn");
+  const logReviewCancelBtn = document.getElementById("challengeLogReviewCancelBtn");
+  const logReviewApproveBtn = document.getElementById("challengeLogReviewApproveBtn");
   let activeChallengesRows = [];
   let endedChallengesRows = [];
   let editingChallengeId = null;
   let currentChallengesTab = "active";
   let lastModalTrigger = null;
+  let confirmResolve = null;
+  let selectedPendingLog = null;
+  let selectedPendingContext = null;
 
   const setError = (message = "") => {
     if (!errorEl) return;
@@ -282,6 +345,194 @@ export async function initStaffChallengesUI({ studioId, user, roles, showToast }
 
   const hideDetailModal = () => {
     if (detailOverlay) detailOverlay.style.display = "none";
+    if (detailMoreMenu) detailMoreMenu.hidden = true;
+    if (detailMoreBtn) detailMoreBtn.setAttribute("aria-expanded", "false");
+  };
+
+  const hideConfirmModal = (result = false) => {
+    if (confirmOverlay) confirmOverlay.style.display = "none";
+    if (typeof confirmResolve === "function") {
+      const resolve = confirmResolve;
+      confirmResolve = null;
+      resolve(Boolean(result));
+    }
+  };
+
+  const openConfirmModal = ({ title, message, confirmText } = {}) => new Promise(resolve => {
+    confirmResolve = resolve;
+    if (confirmTitleEl) confirmTitleEl.textContent = String(title || "Confirm action");
+    if (confirmBodyEl) confirmBodyEl.textContent = String(message || "");
+    if (confirmOkBtn) confirmOkBtn.textContent = String(confirmText || "Confirm");
+    if (confirmOverlay) confirmOverlay.style.display = "flex";
+    confirmCancelBtn?.focus();
+  });
+
+  const getDeleteChallengeFailureMessage = (error) => {
+    const fallback = "Unable to delete: this challenge is connected to student logs.";
+    const raw = String(error?.message || error?.details || "").toLowerCase();
+    if (!raw) return fallback;
+    if (raw.includes("completed") || raw.includes("pending_review") || raw.includes("pending review")) {
+      return "Unable to delete: this challenge is connected to student logs.";
+    }
+    if (raw.includes("foreign key") || raw.includes("violates")) {
+      return "Unable to delete: this challenge is connected to student logs.";
+    }
+    return fallback;
+  };
+
+  const closeLogReviewModal = () => {
+    selectedPendingLog = null;
+    selectedPendingContext = null;
+    if (logReviewOverlay) logReviewOverlay.style.display = "none";
+    if (logReviewBody) logReviewBody.innerHTML = "";
+    if (logReviewApproveBtn) {
+      logReviewApproveBtn.disabled = true;
+      logReviewApproveBtn.textContent = "Approve log";
+    }
+  };
+
+  const fetchPendingChallengeLogForStudent = async ({ studentId, challengeTitle }) => {
+    const student = String(studentId || "").trim();
+    const title = String(challengeTitle || "").trim();
+    if (!student) return null;
+
+    const { data, error } = await supabase
+      .from("logs")
+      .select("id, userId, category, status, date, points, notes, created_at")
+      .eq("studio_id", resolvedStudioId)
+      .eq("userId", student)
+      .in("status", ["pending", "pending_review", "pending approval", "completed_pending"])
+      .order("date", { ascending: false })
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+
+    const allRows = Array.isArray(data) ? data : [];
+    const rows = allRows.filter(entry => {
+      const statusCanonical = String(entry?.status || "")
+        .trim()
+        .toLowerCase()
+        .replace(/[\s\-\.]+/g, "_");
+      const isPendingLike = statusCanonical === "pending" || statusCanonical === "pending_review" || statusCanonical === "completed_pending";
+      if (!isPendingLike) return false;
+      const category = String(entry?.category || "").trim().toLowerCase();
+      const notes = String(entry?.notes || "").trim().toLowerCase();
+      return (
+        category === "teacher challenge" ||
+        notes.startsWith("teacher challenge:") ||
+        (title && notes.includes(title.toLowerCase()))
+      );
+    });
+    if (window?.APP_ENV === "dev") {
+      console.debug("[ChallengesUI] pending log lookup", {
+        studentId: student,
+        challengeTitle: title,
+        fetchedRows: allRows.length,
+        matchedRows: rows.length,
+        fetchedStatuses: Array.from(new Set(allRows.map(entry => String(entry?.status || ""))))
+      });
+    }
+    if (!rows.length) {
+      const fallbackRows = allRows.filter(entry => {
+        const statusCanonical = String(entry?.status || "")
+          .trim()
+          .toLowerCase()
+          .replace(/[\s\-\.]+/g, "_");
+        return statusCanonical === "pending" || statusCanonical === "pending_review" || statusCanonical === "completed_pending";
+      });
+      if (window?.APP_ENV === "dev" && fallbackRows.length) {
+        console.debug("[ChallengesUI] using fallback pending log without title/category match", {
+          studentId: student,
+          challengeTitle: title,
+          fallbackRows: fallbackRows.length
+        });
+      }
+      if (!fallbackRows.length) return null;
+      return fallbackRows[0];
+    }
+    if (!title) return rows[0];
+
+    const exactPrefix = `teacher challenge: ${title}`.toLowerCase();
+    const exact = rows.find(entry => String(entry?.notes || "").trim().toLowerCase() === exactPrefix);
+    if (exact) return exact;
+
+    const partial = rows.find(entry => String(entry?.notes || "").toLowerCase().includes(title.toLowerCase()));
+    return partial || rows[0];
+  };
+
+  const openPendingLogReviewModal = async ({ assignmentId, studentId, studentName, challengeId, mode, challengeTitle }) => {
+    if (!logReviewOverlay || !logReviewBody) return;
+    selectedPendingLog = null;
+    selectedPendingContext = {
+      assignmentId: String(assignmentId || ""),
+      studentId: String(studentId || ""),
+      studentName: String(studentName || ""),
+      challengeId: String(challengeId || ""),
+      mode: String(mode || "active"),
+      challengeTitle: String(challengeTitle || "")
+    };
+    if (logReviewApproveBtn) {
+      logReviewApproveBtn.disabled = true;
+      logReviewApproveBtn.textContent = "Approve log";
+    }
+
+    logReviewBody.innerHTML = "Loading pending log...";
+    logReviewOverlay.style.display = "flex";
+
+    try {
+      const logRow = await fetchPendingChallengeLogForStudent({ studentId, challengeTitle });
+      if (!logRow) {
+        if (logReviewApproveBtn) logReviewApproveBtn.disabled = true;
+        logReviewBody.innerHTML = `
+          <div class="challenge-detail-meta">No pending log found for this student/challenge.</div>
+          <div class="challenge-detail-meta">This is a data sync issue. Challenge completion can only be approved from a pending student log.</div>
+        `;
+        return;
+      }
+
+      selectedPendingLog = logRow;
+      if (logReviewApproveBtn) {
+        logReviewApproveBtn.disabled = false;
+        logReviewApproveBtn.textContent = "Approve log";
+      }
+
+      const noteText = String(logRow.notes || "").trim() || "No notes provided.";
+      logReviewBody.innerHTML = `
+        <div class="challenge-log-review-meta">Student: ${escapeHtml(String(studentName || "Student"))}</div>
+        <div class="challenge-log-review-meta">Date: ${escapeHtml(String(logRow.date || ""))}</div>
+        <div class="challenge-log-review-meta">Points: ${Number(logRow.points || 0)}</div>
+        <div class="challenge-log-review-meta">Status: Pending</div>
+        <div class="challenge-log-review-notes">${escapeHtml(noteText)}</div>
+      `;
+    } catch (error) {
+      console.error("[ChallengesUI] failed to load pending log", error);
+      logReviewBody.innerHTML = `<div class="challenge-detail-meta">Unable to load student log.</div>`;
+    }
+  };
+
+  const toggleDetailMoreMenu = (nextOpen) => {
+    if (!detailMoreMenu || !detailMoreBtn) return;
+    const isOpen = !detailMoreMenu.hidden;
+    const shouldOpen = typeof nextOpen === "boolean" ? nextOpen : !isOpen;
+    detailMoreMenu.hidden = !shouldOpen;
+    detailMoreBtn.setAttribute("aria-expanded", shouldOpen ? "true" : "false");
+  };
+
+  const renderStatusChips = ({ newCount = 0, activeCount = 0, pendingCount = 0, completedCount = 0 }, options = {}) => {
+    const allowed = Array.isArray(options?.allowedKeys) && options.allowedKeys.length
+      ? new Set(options.allowedKeys)
+      : null;
+    const hideWhenEmpty = options?.hideWhenEmpty === true;
+    const chips = [
+      { key: "new", label: "Invited", value: Number(newCount || 0) },
+      { key: "active", label: "Accepted", value: Number(activeCount || 0) },
+      { key: "pending", label: "Pending", value: Number(pendingCount || 0) },
+      { key: "completed", label: "Completed", value: Number(completedCount || 0) }
+    ].filter(entry => entry.value > 0 && (!allowed || allowed.has(entry.key)));
+
+    if (!chips.length) return hideWhenEmpty ? "" : '<span class="challenge-status-empty">No activity yet</span>';
+    return chips
+      .map(entry => `<span class="challenge-status-chip is-${entry.key}">${entry.label} ${entry.value}</span>`)
+      .join("");
   };
 
   const setDefaultDates = () => {
@@ -292,9 +543,7 @@ export async function initStaffChallengesUI({ studioId, user, roles, showToast }
   };
 
   const clearDates = () => {
-    if (startInput) startInput.value = "";
-    if (endInput) endInput.value = "";
-    endTouched = true;
+    setDefaultDates();
   };
 
   const getTeacherDefaultId = () => {
@@ -373,11 +622,24 @@ export async function initStaffChallengesUI({ studioId, user, roles, showToast }
     if (createActionBtn) createActionBtn.disabled = !isFormValid();
   };
 
+  const setDefaultChallengeCategory = () => {
+    if (!categorySelect) return;
+    const preferred = "Personal";
+    const hasPreferred = Array.from(categorySelect.options).some(option => String(option.value || "") === preferred);
+    if (!hasPreferred) {
+      const option = document.createElement("option");
+      option.value = preferred;
+      option.textContent = preferred;
+      categorySelect.appendChild(option);
+    }
+    categorySelect.value = preferred;
+  };
+
   const resetCreateForm = () => {
     editingChallengeId = null;
     if (titleInput) titleInput.value = "";
     if (pointsInput) pointsInput.value = "5";
-    if (categorySelect) categorySelect.value = "";
+    setDefaultChallengeCategory();
     if (descriptionInput) descriptionInput.value = "";
     document.querySelectorAll("input[name='challengeAssignType']").forEach(input => {
       input.checked = input.value === "whole_studio";
@@ -514,36 +776,178 @@ export async function initStaffChallengesUI({ studioId, user, roles, showToast }
     }
   };
 
-  const renderChallengeDetail = (row, mode) => {
+  const getFieldValue = (sources, keys) => {
+    for (const source of sources) {
+      if (!source || typeof source !== "object") continue;
+      for (const key of keys) {
+        if (Object.prototype.hasOwnProperty.call(source, key) && source[key] != null && source[key] !== "") {
+          return source[key];
+        }
+      }
+    }
+    return null;
+  };
+
+  const normalizeAssignmentMode = (value) => {
+    const raw = String(value || "").trim().toLowerCase();
+    if (!raw) return "";
+    if (raw === "teacher_students" || raw === "teacher_only") return "teacher_students";
+    if (raw === "selected_students" || raw === "selected") return "selected_students";
+    if (raw === "whole_studio" || raw === "all_students" || raw === "all") return "all_students";
+    if (raw.includes("teacher")) return "teacher_students";
+    if (raw.includes("selected")) return "selected_students";
+    if (raw.includes("whole") || raw.includes("all")) return "all_students";
+    return "";
+  };
+
+  const resolveUserNameById = (userId, usersById) => {
+    const id = String(userId || "").trim();
+    if (!id) return "";
+    const fromMap = usersById?.get(id);
+    if (fromMap) return getUserLabel(fromMap);
+    const fromUsers = users.find(entry => String(entry?.id || "") === id);
+    if (fromUsers) return getUserLabel(fromUsers);
+    return "";
+  };
+
+  const mapAssignmentToDisplayStatus = (assignment) => {
+    const statusCanonical = String(assignment?.status || "")
+      .trim()
+      .toLowerCase()
+      .replace(/[\s\-\.]+/g, "_");
+    if (statusCanonical === "completed" || statusCanonical === "done") {
+      return { key: "completed", label: "Completed", rank: 4 };
+    }
+    if (statusCanonical === "pending" || statusCanonical === "pending_review" || statusCanonical === "needs_review" || statusCanonical === "completed_pending") {
+      return { key: "pending", label: "Pending", rank: 3 };
+    }
+    if (statusCanonical === "active" || statusCanonical === "accepted" || statusCanonical === "in_progress") {
+      return { key: "accepted", label: "Accepted", rank: 2 };
+    }
+    if (statusCanonical === "new") {
+      return { key: "invited", label: "Invited", rank: 1 };
+    }
+    return { key: "invited", label: "Invited", rank: 1 };
+  };
+
+  const fetchChallengeDetailContext = async (row) => {
+    const id = String(row?.id || "").trim();
+    if (!id) return { challengeData: row || null, assignments: [], usersById: new Map() };
+
+    let challengeData = row || null;
+    try {
+      const { data: challengeRow, error: challengeError } = await supabase
+        .from("teacher_challenges")
+        .select("*")
+        .eq("id", id)
+        .maybeSingle();
+      if (challengeError) throw challengeError;
+      if (challengeRow) challengeData = challengeRow;
+    } catch (error) {
+      console.warn("[ChallengesUI] unable to load full challenge detail row; using RPC row fallback", error);
+    }
+
+    const { data: assignmentRows, error: assignmentError } = await supabase
+      .from("teacher_challenge_assignments")
+      .select("id, student_id, status, accepted_at, completed_at")
+      .eq("challenge_id", id)
+      .eq("studio_id", resolvedStudioId);
+    if (assignmentError) throw assignmentError;
+
+    const assignments = Array.isArray(assignmentRows) ? assignmentRows : [];
+    if (window?.APP_ENV === "dev") {
+      const canonicalCounts = assignments.reduce((acc, entry) => {
+        const canonical = String(entry?.status || "")
+          .trim()
+          .toLowerCase()
+          .replace(/[\s\-\.]+/g, "_") || "(empty)";
+        acc[canonical] = Number(acc[canonical] || 0) + 1;
+        return acc;
+      }, {});
+      console.debug("[ChallengesUI] assignment statuses (raw + canonical)", {
+        challengeId: id,
+        uniqueRawStatuses: Array.from(new Set(assignments.map(entry => String(entry?.status || "")))),
+        canonicalCounts
+      });
+    }
+    const creatorId = String(getFieldValue([challengeData, row], ["created_by", "teacher_id"]) || "").trim();
+    const assignedTeacherId = String(getFieldValue([challengeData, row], ["assigned_teacher_id", "assignment_teacher_id"]) || "").trim();
+    const userIds = new Set(
+      assignments
+        .map(entry => String(entry?.student_id || "").trim())
+        .filter(Boolean)
+    );
+    if (creatorId) userIds.add(creatorId);
+    if (assignedTeacherId) userIds.add(assignedTeacherId);
+
+    const idList = Array.from(userIds);
+    if (!idList.length) return { challengeData, assignments, usersById: new Map() };
+
+    const { data: userRows, error: userError } = await supabase
+      .from("users")
+      .select("id, firstName, lastName, email, roles")
+      .in("id", idList);
+    if (userError) throw userError;
+
+    const usersById = new Map(
+      (Array.isArray(userRows) ? userRows : []).map(userRow => [String(userRow.id), userRow])
+    );
+    return { challengeData, assignments, usersById };
+  };
+
+  const renderChallengeDetail = async (row, mode) => {
     const parsed = splitCategoryFromDescription(row?.description);
     const isActiveMode = mode === "active";
+    const descriptionText = String(parsed.description || "").trim();
+    const shouldShowDescription = !!descriptionText && !/^no description provided\.?$/i.test(descriptionText);
     if (!detailBody) return;
+    const newCount = Number(row?.new_count || 0);
+    const activeCount = Number(row?.active_count || 0);
+    const pendingCount = Number(row?.completed_pending_count || 0);
+    const completedCount = Number(row?.completed_count || 0);
+
     detailBody.innerHTML = `
       <div class="challenge-detail-block">
         <div class="challenge-detail-title">${escapeHtml(String(row?.title || "Untitled challenge"))}</div>
-        <div class="challenge-detail-meta">${Number(row?.points || 0)} points</div>
-        <div class="challenge-detail-meta">Start: ${escapeHtml(String(row?.start_date || ""))}</div>
-        <div class="challenge-detail-meta">End: ${escapeHtml(String(row?.end_date || ""))}</div>
-        <div class="challenge-detail-meta">Assigned to ${Number(row?.assignment_count || 0)} students</div>
-        ${parsed.category ? `<div class="challenge-detail-meta">Category: ${escapeHtml(parsed.category)}</div>` : ""}
-        <div class="challenge-detail-desc">${escapeHtml(String(parsed.description || "No description provided."))}</div>
+        <div class="challenge-detail-meta challenge-detail-meta-stack">
+          <span id="challengeDetailCreatorLine">Created by: Loading...</span>
+          <span id="challengeDetailScopeLine">Assigned to: Loading...</span>
+        </div>
+        <div class="challenge-meta-card">
+          <div class="challenge-meta-grid">
+            <div class="challenge-detail-meta-cell"><span class="challenge-detail-meta-label">Start date</span><span class="challenge-detail-meta-value">${escapeHtml(String(row?.start_date || "")) || "N/A"}</span></div>
+            <div class="challenge-detail-meta-cell"><span class="challenge-detail-meta-label">End date</span><span class="challenge-detail-meta-value">${escapeHtml(String(row?.end_date || "")) || "N/A"}</span></div>
+            <div class="challenge-detail-meta-cell"><span class="challenge-detail-meta-label">Points</span><span class="challenge-detail-meta-value">${Number(row?.points || 0)}</span></div>
+            <div class="challenge-detail-meta-cell"><span class="challenge-detail-meta-label">Assigned students</span><span id="challengeDetailAssignedCount" class="challenge-detail-meta-value">${Number(row?.total_assigned ?? row?.assignment_count ?? 0)}</span></div>
+            <div class="challenge-detail-meta-cell challenge-meta-grid-full"><span class="challenge-detail-meta-label">Category</span><span class="challenge-detail-meta-value">${escapeHtml(String(parsed.category || "Not set"))}</span></div>
+          </div>
+        </div>
+        ${isActiveMode ? `<div class="challenge-status-chips">${renderStatusChips(
+          { newCount, activeCount, pendingCount, completedCount },
+          { allowedKeys: ["pending", "completed"], hideWhenEmpty: true }
+        )}</div>` : ""}
+        ${shouldShowDescription ? `<div class="challenge-detail-desc">${escapeHtml(descriptionText)}</div>` : ""}
+        <div id="challengeDetailStudentsBlock" class="challenge-roster-block">Loading student details...</div>
       </div>
-      <div class="modal-actions">
-        ${isActiveMode ? '<button id="challengeDetailEditBtn" type="button" class="blue-button">Edit</button>' : ""}
-        ${isActiveMode ? '<button id="challengeDetailDeactivateBtn" type="button" class="blue-button">Deactivate</button>' : ""}
-        ${isActiveMode ? '<button id="challengeDetailDeleteBtn" type="button" class="blue-button btn-ghost">Delete</button>' : ""}
-        ${mode === "ended" ? '<button id="challengeDetailCopyBtn" type="button" class="blue-button">Copy challenge</button>' : ""}
-        <button id="challengeDetailBackToListBtn" type="button" class="blue-button">Back to ${mode === "ended" ? "ended" : "active"} list</button>
+      <div class="challenge-detail-actions ${isActiveMode ? "is-active" : "is-ended"}">
+        ${isActiveMode ? '<button id="challengeDetailEditBtn" type="button" class="challenge-action-btn is-primary">Edit</button>' : ""}
+        ${isActiveMode ? '<button id="challengeDetailDeactivateBtn" type="button" class="challenge-action-btn is-secondary">Deactivate</button>' : ""}
+        ${mode === "ended" ? '<button id="challengeDetailCopyBtn" type="button" class="challenge-action-btn is-primary">Start New Round</button>' : ""}
       </div>
     `;
+    if (detailHeaderBackBtn) {
+      detailHeaderBackBtn.textContent = `\u2190 Back to ${mode === "ended" ? "ended" : "active"}`;
+      detailHeaderBackBtn.onclick = () => {
+        hideDetailModal();
+        currentChallengesTab = mode === "ended" ? "ended" : "active";
+        renderChallengesTabButtons();
+        openChallengesModalForTab(currentChallengesTab);
+      };
+    }
+    if (detailMoreBtn) detailMoreBtn.hidden = !isActiveMode;
+    toggleDetailMoreMenu(false);
     hideChallengesModal();
     if (detailOverlay) detailOverlay.style.display = "flex";
-    document.getElementById("challengeDetailBackToListBtn")?.addEventListener("click", () => {
-      hideDetailModal();
-      currentChallengesTab = mode === "ended" ? "ended" : "active";
-      renderChallengesTabButtons();
-      openChallengesModalForTab(currentChallengesTab);
-    });
     document.getElementById("challengeDetailCopyBtn")?.addEventListener("click", async () => {
       hideDetailModal();
       await openCreateModal(row);
@@ -552,13 +956,170 @@ export async function initStaffChallengesUI({ studioId, user, roles, showToast }
       hideDetailModal();
       await openEditModal(row);
     });
-    document.getElementById("challengeDetailDeleteBtn")?.addEventListener("click", async () => {
-      await handleDeleteChallenge(row);
+    if (detailDeleteMenuBtn) detailDeleteMenuBtn.onclick = async () => {
+      const deleted = await handleDeleteChallenge(row);
+      if (!deleted) return;
       hideDetailModal();
-    });
+      await openChallengesModalForTab(currentChallengesTab);
+    };
     document.getElementById("challengeDetailDeactivateBtn")?.addEventListener("click", async () => {
       await handleDeactivateChallenge(row);
     });
+
+    const creatorLine = document.getElementById("challengeDetailCreatorLine");
+    const scopeLine = document.getElementById("challengeDetailScopeLine");
+    const assignedCountEl = document.getElementById("challengeDetailAssignedCount");
+    const studentsBlock = document.getElementById("challengeDetailStudentsBlock");
+
+    const resolveCreatorLabel = ({ challengeData, usersById }) => {
+      const creatorId = String(getFieldValue([challengeData, row], ["created_by", "teacher_id"]) || "").trim();
+      const creatorName = resolveUserNameById(creatorId, usersById);
+      if (creatorName) return creatorName;
+      console.warn("[ChallengesUI] creator missing for challenge", { challenge_id: String(row?.id || "") });
+      return "Unknown";
+    };
+
+    const resolveScopeLabel = ({ challengeData, usersById, assignedCount }) => {
+      const modeValue = normalizeAssignmentMode(getFieldValue(
+        [challengeData, row],
+        ["assigned_to_mode", "assignment_type", "assign_type"]
+      ));
+      const allStudentsFlag = getFieldValue(
+        [challengeData, row],
+        ["assigned_to_all", "is_all_students", "all_students", "whole_studio"]
+      ) === true;
+      const teacherScopeFlag = getFieldValue(
+        [challengeData, row],
+        ["all_my_students", "assigned_to_teacher_students", "is_teacher_students"]
+      ) === true;
+      const assignedTeacherId = String(getFieldValue(
+        [challengeData, row],
+        ["assigned_teacher_id", "assignment_teacher_id", "teacher_id"]
+      ) || "").trim();
+
+      if (modeValue === "all_students" || allStudentsFlag) {
+        return "All students";
+      }
+      if (modeValue === "teacher_students" || teacherScopeFlag) {
+        const teacherName = resolveUserNameById(
+          assignedTeacherId || getFieldValue([challengeData, row], ["teacher_id", "created_by"]),
+          usersById
+        ) || "Unknown";
+        return `All students of ${teacherName}`;
+      }
+      return `Selected students (${assignedCount})`;
+    };
+
+    const buildRoster = ({ assignments, usersById }) => {
+      const rosterByStudent = new Map();
+      assignments.forEach(assignment => {
+        const studentId = String(assignment?.student_id || "").trim();
+        if (!studentId) return;
+        const userRow = usersById.get(studentId);
+        const name = userRow ? getUserLabel(userRow) : "Unknown student";
+        const mapped = mapAssignmentToDisplayStatus(assignment);
+        const existing = rosterByStudent.get(studentId);
+        if (!existing || mapped.rank > existing.rank) {
+          rosterByStudent.set(studentId, {
+            assignmentId: String(assignment?.id || ""),
+            studentId,
+            name,
+            statusKey: mapped.key,
+            statusLabel: mapped.label,
+            rank: mapped.rank
+          });
+        }
+      });
+
+      return Array.from(rosterByStudent.values())
+        .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }));
+    };
+
+    const countByStatusKey = (items) => items.reduce((acc, item) => {
+      const key = String(item?.statusKey || "").trim();
+      if (!key) return acc;
+      acc[key] = Number(acc[key] || 0) + 1;
+      return acc;
+    }, {});
+
+    try {
+      const { challengeData, assignments, usersById } = await fetchChallengeDetailContext(row);
+      const roster = buildRoster({ assignments, usersById });
+      const assignedCount = roster.length;
+      const creatorLabel = resolveCreatorLabel({ challengeData, usersById });
+      const scopeLabel = resolveScopeLabel({ challengeData, usersById, assignedCount });
+      const rosterStatusCounts = countByStatusKey(roster);
+      const devMode = window?.APP_ENV === "dev";
+
+      if (devMode) {
+        console.debug("[ChallengesUI] detail roster status debug", {
+          challengeId: String(row?.id || ""),
+          assignmentsFetched: assignments.length,
+          rosterStatusCounts
+        });
+        const listPendingCount = Number(row?.completed_pending_count || 0);
+        const rosterPendingCount = Number(rosterStatusCounts.pending || 0);
+        if (listPendingCount > 0 && rosterPendingCount === 0) {
+          console.warn("[ChallengesUI] pending mismatch between list and detail roster", {
+            challengeId: String(row?.id || ""),
+            listPendingCount,
+            rosterPendingCount
+          });
+        }
+      }
+
+      if (creatorLine) creatorLine.textContent = `Created by: ${creatorLabel}`;
+      if (scopeLine) scopeLine.textContent = `Assigned to: ${scopeLabel}`;
+      if (assignedCountEl) assignedCountEl.textContent = String(assignedCount);
+
+      if (studentsBlock) {
+        if (!roster.length) {
+          studentsBlock.innerHTML = `
+            <div class="challenge-roster-head">Assigned students (0)</div>
+            <div class="challenge-detail-meta">No assigned students.</div>
+          `;
+        } else {
+          studentsBlock.innerHTML = `
+            <div class="challenge-roster-head">Assigned students (${roster.length})</div>
+            <div class="challenge-roster-list">
+              ${roster.map(entry => `
+                <div class="challenge-roster-row">
+                  <span class="challenge-roster-name">${escapeHtml(entry.name)}</span>
+                  ${entry.statusKey === "pending"
+                    ? `<button type="button" class="challenge-status-pill status-${entry.statusKey} is-clickable" data-action="review-pending-log" data-assignment-id="${escapeHtml(entry.assignmentId)}" data-student-id="${escapeHtml(entry.studentId)}" data-student-name="${escapeHtml(entry.name)}">${escapeHtml(entry.statusLabel)}</button>`
+                    : `<span class="challenge-status-pill status-${entry.statusKey}">${escapeHtml(entry.statusLabel)}</span>`}
+                </div>
+              `).join("")}
+            </div>
+          `;
+          studentsBlock.querySelectorAll("[data-action='review-pending-log']").forEach(btn => {
+            btn.addEventListener("click", async event => {
+              event.stopPropagation();
+              const assignmentId = String(btn.getAttribute("data-assignment-id") || "");
+              const studentId = String(btn.getAttribute("data-student-id") || "");
+              const studentName = String(btn.getAttribute("data-student-name") || "");
+              await openPendingLogReviewModal({
+                assignmentId,
+                studentId,
+                studentName,
+                challengeId: String(row?.id || ""),
+                mode,
+                challengeTitle: String(row?.title || "")
+              });
+            });
+          });
+        }
+      }
+    } catch (error) {
+      console.error("[ChallengesUI] detail assignments fetch failed", error);
+      if (creatorLine) creatorLine.textContent = "Created by: Unknown";
+      if (scopeLine) {
+        scopeLine.textContent = `Assigned to: Selected students (${Number(row?.total_assigned ?? row?.assignment_count ?? 0)})`;
+      }
+      if (studentsBlock) {
+        studentsBlock.textContent = "Unable to load student details.";
+      }
+    }
   };
 
   const openEditModal = async (row) => {
@@ -568,23 +1129,29 @@ export async function initStaffChallengesUI({ studioId, user, roles, showToast }
 
   const handleDeleteChallenge = async (row) => {
     const challengeId = String(row?.id || "");
-    if (!challengeId) return;
+    if (!challengeId) return false;
+    const confirmed = await openConfirmModal({
+      title: "Delete challenge forever?",
+      message: "This cannot be undone.",
+      confirmText: "Delete forever"
+    });
+    if (!confirmed) return false;
     try {
       await deleteChallenge(challengeId);
       if (typeof showToast === "function") showToast("Challenge deleted");
       await loadHeaderCounts();
-      if (staffChallengesOverlay?.style.display === "flex") {
-        await openChallengesModalForTab(currentChallengesTab);
-      }
+      return true;
     } catch (error) {
       console.error("[ChallengesUI] delete failed", error);
-      if (typeof showToast === "function") showToast("Couldn't delete challenge.");
+      if (typeof showToast === "function") showToast(getDeleteChallengeFailureMessage(error));
+      return false;
     }
   };
 
   const handleDeactivateChallenge = async (row) => {
     const challengeId = String(row?.id || "");
     if (!challengeId) return;
+    if (!window.confirm("does not delete the challenge, but removes it from student's cue")) return;
     try {
       const { error } = await supabase.rpc("deactivate_teacher_challenge", {
         p_challenge_id: challengeId
@@ -649,12 +1216,17 @@ export async function initStaffChallengesUI({ studioId, user, roles, showToast }
         <div class="challenge-active-row-top">
           <div class="challenge-active-title-wrap">
             <div class="challenge-active-title">${escapeHtml(String(row.title || "Untitled challenge"))}</div>
-            ${row?.is_active === false ? '<span class="challenge-inactive-pill">Inactive</span>' : ""}
+            ${!isEndedTab && row?.is_active === false ? '<span class="challenge-inactive-pill">Inactive</span>' : ""}
           </div>
           <div class="challenge-active-date">${isEndedTab ? "Ended" : "Ends"} ${escapeHtml(String(row.end_date || ""))}</div>
         </div>
-        <div class="challenge-active-meta">Assigned to ${Number(row.total_assigned || 0)} students</div>
-        <div class="challenge-active-meta">New: ${Number(row.new_count || 0)} • Active: ${Number(row.active_count || 0)} • Pending: ${Number(row.completed_pending_count || 0)} • Completed: ${Number(row.completed_count || 0)}</div>
+        <div class="challenge-active-meta is-subtle">Assigned to ${Number(row.total_assigned || 0)} students</div>
+        <div class="challenge-status-chips">${renderStatusChips({
+          newCount: Number(row.new_count || 0),
+          activeCount: Number(row.active_count || 0),
+          pendingCount: Number(row.completed_pending_count || 0),
+          completedCount: Number(row.completed_count || 0)
+        })}</div>
       </div>
     `).join("");
 
@@ -698,7 +1270,7 @@ export async function initStaffChallengesUI({ studioId, user, roles, showToast }
     await loadChallengeList({ mode: currentChallengesTab, listEl: challengesModalList, render: true });
     if (staffChallengesOverlay) {
       staffChallengesOverlay.style.display = "flex";
-      const closeTarget = challengesCloseBtn || challengesFooterCloseBtn;
+      const closeTarget = challengesCloseBtn;
       if (closeTarget) closeTarget.focus();
     }
   };
@@ -725,8 +1297,11 @@ export async function initStaffChallengesUI({ studioId, user, roles, showToast }
   cancelBtn?.addEventListener("click", hideCreateModal);
   closeBtn?.addEventListener("click", hideCreateModal);
   challengesCloseBtn?.addEventListener("click", hideChallengesModal);
-  challengesFooterCloseBtn?.addEventListener("click", hideChallengesModal);
   detailCloseBtn?.addEventListener("click", hideDetailModal);
+  detailMoreBtn?.addEventListener("click", event => {
+    event.stopPropagation();
+    toggleDetailMoreMenu();
+  });
 
   createOverlay?.addEventListener("click", event => {
     if (event.target === createOverlay) hideCreateModal();
@@ -735,17 +1310,103 @@ export async function initStaffChallengesUI({ studioId, user, roles, showToast }
     if (event.target === staffChallengesOverlay) hideChallengesModal();
   });
   detailOverlay?.addEventListener("click", event => {
+    if (event.target instanceof Element && event.target.closest(".challenge-detail-header-actions")) return;
+    toggleDetailMoreMenu(false);
     if (event.target === detailOverlay) hideDetailModal();
+  });
+  confirmOverlay?.addEventListener("click", event => {
+    if (event.target === confirmOverlay) hideConfirmModal(false);
+  });
+  logReviewOverlay?.addEventListener("click", event => {
+    if (event.target === logReviewOverlay) closeLogReviewModal();
+  });
+  confirmCancelBtn?.addEventListener("click", () => hideConfirmModal(false));
+  confirmOkBtn?.addEventListener("click", () => hideConfirmModal(true));
+  logReviewCloseBtn?.addEventListener("click", closeLogReviewModal);
+  logReviewCancelBtn?.addEventListener("click", closeLogReviewModal);
+  logReviewApproveBtn?.addEventListener("click", async () => {
+    if (!selectedPendingLog?.id) return;
+    if (logReviewApproveBtn) {
+      logReviewApproveBtn.disabled = true;
+      logReviewApproveBtn.textContent = "Approving...";
+    }
+    try {
+      let assignmentSynced = false;
+      const assignmentId = String(selectedPendingContext?.assignmentId || "");
+
+      if (assignmentId) {
+        const { error: rpcError } = await supabase.rpc("approve_teacher_challenge_completion", {
+          p_assignment_id: assignmentId,
+          p_log_id: String(selectedPendingLog.id)
+        });
+        if (!rpcError) {
+          assignmentSynced = true;
+        } else {
+          console.warn("[ChallengesUI] approve_teacher_challenge_completion failed; falling back to log-only approve", rpcError);
+        }
+      }
+
+      if (!assignmentSynced) {
+        const { error: logError } = await supabase
+          .from("logs")
+          .update({ status: "approved" })
+          .eq("id", selectedPendingLog.id)
+          .eq("studio_id", resolvedStudioId);
+        if (logError) throw logError;
+      }
+
+      if (assignmentSynced) {
+        const reviewedBtn = assignmentId
+          ? detailBody?.querySelector(`[data-action='review-pending-log'][data-assignment-id='${assignmentId}']`)
+          : null;
+        if (reviewedBtn) {
+          const completedSpan = document.createElement("span");
+          completedSpan.className = "challenge-status-pill status-completed";
+          completedSpan.textContent = "Completed";
+          reviewedBtn.replaceWith(completedSpan);
+        }
+      }
+
+      if (typeof showToast === "function") {
+        showToast(assignmentSynced ? "Log approved." : "Log approved. Challenge status will sync separately.");
+      }
+      closeLogReviewModal();
+    } catch (error) {
+      console.error("[ChallengesUI] approve pending log failed", error);
+      if (typeof showToast === "function") showToast("Couldn't approve this log.");
+      if (logReviewApproveBtn) {
+        logReviewApproveBtn.disabled = false;
+        logReviewApproveBtn.textContent = "Approve log";
+      }
+    }
+  });
+  document.addEventListener("click", event => {
+    if (!detailOverlay || detailOverlay.style.display !== "flex") return;
+    if (!(event.target instanceof Element)) return;
+    if (event.target.closest(".challenge-detail-header-actions")) return;
+    toggleDetailMoreMenu(false);
   });
   if (!staffChallengesEscBound) {
     document.addEventListener("keydown", event => {
       if (event.key !== "Escape") return;
       if (detailOverlay?.style.display === "flex") {
+        if (detailMoreMenu && !detailMoreMenu.hidden) {
+          toggleDetailMoreMenu(false);
+          return;
+        }
         hideDetailModal();
         return;
       }
       if (createOverlay?.style.display === "flex") {
         hideCreateModal();
+        return;
+      }
+      if (logReviewOverlay?.style.display === "flex") {
+        closeLogReviewModal();
+        return;
+      }
+      if (confirmOverlay?.style.display === "flex") {
+        hideConfirmModal(false);
         return;
       }
       if (staffChallengesOverlay?.style.display === "flex") {
