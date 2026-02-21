@@ -4,6 +4,14 @@ import { finalizePostAuth } from "./studio-routing.js";
 import { ensureUserRow } from "./utils.js";
 import { setActiveProfileId } from "./active-profile.js";
 
+function getSafeReturnTo() {
+  const raw = new URLSearchParams(window.location.search).get("returnTo") || "";
+  if (!raw || !raw.startsWith("/") || raw.startsWith("//")) {
+    return "/index.html";
+  }
+  return raw;
+}
+
 async function createStudioStudents(students, parentId, studioId) {
   if (!crypto?.randomUUID) {
     throw new Error("Browser does not support UUID generation.");
@@ -41,7 +49,7 @@ window.selectStudent = function(student) {
   localStorage.setItem('activeStudentId', student.id);
   setActiveProfileId(student.id);
   document.getElementById('studentSelectOverlay')?.style && (document.getElementById('studentSelectOverlay').style.display = 'none');
-  window.location.href = 'index.html';
+  window.location.href = getSafeReturnTo();
 };
 
 window.cancelStudentSelect = function() {
@@ -182,7 +190,9 @@ if (shouldFinalize) {
   localStorage.removeItem("pendingChildrenEmail");
 }
 
-await finalizePostAuth({ ensureUser: false, storeProfile: false });
+const postAuth = await finalizePostAuth({ ensureUser: false, storeProfile: false, redirectHome: false });
+if (postAuth?.routeResult?.redirected) return;
+window.location.href = getSafeReturnTo();
 console.log("[Login] routed");
 return;
 

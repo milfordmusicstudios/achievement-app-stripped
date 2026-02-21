@@ -177,6 +177,34 @@
   <script src="supabase-config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script type="module" src="supabaseClient.js"></script>
+  <script type="module">
+    import { supabase } from "./supabaseClient.js";
+
+    async function ingestSupabaseSessionFromHash(supabaseClient) {
+      const raw = (window.location.hash || "").replace(/^#/, "");
+      if (!raw) return false;
+
+      const p = new URLSearchParams(raw);
+      const access_token = p.get("access_token");
+      const refresh_token = p.get("refresh_token");
+
+      if (!access_token || !refresh_token) return false;
+
+      const { error } = await supabaseClient.auth.setSession({ access_token, refresh_token });
+
+      window.history.replaceState({}, document.title, window.location.pathname + window.location.search);
+
+      if (error) {
+        console.error("Handoff setSession failed:", error);
+        return false;
+      }
+
+      return true;
+    }
+
+    window.ingestSupabaseSessionFromHash = ingestSupabaseSessionFromHash;
+    await ingestSupabaseSessionFromHash(supabase);
+  </script>
   <script type="module" src="utils.js"></script>
   <script type="module" src="studio-routing.js"></script>
   <script type="module" src="nav.js"></script>

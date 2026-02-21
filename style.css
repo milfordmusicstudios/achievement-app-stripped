@@ -211,8 +211,8 @@ a.big-fun-btn:focus-visible {
 }
 
 .studio-logo {
-  max-width: 96px;
-  width: 96px;
+  max-width: 168px;
+  width: 168px;
   height: auto;
   display: block;
   margin: 0 auto;
@@ -2536,7 +2536,7 @@ body.white-page main.app {
 
 /* Logo */
 .auth-container .logo {
-  max-width: 180px;
+  max-width: 315px;
   height: auto;
   margin: 0 auto 10px;
   display: block;
@@ -5467,7 +5467,7 @@ body.settings-page .settings-page-header {
 }
 
 body.settings-page .studio-logo-header {
-  height: 56px;
+  height: 98px;
   width: auto;
   object-fit: contain;
   display: block;
@@ -5475,7 +5475,7 @@ body.settings-page .studio-logo-header {
 
 @media (max-width: 520px) {
   body.settings-page .studio-logo-header {
-    height: 44px;
+    height: 77px;
   }
   body.settings-page .settings-page-header {
     gap: 8px;

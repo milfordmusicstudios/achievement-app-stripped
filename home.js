@@ -20,6 +20,10 @@ let ACTIVE_PROFILE_ID = null;
 let avatarMenuHandler = null;
 let avatarMenuEventsBound = false;
 
+function loginRedirectUrl() {
+  return "login.html?returnTo=/index.html";
+}
+
 function setActiveProfileIdContext(id) {
   ACTIVE_PROFILE_ID = id != null ? String(id) : null;
 }
@@ -485,17 +489,21 @@ function initAvatarSwitcher(users) {
 }
 
 async function init() {
+  if (typeof window.ingestSupabaseSessionFromHash === "function") {
+    await window.ingestSupabaseSessionFromHash(supabase);
+  }
+
   // 🔒 Hard auth gate
   const { data: sessionData } = await supabase.auth.getSession();
   if (!sessionData?.session) {
-    window.location.href = "login.html";
+    window.location.href = loginRedirectUrl();
     return;
   }
 
   let viewerContext = await getViewerContext();
   console.log("[Identity] viewer context", viewerContext);
   if (!viewerContext?.viewerUserId) {
-    window.location.href = "login.html";
+    window.location.href = loginRedirectUrl();
     return;
   }
 
@@ -1020,7 +1028,7 @@ async function insertLogs(rows, { approved }) {
   const authUserId = sessionData?.session?.user?.id || null;
   if (!authUserId) {
     if (sessionError) console.error("[Home] session check failed", sessionError);
-    window.location.href = "login.html";
+    window.location.href = loginRedirectUrl();
     return false;
   }
 
