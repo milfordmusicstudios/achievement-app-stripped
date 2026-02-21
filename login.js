@@ -59,7 +59,7 @@ document.addEventListener("DOMContentLoaded", () => {
     showError('We could not complete the link. Please try again.');
   }
 
-  const resetUrl = `${window.location.origin}/reset-password.html`;
+  const resetUrl = `https://awards.milfordmusic.com/reset-password.html`;
   const emailInputGetter = () => document.getElementById('email');
 
   const disableForgotButton = (state, text) => {

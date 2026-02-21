@@ -147,4 +147,7 @@ await enforceEnvConsistency();
 await ingestSessionFromHash();
 console.info(`[Supabase] init env=${APP_ENV} host=${window.location.host}`);
 
+export function getSupabaseClient() {
+  return supabase;
+}
 export { supabase };
