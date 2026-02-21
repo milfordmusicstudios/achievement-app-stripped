@@ -18,6 +18,31 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   },
 });
 
+function readTokensFromHash() {
+  const rawHash = (window.location.hash || "").replace(/^#/, "");
+  if (!rawHash) return null;
+  const params = new URLSearchParams(rawHash);
+  const access_token = params.get("access_token");
+  const refresh_token = params.get("refresh_token");
+  if (!access_token || !refresh_token) return null;
+  return { access_token, refresh_token };
+}
+
+async function ingestSessionFromHash() {
+  const tokens = readTokensFromHash();
+  if (!tokens) return false;
+
+  // Remove hash immediately so tokens are not kept in the address bar.
+  window.history.replaceState({}, document.title, window.location.pathname + window.location.search);
+
+  const { error } = await supabase.auth.setSession(tokens);
+  if (error) {
+    console.error("[Supabase] Token handoff setSession error:", error);
+    return false;
+  }
+  return true;
+}
+
 function shouldDropKey(key) {
   if (!key) return false;
   const normalized = key.toLowerCase();
@@ -65,6 +90,7 @@ async function enforceEnvConsistency() {
 }
 
 await enforceEnvConsistency();
+await ingestSessionFromHash();
 console.info(`[Supabase] init env=${APP_ENV} host=${window.location.host}`);
 
 export { supabase };
