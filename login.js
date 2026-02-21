@@ -59,7 +59,7 @@ document.addEventListener("DOMContentLoaded", () => {
     showError('We could not complete the link. Please try again.');
   }
 
-  const resetUrl = `${window.location.origin}/auth-callback.html?next=reset-password`;
+  const resetUrl = `${window.location.origin}/reset-password.html`;
   const emailInputGetter = () => document.getElementById('email');
 
   const disableForgotButton = (state, text) => {

@@ -29,10 +29,28 @@ function readTokensFromHash() {
   return { access_token, refresh_token };
 }
 
+function getCurrentPageName() {
+  const rawPath = window.location.pathname || "";
+  const cleaned = rawPath.split("/").filter(Boolean);
+  if (cleaned.length === 0) return "index.html";
+  return cleaned[cleaned.length - 1].toLowerCase();
+}
+
+function removeAuthParamsFromUrl() {
+  const url = new URL(window.location.href);
+  url.searchParams.delete("code");
+  url.searchParams.delete("type");
+  url.searchParams.delete("token_hash");
+  url.searchParams.delete("next");
+  const nextUrl = `${url.pathname}${url.search}`;
+  window.history.replaceState({}, document.title, nextUrl);
+}
+
 async function ingestSessionFromHash() {
-  const rawHash = (window.location.hash || "").replace(/^#/, "");
+  const url = new URL(window.location.href);
+  const rawHash = (url.hash || "").replace(/^#/, "");
   const hashParams = new URLSearchParams(rawHash);
-  const flowType = (hashParams.get("type") || "").toLowerCase();
+  const flowType = (url.searchParams.get("type") || hashParams.get("type") || "").toLowerCase();
 
   if (flowType) {
     try {
@@ -43,17 +61,40 @@ async function ingestSessionFromHash() {
   }
 
   const tokens = readTokensFromHash();
-  if (!tokens) return false;
+  if (tokens) {
+    // Remove hash immediately so tokens are not kept in the address bar.
+    window.history.replaceState({}, document.title, window.location.pathname + window.location.search);
 
-  // Remove hash immediately so tokens are not kept in the address bar.
-  window.history.replaceState({}, document.title, window.location.pathname + window.location.search);
-
-  const { error } = await supabase.auth.setSession(tokens);
-  if (error) {
-    console.error("[Supabase] Token handoff setSession error:", error);
-    return false;
+    const { error } = await supabase.auth.setSession(tokens);
+    if (error) {
+      console.error("[Supabase] Token handoff setSession error:", error);
+    }
+  } else {
+    const code = url.searchParams.get("code");
+    const tokenHash = url.searchParams.get("token_hash");
+    if (code) {
+      const { error } = await supabase.auth.exchangeCodeForSession(code);
+      if (error) {
+        console.error("[Supabase] exchangeCodeForSession error:", error);
+      }
+      removeAuthParamsFromUrl();
+    } else if (tokenHash && flowType) {
+      const { error } = await supabase.auth.verifyOtp({ type: flowType, token_hash: tokenHash });
+      if (error) {
+        console.error("[Supabase] verifyOtp error:", error);
+      }
+      removeAuthParamsFromUrl();
+    }
   }
-  return true;
+
+  if (flowType === "recovery") {
+    const pageName = getCurrentPageName();
+    if (pageName !== "reset-password.html" && pageName !== "auth-callback.html") {
+      window.location.replace("reset-password.html");
+      return true;
+    }
+  }
+  return Boolean(flowType || tokens);
 }
 
 function shouldDropKey(key) {
