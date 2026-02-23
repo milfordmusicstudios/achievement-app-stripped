@@ -1,4 +1,4 @@
-import { supabase } from "./supabaseClient.js";
+import { authStartupReady, supabase } from "./supabaseClient.js";
 
 const PUBLIC_PAGES = new Set([
   "",
@@ -51,6 +51,8 @@ async function ensureSession() {
   if (PUBLIC_PAGES.has(name)) return;
 
   try {
+    await authStartupReady;
+
     const currentSession = await supabase.auth.getSession();
     if (currentSession?.data?.session) return;
 

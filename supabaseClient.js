@@ -143,11 +143,16 @@ async function enforceEnvConsistency() {
   }
 }
 
-await enforceEnvConsistency();
-await ingestSessionFromHash();
+const authStartupReady = (async () => {
+  await enforceEnvConsistency();
+  await ingestSessionFromHash();
+})();
+
+await authStartupReady;
 console.info(`[Supabase] init env=${APP_ENV} host=${window.location.host}`);
 
 export function getSupabaseClient() {
   return supabase;
 }
+export { authStartupReady };
 export { supabase };
