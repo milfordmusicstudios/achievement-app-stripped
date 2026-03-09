@@ -1,39 +1,60 @@
 import { supabase } from "./supabaseClient.js";
 
-// ✅ Helper: Popup for level-up event
-function showLevelUpPopup(userName, newLevelName) {
-  console.log("[DEBUG] Showing Level-Up popup for:", userName, newLevelName);
+export function showToast(message, type = "success", duration = 2200) {
+  if (typeof document === "undefined") return;
+
+  let host = document.getElementById("appToastHost");
+  if (!host) {
+    host = document.createElement("div");
+    host.id = "appToastHost";
+    host.style.cssText = [
+      "position: fixed",
+      "top: 16px",
+      "right: 16px",
+      "display: flex",
+      "flex-direction: column",
+      "gap: 8px",
+      "z-index: 1000000",
+      "pointer-events: none",
+      "max-width: min(92vw, 360px)"
+    ].join("; ");
+    document.body.appendChild(host);
+  }
+
+  const toast = document.createElement("div");
+  const typeStyles = {
+    success: "background:#e8f8ee; border-color:#1f7a3e; color:#114d28;",
+    error: "background:#fdecec; border-color:#b42318; color:#7a271a;",
+    info: "background:#eaf3ff; border-color:#1d4ed8; color:#1e3a8a;"
+  };
+
+  toast.style.cssText = [
+    "pointer-events: auto",
+    "border: 1px solid",
+    "border-radius: 10px",
+    "padding: 10px 12px",
+    "font-size: 14px",
+    "font-weight: 600",
+    "box-shadow: 0 8px 24px rgba(0,0,0,0.18)",
+    "transform: translateY(-6px)",
+    "opacity: 0",
+    "transition: opacity 140ms ease, transform 140ms ease",
+    typeStyles[type] || typeStyles.info
+  ].join("; ");
+
+  toast.textContent = message;
+  host.appendChild(toast);
+
+  requestAnimationFrame(() => {
+    toast.style.opacity = "1";
+    toast.style.transform = "translateY(0)";
+  });
 
   setTimeout(() => {
-    const overlay = document.createElement('div');
-    overlay.style = `
-      position: fixed;
-      top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.7);
-      display: flex; justify-content: center; align-items: center;
-      z-index: 999999;
-    `;
-
-    overlay.innerHTML = `
-      <div style="
-        background: white;
-        padding: 30px;
-        border-radius: 14px;
-        text-align: center;
-        box-shadow: 0 4px 16px rgba(0,0,0,0.4);
-        max-width: 340px;
-        animation: fadeIn 0.3s ease;
-      ">
-        <h2 style="color:#00477d; margin-bottom:10px;">🎉 Level Up!</h2>
-        <p>${userName} just reached <b>${newLevelName}</b>!</p>
-        <button id="closeLevelUpPopup" class="blue-button" style="margin-top:15px;">OK</button>
-      </div>
-    `;
-
-    document.body.appendChild(overlay);
-    const closeBtn = document.getElementById('closeLevelUpPopup');
-    if (closeBtn) closeBtn.addEventListener('click', () => overlay.remove());
-  }, 1500);
+    toast.style.opacity = "0";
+    toast.style.transform = "translateY(-6px)";
+    setTimeout(() => toast.remove(), 160);
+  }, Math.max(900, duration));
 }
 
 export async function recalculateUserPoints(userId) {
@@ -87,7 +108,7 @@ export async function recalculateUserPoints(userId) {
       ]);
 
       if (loggedIn && loggedIn.id === userId && loggedIn.roles?.includes('student')) {
-        showLevelUpPopup(fullName, currentLevel.name || `Level ${currentLevel.id}`);
+        showToast(`${fullName} reached ${currentLevel.name || `Level ${currentLevel.id}`}.`, 'success', 2600);
         loggedIn.level = currentLevel.id;
         localStorage.setItem('loggedInUser', JSON.stringify(loggedIn));
       }

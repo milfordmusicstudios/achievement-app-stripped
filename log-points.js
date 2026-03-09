@@ -1,5 +1,5 @@
 import { supabase } from "./supabaseClient.js";
-import { recalculateUserPoints } from './utils.js';
+import { recalculateUserPoints, showToast } from './utils.js';
 
 document.addEventListener("DOMContentLoaded", async () => {
   const user = JSON.parse(localStorage.getItem("loggedInUser"));
@@ -425,63 +425,20 @@ categorySelect.addEventListener("change", () => {
         return;
       }
 
-// ✅ Recalculate user points & allow Level Up popup to trigger
-for (const id of targetUsers) {
-  await recalculateUserPoints(id);
-}
 
-// ✅ Wait a moment to ensure Level Up popup appears first
-await new Promise(resolve => setTimeout(resolve, 1500));
-
-// ✅ Always show success popup clearly
-const popup = document.createElement("div");
-popup.innerHTML = `
-  <div style="
-    position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.6);
-    display: flex; justify-content: center; align-items: center;
-    z-index: 9999; /* Make sure it's on top */
-  ">
-    <div style="background:white; padding:30px; border-radius:12px; text-align:center; max-width:300px; box-shadow:0 2px 10px rgba(0,0,0,0.3);">
-      <h3 style="color:#00477d; margin-bottom:15px;">✅ Log submitted successfully!</h3>
-      <div style="display:flex; flex-direction:column; gap:10px;">
-        <button id="goHomeBtn" class="blue-button">Go to Home</button>
-        <button id="logMoreBtn" class="blue-button">Log More Points</button>
-      </div>
-    </div>
-  </div>
-`;
-document.body.appendChild(popup);
-
-// ✅ Safely attach listeners after DOM insert
-setTimeout(() => {
-  const goHomeBtn = document.getElementById("goHomeBtn");
-  const logMoreBtn = document.getElementById("logMoreBtn");
-
-  if (goHomeBtn) {
-    goHomeBtn.addEventListener("click", () => {
-      popup.remove();
-      window.location.href = "index.html";
-    });
-  }
-
-      if (logMoreBtn) {
-        logMoreBtn.addEventListener("click", () => {
-          popup.remove();
-          document.getElementById("logForm").reset();
-          clearLogStudentSelection();
-          renderLogStudentResults();
-
-          // Reset date and hide fields if student
-          logDatePicker.resetToToday();
-          if (!(activeRole === "admin" || activeRole === "teacher")) {
-            if (studentRow) studentRow.style.display = "none";
-            if (pointsInput) pointsInput.closest("tr").style.display = "none";
-          }
-        });
+      for (const id of targetUsers) {
+        await recalculateUserPoints(id);
       }
-}, 100);
+
+      showToast("Log submitted successfully.", "success", 1700);
+      document.getElementById("logForm").reset();
+      clearLogStudentSelection();
+      renderLogStudentResults();
+      logDatePicker.resetToToday();
+      if (!(activeRole === "admin" || activeRole === "teacher")) {
+        if (studentRow) studentRow.style.display = "none";
+        if (pointsInput) pointsInput.closest("tr").style.display = "none";
+      }
     });
   }
 

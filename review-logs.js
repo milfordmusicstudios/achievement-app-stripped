@@ -1,5 +1,5 @@
 import { supabase } from "./supabaseClient.js";
-import { recalculateUserPoints } from './utils.js';
+import { recalculateUserPoints, showToast } from './utils.js';
 
 const categoryOptions = ["practice", "participation", "performance", "personal", "proficiency"];
 
@@ -690,7 +690,7 @@ if (quickAddSubmit) {
       }
     }
 
-    alert(`✅ Points added for ${selectedIds.length} student(s)!`);
+    showToast(`Points added for ${selectedIds.length} student(s)!`, "success", 1600);
     quickAddModal.style.display = "none";
     resetQuickAddSelection();
     quickAddDatePicker.resetToToday();
@@ -700,3 +700,4 @@ if (quickAddSubmit) {
 }
 
   });
+
