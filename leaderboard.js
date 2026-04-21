@@ -63,11 +63,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
-    const totals = await fetchTotals(activeStudioId, students.map(s => s.id));
     if (countEl) countEl.textContent = `Showing ${students.length} students`;
 
     const activeStudentId = localStorage.getItem("aa.activeStudentId") || null;
-    const placements = buildPlacements(students, totals, levels, activeStudentId);
+    const placements = buildPlacements(students, levels, activeStudentId);
     renderAvatars(placements);
     bindLeaderboardZoom({ zoomInput, zoomValue, placements });
 
@@ -166,7 +165,7 @@ async function fetchStudentsByIds(ids, studioId) {
   if (!ids.length) return [];
   const { data, error } = await supabase
     .from("users")
-    .select("id, firstName, lastName, avatarUrl, roles, active, deactivated_at")
+    .select("id, firstName, lastName, avatarUrl, roles, points, level, active, deactivated_at")
     .in("id", ids)
     .eq("studio_id", studioId)
     .is("deactivated_at", null);
@@ -180,32 +179,17 @@ async function fetchStudentsByIds(ids, studioId) {
   });
 }
 
-async function fetchTotals(studioId, userIds) {
-  if (!userIds.length) return {};
-  const { data, error } = await supabase
-    .from("logs")
-    .select("userId, points")
-    .eq("studio_id", studioId)
-    .eq("status", "approved")
-    .in("userId", userIds);
-  if (error) {
-    console.error("[Leaderboard] totals fetch failed", error);
-    return {};
-  }
-  const totals = {};
-  (data || []).forEach(row => {
-    const id = row.userId;
-    totals[id] = (totals[id] || 0) + (row.points || 0);
-  });
-  return totals;
+function getStudentLeaderboardPoints(student) {
+  const points = Number(student?.points);
+  return Number.isFinite(points) ? points : 0;
 }
 
-function buildPlacements(students, totals, levels, activeStudentId) {
+function buildPlacements(students, levels, activeStudentId) {
   const placements = [];
   const perLevelCount = {};
 
   students.forEach(student => {
-    const total = totals[student.id] || 0;
+    const total = getStudentLeaderboardPoints(student);
     const level = getLevelForPoints(total, levels);
     if (!level) return;
 

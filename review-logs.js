@@ -1724,7 +1724,7 @@ async function loadQuickAddCategories() {
     return;
   }
 
-  const blockedCategoryNames = new Set(["batch_practice"]);
+  const blockedCategoryNames = new Set(["batch_practice", "practice_batch"]);
   const visibleCategories = (categories || []).filter(
     (cat) => !blockedCategoryNames.has(String(cat?.name || "").toLowerCase())
   );

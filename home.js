@@ -2815,7 +2815,7 @@ async function loadCategoriesForStudio(studioId) {
     .select('*')
     .order('id', { ascending: true });
   if (error || !Array.isArray(data)) return { data: [], error };
-  const blockedCategoryNames = new Set(["batch_practice"]);
+  const blockedCategoryNames = new Set(["batch_practice", "practice_batch"]);
   const filtered = data.filter(category => !blockedCategoryNames.has(String(category?.name || "").toLowerCase()));
   return { data: filtered, error: null };
 }

@@ -84,7 +84,7 @@
       return;
     }
 
-    const blockedCategoryNames = new Set(["batch_practice"]);
+    const blockedCategoryNames = new Set(["batch_practice", "practice_batch"]);
     (data || [])
       .filter(cat => !blockedCategoryNames.has(String(cat?.name || "").toLowerCase()))
       .forEach(cat => {
