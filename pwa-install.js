@@ -1,3 +1,5 @@
+import { getAuthUserId } from "./utils.js";
+
 const INSTALL_TARGETS = [
   {
     key: "ios",
@@ -47,8 +49,11 @@ const TROUBLESHOOTING = [
 
 const DISABLED_PATHS = new Set(["auth-callback.html"]);
 const DISMISS_STORAGE_KEY = "aa.pwaPromptDismissed.v1";
+const INSTALL_PROMPT_SEEN_KEY_PREFIX = "install_prompt_seen";
 
 let deferredInstallPrompt = null;
+let installPromptUserId = null;
+let installPromptUserResolved = false;
 let launcherCard = null;
 let launcherTitle = null;
 let launcherBody = null;
@@ -101,12 +106,61 @@ function canUseInstallPrompt(platformState) {
   return Boolean(deferredInstallPrompt) && !isManualOnlyPlatform(platformState) && !platformState.isStandalone;
 }
 
-function isPromptDismissed() {
-  return localStorage.getItem(DISMISS_STORAGE_KEY) === "1";
+function buildInstallPromptSeenKey(userId) {
+  const id = String(userId || "").trim();
+  return id ? `${INSTALL_PROMPT_SEEN_KEY_PREFIX}_${id}` : null;
 }
 
-function setPromptDismissed() {
-  localStorage.setItem(DISMISS_STORAGE_KEY, "1");
+function readLocalStorage(key) {
+  try {
+    return key ? localStorage.getItem(key) : null;
+  } catch (error) {
+    console.warn("[pwa] failed reading install prompt storage", error);
+    return null;
+  }
+}
+
+function writeLocalStorage(key, value) {
+  try {
+    if (!key) return false;
+    localStorage.setItem(key, value);
+    return true;
+  } catch (error) {
+    console.warn("[pwa] failed writing install prompt storage", error);
+    return false;
+  }
+}
+
+async function resolveInstallPromptUserId() {
+  if (installPromptUserResolved) return installPromptUserId;
+  installPromptUserResolved = true;
+  try {
+    installPromptUserId = await getAuthUserId();
+  } catch (error) {
+    console.warn("[pwa] failed resolving auth user for install prompt", error);
+    installPromptUserId = null;
+  }
+  return installPromptUserId;
+}
+
+function hasSeenInstallPrompt() {
+  const key = buildInstallPromptSeenKey(installPromptUserId);
+  if (!key) return true;
+  if (readLocalStorage(key) === "1") return true;
+
+  // Backward compatibility: honor the previous global dismissal flag once,
+  // then promote it to the per-user key requested for future checks.
+  if (readLocalStorage(DISMISS_STORAGE_KEY) === "1") {
+    writeLocalStorage(key, "1");
+    return true;
+  }
+
+  return false;
+}
+
+function setInstallPromptSeen() {
+  const key = buildInstallPromptSeenKey(installPromptUserId);
+  return writeLocalStorage(key, "1");
 }
 
 function orderedTargets(primaryKey) {
@@ -261,7 +315,7 @@ function setHelpExpanded(expanded) {
 function shouldShowLauncher(platformState) {
   if (!launcherCard) return false;
   if (platformState.isStandalone) return false;
-  return !isPromptDismissed();
+  return !hasSeenInstallPrompt();
 }
 
 function updateInstallUI() {
@@ -317,6 +371,7 @@ async function handleInstallAction() {
     return;
   }
 
+  setInstallPromptSeen();
   deferredInstallPrompt.prompt();
   const choice = await deferredInstallPrompt.userChoice.catch(() => null);
   deferredInstallPrompt = null;
@@ -355,7 +410,7 @@ function closeModal() {
 }
 
 function dismissLauncher() {
-  setPromptDismissed();
+  setInstallPromptSeen();
   hideLauncher();
 }
 
@@ -377,6 +432,12 @@ function wireSettingsEntryPoint() {
 }
 
 function injectUI() {
+  if (modalOverlay) {
+    wireSettingsEntryPoint();
+    updateInstallUI();
+    return;
+  }
+
   const platformState = detectPlatform();
   document.body.insertAdjacentHTML("beforeend", buildLauncherCard() + buildModal(
     platformState.primary,
@@ -397,7 +458,7 @@ function injectUI() {
   sectionPanels = Array.from(document.querySelectorAll(".pwa-install-modal__panel"));
 
   launcherAction?.addEventListener("click", () => {
-    setPromptDismissed();
+    setInstallPromptSeen();
     hideLauncher();
     openModal(detectPlatform().primary, { expandHelp: false });
   });
@@ -465,7 +526,7 @@ window.addEventListener("beforeinstallprompt", (event) => {
 
 window.addEventListener("appinstalled", () => {
   deferredInstallPrompt = null;
-  setPromptDismissed();
+  setInstallPromptSeen();
   closeModal();
   updateInstallUI();
 });
@@ -475,16 +536,18 @@ window.addEventListener("pageshow", () => {
   updateInstallUI();
 });
 
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", () => {
-    if (!DISABLED_PATHS.has(getCurrentPage())) {
-      injectUI();
-    }
-    void registerServiceWorker();
-  }, { once: true });
-} else {
+async function bootPwaInstall() {
   if (!DISABLED_PATHS.has(getCurrentPage())) {
+    await resolveInstallPromptUserId();
     injectUI();
   }
   void registerServiceWorker();
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", () => {
+    void bootPwaInstall();
+  }, { once: true });
+} else {
+  void bootPwaInstall();
 }
