@@ -76,7 +76,7 @@ module.exports = async (req, res) => {
   // TODO: If your "invites" schema differs, adjust fields or constraints here.
   const { error: inviteErr } = await supabaseAdmin
     .from("invites")
-    .upsert(inviteRow, { onConflict: "token" });
+    .insert(inviteRow);
 
   if (inviteErr) {
     return res.status(500).json({ ok: false, error: inviteErr.message || "Invite insert failed" });

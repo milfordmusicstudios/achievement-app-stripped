@@ -136,13 +136,15 @@ function isStudentTutorialEligible({ viewerContext, profile } = {}) {
 function scheduleStudentTutorial({ viewerContext, profileId, profile } = {}) {
   if (!isStudentTutorialEligible({ viewerContext, profile })) return;
   if (!profileId) return;
+  const userId = viewerContext?.viewerUserId || profileId;
 
   window.setTimeout(async () => {
     if (!isStudentTutorialEligible({ viewerContext, profile })) return;
     try {
       if (!studentTutorial) {
-        studentTutorial = createStudentHomeTutorial({ profileId });
+        studentTutorial = createStudentHomeTutorial({ userId, profileId });
       } else {
+        studentTutorial.userId = userId;
         studentTutorial.profileId = profileId;
       }
       window.AA_replayStudentTutorial = () => studentTutorial.start({ force: true });
@@ -165,14 +167,16 @@ function isTeacherAdminTutorialEligible({ viewerContext } = {}) {
 function scheduleTeacherAdminTutorial({ viewerContext } = {}) {
   if (!isTeacherAdminTutorialEligible({ viewerContext })) return;
   const profileId = viewerContext?.viewerUserId || viewerContext?.activeProfileId || null;
+  const userId = viewerContext?.viewerUserId || profileId;
   if (!profileId) return;
 
   window.setTimeout(async () => {
     if (!isTeacherAdminTutorialEligible({ viewerContext })) return;
     try {
       if (!teacherAdminTutorial) {
-        teacherAdminTutorial = createTeacherAdminTutorial({ profileId });
+        teacherAdminTutorial = createTeacherAdminTutorial({ userId, profileId });
       } else {
+        teacherAdminTutorial.userId = userId;
         teacherAdminTutorial.profileId = profileId;
       }
       window.AA_replayTeacherAdminTutorial = () => teacherAdminTutorial.start({ force: true });

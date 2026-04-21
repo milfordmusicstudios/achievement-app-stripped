@@ -1,6 +1,7 @@
 const STORAGE_PREFIX = "aa.tutorial";
 const REPLAY_FLAG_KEY = `${STORAGE_PREFIX}.replay`;
 const RUN_STATE_PREFIX = `${STORAGE_PREFIX}.run`;
+const SEEN_KEY_PREFIX = "tutorial_seen";
 const DEFAULT_CARD_WIDTH = 320;
 const CARD_MARGIN = 16;
 const SPOTLIGHT_PADDING = 10;
@@ -333,6 +334,11 @@ function buildCompletionKey(tutorialId, profileId) {
   return `${STORAGE_PREFIX}.${tutorialId}.${id}`;
 }
 
+function buildSeenKey(userId) {
+  const id = String(userId || "").trim();
+  return id ? `${SEEN_KEY_PREFIX}_${id}` : null;
+}
+
 function buildRunStateKey(tutorialId, profileId) {
   const id = String(profileId || "anonymous").trim() || "anonymous";
   return `${RUN_STATE_PREFIX}.${tutorialId}.${id}`;
@@ -384,6 +390,18 @@ function consumeReplayFlag(tutorialId) {
 }
 
 class LocalTutorialStore {
+  async hasSeen(userId) {
+    const key = buildSeenKey(userId);
+    if (!key) return false;
+    return readStorage(key, "local") === "1";
+  }
+
+  async setSeen(userId) {
+    const key = buildSeenKey(userId);
+    if (!key) return false;
+    return writeStorage(key, "1", "local");
+  }
+
   async getVersion(tutorialId, profileId) {
     const raw = readStorage(buildCompletionKey(tutorialId, profileId), "local");
     const parsed = Number(raw);
@@ -396,8 +414,9 @@ class LocalTutorialStore {
 }
 
 class TutorialManager {
-  constructor({ config, profileId, store, onClose } = {}) {
+  constructor({ config, userId, profileId, store, onClose } = {}) {
     this.config = config;
+    this.userId = userId || profileId || null;
     this.profileId = profileId;
     this.store = store || new LocalTutorialStore();
     this.onClose = typeof onClose === "function" ? onClose : null;
@@ -419,8 +438,8 @@ class TutorialManager {
   async maybeStart({ startOnlyOnStartPath = false } = {}) {
     const forceReplay = consumeReplayFlag(this.config?.id);
     const runState = this.readRunState();
-    const currentVersion = await this.store.getVersion(this.config?.id, this.profileId);
-    const shouldStart = forceReplay || Boolean(runState) || currentVersion !== this.config?.version;
+    const hasSeen = await this.hasSeenTutorial();
+    const shouldStart = forceReplay || Boolean(runState) || !hasSeen;
     if (!shouldStart) return false;
 
     if (!runState && startOnlyOnStartPath && getCurrentPageName() !== String(this.config?.startPath || "").toLowerCase()) {
@@ -437,8 +456,7 @@ class TutorialManager {
     }
 
     if (!force) {
-      const currentVersion = await this.store.getVersion(this.config?.id, this.profileId);
-      if (currentVersion === this.config?.version) return false;
+      if (await this.hasSeenTutorial()) return false;
     }
 
     if (!this.steps.length) return false;
@@ -858,10 +876,28 @@ class TutorialManager {
 
   async markComplete() {
     try {
+      await this.store.setSeen(this.userId);
       await this.store.setVersion(this.config?.id, this.profileId, this.config?.version);
     } catch (error) {
       console.warn("[Tutorial] failed saving completion state", error);
     }
+  }
+
+  async hasSeenTutorial() {
+    try {
+      if (await this.store.hasSeen(this.userId)) return true;
+
+      // Backward compatibility: honor the previous per-tutorial completion key
+      // and promote it to the new per-user seen flag.
+      const currentVersion = await this.store.getVersion(this.config?.id, this.profileId);
+      if (currentVersion === this.config?.version) {
+        await this.store.setSeen(this.userId);
+        return true;
+      }
+    } catch (error) {
+      console.warn("[Tutorial] failed reading seen state", error);
+    }
+    return false;
   }
 
   handleKeydown(event) {

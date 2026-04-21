@@ -1,7 +1,7 @@
 // login.js
 import { supabase } from "./supabaseClient.js";
 import { finalizePostAuth } from "./studio-routing.js";
-import { ensureUserRow } from "./utils.js";
+import { clearAppSessionCache, ensureUserRow } from "./utils.js";
 import { setActiveProfileId } from "./active-profile.js";
 
 function getSafeReturnTo() {
@@ -52,9 +52,9 @@ window.selectStudent = function(student) {
   window.location.href = getSafeReturnTo();
 };
 
-window.cancelStudentSelect = function() {
+window.cancelStudentSelect = async function() {
   console.log("DEBUG: Student selection canceled");
-  localStorage.clear();
+  await clearAppSessionCache("cancel-student-select");
   document.getElementById('studentSelectOverlay').style.display = 'none';
   window.location.href = 'login.html';
 };

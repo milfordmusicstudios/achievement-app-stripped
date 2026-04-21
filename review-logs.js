@@ -96,8 +96,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
   const activeRole = viewerContext.isAdmin ? "admin" : "teacher";
+  const tutorialUserId = viewerContext?.viewerUserId || viewerContext?.activeProfileId || null;
   const teacherAdminTutorial = createTeacherAdminTutorial({
-    profileId: viewerContext?.viewerUserId || viewerContext?.activeProfileId || null
+    userId: tutorialUserId,
+    profileId: tutorialUserId
   });
   void teacherAdminTutorial.maybeStart();
   if (document.body) {

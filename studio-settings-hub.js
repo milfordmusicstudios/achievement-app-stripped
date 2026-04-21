@@ -259,8 +259,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
+  const tutorialUserId = viewerContext?.viewerUserId || viewerContext?.activeProfileId || null;
   const teacherAdminTutorial = createTeacherAdminTutorial({
-    profileId: viewerContext?.viewerUserId || viewerContext?.activeProfileId || null
+    userId: tutorialUserId,
+    profileId: tutorialUserId
   });
 
   if (!studioId) {
