@@ -1,12 +1,55 @@
 // login.js
 import { supabase } from "./supabaseClient.js";
+import { finalizePostAuth } from "./studio-routing.js";
+import { ensureUserRow } from "./utils.js";
+import { setActiveProfileId } from "./active-profile.js";
 
-window.selectStudent = function(studentId, parentData) {
-  console.log("DEBUG: Student selected", studentId);
-  localStorage.setItem('activeStudentId', studentId);
-  localStorage.setItem('loggedInUser', JSON.stringify(parentData));
-  document.getElementById('studentSelectOverlay').style.display = 'none';
-  window.location.href = 'index.html';
+function getSafeReturnTo() {
+  const raw = new URLSearchParams(window.location.search).get("returnTo") || "";
+  if (!raw || !raw.startsWith("/") || raw.startsWith("//")) {
+    return "/index.html";
+  }
+  return raw;
+}
+
+async function createStudioStudents(students, parentId, studioId) {
+  if (!crypto?.randomUUID) {
+    throw new Error("Browser does not support UUID generation.");
+  }
+  if (!studioId) {
+    throw new Error("Missing activeStudioId for student creation.");
+  }
+
+  const rows = students.map(c => {
+    const id = crypto.randomUUID();
+    console.log("[PersonCreate] created new id", id);
+    return {
+      id,
+      firstName: c.firstName,
+      lastName: c.lastName,
+      roles: ["student"],
+      parent_uuid: parentId,
+      instrument: c.instruments,
+      teacherIds: c.teacherIds,
+      points: 0,
+      level: 1,
+      active: true,
+      studio_id: studioId,
+      showonleaderboard: true
+    };
+  });
+
+  const { error: insertErr } = await supabase.from("users").insert(rows);
+  if (insertErr) throw insertErr;
+}
+
+window.selectStudent = function(student) {
+  console.log("DEBUG: Student selected", student?.id);
+  localStorage.setItem('loggedInUser', JSON.stringify(student));
+  localStorage.setItem('activeStudentId', student.id);
+  setActiveProfileId(student.id);
+  document.getElementById('studentSelectOverlay')?.style && (document.getElementById('studentSelectOverlay').style.display = 'none');
+  window.location.href = getSafeReturnTo();
 };
 
 window.cancelStudentSelect = function() {
@@ -16,108 +59,78 @@ window.cancelStudentSelect = function() {
   window.location.href = 'login.html';
 };
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
 document.addEventListener("DOMContentLoaded", () => {
   console.log("DEBUG: login.js loaded");
 
   const form = document.getElementById('loginForm');
   const errorDisplay = document.getElementById('loginError');
-  const messageDisplay = document.getElementById('loginMessage');
-  const forgotButton = document.getElementById('forgotPasswordBtn');
-  const params = new URLSearchParams(window.location.search);
+  const forgotBtn = document.getElementById('forgotPasswordBtn');
+  const resetPanel = document.getElementById('resetPanel');
+  const resetEmailInput = document.getElementById('resetEmail');
+  const sendResetBtn = document.getElementById('sendResetBtn');
+  const cancelResetBtn = document.getElementById('cancelResetBtn');
+  const resetStatus = document.getElementById('resetStatus');
 
-  const showError = (text) => {
-    if (messageDisplay) {
-      messageDisplay.style.display = 'none';
-      messageDisplay.textContent = '';
-    }
-    if (errorDisplay) {
-      errorDisplay.style.display = 'block';
-      errorDisplay.textContent = text;
-    }
+  const showResetStatus = (message, isError = false) => {
+    if (!resetStatus) return;
+    resetStatus.textContent = message || '';
+    resetStatus.style.display = message ? 'block' : 'none';
+    resetStatus.style.color = isError ? '#c62828' : '#0b7a3a';
   };
 
-  const showMessage = (text) => {
-    if (errorDisplay) {
-      errorDisplay.style.display = 'none';
-      errorDisplay.textContent = '';
-    }
-    if (messageDisplay) {
-      messageDisplay.style.display = 'block';
-      messageDisplay.textContent = text;
-    }
-  };
-
-  if (params.get('status') === 'reset-success') {
-    showMessage('Password updated. Please log in.');
-  }
-  if (params.get('flow') === 'guard') {
-    showError('Please sign in to continue.');
-  }
-  if (params.get('flow') === 'auth-callback' && params.get('error')) {
-    showError('We could not complete the link. Please try again.');
+  if (forgotBtn && resetPanel) {
+    forgotBtn.addEventListener('click', () => {
+      resetPanel.style.display = 'block';
+      const emailValue = document.getElementById('loginEmail')?.value?.trim() || '';
+      if (resetEmailInput) resetEmailInput.value = emailValue;
+      showResetStatus('');
+    });
   }
 
-  const resetUrl = `https://awards.milfordmusic.com/reset-password.html`;
-  const emailInputGetter = () => document.getElementById('email');
+  if (cancelResetBtn && resetPanel) {
+    cancelResetBtn.addEventListener('click', () => {
+      resetPanel.style.display = 'none';
+      showResetStatus('');
+    });
+  }
 
-  const disableForgotButton = (state, text) => {
-    if (!forgotButton) return;
-    forgotButton.disabled = state;
-    forgotButton.textContent = text ?? 'Forgot password?';
-  };
+  if (sendResetBtn) {
+    sendResetBtn.addEventListener('click', async () => {
+      const email = resetEmailInput?.value?.trim().toLowerCase() || '';
+      if (!email) {
+        showResetStatus('Please enter your email address.', true);
+        return;
+      }
 
-  const handleForgotPassword = async () => {
-    const emailInput = emailInputGetter();
-    const emailValue = emailInput?.value.trim().toLowerCase() ?? '';
-
-    if (!emailValue) {
-      showError('Enter your email to reset password.');
-      emailInput?.focus();
-      return;
-    }
-
-    if (!EMAIL_REGEX.test(emailValue)) {
-      showError('Please enter a valid email address.');
-      emailInput?.focus();
-      return;
-    }
-
-    disableForgotButton(true, 'Sending...');
-    try {
-      await supabase.auth.resetPasswordForEmail(emailValue, {
-        redirectTo: resetUrl,
-      });
-      showMessage('Password reset email sent. Check your inbox.');
-    } catch (error) {
-      console.error("[Login] reset password error", error);
-      showError(error?.message || 'Unable to send reset email.');
-    } finally {
-      setTimeout(() => disableForgotButton(false, 'Forgot password?'), 10000);
-    }
-  };
-
-  forgotButton?.addEventListener('click', handleForgotPassword);
+      sendResetBtn.disabled = true;
+      showResetStatus('');
+      try {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${location.origin}/auth-callback.html`
+        });
+        if (error) {
+          showResetStatus(error.message || 'Failed to send reset email.', true);
+        } else {
+          showResetStatus('Check your email for a reset link.');
+        }
+      } catch (err) {
+        showResetStatus(err?.message || 'Failed to send reset email.', true);
+      } finally {
+        sendResetBtn.disabled = false;
+      }
+    });
+  }
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     console.log("DEBUG: Login form submitted");
 
-    const emailInput = document.getElementById('email');
-    const passwordInput = document.getElementById('loginPassword');
-    const email = emailInput?.value.trim().toLowerCase() ?? "";
-    const password = passwordInput?.value.trim() ?? "";
-
-    console.log(`[Login] email="${email}" pwLen=${password.length}`);
+    const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+    const password = document.getElementById('loginPassword').value;
 
     if (!email || !password) {
-      showError('Please enter both email and password.');
-      return;
-    }
-
-    if (email.includes(" ") || !EMAIL_REGEX.test(email)) {
-      showError('Please enter a valid email address.');
+      errorDisplay.style.display = 'block';
+      errorDisplay.textContent = 'Please enter both email and password.';
       return;
     }
 
@@ -127,59 +140,65 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (error) {
       console.error("DEBUG: Login failed", error.message);
-      showError('Invalid email or password.');
+      errorDisplay.style.display = 'block';
+      errorDisplay.textContent = 'Invalid email or password.';
       return;
     }
 
-    console.log("DEBUG: Login success, user id:", data.user.id);
+// ✅ Hydrate session before any RLS-protected table reads
+const { data: sessionData, error: sessionErr } = await supabase.auth.getSession();
+if (sessionErr || !sessionData?.session?.user) {
+  console.error("DEBUG: Session hydration failed", sessionErr);
+  errorDisplay.style.display = 'block';
+  errorDisplay.textContent = 'Session not ready. Please try again.';
+  return;
+}
 
-    const { data: userData, error: fetchError } = await supabase
-      .from('users')
-      .select('id, firstName, lastName, email, roles, parent_uuid, avatarUrl, teacherIds, instrument')
-      .eq('id', data.user.id)
-      .single();
+const authUser = sessionData.session.user;
+const userId = authUser.id;
+console.log("[Login] authUserId/email", authUser.id, authUser.email);
 
-    console.log("DEBUG: User fetch result", userData, fetchError);
+const ensured = await ensureUserRow();
+if (ensured) {
+  localStorage.setItem("loggedInUser", JSON.stringify(ensured));
+}
+console.log("[Login] post-auth ok", { userId, email: authUser.email });
 
-    if (fetchError || !userData) {
-      showError('Error fetching user profile.');
-      return;
-    }
+// --- FINALIZE PENDING CHILDREN (signup with multiple students) ---
+const pendingEmail = (localStorage.getItem("pendingChildrenEmail") || "").toLowerCase();
+const pendingRaw = localStorage.getItem("pendingChildren");
+const pendingChildren = pendingRaw ? JSON.parse(pendingRaw) : [];
+console.log("FINALIZE: pendingChildren =", pendingChildren);
 
-    // ✅ Normalize roles
-    if (typeof userData.roles === "string") {
-      try { userData.roles = JSON.parse(userData.roles); } 
-      catch { userData.roles = userData.roles.split(",").map(r => r.trim()); }
-    } else if (!Array.isArray(userData.roles)) {
-      userData.roles = userData.roles ? [userData.roles] : [];
-    }
 
-    if ((!userData.roles || userData.roles.length === 0) && userData.email === "lisarachelle85@gmail.com") {
-      console.warn("Roles missing, applying fallback for admin.");
-      userData.roles = ["teacher", "admin"];
-    }
+const authEmail = (sessionData.session.user.email || "").toLowerCase();
+const shouldFinalize = pendingChildren.length > 0 && pendingEmail === authEmail;
 
-    console.log("DEBUG: Normalized roles", userData.roles);
 
-    // ✅ Save user and determine role
-    localStorage.setItem('loggedInUser', JSON.stringify(userData));
-    const normalizedRoles = (userData.roles || ['student']).map(r => r.toLowerCase());
-    const defaultRole = normalizedRoles.includes('admin') ? 'admin' :
-                        normalizedRoles.includes('teacher') ? 'teacher' :
-                        normalizedRoles.includes('parent') ? 'parent' : 'student';
-    localStorage.setItem('activeRole', defaultRole);
+if (shouldFinalize) {
+  try {
+    const studioId = localStorage.getItem("activeStudioId");
+    await createStudioStudents(pendingChildren, userId, studioId);
+  } catch (err) {
+    console.error("[Finalize] student create failed", err);
+    errorDisplay.textContent = "Student creation failed.";
+    errorDisplay.style.display = "block";
+    return;
+  }
 
-    // ✅ Redirect based on role
-    if (normalizedRoles.includes('parent')) {
-      console.log("DEBUG: Parent role detected – redirecting directly to settings");
-      sessionStorage.setItem("forceUserSwitch", "true");
-      window.location.href = 'settings.html';  // ✅ relative path avoids 404 on Vercel
-    } else {
-      console.log("DEBUG: Redirecting to home");
-      window.location.href = 'index.html';
-    }
-  });
-});
+  localStorage.removeItem("pendingChildren");
+  localStorage.removeItem("pendingChildrenEmail");
+}
+
+const postAuth = await finalizePostAuth({ ensureUser: false, storeProfile: false, redirectHome: false });
+if (postAuth?.routeResult?.redirected) return;
+window.location.href = getSafeReturnTo();
+console.log("[Login] routed");
+return;
+
+  }); // end submit
+});   // end DOMContentLoaded
+
 /* === Append-only: flat 2D password toggle for Login === */
 (function () {
   function svgEyeOpen() {
@@ -229,3 +248,5 @@ document.addEventListener("DOMContentLoaded", () => {
     addPwToggle(document.getElementById('loginPassword'));
   });
 })();
+
+

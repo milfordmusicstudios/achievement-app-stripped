@@ -1,0 +1,65 @@
+#settings-tabs {
+  position: sticky;
+  top: 0;
+  z-index: 80;
+  padding: 8px 0 4px;
+  margin-bottom: 18px;
+  background: transparent;
+  border-bottom: none;
+}
+
+#settings-tabs .settings-tabs-inner {
+  max-width: 480px;
+  width: min(100%, 480px);
+  margin: 0 auto;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 0;
+  background: transparent;
+}
+
+.settings-tab {
+  padding: 8px 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(11, 79, 138, 0.3);
+  background: rgba(255, 255, 255, 0.75);
+  color: rgba(11, 79, 138, 0.85);
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 0.9rem;
+  letter-spacing: 0.4px;
+  transition: all 150ms ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 120px;
+  text-align: center;
+}
+
+.settings-tab:hover,
+.settings-tab:focus-visible {
+  color: #0B4F8A;
+  border-color: rgba(11, 79, 138, 0.85);
+}
+
+.settings-tab.is-active {
+  background: #0B4F8A;
+  color: #fff;
+  border-color: #0B4F8A;
+  box-shadow: 0 10px 20px rgba(7, 50, 88, 0.25);
+}
+
+@media (max-width: 480px) {
+  #settings-tabs {
+    padding: 6px 0;
+  }
+  #settings-tabs .settings-tabs-inner {
+    gap: 6px;
+  }
+  .settings-tab {
+    flex: 1 1 45%;
+    min-width: 100px;
+  }
+}

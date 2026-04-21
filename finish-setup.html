@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta name="supabase-url" content="https://wygdmapqwqjqrmrksaef.supabase.co" />
+  <meta name="supabase-anon-key" content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind5Z2RtYXBxd3FqcXJtcmtzYWVmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMyODE2NDEsImV4cCI6MjA2ODg1NzY0MX0.LPkBdlfSc6V8dbQ6wTAJMPvm7PzQ1OxOraypdee7w2I" />
+
+  <meta charset="UTF-8" />
+  <title>Finish Setup | Achievement App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="style.css" />
+  <meta name="theme-color" content="#0B4F8A" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Achievement App" />
+  <link rel="icon" type="image/png" sizes="192x192" href="images/pwa/icon-192.png?v=20260418b" />
+  
+  <link rel="apple-touch-icon" href="images/pwa/apple-touch-icon.png?v=20260418b" />
+</head>
+
+<body class="white-page">
+  <div id="envBadge" class="env-badge" style="display:none;"></div>
+
+  <main class="app">
+    <div class="auth-container">
+      <img src="images/logos/amplified.png" alt="App Logo" class="logo" />
+      <h2>Finish Setup</h2>
+      <p style="margin-top:6px;">Complete your account to join your studio.</p>
+
+      <form id="finishSetupForm" class="settings-form" style="max-width:520px;">
+        <h3 style="margin-top:0;">Adult / Parent Info</h3>
+        <input type="text" id="adultFirstName" placeholder="First Name" required />
+        <input type="text" id="adultLastName" placeholder="Last Name" required />
+
+        <div style="margin:10px 0;">
+          <label style="display:block; margin-bottom:6px;">Account Type</label>
+          <label style="display:block; margin-bottom:6px;">
+            <input type="radio" name="accountType" value="adult" />
+            Adult (no students linked yet)
+          </label>
+          <label style="display:block;">
+            <input type="radio" name="accountType" value="parent" checked />
+            Parent/Guardian (I want to add students now)
+          </label>
+        </div>
+
+        <section id="selfTeacherSection" style="margin-top:12px; display:none;">
+          <h3 style="margin:0 0 6px 0;">Teacher(s)</h3>
+          <select id="selfTeacherIds" class="teacher-select" multiple></select>
+          <div id="selfTeacherError" class="teacher-error" style="display:none;"></div>
+        </section>
+
+        <section id="studentsSection" style="margin-top:14px;">
+          <h3 style="margin:0 0 6px 0;">Add Students</h3>
+          <p style="margin:0 0 10px 0;">Add one or more students now (you can add more later).</p>
+          <div id="studentsList"></div>
+          <button type="button" id="addStudentBtn" class="blue-button" style="margin-top:10px;">
+            Add another student
+          </button>
+        </section>
+
+        <section style="margin-top:18px;">
+          <h3 style="margin:0 0 6px 0;">Create a password (so you can log in without a magic link)</h3>
+          <input id="newPassword" type="password" placeholder="New Password" />
+          <input id="confirmPassword" type="password" placeholder="Confirm Password" />
+          <div style="font-size:12px; color:#555; margin-top:4px;">Minimum 8 characters recommended.</div>
+          <div id="passwordStatus" style="display:none; margin-top:8px;"></div>
+        </section>
+
+        <div class="button-row" style="margin-top:14px;">
+          <button type="submit" class="blue-button" id="completeSetupBtn">Complete Setup</button>
+          <button type="button" id="skipBtn" class="blue-button" style="background:#999;">Skip for now</button>
+        </div>
+
+        <button type="button" id="logoutBtn" class="blue-button" style="margin-top:10px; background:#999;">Logout</button>
+
+        <p id="finishSetupError" style="color:#c62828; display:none; margin-top:10px;"></p>
+        <p id="finishSetupMsg" style="color:#0b7a3a; display:none; margin-top:10px;"></p>
+      </form>
+    </div>
+  </main>
+
+  <footer class="auth-footer">
+    &copy; 2025 Music Amplified Awards
+  </footer>
+
+  <template id="studentRowTemplate">
+    <div class="student-block" style="border:1px solid rgba(11,79,138,0.18); border-radius:12px; padding:10px; margin-bottom:10px;">
+      <div class="form-row">
+        <input type="text" class="student-first" name="student_first[]" placeholder="Student First Name" />
+      </div>
+      <div class="form-row">
+        <input type="text" class="student-last" name="student_last[]" placeholder="Student Last Name" />
+      </div>
+      <div class="form-row">
+        <select class="student-grade">
+          <option value="">Grade (optional)</option>
+          <option value="K">K</option>
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5">5</option>
+          <option value="6">6</option>
+          <option value="7">7</option>
+          <option value="8">8</option>
+          <option value="9">9</option>
+          <option value="10">10</option>
+          <option value="11">11</option>
+          <option value="12">12</option>
+          <option value="Adult">Adult</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <input type="text" class="student-instrument" placeholder="Instrument (optional)" />
+      </div>
+      <div class="form-row teacher-select-wrap">
+        <label class="teacher-label">Teacher(s)</label>
+        <select class="student-teachers teacher-select" multiple></select>
+        <div class="teacher-error" style="display:none;"></div>
+      </div>
+      <button type="button" class="blue-button remove-student-btn" style="background:#999;">
+        Remove student
+      </button>
+    </div>
+  </template>
+
+  <script src="config.js"></script>
+  <script src="supabase-config.js"></script>
+  <script type="module" src="supabaseClient.js"></script>
+  <script type="module" src="utils.js"></script>
+  <script type="module" src="studio-routing.js"></script>
+  <script type="module" src="nav.js"></script>
+
+  <script type="module" src="./finish-setup.js"></script>
+  <script type="module" src="pwa-install.js"></script>
+</body>
+</html>
+

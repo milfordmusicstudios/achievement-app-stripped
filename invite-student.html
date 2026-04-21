@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta name="supabase-url" content="https://wygdmapqwqjqrmrksaef.supabase.co" />
+  <meta name="supabase-anon-key" content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind5Z2RtYXBxd3FqcXJtcmtzYWVmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMyODE2NDEsImV4cCI6MjA2ODg1NzY0MX0.LPkBdlfSc6V8dbQ6wTAJMPvm7PzQ1OxOraypdee7w2I" />
+
+  <meta charset="UTF-8" />
+  <title>Invite Student | Achievement App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="nav.css" />
+  <style>
+    [data-embed-root].is-embedded {
+      padding: 0;
+      margin: 0;
+    }
+
+    [data-embed-root].is-embedded .standalone-only {
+      display: none;
+    }
+  </style>
+  <meta name="theme-color" content="#0B4F8A" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Achievement App" />
+  <link rel="icon" type="image/png" sizes="192x192" href="images/pwa/icon-192.png?v=20260418b" />
+  
+  <link rel="apple-touch-icon" href="images/pwa/apple-touch-icon.png?v=20260418b" />
+</head>
+<body class="app-shell white-page">
+  <header class="standalone-only">
+    <div id="envBadge" class="env-badge" style="display:none;"></div>
+    <h2 style="text-align:center; margin:0; padding:10px 20px;">Invite Student</h2>
+  </header>
+
+  <main class="app-main standalone-only">
+    <h1>Invite Student</h1>
+  </main>
+
+  <div class="settings-embed" data-embed-root>
+    <div class="embed-panel-body embed-account-card">
+      <form id="inviteForm" class="settings-form" style="max-width:520px;">
+        <div class="embed-row">
+          <div class="embed-label">Email</div>
+          <div class="embed-field">
+            <input id="inviteEmail" type="email" required />
+          </div>
+        </div>
+        <div class="embed-divider"></div>
+        <div class="embed-row">
+          <div class="embed-label">Role</div>
+          <div class="embed-field">
+            <select id="inviteRole" required>
+              <option value="">Select role</option>
+              <option value="student">Student</option>
+              <option value="parent">Parent/Guardian</option>
+              <option value="teacher">Teacher</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+        </div>
+        <p id="inviteError" style="color:#c62828; display:none; margin-top:10px;"></p>
+        <p id="inviteSuccess" style="color:#0b7a3a; display:none; margin-top:10px;"></p>
+        <div class="embed-actions">
+          <div class="button-row" style="margin-top:14px;">
+            <button type="submit" class="blue-button">Create Invite</button>
+          </div>
+        </div>
+      </form>
+
+      <div id="inviteLinkBox" style="display:none; margin-top:16px;">
+        <div style="font-weight:700; margin-bottom:6px;">Invite link</div>
+        <input id="inviteLinkInput" type="text" readonly style="width:100%;" />
+        <button id="copyInviteBtn" class="blue-button" type="button" style="margin-top:8px;">Copy invite link</button>
+      </div>
+
+      <h3 class="embed-subhead">Pending Invites</h3>
+      <div class="embed-pending">
+        <div style="margin-top:24px;">
+          <div id="pendingInvites" style="display:grid; gap:10px;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="app-bottom-nav" class="standalone-only"></div>
+
+  <script src="config.js"></script>
+  <script src="supabase-config.js"></script>
+  <script type="module" src="supabaseClient.js"></script>
+  <script type="module" src="utils.js"></script>
+  <script type="module" src="studio-routing.js"></script>
+  <script type="module" src="nav.js"></script>
+
+  <script type="module" src="invite-staff.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const roleSelect = document.getElementById("inviteRole");
+      if (roleSelect) {
+        roleSelect.value = "student";
+      }
+    });
+  </script>
+  <script type="module" src="pwa-install.js"></script>
+</body>
+</html>
+

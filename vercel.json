@@ -1,0 +1,28 @@
+{
+  "rewrites": [
+    {
+      "source": "/info",
+      "destination": "/info.html"
+    },
+    {
+      "source": "/info/",
+      "destination": "/info.html"
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/badges/cron-daily?cron_secret=${BADGE_CRON_SECRET}",
+      "schedule": "0 15 * * *"
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/(.*)",
+      "has": [
+        { "type": "host", "value": "achievement-app-stripped.vercel.app" }
+      ],
+      "destination": "https://awards.milfordmusic.com/$1",
+      "permanent": true
+    }
+  ]
+}

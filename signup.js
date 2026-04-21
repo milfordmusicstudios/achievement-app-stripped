@@ -1,156 +1,228 @@
 import { supabase } from "./supabaseClient.js";
 
-document.addEventListener("DOMContentLoaded", () => {
-  const form = document.getElementById('signupForm');
-  const errorDisplay = document.getElementById('signupError');
-  const emailInput = document.getElementById('signupEmail');
-  const cancelBtn = document.getElementById('cancelBtn');
-  const submitBtn = document.getElementById('submitBtn');
+let teachersAvailable = false; // if no teachers exist, allow signup without selecting any
+let teacherOptionData = [];    // cached teacher options for dynamic student blocks
 
-  // ✅ Pre-fill email if provided in query
+function parseRoles(roles) {
+  if (!roles) return [];
+  if (Array.isArray(roles)) return roles.map(r => String(r).toLowerCase());
+  if (typeof roles === "string") {
+    try {
+      const parsed = JSON.parse(roles);
+      return Array.isArray(parsed) ? parsed.map(r => String(r).toLowerCase()) : [String(parsed).toLowerCase()];
+    } catch {
+      return roles.split(",").map(r => r.trim().toLowerCase()).filter(Boolean);
+    }
+  }
+  return [String(roles).toLowerCase()];
+}
+
+function applyTeacherOptionsToSelect(selectEl) {
+  if (!selectEl) return;
+
+  // If no teachers exist, show the fail-safe option
+  if (!teachersAvailable) {
+    selectEl.innerHTML = "";
+    selectEl.disabled = true;
+    selectEl.required = false;
+
+    const opt = document.createElement("option");
+    opt.value = "";
+    opt.textContent = "No teachers available — you may continue";
+    selectEl.appendChild(opt);
+    return;
+  }
+
+  // Teachers exist
+  selectEl.disabled = false;
+  selectEl.required = true;
+
+  // Preserve selections if any
+  const selected = new Set(Array.from(selectEl.selectedOptions || []).map(o => o.value));
+
+  selectEl.innerHTML = "";
+  teacherOptionData.forEach(t => {
+    const opt = document.createElement("option");
+    opt.value = t.id;
+    opt.textContent = t.label;
+    if (selected.has(t.id)) opt.selected = true;
+    selectEl.appendChild(opt);
+  });
+}
+
+// Simple helper for parsing instruments
+function parseInstruments(raw) {
+  return (raw || "")
+    .split(",")
+    .map(i => i.trim())
+    .filter(Boolean);
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const form = document.getElementById("signupForm");
+  const errorDisplay = document.getElementById("signupError");
+  const emailInput = document.getElementById("signupEmail");
+  const cancelBtn = document.getElementById("cancelBtn");
+  const submitBtn = document.getElementById("submitBtn");
+  const hasPendingInvite = Boolean(localStorage.getItem("pendingInviteToken"));
+  const studentsContainer = document.getElementById("studentsContainer");
+  const addStudentBtn = document.getElementById("addStudentBtn");
+
+  if (hasPendingInvite) {
+    if (studentsContainer) {
+      studentsContainer.style.display = "none";
+      studentsContainer.querySelectorAll("input, select").forEach(el => {
+        el.required = false;
+      });
+    }
+    if (addStudentBtn) addStudentBtn.style.display = "none";
+  }
+
+  // Prefill email if provided in query
   const params = new URLSearchParams(window.location.search);
   const inviteEmail = params.get("email");
-  if (inviteEmail) {
+  if (inviteEmail && emailInput) {
     emailInput.value = inviteEmail;
     emailInput.readOnly = true;
   }
 
-  // ✅ Load Teachers into Multi-Select (supports roles as array or string)
   async function loadTeachers() {
     const { data: teachers, error } = await supabase
       .from("users")
-      .select("id, firstName, lastName, roles");
+      .select('id, "firstName", "lastName", roles');
 
     if (error) {
       console.error("Error loading teachers:", error);
+      // If we can’t load teachers, act like none exist (fail-safe)
+      teachersAvailable = false;
+      teacherOptionData = [];
+      document.querySelectorAll('select[id^="teacherIds"]').forEach(applyTeacherOptionsToSelect);
       return;
     }
 
-    const teacherSelect = document.getElementById("teacherIds");
-    teacherSelect.innerHTML = "";
+    const teacherList = (teachers || [])
+      .filter(t => {
+        const roles = parseRoles(t.roles);
+        return roles.includes("teacher") || roles.includes("admin");
+      })
+      .sort(
+        (a, b) =>
+          (a.lastName || "").localeCompare(b.lastName || "") ||
+          (a.firstName || "").localeCompare(b.firstName || "")
+      );
 
-    const isTeacherish = (roles) => {
-      if (!roles) return false;
-      let arr = roles;
-      if (typeof roles === "string") {
-        try { arr = JSON.parse(roles); } catch { arr = roles.split(",").map(r => r.trim()); }
-      }
-      if (!Array.isArray(arr)) arr = [arr];
-      arr = arr.map(r => String(r).toLowerCase());
-      return arr.includes("teacher") || arr.includes("admin");
-    };
+    teachersAvailable = teacherList.length > 0;
 
-    teachers
-      .filter(t => isTeacherish(t.roles))
-      .sort((a,b) => (a.lastName||"").localeCompare(b.lastName||"") || (a.firstName||"").localeCompare(b.firstName||""))
-      .forEach(t => {
-        const opt = document.createElement("option");
-        opt.value = t.id;
-        opt.textContent = `${t.firstName ?? ""} ${t.lastName ?? ""}`.trim() || "Unnamed Teacher";
-        teacherSelect.appendChild(opt);
-      });
+    teacherOptionData = teacherList.map(t => ({
+      id: t.id,
+      label: (`${t.firstName ?? ""} ${t.lastName ?? ""}`.trim() || "Unnamed Teacher")
+    }));
+
+    // Apply options to ALL teacher selects (teacherIds, teacherIds2, teacherIds3, ...)
+    document.querySelectorAll('select[id^="teacherIds"]').forEach(applyTeacherOptionsToSelect);
   }
+
   loadTeachers();
 
-  // ✅ Cancel Button → back to login
-  cancelBtn.addEventListener("click", () => {
+  // When a new student block is added, populate its teacher select
+  document.getElementById("addStudentBtn")?.addEventListener("click", () => {
+    setTimeout(() => {
+      document.querySelectorAll('select[id^="teacherIds"]').forEach(applyTeacherOptionsToSelect);
+    }, 0);
+  });
+
+  // Cancel Button → back to login
+  cancelBtn?.addEventListener("click", () => {
     window.location.href = "login.html";
   });
 
-  // Simple helper for parsing instruments
-  function parseInstruments(raw) {
-    return (raw || "")
-      .split(",")
-      .map(i => i.trim())
-      .filter(Boolean);
-  }
-
-  // ✅ Form Submit
-  form.addEventListener('submit', async (e) => {
+  form?.addEventListener("submit", async (e) => {
     e.preventDefault();
-    errorDisplay.style.display = 'none';
-    errorDisplay.textContent = '';
 
-    // Required fields
-    const firstName = document.getElementById('firstName').value.trim();
-    const lastName = document.getElementById('lastName').value.trim();
-    const email = emailInput.value.trim().toLowerCase();
-    const password = document.getElementById('signupPassword').value;
-    const instrumentRaw = document.getElementById('instrument').value;
-    const instruments = parseInstruments(instrumentRaw);
-    const teacherIds = Array.from(document.getElementById('teacherIds').selectedOptions).map(o => o.value);
+    errorDisplay.style.display = "none";
+    errorDisplay.textContent = "";
 
-    // ✅ Client-side validation for required multi-select + instruments
-    if (instruments.length === 0) {
-      errorDisplay.textContent = "Please enter at least one instrument.";
-      errorDisplay.style.display = 'block';
-      return;
-    }
-    if (teacherIds.length === 0) {
-      errorDisplay.textContent = "Please select at least one teacher.";
-      errorDisplay.style.display = 'block';
+    const email = (emailInput?.value || "").trim().toLowerCase();
+    const password = document.getElementById("signupPassword")?.value || "";
+
+    // Email/password required for auth signup
+    if (!email || !password) {
+      errorDisplay.textContent = "Email and password are required.";
+      errorDisplay.style.display = "block";
       return;
     }
 
-    // Quick HTML validation for other required fields
-    if (!firstName || !lastName || !email || !password) {
-      errorDisplay.textContent = "First name, last name, email, and password are required.";
-      errorDisplay.style.display = 'block';
-      return;
-    }
-
-    // Avoid double-submit
-    submitBtn.disabled = true;
+    const pending = [];
 
     try {
-      // ✅ Step 1: Sign Up Auth User
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({ email, password });
-      if (signUpError) {
-        throw new Error(signUpError.message);
-      }
+      if (!hasPendingInvite) {
+        const blocks = Array.from(document.querySelectorAll("#studentsContainer .student-block"));
+        blocks.forEach((block, idx) => {
+          const n = idx + 1;
+          const suffix = (n === 1) ? "" : String(n);
 
-      const userId = signUpData.user?.id;
-      if (!userId) {
-        throw new Error("Signup failed. Try again.");
-      }
+          const firstName = (document.getElementById(`firstName${suffix}`)?.value || "").trim();
+          const lastName  = (document.getElementById(`lastName${suffix}`)?.value || "").trim();
+          const rawInst   = (document.getElementById(`instrument${suffix}`)?.value || "");
+          const instruments = parseInstruments(rawInst);
 
-      // ✅ Step 2: Upload Avatar (if provided)
-      let avatarUrl = null;
-      const avatarFile = document.getElementById('avatarInput').files[0];
-      if (avatarFile) {
-        const fileName = `${userId}-${Date.now()}-${avatarFile.name.replace(/\s+/g, "_")}`;
-        const { error: uploadError } = await supabase.storage.from("avatars").upload(fileName, avatarFile, { upsert: true });
-        if (!uploadError) {
-          const { data: publicUrl } = supabase.storage.from("avatars").getPublicUrl(fileName);
-          avatarUrl = publicUrl.publicUrl;
-        } else {
-          console.warn("Avatar upload failed:", uploadError.message);
+          const teacherSel = document.getElementById(`teacherIds${suffix}`);
+          const teacherIds = Array.from(teacherSel?.selectedOptions || []).map(o => o.value);
+
+          // Optional students: ignore completely if no name entered
+          if (n > 1 && !firstName && !lastName) return;
+
+          // Validate student
+          if (!firstName || !lastName) {
+            throw new Error(`Student #${n} must have both first and last name.`);
+          }
+          if (instruments.length === 0) {
+            throw new Error(`Please enter at least one instrument for Student #${n}.`);
+          }
+          if (teachersAvailable && teacherIds.length === 0) {
+            throw new Error(`Please select at least one teacher for Student #${n}.`);
+          }
+
+          pending.push({ firstName, lastName, instruments, teacherIds });
+        });
+
+        if (pending.length === 0) {
+          throw new Error("Please enter at least one student.");
         }
       }
 
-      // ✅ Step 3: Insert into Custom Users Table
-      const { error: insertError } = await supabase.from('users').insert([{
-        id: userId,
-        firstName,
-        lastName,
-        email,
-        instrument: instruments,   // array
-        teacherIds,                // array of IDs
-        avatarUrl,
-        roles: ['student'],
-        points: 0
-      }]);
+      // Prevent double-submit
+      submitBtn.disabled = true;
 
-      if (insertError) {
-        throw new Error(insertError.message);
+      // Save drafts locally to finalize after email confirm + login
+      if (pending.length > 0) {
+        localStorage.setItem("pendingChildren", JSON.stringify(pending));
+        localStorage.setItem("pendingChildrenEmail", email);
       }
 
-      alert("Signup successful! You may now log in.");
-      window.location.href = 'login.html';
+      // Signup ONCE (parent auth)
+      // Parent name metadata: use Student #1 name for now
+      const parentFirst = pending[0]?.firstName || "";
+      const parentLast  = pending[0]?.lastName || "";
+
+const { data, error: signUpError } = await supabase.auth.signUp({
+  email,
+  password,
+  options: {
+    emailRedirectTo: `${window.location.origin}/auth-callback.html`,
+  },
+});
+
+if (signUpError) throw signUpError;
+
+      alert("Check your email to confirm your account, then log in.");
+      window.location.href = "login.html";
+      return;
+
     } catch (err) {
       console.error("Signup error:", err);
       errorDisplay.textContent = err.message || "Something went wrong. Please try again.";
-      errorDisplay.style.display = 'block';
+      errorDisplay.style.display = "block";
       submitBtn.disabled = false;
       return;
     }

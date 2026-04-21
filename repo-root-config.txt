@@ -1,0 +1,3 @@
+C:\Users\lisarachelle85\OneDrive\Desktop\Achievement App DEV\package.json
+C:\Users\lisarachelle85\OneDrive\Desktop\Achievement App DEV\vercel.json
+C:\Users\lisarachelle85\OneDrive\Desktop\Achievement App DEV\.env.local

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta name="supabase-url" content="https://wygdmapqwqjqrmrksaef.supabase.co" />
+  <meta name="supabase-anon-key" content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind5Z2RtYXBxd3FqcXJtcmtzYWVmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMyODE2NDEsImV4cCI6MjA2ODg1NzY0MX0.LPkBdlfSc6V8dbQ6wTAJMPvm7PzQ1OxOraypdee7w2I" />
+
+  <meta charset="UTF-8" />
+  <title>Join Studio | Achievement App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="style.css" />
+  <meta name="theme-color" content="#0B4F8A" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Achievement App" />
+  <link rel="icon" type="image/png" sizes="192x192" href="images/pwa/icon-192.png?v=20260418b" />
+  
+  <link rel="apple-touch-icon" href="images/pwa/apple-touch-icon.png?v=20260418b" />
+</head>
+<body class="white-page">
+  <div id="envBadge" class="env-badge" style="display:none;"></div>
+
+  <main class="app">
+    <h2>Join a Studio</h2>
+
+    <section class="settings-form" style="max-width:520px; margin: 0 auto 20px;">
+      <h3 id="inviteHeading">Join with Invite</h3>
+
+      <label for="inviteToken">Invite Token</label>
+      <input id="inviteToken" type="text" placeholder="Paste your invite token" />
+
+      <p id="inviteStatus" style="margin-top:10px;">Paste an invite token to continue.</p>
+      <p id="inviteDetails" style="margin-top:6px;"></p>
+      <p id="inviteError" style="color:#c62828; display:none; margin-top:10px;"></p>
+
+      <div id="validateRow" class="button-row" style="margin-top:14px; display:none;">
+        <button id="validateInviteBtn" type="button" class="blue-button">Validate Invite</button>
+      </div>
+    </section>
+
+    <section id="authPanels" class="settings-form" style="max-width:520px; margin: 0 auto 20px; display:none;">
+      <h3 id="inviteWelcome">Welcome to this studio</h3>
+      <p id="invitePrompt">You have been invited to join this studio. Please log in or create an account below.</p>
+
+      <div style="display:grid; gap:16px;">
+        <form id="loginFormInline" class="settings-form" style="padding:0;">
+          <h4>Log in</h4>
+          <label for="loginEmailInline">Email</label>
+          <input id="loginEmailInline" type="email" autocomplete="email" />
+
+          <label for="loginPasswordInline">Password</label>
+          <input id="loginPasswordInline" type="password" autocomplete="current-password" />
+
+          <p id="loginErrorInline" style="color:#c62828; display:none; margin-top:10px;"></p>
+          <p id="loginSuccessInline" style="color:#0b7a3a; display:none; margin-top:10px;"></p>
+
+          <div class="button-row" style="margin-top:14px;">
+            <button type="submit" class="blue-button">Log in</button>
+          </div>
+        </form>
+
+        <form id="signupFormInline" class="settings-form" style="padding:0;">
+          <h4>Create account</h4>
+          <label for="signupEmailInline">Email</label>
+          <input id="signupEmailInline" type="email" autocomplete="email" />
+
+          <label for="signupPasswordInline">Password</label>
+          <input id="signupPasswordInline" type="password" autocomplete="new-password" />
+
+          <p id="signupErrorInline" style="color:#c62828; display:none; margin-top:10px;"></p>
+          <p id="signupSuccessInline" style="color:#0b7a3a; display:none; margin-top:10px;"></p>
+
+          <div class="button-row" style="margin-top:14px;">
+            <button type="submit" class="blue-button">Create account</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <div class="button-row" style="margin-top:18px;">
+      <button id="backBtn" type="button" class="blue-button">Back</button>
+    </div>
+  </main>
+
+  <script src="config.js"></script>
+  <script src="supabase-config.js"></script>
+  <script type="module" src="supabaseClient.js"></script>
+  <script type="module" src="utils.js"></script>
+  <script type="module" src="studio-routing.js"></script>
+  <script type="module" src="nav.js"></script>
+
+  <script type="module" src="join.js"></script>
+  <script type="module" src="pwa-install.js"></script>
+</body>
+</html>
+

@@ -1,41 +1,60 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <meta name="supabase-url" content="https://wygdmapqwqjqrmrksaef.supabase.co" />
+  <meta name="supabase-anon-key" content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind5Z2RtYXBxd3FqcXJtcmtzYWVmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMyODE2NDEsImV4cCI6MjA2ODg1NzY0MX0.LPkBdlfSc6V8dbQ6wTAJMPvm7PzQ1OxOraypdee7w2I" />
+
   <meta charset="UTF-8" />
   <title>Leaderboard | Achievement App</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="nav.css" />
+  <meta name="theme-color" content="#0B4F8A" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Achievement App" />
+  <link rel="icon" type="image/png" sizes="192x192" href="images/pwa/icon-192.png?v=20260418b" />
+  
+  <link rel="apple-touch-icon" href="images/pwa/apple-touch-icon.png?v=20260418b" />
 </head>
-<body class="tall-background leaderboard-page">
+<body class="app-shell tall-background leaderboard-page">
+  <div class="app-main">
+    <div id="envBadge" class="env-badge" style="display:none;"></div>
 
-  <main class="app">
-
-    <!-- 🔹 Header row with home button and title -->
-<div class="leaderboard-header">
-  <button type="button" class="blue-button" onclick="window.location.href='index.html'">Home</button>
-  <h2 class="leaderboard-title">Leaderboard</h2>
-</div>
-    <!-- 🔹 Scrollable leaderboard -->
-<div class="leaderboard-scroll-wrapper">
-      <div class="level-bars" id="leaderboardContainer">
-        <!-- JavaScript will inject level rows and avatars here -->
+    <main class="app">
+      <header class="leaderboard-header">
+        <h1 class="leaderboard-title">Leaderboard</h1>
+        <div id="leaderboardCount" class="leaderboard-count"></div>
+      </header>
+      <div class="leaderboard-scroll-wrapper">
+        <div class="level-bars" id="leaderboardContainer">
+          <div id="leaderboardBars"></div>
+        </div>
       </div>
+    </main>
+
+    <footer>
+      &copy; 2025 Music Amplified Awards
+    </footer>
+
+    <!-- Ã°Å¸â€Â¹ Loading Popup -->
+    <div id="loadingPopup">
+      <p id="loadingMessage">Ã°Å¸Å½Â¶ Tuning up the instruments...</p>
     </div>
+  </div>
 
-  </main>
-
-  <footer>
-    &copy; 2025 Milford Music Studios Achievement App
-  </footer>
-<!-- 🔹 Loading Popup -->
-<div id="loadingPopup">
-  <p id="loadingMessage">🎶 Tuning up the instruments...</p>
-</div>
-
-  <!-- ✅ Scripts -->
-  <script type="module" src="config.js"></script>
+  <div id="app-bottom-nav"></div>
+  <script src="config.js"></script>
+  <script src="supabase-config.js"></script>
   <script type="module" src="supabaseClient.js"></script>
-  <script type="module" src="authGuard.js"></script>
+  <script type="module" src="utils.js"></script>
+  <script type="module" src="studio-routing.js"></script>
+  <script type="module" src="nav.js"></script>
+
   <script type="module" src="leaderboard.js"></script>
+  <script type="module" src="pwa-install.js"></script>
 </body>
 </html>
+

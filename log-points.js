@@ -1,9 +1,21 @@
 import { supabase } from "./supabaseClient.js";
-import { recalculateUserPoints, showToast } from './utils.js';
+import { recalculateUserPoints, renderActiveStudentHeader } from './utils.js';
+import { ensureStudioContextAndRoute } from "./studio-routing.js";
+
 
 document.addEventListener("DOMContentLoaded", async () => {
+  const routeResult = await ensureStudioContextAndRoute({ redirectHome: false });
+  if (routeResult?.redirected) return;
+
+  const headerState = await renderActiveStudentHeader({
+    mountId: "activeStudentHeader",
+    contentSelector: ".student-content"
+  });
+  if (headerState?.blocked) return;
+
   const user = JSON.parse(localStorage.getItem("loggedInUser"));
   const activeRole = localStorage.getItem("activeRole");
+  const activeStudioId = localStorage.getItem("activeStudioId") || user?.studio_id || user?.studioId || null;
 
   if (!user) {
     window.location.href = "login.html";
@@ -11,244 +23,34 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   const categorySelect = document.getElementById("logCategory");
-  const studentRow = document.getElementById("logStudentRow");
-  const studentSearchInput = document.getElementById("logStudentSearch");
-  const studentResults = document.getElementById("logStudentResults");
-  const studentChips = document.getElementById("logStudentChips");
-  const studentHidden = document.getElementById("logStudent");
-  const clearLogStudentBtn = document.getElementById("clearLogStudent");
+  const studentSelect = document.getElementById("logStudent");
   const previewImage = document.getElementById("previewImage");
   const pointsInput = document.getElementById("logPoints");
   const notesInput = document.getElementById("logNote");
-  const logDateCalendar = document.getElementById("logDateCalendar");
-  const logDateSummary = document.getElementById("logDateSummary");
+  const dateInput = document.getElementById("logDate");
   const submitBtn = document.querySelector("button[type='submit']");
   const cancelBtn = document.querySelector("button[type='button']");
 
-  let availableStudents = [];
-  const selectedStudents = new Map();
-
-  function formatStudentName(student) {
-    if (!student) return "";
-    const first = student.firstName || "";
-    const last = student.lastName || "";
-    const name = `${last}, ${first}`.trim();
-    return name.length ? name : `${first} ${last}`.trim();
+  // ✅ Default date to today
+  if (dateInput) {
+    const today = new Date().toISOString().split("T")[0];
+    dateInput.value = today;
   }
-
-  function updateLogStudentHidden() {
-    if (!studentHidden) return;
-    studentHidden.value = Array.from(selectedStudents.keys()).join(",");
-  }
-
-  function createMultiDateCalendar(container, summaryNode) {
-    const selectedDates = new Set();
-    const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-    let currentMonthDate = new Date();
-    currentMonthDate.setDate(1);
-
-    function toDateKey(year, monthIndex, day) {
-      const mm = String(monthIndex + 1).padStart(2, "0");
-      const dd = String(day).padStart(2, "0");
-      return `${year}-${mm}-${dd}`;
-    }
-
-    function updateSummary() {
-      if (!summaryNode) return;
-      const dates = Array.from(selectedDates).sort();
-      summaryNode.textContent = dates.length
-        ? `${dates.length} date(s) selected: ${dates.join(", ")}`
-        : "Select one or more dates.";
-    }
-
-    function renderCalendar() {
-      if (!container) return;
-      const year = currentMonthDate.getFullYear();
-      const monthIndex = currentMonthDate.getMonth();
-      const firstDay = new Date(year, monthIndex, 1).getDay();
-      const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
-      const todayKey = new Date().toISOString().split("T")[0];
-      const monthTitle = currentMonthDate.toLocaleString(undefined, { month: "long", year: "numeric" });
-
-      const headerCells = weekDays.map(day => `<div class="multi-date-weekday">${day}</div>`).join("");
-      const emptyCells = Array.from({ length: firstDay }, () => `<button type="button" class="multi-date-day placeholder"></button>`).join("");
-      const dayCells = Array.from({ length: daysInMonth }, (_, index) => {
-        const day = index + 1;
-        const dateKey = toDateKey(year, monthIndex, day);
-        const isSelected = selectedDates.has(dateKey);
-        const isToday = dateKey === todayKey;
-        return `
-          <button
-            type="button"
-            class="multi-date-day ${isSelected ? "selected" : ""} ${isToday ? "today" : ""}"
-            data-date="${dateKey}"
-            aria-pressed="${isSelected ? "true" : "false"}"
-          >${day}</button>`;
-      }).join("");
-
-      container.innerHTML = `
-        <div class="multi-date-header">
-          <button type="button" class="multi-date-nav" data-nav="-1" aria-label="Previous month">&#9664;</button>
-          <div class="multi-date-title">${monthTitle}</div>
-          <button type="button" class="multi-date-nav" data-nav="1" aria-label="Next month">&#9654;</button>
-        </div>
-        <div class="multi-date-grid">
-          ${headerCells}
-          ${emptyCells}
-          ${dayCells}
-        </div>
-      `;
-
-      container.querySelectorAll("button[data-nav]").forEach(button => {
-        button.addEventListener("click", () => {
-          const direction = parseInt(button.dataset.nav, 10) || 0;
-          currentMonthDate.setMonth(currentMonthDate.getMonth() + direction);
-          renderCalendar();
-        });
-      });
-
-      container.querySelectorAll("button[data-date]").forEach(button => {
-        button.addEventListener("click", () => {
-          const dateKey = button.dataset.date;
-          if (!dateKey) return;
-          if (selectedDates.has(dateKey)) {
-            selectedDates.delete(dateKey);
-          } else {
-            selectedDates.add(dateKey);
-          }
-          updateSummary();
-          renderCalendar();
-        });
-      });
-    }
-
-    function resetToToday() {
-      const today = new Date();
-      currentMonthDate = new Date(today.getFullYear(), today.getMonth(), 1);
-      selectedDates.clear();
-      updateSummary();
-      renderCalendar();
-    }
-
-    function getSelectedDates() {
-      return Array.from(selectedDates).sort();
-    }
-
-    resetToToday();
-    return { getSelectedDates, resetToToday };
-  }
-
-  function renderLogStudentChips() {
-    if (!studentChips) return;
-    if (!selectedStudents.size) {
-      studentChips.innerHTML = "";
-      return;
-    }
-    studentChips.innerHTML = Array.from(selectedStudents.values())
-      .map(student => {
-        const name = formatStudentName(student);
-        return `
-        <span class="student-chip">
-          ${name}
-          <button type="button" data-remove-student="${student.id}" aria-label="Remove ${name}">&times;</button>
-        </span>`;
-      })
-      .join("");
-  }
-
-  function renderLogStudentResults() {
-    if (!studentResults) return;
-    const query = (studentSearchInput?.value || "").trim().toLowerCase();
-    if (!query) {
-      studentResults.style.display = "none";
-      return;
-    }
-
-    studentResults.style.display = "block";
-
-    if (!availableStudents.length) {
-      studentResults.innerHTML = `<div class="student-placeholder">Loading students...</div>`;
-      return;
-    }
-
-    const matches = availableStudents.filter(student => {
-      const full = `${student.firstName} ${student.lastName}`.trim().toLowerCase();
-      const reversed = `${student.lastName}, ${student.firstName}`.trim().toLowerCase();
-      return full.includes(query) || reversed.includes(query);
-    });
-
-    if (!matches.length) {
-      studentResults.innerHTML = `<div class="student-placeholder">No matches</div>`;
-      return;
-    }
-
-    studentResults.innerHTML = matches
-      .map(student => {
-        const name = formatStudentName(student);
-        const isSelected = selectedStudents.has(String(student.id));
-        return `<div class="student-option ${isSelected ? "selected" : ""}" data-id="${student.id}">${name}</div>`;
-      })
-      .join("");
-  }
-
-  function clearLogStudentSelection() {
-    selectedStudents.clear();
-    if (studentHidden) studentHidden.value = "";
-    if (studentChips) studentChips.innerHTML = "";
-    if (studentSearchInput) studentSearchInput.value = "";
-    renderLogStudentResults();
-  }
-
-  function clearLogStudentSearch() {
-    if (studentSearchInput) studentSearchInput.value = "";
-    clearLogStudentSelection();
-    if (studentResults) studentResults.style.display = "none";
-  }
-
-  function selectLogStudent(student) {
-    if (!student || !studentHidden) return;
-    const key = String(student.id);
-    if (selectedStudents.has(key)) return;
-    selectedStudents.set(key, student);
-    updateLogStudentHidden();
-    renderLogStudentChips();
-    if (studentSearchInput) studentSearchInput.value = "";
-    renderLogStudentResults();
-  }
-
-  studentResults?.addEventListener("click", (event) => {
-    const option = event.target.closest(".student-option");
-    if (!option) return;
-    const student = availableStudents.find(s => String(s.id) === option.dataset.id);
-    if (student) selectLogStudent(student);
-  });
-
-  studentSearchInput?.addEventListener("input", () => renderLogStudentResults());
-  studentSearchInput?.addEventListener("focus", () => renderLogStudentResults());
-
-  studentChips?.addEventListener("click", (event) => {
-    const removeButton = event.target.closest("button[data-remove-student]");
-    if (!removeButton) return;
-    const id = removeButton.dataset.removeStudent;
-    if (!id) return;
-    selectedStudents.delete(id);
-    updateLogStudentHidden();
-    renderLogStudentChips();
-    renderLogStudentResults();
-  });
-
-  clearLogStudentBtn?.addEventListener("click", clearLogStudentSearch);
-  const logDatePicker = createMultiDateCalendar(logDateCalendar, logDateSummary);
 
   // ✅ Hide student dropdown & points input for students
   if (!(activeRole === "admin" || activeRole === "teacher")) {
-    if (studentRow) studentRow.style.display = "none";
+    if (studentSelect) studentSelect.closest("tr").style.display = "none";
     if (pointsInput) pointsInput.closest("tr").style.display = "none";
-    clearLogStudentSelection();
   }
 
   // ✅ Show default category preview
   if (previewImage) previewImage.src = "images/categories/allCategories.png";
+
+// URL prefill (from Home chips)
+const urlParams = new URLSearchParams(window.location.search);
+const PREFILL_CATEGORY = urlParams.get('category');
+const PREFILL_HINT = urlParams.get('hint');
+const PREFILL_MODE = urlParams.get('mode');
 
   // ✅ Load categories
   const { data: categories, error: catErr } = await supabase
@@ -259,14 +61,27 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (catErr) console.error("Error loading categories:", catErr.message);
 
   if (categories && categorySelect) {
+    const blockedCategoryNames = new Set(["batch_practice"]);
+    const visibleCategories = categories.filter(cat => !blockedCategoryNames.has(String(cat?.name || "").toLowerCase()));
     categorySelect.innerHTML = "<option value=''>Category</option>";
-    categories.forEach(cat => {
+    visibleCategories.forEach(cat => {
       const opt = document.createElement("option");
       opt.value = cat.name;
       opt.dataset.icon = cat.icon;
       opt.textContent = cat.name;
       categorySelect.appendChild(opt);
     });
+
+    // Prefill category when arriving from Home shortcuts
+    if (PREFILL_CATEGORY) {
+      categorySelect.value = PREFILL_CATEGORY;
+      categorySelect.dispatchEvent(new Event('change'));
+    }
+    if (PREFILL_HINT) {
+      const notesEl = document.getElementById('notes');
+      if (notesEl && !notesEl.value) notesEl.placeholder = PREFILL_HINT;
+    }
+
     // ✅ Category descriptions
 const categoryDescriptions = {
   "practice": "Daily practice (5 point)s.",
@@ -297,40 +112,45 @@ categorySelect.addEventListener("change", () => {
   }
 
   // ✅ Populate students only for teachers/admins
-  if (activeRole === "admin" || activeRole === "teacher") {
+  if ((activeRole === "admin" || activeRole === "teacher") && studentSelect) {
     const { data: students, error: stuErr } = await supabase
       .from("users")
-      .select("id, firstName, lastName, roles, teacherIds, active");
+      .select("id, firstName, lastName, roles, teacherIds")
+      .is("deactivated_at", null);
 
     if (stuErr) {
       console.error("Supabase error loading students:", stuErr.message);
-      availableStudents = [];
     } else if (students) {
-      availableStudents = students
-        .filter(s => {
-          const roles = Array.isArray(s.roles) ? s.roles : [s.roles];
-          const isStudent = roles.includes("student");
-          const isActive = s.active !== false;
+      const filtered = students.filter(s => {
+        const roles = Array.isArray(s.roles) ? s.roles : [s.roles];
+        const isStudent = roles.includes("student");
 
-          if (activeRole === "admin") return isStudent && isActive;
-          if (activeRole === "teacher") {
-            const teacherList = Array.isArray(s.teacherIds) ? s.teacherIds : [];
-            return isStudent && isActive && teacherList.includes(user.id);
-          }
-          return false;
-        })
-        .sort((a, b) => {
-          const nameA = `${a.firstName} ${a.lastName}`.toLowerCase();
-          const nameB = `${b.firstName} ${b.lastName}`.toLowerCase();
-          return nameA.localeCompare(nameB);
-        });
-    } else {
-      availableStudents = [];
+        if (activeRole === "admin") return isStudent;
+
+        if (activeRole === "teacher") {
+          const teacherList = Array.isArray(s.teacherIds) ? s.teacherIds : [];
+          return isStudent && teacherList.includes(user.id);
+        }
+
+        return false;
+      });
+
+      // ✅ Sort students alphabetically
+      const sorted = filtered.sort((a, b) => {
+        const nameA = `${a.firstName} ${a.lastName}`.toLowerCase();
+        const nameB = `${b.firstName} ${b.lastName}`.toLowerCase();
+        return nameA.localeCompare(nameB);
+      });
+
+      // ✅ Populate dropdown
+      studentSelect.innerHTML = "<option value=''>Select a student</option>";
+      sorted.forEach(s => {
+        const opt = document.createElement("option");
+        opt.value = s.id;
+        opt.textContent = `${s.firstName} ${s.lastName}`;
+        studentSelect.appendChild(opt);
+      });
     }
-    renderLogStudentResults();
-  } else {
-    availableStudents = [];
-    renderLogStudentResults();
   }
 
   // ✅ Submit log
@@ -340,16 +160,12 @@ categorySelect.addEventListener("change", () => {
 
       const category = categorySelect?.value;
       const note = notesInput?.value.trim();
-      const dates = logDatePicker.getSelectedDates();
+      const date = dateInput?.value;
 
-      let targetUsers = [user.id];
-      if (activeRole === "admin" || activeRole === "teacher") {
-        targetUsers = Array.from(selectedStudents.keys());
-        if (!targetUsers.length) {
-          alert("Please select at least one student.");
-          return;
-        }
-      }
+      const targetUser =
+        (activeRole === "admin" || activeRole === "teacher") && studentSelect.value
+          ? studentSelect.value
+          : user.id;
 
       let points = 5; // default for practice
       if (activeRole === "admin" || activeRole === "teacher") {
@@ -357,8 +173,12 @@ categorySelect.addEventListener("change", () => {
         if (!isNaN(enteredPoints)) points = enteredPoints;
       }
 
-      if (!category || !dates.length) {
-        alert("Please complete category and select at least one date.");
+      if (!category || !date) {
+        alert("Please complete category and date.");
+        return;
+      }
+      if (!activeStudioId) {
+        alert("No active studio selected. Please reopen Home and try again.");
         return;
       }
 
@@ -368,56 +188,15 @@ categorySelect.addEventListener("change", () => {
         status = "approved";
       }
 
-      const inserts = targetUsers.flatMap(id =>
-        dates.map(date => ({
-          userId: id,
-          category,
-          notes: note,
-          date,
-          points,
-          status
-        }))
-      );
-
-      // Block only the current submission when an identical log already exists.
-      // This does not retroactively alter existing rows.
-      const normalizedNote = note || "";
-      const { data: existingLogs, error: duplicateCheckErr } = await supabase
-        .from("logs")
-        .select("userId, category, notes, date, points")
-        .in("userId", targetUsers)
-        .eq("category", category)
-        .in("date", dates)
-        .eq("points", points);
-
-      if (duplicateCheckErr) {
-        console.error("Failed duplicate check:", duplicateCheckErr.message);
-        alert("Unable to validate duplicates right now. Please try again.");
-        return;
-      }
-
-      const duplicateEntries = (existingLogs || [])
-        .filter(log => (log.notes || "") === normalizedNote)
-        .map(log => ({ userId: String(log.userId), date: String(log.date || "").split("T")[0] }));
-
-      if (duplicateEntries.length) {
-        const duplicateUserIds = new Set(duplicateEntries.map(entry => entry.userId));
-        const duplicateDates = Array.from(new Set(duplicateEntries.map(entry => entry.date))).sort();
-        const dateSuffix = duplicateDates.length ? ` on: ${duplicateDates.join(", ")}` : "";
-        if (activeRole === "admin" || activeRole === "teacher") {
-          const duplicateNames = targetUsers
-            .filter(id => duplicateUserIds.has(String(id)))
-            .map(id => formatStudentName(selectedStudents.get(String(id)) || { id }))
-            .filter(Boolean);
-          const nameText = duplicateNames.length ? ` for: ${duplicateNames.join(", ")}` : "";
-          alert(`This entry has already been logged${nameText}${dateSuffix}.`);
-        } else {
-          alert(`This entry has already been logged${dateSuffix}.`);
-        }
-        return;
-      }
-
-      const { error: logErr } = await supabase.from("logs").insert(inserts);
+      const { error: logErr } = await supabase.from("logs").insert([{
+        userId: targetUser,
+        studio_id: activeStudioId,
+        category,
+        notes: note,
+        date,
+        points,
+        status
+      }]);
 
       if (logErr) {
         console.error("Failed to save log:", logErr.message);
@@ -425,20 +204,62 @@ categorySelect.addEventListener("change", () => {
         return;
       }
 
+// ✅ Recalculate user points & allow Level Up popup to trigger
+await recalculateUserPoints(targetUser);
 
-      for (const id of targetUsers) {
-        await recalculateUserPoints(id);
-      }
+// ✅ Wait a moment to ensure Level Up popup appears first
+await new Promise(resolve => setTimeout(resolve, 1500));
 
-      showToast("Log submitted successfully.", "success", 1700);
+// ✅ Always show success popup clearly
+const popup = document.createElement("div");
+popup.innerHTML = `
+  <div style="
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.6);
+    display: flex; justify-content: center; align-items: center;
+    z-index: 9999; /* Make sure it's on top */
+  ">
+    <div style="background:white; padding:30px; border-radius:12px; text-align:center; max-width:300px; box-shadow:0 2px 10px rgba(0,0,0,0.3);">
+      <h3 style="color:#00477d; margin-bottom:15px;">✅ Log submitted successfully!</h3>
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <button id="goHomeBtn" class="blue-button">Go to Home</button>
+        <button id="logMoreBtn" class="blue-button">Log More Points</button>
+      </div>
+    </div>
+  </div>
+`;
+document.body.appendChild(popup);
+
+// ✅ Safely attach listeners after DOM insert
+setTimeout(() => {
+  const goHomeBtn = document.getElementById("goHomeBtn");
+  const logMoreBtn = document.getElementById("logMoreBtn");
+
+  if (goHomeBtn) {
+    goHomeBtn.addEventListener("click", () => {
+      popup.remove();
+      window.location.href = "index.html";
+    });
+  }
+
+  if (logMoreBtn) {
+    logMoreBtn.addEventListener("click", () => {
+      popup.remove();
       document.getElementById("logForm").reset();
-      clearLogStudentSelection();
-      renderLogStudentResults();
-      logDatePicker.resetToToday();
+
+      // Reset date and hide fields if student
+      if (dateInput) {
+        const today = new Date().toISOString().split("T")[0];
+        dateInput.value = today;
+      }
       if (!(activeRole === "admin" || activeRole === "teacher")) {
-        if (studentRow) studentRow.style.display = "none";
+        if (studentSelect) studentSelect.closest("tr").style.display = "none";
         if (pointsInput) pointsInput.closest("tr").style.display = "none";
       }
+    });
+  }
+}, 100);
     });
   }
 

@@ -1,0 +1,13 @@
+{
+  "name": "achievement-app-dev",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "badges:seed": "node scripts/upsert-badge-definitions.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "dotenv": "^17.3.1",
+    "sharp": "^0.34.5"
+  }
+}

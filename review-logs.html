@@ -1,139 +1,178 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <meta name="supabase-url" content="https://wygdmapqwqjqrmrksaef.supabase.co" />
+  <meta name="supabase-anon-key" content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind5Z2RtYXBxd3FqcXJtcmtzYWVmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMyODE2NDEsImV4cCI6MjA2ODg1NzY0MX0.LPkBdlfSc6V8dbQ6wTAJMPvm7PzQ1OxOraypdee7w2I" />
+
   <meta charset="UTF-8">
   <title>Review Logs | Achievement App</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=20260121-1">
+  <link rel="stylesheet" href="nav.css">
+  <meta name="theme-color" content="#0B4F8A" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Achievement App" />
+  <link rel="icon" type="image/png" sizes="192x192" href="images/pwa/icon-192.png?v=20260418b" />
+  
+  <link rel="apple-touch-icon" href="images/pwa/apple-touch-icon.png?v=20260418b" />
 </head>
-<body class="tall-background">
+<body class="app-shell tall-background review-logs-page">
+  <div class="app-main">
+<div id="envBadge" class="env-badge" style="display:none;"></div>
+
   <main class="app">
 
-    <!-- ✅ Top Bar -->
-    <header id="pageHeader">
-      <button class="blue-button" onclick="window.location.href='index.html'">Home</button>
-      <h2>Review Logs</h2>
+    <header id="pageHeader" class="review-header">
+      <h2 class="review-title">Review Points</h2>
+      <img id="reviewRoleBadge" class="review-role-badge" src="" alt="Role badge">
     </header>
-<!-- Notifications toggle -->
-<div style="text-align:center; margin-bottom:15px;">
-  <button id="showLogsBtn" class="blue-button">Show Logs</button>
-  <button id="showNotificationsBtn" class="blue-button">Show Notifications</button>
-</div>
 
-<!-- Notifications Section -->
-<div id="notificationsSection" style="display:none; padding:20px;"></div>
+    <section id="categorySummary" class="summary-strip"></section>
 
-    <!-- ✅ Category Summary -->
-    <section id="categorySummary"></section>
-
-    <!-- ✅ Action Bar -->
-    <div id="actionBar">
-      <input id="searchInput" type="text" placeholder="Search logs...">
-      <select id="statusFilter" class="blue-button">
-        <option value="">All Statuses</option>
-        <option value="pending">Pending</option>
-        <option value="approved">Approved</option>
-        <option value="rejected">Rejected</option>
-        <option value="needs info">Needs Info</option>
-      </select>
-      <button id="quickAddBtn" class="blue-button">Quick Add</button>
-      <button id="bulkApproveBtn" class="blue-button">Approve Selected</button>
-      <button id="deleteSelectedBtn" class="blue-button" style="background:#d9534f;">Delete Selected</button>
+    <div class="filter-toolbar">
+      <div class="filter-left">
+        <input id="searchInput" type="text" placeholder="Search logs...">
+      </div>
+      <div class="filter-right">
+        <div class="view-toggle">
+          <button id="showLogsBtn" class="blue-button">Logs</button>
+          <button id="showNotificationsBtn" class="blue-button">Notifications</button>
+        </div>
+        <button id="quickAddBtn" class="blue-button">Quick Add</button>
+      </div>
     </div>
 
-    <!-- ✅ Bulk Approve Panel -->
-    <div id="bulkApprovePanel" style="display:none; text-align:center; margin-bottom:10px;">
+    <div id="notificationsSection" class="notifications-panel" style="display:none;"></div>
+
+    <div id="bulkApprovePanel" class="bulk-approve-panel" style="display:none;">
       <label>Points to assign:
-        <input type="number" id="bulkPoints" style="width:80px;">
+        <input type="number" id="bulkPoints">
       </label>
       <button id="confirmBulkApprove" class="blue-button">Confirm</button>
       <button id="cancelBulkApprove" class="blue-button" style="background:#999;">Cancel</button>
     </div>
 
-    <!-- ✅ Scrollable Table -->
-    <div id="logsWrapper">
-      <table id="logsHeaderTable">
-        <thead>
-          <tr>
-            <th><input type="checkbox" id="selectAll"></th>
-            <th data-sort="fullName">Student</th>
-            <th data-sort="category">Category</th>
-            <th data-sort="date">Date</th>
-            <th data-sort="points">Points</th>
-            <th>Note</th>
-            <th data-sort="status">Status</th>
-          </tr>
-        </thead>
-      </table>
-
-      <table id="logsTable">
-        <tbody id="logsTableBody"></tbody>
-      </table>
+    <div id="bulkActionBar" class="bulk-action-bar" style="display:none;">
+      <button id="bulkApproveBtn" class="blue-button">Approve All</button>
+      <button id="bulkRejectBtn" class="blue-button" style="background:#f0ad4e;">Reject All</button>
+      <button id="deleteSelectedBtn" class="blue-button" style="background:#d9534f;">Delete Selected</button>
     </div>
 
-    <!-- ✅ Pagination -->
-    <div id="paginationControls">
-      <button id="prevPageBtn" class="blue-button">Prev</button>
-      <span id="pageInfo"></span>
-      <button id="nextPageBtn" class="blue-button">Next</button>
-      <select id="logsPerPage" class="blue-button">
-        <option value="25">25</option>
-        <option value="50" selected>50</option>
-        <option value="100">100</option>
-      </select>
-    </div>
-<!-- ✅ Quick Add Modal -->
-<div id="quickAddModal" class="modal" style="display:none;
-  position:fixed; top:0; left:0; width:100%; height:100%;
-  background:rgba(0,0,0,0.6); z-index:10000; justify-content:center; align-items:center;">
-  <div class="modal-content" style="background:white; padding:20px; border-radius:10px; width:90%; max-width:500px;">
-    <h3 style="text-align:center; color:#00477d;">Quick Add Points</h3>
-    <div style="max-height:400px; overflow:visible; margin-bottom:10px;">
-      <label><b>By Students</b></label>
-      <div class="student-selector" id="quickAddStudentSelector" style="margin-top:6px;">
-        <div class="selected-chips" id="quickAddStudentChips"></div>
-        <input type="text" id="quickAddStudentSearch" placeholder="Student Search" autocomplete="off" />
-        <div class="selector-results" id="quickAddStudentResults">
-          <div class="student-placeholder">Start typing to find a student.</div>
-        </div>
-      </div>
-      <div class="selector-actions">
-        <button type="button" id="quickAddClearSearch">Clear search</button>
+    <div id="logsWrapper" class="logs-table-wrap">
+      <div id="reviewLogsErrorPanel" class="review-logs-error" role="status" aria-live="polite" style="display:none;"></div>
+      <div class="logs-scroll">
+        <table id="logsTable">
+          <thead>
+            <tr>
+              <th><input type="checkbox" id="selectAll"></th>
+              <th data-sort="fullName">Student</th>
+              <th data-sort="category">Category</th>
+              <th data-sort="date">Date</th>
+              <th data-sort="points">Points</th>
+              <th>Note</th>
+              <th data-sort="status">Status</th>
+            </tr>
+          </thead>
+          <tbody id="logsTableBody"></tbody>
+        </table>
       </div>
     </div>
 
-    <label><b>Category:</b></label>
-    <select id="quickAddCategory" class="white-input" style="width:100%; margin-bottom:10px;">
-      <option value="">Select category</option>
-      <option value="practice">Practice</option>
-      <option value="participation">Participation</option>
-      <option value="performance">Performance</option>
-      <option value="personal">Personal</option>
-      <option value="proficiency">Proficiency</option>
-    </select>
-
-    <label><b>Date:</b></label>
-    <div id="quickAddDateCalendar" class="multi-date-calendar" style="margin-bottom:8px;"></div>
-    <div id="quickAddDateSummary" style="margin-bottom:10px; color:#00477d; font-size:0.9rem; font-weight:600;"></div>
-    <div style="margin:-6px 0 10px 0; font-size:0.85rem; color:#00477d;">Points entered below will be applied to every selected date.</div>
-
-    <label><b>Points:</b></label>
-    <input type="number" id="quickAddPoints" class="white-input" placeholder="Enter points" style="width:100%; margin-bottom:10px;" />
-
-    <label><b>Notes:</b></label>
-    <textarea id="quickAddNotes" class="white-input" placeholder="Optional note" style="width:100%; margin-bottom:15px;"></textarea>
-
-    <div style="display:flex; justify-content:center; gap:15px;">
-      <button id="quickAddSubmit" class="blue-button">Submit</button>
-      <button id="quickAddCancel" class="blue-button" style="background:#999;">Cancel</button>
+    <div id="paginationControls" class="pagination-row">
+      <div class="pager-controls">
+        <button id="prevPageBtn" class="blue-button">Prev</button>
+        <span id="pageInfo"></span>
+        <button id="nextPageBtn" class="blue-button">Next</button>
+        <select id="logsPerPage" class="blue-button">
+          <option value="25">25</option>
+          <option value="50" selected>50</option>
+          <option value="100">100</option>
+        </select>
+      </div>
     </div>
-  </div>
-</div>
+
+    <div id="quickAddModal" class="quickadd-modal-overlay" style="display:none;">
+      <div class="quickadd-modal-shell">
+        <form id="quickAddForm" class="staff-card quickadd-card">
+          <div class="quicklog-header-row">
+            <div class="quicklog-title">Quick Log</div>
+          </div>
+
+          <label for="quickAddStudentSearch">Students</label>
+          <div class="staff-student-picker quickadd-student-picker">
+            <input
+              id="quickAddStudentSearch"
+              type="text"
+              placeholder="Type a student name..."
+              autocomplete="off"
+            />
+            <div id="quickAddStudentsDropdown" class="staff-student-dropdown" hidden></div>
+            <div id="quickAddStudentsSelected" class="staff-student-selected" aria-live="polite"></div>
+            <select id="quickAddStudents" multiple hidden aria-hidden="true"></select>
+          </div>
+
+          <div class="ql-category-pop">
+            <label for="quickAddCategory">Category</label>
+            <select id="quickAddCategory" class="white-input">
+          <option value="">Select category</option>
+          <option value="practice">Practice</option>
+          <option value="participation">Participation</option>
+          <option value="performance">Performance</option>
+          <option value="personal">Personal</option>
+          <option value="proficiency">Proficiency</option>
+        </select>
+          </div>
+
+          <label>Dates</label>
+          <button id="quickAddCalendarToggle" class="blue-button staff-calendar-toggle" type="button">
+            Select dates
+          </button>
+          <div id="quickAddCalendarPanel" class="staff-calendar-panel" hidden>
+            <div class="calendar">
+              <div class="calendar-header">
+                <button id="quickAddCalPrev" class="calendar-nav" type="button">&lt;</button>
+                <div id="quickAddCalMonthLabel" class="calendar-title"></div>
+                <button id="quickAddCalNext" class="calendar-nav" type="button">&gt;</button>
+              </div>
+              <div class="calendar-weekdays">
+                <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+              </div>
+              <div id="quickAddCalendar" class="calendar-grid"></div>
+            </div>
+          </div>
+
+          <label for="quickAddPoints">Points</label>
+          <input type="number" id="quickAddPoints" class="white-input" placeholder="Enter points" />
+          <p id="quickAddPracticePointsNote" class="staff-msg" style="display:none;">Practice category will automatically award 5 points per day.</p>
+
+          <label for="quickAddNotes">Notes</label>
+          <textarea id="quickAddNotes" class="white-input" placeholder="Optional note"></textarea>
+
+          <div class="button-row quickadd-actions">
+            <button id="quickAddSubmit" class="blue-button quickadd-submit" type="button">Submit Points</button>
+            <button id="quickAddCancel" class="blue-button quickadd-cancel" type="button">Cancel</button>
+          </div>
+          <p id="quickAddStatusMsg" class="staff-msg" style="display:none;" aria-live="polite"></p>
+        </form>
+      </div>
+    </div>
 
   </main>
-  <script type="module" src="config.js"></script>
+  </div>
+
+  <div id="app-bottom-nav"></div>
+  <script src="config.js"></script>
+  <script src="supabase-config.js"></script>
   <script type="module" src="supabaseClient.js"></script>
-  <script type="module" src="authGuard.js"></script>
+  <script type="module" src="utils.js"></script>
+  <script type="module" src="studio-routing.js"></script>
+  <script type="module" src="nav.js"></script>
+
   <script type="module" src="review-logs.js"></script>
+  <script type="module" src="pwa-install.js"></script>
 </body>
 </html>
+

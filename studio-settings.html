@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta name="supabase-url" content="https://wygdmapqwqjqrmrksaef.supabase.co" />
+  <meta name="supabase-anon-key" content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind5Z2RtYXBxd3FqcXJtcmtzYWVmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMyODE2NDEsImV4cCI6MjA2ODg1NzY0MX0.LPkBdlfSc6V8dbQ6wTAJMPvm7PzQ1OxOraypdee7w2I" />
+
+  <meta charset="UTF-8" />
+  <title>Studio Settings | Achievement App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="nav.css" />
+  <meta name="theme-color" content="#0B4F8A" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Achievement App" />
+  <link rel="icon" type="image/png" sizes="192x192" href="images/pwa/icon-192.png?v=20260418b" />
+  
+  <link rel="apple-touch-icon" href="images/pwa/apple-touch-icon.png?v=20260418b" />
+</head>
+<body class="app-shell app-bg bg-teal settings-page studio-settings-page">
+  <div class="app-main">
+    <div id="envBadge" class="env-badge" style="display:none;"></div>
+    <main class="app">
+      <div class="settings-wrap">
+        <div class="settings-actions" style="margin-bottom:16px; justify-content:flex-start;">
+          <a class="blue-button" href="home.html">Home</a>
+        </div>
+        <section class="settings-card">
+          <div class="settings-card-body">
+            <h2 class="settings-title">Studio Settings</h2>
+
+            <section class="settings-section" hidden>
+              <div class="section-head">
+                <div class="section-title">Studio Identity</div>
+              </div>
+              <div class="settings-rows">
+                <div class="settings-row">
+                  <div class="row-label">
+                    <label for="studioName">Studio Name</label>
+                  </div>
+                  <div class="row-value">
+                    <input id="studioName" type="text" class="settings-input" placeholder="Studio name" />
+                  </div>
+                  <div></div>
+                </div>
+                <div class="settings-row">
+                  <div class="row-label">
+                    <label for="studioEmail">Studio Email</label>
+                  </div>
+                  <div class="row-value">
+                    <input id="studioEmail" type="email" class="settings-input" placeholder="studio@example.com" />
+                  </div>
+                  <div></div>
+                </div>
+                <div class="settings-row">
+                  <div class="row-label">
+                    <label for="studioLogoFile">Studio Logo</label>
+                  </div>
+                <div class="row-value">
+                  <label for="studioLogoFile" class="logo-upload-area">
+                    <img id="studioLogoPreview" alt="Studio logo preview" style="display:none;" />
+                    <span class="logo-upload-text">Click to replace logo</span>
+                  </label>
+                  <input id="studioLogoFile" type="file" accept="image/*" hidden />
+                </div>
+                  <div></div>
+                </div>
+              </div>
+            </section>
+
+            <section class="settings-section" hidden>
+              <div class="section-head">
+                <div class="section-title">Permissions</div>
+              </div>
+              <div class="settings-rows">
+                <div class="settings-row">
+                  <div class="row-label">
+                    <label for="teacherCanLogPoints">Teacher can log points</label>
+                  </div>
+                  <div class="row-value" style="display:flex; align-items:center; gap:8px;">
+                    <input id="teacherCanLogPoints" type="checkbox" />
+                    <label for="teacherCanLogPoints">Enabled</label>
+                  </div>
+                  <div></div>
+                </div>
+                <div class="settings-row">
+                  <div class="row-label">
+                    <label for="teacherCanCreateChallenges">Teacher can create challenges</label>
+                  </div>
+                  <div class="row-value" style="display:flex; align-items:center; gap:8px;">
+                    <input id="teacherCanCreateChallenges" type="checkbox" />
+                    <label for="teacherCanCreateChallenges">Enabled</label>
+                  </div>
+                  <div></div>
+                </div>
+                <div class="settings-row">
+                  <div class="row-label">
+                    <label for="teacherCanApproveLogs">Teacher can approve logs</label>
+                  </div>
+                  <div class="row-value" style="display:flex; align-items:center; gap:8px;">
+                    <input id="teacherCanApproveLogs" type="checkbox" />
+                    <label for="teacherCanApproveLogs">Enabled</label>
+                  </div>
+                  <div></div>
+                </div>
+              </div>
+            </section>
+
+            <section class="settings-section">
+              <div class="section-head">
+                <div class="section-title">Challenges</div>
+              </div>
+              <div class="settings-rows">
+                <div class="settings-row">
+                  <div class="row-label">
+                    <label for="teacherChallengesRequireApproval">Teacher challenges require approval</label>
+                  </div>
+                  <div class="row-value" style="display:flex; align-items:center; gap:8px;">
+                    <input id="teacherChallengesRequireApproval" type="checkbox" />
+                    <label for="teacherChallengesRequireApproval">Enabled</label>
+                  </div>
+                  <div></div>
+                </div>
+                <div class="settings-hint">
+                  When ON, teacher-created challenges require admin approval before going live.
+                </div>
+              </div>
+            </section>
+
+            <section class="settings-section">
+              <div class="section-head">
+                <div class="section-title">Leaderboard Scope</div>
+              </div>
+              <div class="settings-rows">
+                <div class="settings-row">
+                  <div class="row-label">
+                    <span>Leaderboard Scope</span>
+                  </div>
+                  <div class="row-value" style="display:flex; flex-wrap:wrap; gap:12px;">
+                    <label style="display:flex; align-items:center; gap:6px;">
+                      <input type="radio" name="leaderboardScope" id="leaderboardStudioOnly" value="studio_only" checked />
+                      Studio only
+                    </label>
+                    <label style="display:flex; align-items:center; gap:6px;">
+                      <input type="radio" name="leaderboardScope" id="leaderboardGlobal" value="global" />
+                      Global
+                    </label>
+                  </div>
+                  <div></div>
+                </div>
+                <div class="settings-hint">
+                  Global is for future multi-studio mode.
+                </div>
+              </div>
+            </section>
+
+            <section class="settings-section" hidden>
+              <div class="section-head">
+                <div class="section-title">Notifications</div>
+                <div class="settings-hint">Admins only</div>
+              </div>
+              <div class="settings-rows">
+                <div class="settings-row">
+                  <div class="row-label">
+                    <label for="adminOnLogSubmitted">Notify on log submitted</label>
+                  </div>
+                  <div class="row-value" style="display:flex; align-items:center; gap:8px;">
+                    <input id="adminOnLogSubmitted" type="checkbox" />
+                    <label for="adminOnLogSubmitted">Enabled</label>
+                  </div>
+                  <div></div>
+                </div>
+                <div class="settings-row">
+                  <div class="row-label">
+                    <label for="adminOnLogFlagged">Notify on log flagged</label>
+                  </div>
+                  <div class="row-value" style="display:flex; align-items:center; gap:8px;">
+                    <input id="adminOnLogFlagged" type="checkbox" />
+                    <label for="adminOnLogFlagged">Enabled</label>
+                  </div>
+                  <div></div>
+                </div>
+                <div class="settings-row">
+                  <div class="row-label">
+                    <label for="adminOnLevelUp">Notify on level up</label>
+                  </div>
+                  <div class="row-value" style="display:flex; align-items:center; gap:8px;">
+                    <input id="adminOnLevelUp" type="checkbox" />
+                    <label for="adminOnLevelUp">Enabled</label>
+                  </div>
+                  <div></div>
+                </div>
+              </div>
+            </section>
+
+            <section class="settings-section">
+              <div class="section-head">
+                <div class="section-title">Badges</div>
+              </div>
+              <div class="settings-rows">
+                <div class="settings-row">
+                  <div class="row-label">
+                    <label for="badgesEnabled">Badges</label>
+                  </div>
+                  <div class="row-value" style="display:flex; align-items:center; gap:8px;">
+                    <input id="badgesEnabled" type="checkbox" />
+                    <label for="badgesEnabled">Enabled</label>
+                  </div>
+                  <div></div>
+                </div>
+              </div>
+            </section>
+
+            <div class="settings-actions" style="margin-top:24px;">
+              <button id="saveStudioSettingsBtn" type="button" class="blue-button">Save</button>
+              <div id="studioSettingsStatus" class="settings-hint" aria-live="polite"></div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <div id="toast" class="toast"></div>
+  </div>
+
+  <div id="app-bottom-nav"></div>
+  <script src="config.js"></script>
+  <script src="supabase-config.js"></script>
+  <script type="module" src="supabaseClient.js"></script>
+  <script type="module" src="utils.js"></script>
+  <script type="module" src="studio-routing.js"></script>
+  <script type="module" src="nav.js"></script>
+
+  <script type="module" src="studio-settings.js"></script>
+  <script type="module" src="pwa-install.js"></script>
+</body>
+</html>
+

@@ -1,70 +1,111 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <meta name="supabase-url" content="https://wygdmapqwqjqrmrksaef.supabase.co" />
+  <meta name="supabase-anon-key" content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind5Z2RtYXBxd3FqcXJtcmtzYWVmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMyODE2NDEsImV4cCI6MjA2ODg1NzY0MX0.LPkBdlfSc6V8dbQ6wTAJMPvm7PzQ1OxOraypdee7w2I" />
+
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Manage Users | Achievement App</title>
   <link rel="stylesheet" href="style.css">
-</head>
-<body class="manage-users">
+  <link rel="stylesheet" href="nav.css">
+  <style>
+    [data-embed-root].is-embedded {
+      padding: 0;
+      margin: 0;
+    }
 
-<main class="app">
-  <!-- ✅ Top Bar -->
-  <header style="display:flex; justify-content:space-between; align-items:center; padding:10px 20px;">
-    <button class="blue-button" onclick="window.location.href='index.html'">Home</button>
-    <h2 style="color:#00477d; flex:1; text-align:center;">Manage Users</h2>
+    [data-embed-root].is-embedded .standalone-only {
+      display: none;
+    }
+  </style>
+  <meta name="theme-color" content="#0B4F8A" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Achievement App" />
+  <link rel="icon" type="image/png" sizes="192x192" href="images/pwa/icon-192.png?v=20260418b" />
+  
+  <link rel="apple-touch-icon" href="images/pwa/apple-touch-icon.png?v=20260418b" />
+</head>
+<body class="app-shell manage-users">
+  <header class="standalone-only">
+    <div id="envBadge" class="env-badge" style="display:none;"></div>
+    <h2 style="color:#00477d; margin:0; text-align:center; padding:10px 20px;">Manage Users</h2>
   </header>
 
-  <!-- ✅ Search Bar -->
-  <div id="actionBar">
-    <input type="text" id="userSearch" placeholder="Search users..." />
-    <button id="addUserBtn" class="blue-button">+ Add User</button>
+  <main class="app-main standalone-only">
+    <h1>Manage Users</h1>
+  </main>
+
+  <div data-embed-root class="settings-embed">
+    <div class="embed-panel-body embed-account-card">
+      <div class="manage-users-panel">
+        <div id="actionBar" class="manage-users-action">
+          <input type="text" id="manageUsersSearch" placeholder="Search users by name or email" />
+        </div>
+        <div class="manage-controls">
+          <div class="segmented" id="manageTabs">
+            <button type="button" data-tab="students">Students</button>
+            <button type="button" data-tab="families">Families</button>
+            <button type="button" data-tab="teachers">Teachers &amp; Staff</button>
+            <button type="button" data-tab="all">Show All</button>
+          </div>
+          <div class="segmented" id="statusTabs">
+            <button type="button" data-status="active">Active</button>
+            <button type="button" data-status="inactive">Inactive</button>
+            <button type="button" data-status="all">All</button>
+          </div>
+        </div>
+        <div id="manageUsersStatus" class="manage-users-status">Loading usersï¿½</div>
+        <div id="usersScrollWrapper" class="manage-users-table-wrap">
+          <table id="userHeaderTable" class="manage-users-table">
+            <thead>
+              <tr>
+                <th data-sort="firstName">First Name</th>
+                <th data-sort="lastName">Last Name</th>
+                <th data-sort="email">Email</th>
+                <th>Avatar</th>
+                <th data-sort="roles">Roles</th>
+                <th data-sort="teacherIds">Teachers</th>
+                <th data-sort="instrument">Instrument</th>
+                <th data-sort="points">Points</th>
+                <th data-sort="level">Level</th>
+                <th class="actions-col" aria-label="Actions"></th>
+              </tr>
+            </thead>
+            <tbody id="userTableBody">
+              <!-- Rows inserted dynamically -->
+            </tbody>
+          </table>
+        </div>
+        <div id="paginationControls"></div>
+      </div>
+    </div>
   </div>
 
-  <!-- ✅ Single Scrollable Table -->
-  <div id="usersScrollWrapper">
-    <table id="userHeaderTable">
-      <thead>
-        <tr>
-          <th data-sort="firstName">First Name</th>
-          <th data-sort="lastName">Last Name</th>
-          <th data-sort="email">Email</th>
-          <th>Avatar</th>
-          <th data-sort="roles">Roles</th>
-          <th data-sort="active">Active</th>
-          <th data-sort="teacherIds">Teachers</th>
-          <th data-sort="instrument">Instrument</th>
-          <th data-sort="points">Points</th>
-          <th data-sort="level">Level</th>
-        </tr>
-      </thead>
-      <tbody id="userTableBody">
-        <!-- ✅ Rows inserted dynamically -->
-      </tbody>
-    </table>
-  </div>
-
-  <!-- ✅ Pagination -->
-  <div id="paginationControls"></div>
-</main>
-
-  <script type="module" src="config.js"></script>
+  <div id="app-bottom-nav" class="standalone-only"></div>
+  <script src="config.js"></script>
+  <script src="supabase-config.js"></script>
   <script type="module" src="supabaseClient.js"></script>
-  <script type="module" src="authGuard.js"></script>
+  <script type="module" src="utils.js"></script>
+  <script type="module" src="studio-routing.js"></script>
+  <script type="module" src="nav.js"></script>
+
   <script type="module" src="manage-users.js"></script>
-
   <script>
-function syncUserTableWidths() {
-  const headerCells = document.querySelectorAll("#userHeaderTable th");
-  const rowCells = document.querySelectorAll("#userHeaderTable tr:first-child td");
-  if (!rowCells.length) return;
-  headerCells.forEach((th, i) => {
-    if (rowCells[i]) th.style.width = rowCells[i].offsetWidth + "px";
-  });
-}
-window.addEventListener("load", syncUserTableWidths);
-window.addEventListener("resize", syncUserTableWidths);
-</script>
-
+    function syncUserTableWidths() {
+      const headerCells = document.querySelectorAll("#userHeaderTable th");
+      const rowCells = document.querySelectorAll("#userHeaderTable tr:first-child td");
+      if (!rowCells.length) return;
+      headerCells.forEach((th, i) => {
+        if (rowCells[i]) th.style.width = rowCells[i].offsetWidth + "px";
+      });
+    }
+    window.addEventListener("load", syncUserTableWidths);
+    window.addEventListener("resize", syncUserTableWidths);
+  </script>
+  <script type="module" src="pwa-install.js"></script>
 </body>
 </html>
