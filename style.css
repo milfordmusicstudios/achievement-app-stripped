@@ -3934,6 +3934,14 @@ body.review-logs-page .filter-toolbar input[type="text"] {
   border: 1px solid rgba(11,79,138,0.2);
 }
 
+body.review-logs-page .review-student-filter {
+  width: min(340px, 100%);
+}
+
+body.review-logs-page .review-student-filter .staff-student-selected {
+  max-width: 340px;
+}
+
 body.review-logs-page .filter-toolbar .blue-button {
   padding: 8px 12px;
   font-size: 14px;
@@ -7281,12 +7289,12 @@ body.settings-page [data-studio-slug] {
 .student-tutorial {
   position: fixed;
   inset: 0;
-  z-index: 12000;
   pointer-events: none;
 }
 
 .student-tutorial__overlay {
   position: fixed;
+  z-index: 12000;
   background:
     radial-gradient(circle at top, rgba(255, 248, 228, 0.16), transparent 42%),
     rgba(30, 58, 95, 0.36);

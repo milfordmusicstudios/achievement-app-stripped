@@ -211,63 +211,32 @@ async function hasStaffUnreadLevelUpNotifications(ctx) {
   const viewerUserId = String(ctx?.viewerUserId || "").trim();
   if (!viewerUserId) return false;
   const activeStudioId = String(ctx?.studioId || "").trim();
+  if (!activeStudioId) return false;
   const limit = 80;
-  const attempts = [
-    { label: "userId+studio_id", userKey: "userId", includeStudio: Boolean(activeStudioId) },
-    { label: "userId:no_studio_filter", userKey: "userId", includeStudio: false },
-    { label: "user_id+studio_id", userKey: "user_id", includeStudio: Boolean(activeStudioId) },
-    { label: "user_id:no_studio_filter", userKey: "user_id", includeStudio: false }
-  ];
   console.log("[NotifDiag][nav.js][hasStaffUnreadLevelUpNotifications] query plan", {
     source: "nav.js::hasStaffUnreadLevelUpNotifications",
     viewerUserId,
     activeStudioId: activeStudioId || null,
     limit,
-    attempts: attempts.map((attempt) => attempt.label)
-  });
-  const rowSets = [];
-  const errors = [];
-  for (const attempt of attempts) {
-    const filters = {
-      [attempt.userKey]: viewerUserId,
-      studio_id: attempt.includeStudio ? activeStudioId : "(omitted)",
+    filters: {
+      studio_id: activeStudioId,
       orderBy: "created_at desc",
       limit
-    };
-    console.log("[NotifDiag][nav.js][hasStaffUnreadLevelUpNotifications] query start", {
-      source: "nav.js::hasStaffUnreadLevelUpNotifications",
-      attempt: attempt.label,
-      filters
-    });
-    let query = supabase
-      .from("notifications")
-      .select("*")
-      .eq(attempt.userKey, viewerUserId)
-      .order("created_at", { ascending: false })
-      .limit(limit);
-    if (attempt.includeStudio) {
-      query = query.eq("studio_id", activeStudioId);
     }
-    const { data, error } = await query;
-    const count = Array.isArray(data) ? data.length : 0;
-    console.log("[NotifDiag][nav.js][hasStaffUnreadLevelUpNotifications] query result", {
-      source: "nav.js::hasStaffUnreadLevelUpNotifications",
-      attempt: attempt.label,
-      filters,
-      count,
-      error: error ?? null
-    });
-    if (error) {
-      errors.push({ attempt: attempt.label, error });
-      continue;
-    }
-    if (count > 0) rowSets.push(data);
-  }
-  if (errors.length === attempts.length) {
-    console.warn("[nav] level-up notification lookup failed", errors[0]?.error || errors);
+  });
+
+  const { data, error } = await supabase
+    .from("notifications")
+    .select("*")
+    .eq("studio_id", activeStudioId)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    console.warn("[nav] level-up notification lookup failed", error);
     return false;
   }
-  const rows = mergeNotificationRows(rowSets, limit);
+  const rows = mergeNotificationRows([Array.isArray(data) ? data : []], limit);
   const unreadLevelUpCount = rows.filter((row) => isLevelUpNotification(row) && !isNotificationRead(row)).length;
   console.log("[NotifDiag][nav.js][hasStaffUnreadLevelUpNotifications] query result", {
     source: "nav.js::hasStaffUnreadLevelUpNotifications",
@@ -276,8 +245,7 @@ async function hasStaffUnreadLevelUpNotifications(ctx) {
     unreadReadFilterLogic: "isLevelUpNotification(row) && row.read !== true",
     totalCount: rows.length,
     unreadLevelUpCount,
-    errorCount: errors.length,
-    errors
+    error: null
   });
   return unreadLevelUpCount > 0;
 }

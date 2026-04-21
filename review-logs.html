@@ -35,6 +35,17 @@
     <div class="filter-toolbar">
       <div class="filter-left">
         <input id="searchInput" type="text" placeholder="Search logs...">
+        <div id="studentFilterPicker" class="staff-student-picker review-student-filter">
+          <input
+            id="studentFilterSearch"
+            type="text"
+            placeholder="Filter by student..."
+            autocomplete="off"
+            aria-label="Filter by student"
+          >
+          <div id="studentFilterDropdown" class="staff-student-dropdown" hidden></div>
+          <div id="studentFilterSelected" class="staff-student-selected" aria-live="polite"></div>
+        </div>
       </div>
       <div class="filter-right">
         <div class="view-toggle">

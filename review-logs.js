@@ -6,7 +6,6 @@ const dispatchTutorialAction = (action) => {
   if (!action) return;
   window.dispatchEvent(new CustomEvent(String(action)));
 };
-
 const DEBUG_REVIEW_LOGS = false;
 
 const categoryOptions = ["practice", "participation", "performance", "personal", "proficiency"];
@@ -17,7 +16,6 @@ const categoryColors = {
   personal: "#f3ab40",
   proficiency: "#ff7099"
 };
-
 document.addEventListener("DOMContentLoaded", async () => {
   console.log("[DEBUG] Review Logs: Script loaded");
 
@@ -193,9 +191,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   const logsTableBody = document.getElementById("logsTableBody");
   const categorySummary = document.getElementById("categorySummary");
   const searchInput = document.getElementById("searchInput");
+  const studentFilterSearch = document.getElementById("studentFilterSearch");
+  const studentFilterDropdown = document.getElementById("studentFilterDropdown");
+  const studentFilterSelected = document.getElementById("studentFilterSelected");
   const bulkActionBar = document.getElementById("bulkActionBar");
 
   let allLogs = [];
+  let totalLogsCount = null;
   let users = [];
   let filteredLogs = [];
   let currentSort = { field: "date", order: "desc" };
@@ -203,6 +205,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   let logsPerPage = 25;
   let activeCardFilter = "all";
   let pendingCardFlashPlayed = false;
+  const selectedStudentFilterIds = new Set();
   const requestedFilter = new URLSearchParams(window.location.search).get("filter");
   const normalizedRequestedFilter = requestedFilter === "needs-approval" ? "pending" : requestedFilter;
   if (normalizedRequestedFilter === "pending" || normalizedRequestedFilter === "approved-today" || normalizedRequestedFilter === "needs info" || normalizedRequestedFilter === "all") {
@@ -219,6 +222,91 @@ document.addEventListener("DOMContentLoaded", async () => {
     const approvedStamp = getApprovedTimestamp(log);
     return approvedStamp ? isSameDay(approvedStamp, today) : false;
   };
+  const getReviewStudentName = (student) => {
+    const first = student?.firstName || "";
+    const last = student?.lastName || "";
+    return `${first} ${last}`.trim() || student?.email || "Student";
+  };
+  const getFilterableStudents = () => {
+    const visibleStudentIds = new Set(allLogs.map((log) => String(log.userId || "")).filter(Boolean));
+    return users
+      .filter((student) => visibleStudentIds.has(String(student.id)))
+      .sort((a, b) => getReviewStudentName(a).localeCompare(getReviewStudentName(b)));
+  };
+  const renderSelectedStudentFilters = () => {
+    if (!studentFilterSelected) return;
+    studentFilterSelected.innerHTML = "";
+
+    if (!selectedStudentFilterIds.size) {
+      const empty = document.createElement("span");
+      empty.className = "staff-student-empty";
+      empty.textContent = "All students";
+      studentFilterSelected.appendChild(empty);
+      return;
+    }
+
+    getFilterableStudents()
+      .filter((student) => selectedStudentFilterIds.has(String(student.id)))
+      .forEach((student) => {
+        const chip = document.createElement("button");
+        chip.type = "button";
+        chip.className = "staff-student-chip";
+        chip.dataset.studentId = String(student.id);
+        chip.textContent = `${getReviewStudentName(student)} x`;
+        chip.addEventListener("click", () => {
+          selectedStudentFilterIds.delete(String(student.id));
+          renderSelectedStudentFilters();
+          renderStudentFilterDropdown();
+          applyFilters();
+        });
+        studentFilterSelected.appendChild(chip);
+      });
+  };
+  function renderStudentFilterDropdown() {
+    if (!studentFilterSearch || !studentFilterDropdown) return;
+    const query = String(studentFilterSearch.value || "").trim().toLowerCase();
+    studentFilterDropdown.innerHTML = "";
+
+    if (!query) {
+      studentFilterDropdown.setAttribute("hidden", "");
+      return;
+    }
+
+    const matches = getFilterableStudents().filter((student) =>
+      getReviewStudentName(student).toLowerCase().includes(query)
+    );
+
+    if (!matches.length) {
+      const empty = document.createElement("div");
+      empty.className = "staff-student-no-match";
+      empty.textContent = "No matching students";
+      studentFilterDropdown.appendChild(empty);
+      studentFilterDropdown.removeAttribute("hidden");
+      return;
+    }
+
+    matches.forEach((student) => {
+      const id = String(student.id);
+      const item = document.createElement("button");
+      item.type = "button";
+      item.className = "staff-student-option";
+      item.dataset.studentId = id;
+      const isSelected = selectedStudentFilterIds.has(id);
+      item.textContent = isSelected ? `Selected: ${getReviewStudentName(student)}` : getReviewStudentName(student);
+      if (isSelected) item.classList.add("is-selected");
+      item.addEventListener("click", () => {
+        if (selectedStudentFilterIds.has(id)) selectedStudentFilterIds.delete(id);
+        else selectedStudentFilterIds.add(id);
+        renderSelectedStudentFilters();
+        renderStudentFilterDropdown();
+        applyFilters();
+        studentFilterSearch.focus();
+      });
+      studentFilterDropdown.appendChild(item);
+    });
+
+    studentFilterDropdown.removeAttribute("hidden");
+  }
   const maybeFlashPendingCard = (pendingCount) => {
     if (pendingCardFlashPlayed || Number(pendingCount || 0) <= 0) return;
     const pendingCard = categorySummary?.querySelector(".summary-card.pending");
@@ -400,6 +488,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     hideReviewLogsError();
+    renderSelectedStudentFilters();
     applyFilters();
   } catch (err) {
     console.error("[ERROR] Review Logs:", err);
@@ -408,12 +497,26 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // Search + Card Filter
   searchInput.addEventListener("input", applyFilters);
+  if (studentFilterSearch) {
+    studentFilterSearch.addEventListener("input", renderStudentFilterDropdown);
+    studentFilterSearch.addEventListener("focus", renderStudentFilterDropdown);
+  }
+  document.addEventListener("click", (event) => {
+    if (!studentFilterSearch || !studentFilterDropdown) return;
+    const picker = studentFilterSearch.closest(".staff-student-picker");
+    if (picker && !picker.contains(event.target)) {
+      studentFilterDropdown.setAttribute("hidden", "");
+    }
+  });
 
   function applyFilters() {
     const searchVal = searchInput.value.toLowerCase();
     const todayStr = todayString();
 
     filteredLogs = allLogs.filter(l => {
+      const matchesStudent =
+        selectedStudentFilterIds.size === 0 ||
+        selectedStudentFilterIds.has(String(l.userId || ""));
       const matchesSearch =
         l.fullName.toLowerCase().includes(searchVal) ||
         (l.notes || "").toLowerCase().includes(searchVal) ||
@@ -426,7 +529,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       } else if (activeCardFilter === "needs info") {
         matchesCard = String(l.status || "").toLowerCase() === "needs info";
       }
-      return matchesSearch && matchesCard;
+      return matchesStudent && matchesSearch && matchesCard;
     });
 
     currentPage = 1;
@@ -491,57 +594,69 @@ document.addEventListener("DOMContentLoaded", async () => {
     renderLogsTable(filteredLogs);
   });
 
-  function renderCategorySummary(list) {
-    if (!categorySummary) return;
-    const pendingCount = list.filter(l => String(l.status || "").toLowerCase() === "pending").length;
-    const todayStr = todayString();
-    const approvedTodayCount = list.filter(l => isApprovedToday(l, todayStr)).length;
-    const needsInfoCount = list.filter(l => String(l.status || "").toLowerCase() === "needs info").length;
+async function renderCategorySummary(list) {
+  if (!categorySummary) return;
 
-    const cards = [
-      { label: "Pending Logs", value: pendingCount },
-      { label: "Approved Today", value: approvedTodayCount },
-      { label: "Needs Info", value: needsInfoCount },
-      { label: "Total Logs", value: list.length }
-    ];
+  if (totalLogsCount === null) {
+    const { count, error } = await supabase
+      .from("logs")
+      .select("*", { count: "exact", head: true })
+      .eq("studio_id", viewerContext.studioId);
 
-    categorySummary.innerHTML = cards.map(card => {
-      const key = card.label.toLowerCase();
-      let extraClass = "";
-      let filterTag = "all";
-      if (key.includes("pending")) {
-        extraClass = "pending";
-        filterTag = "pending";
-      } else if (key.includes("approved")) {
-        extraClass = "approved";
-        filterTag = "approved-today";
-      } else if (key.includes("total")) {
-        extraClass = "total";
-        filterTag = "all";
-      } else if (key.includes("needs info")) {
-        extraClass = "review";
-        filterTag = "needs info";
-      } else {
-        extraClass = "review";
-      }
-      return `
+    if (!error) totalLogsCount = count;
+  }
+
+  const pendingCount = list.filter(l => String(l.status || "").toLowerCase() === "pending").length;
+  const todayStr = todayString();
+  const approvedTodayCount = list.filter(l => isApprovedToday(l, todayStr)).length;
+  const needsInfoCount = list.filter(l => String(l.status || "").toLowerCase() === "needs info").length;
+
+  const cards = [
+    { label: "Pending Logs", value: pendingCount },
+    { label: "Approved Today", value: approvedTodayCount },
+    { label: "Needs Info", value: needsInfoCount },
+    { label: "Total Logs", value: totalLogsCount ?? list.length }
+  ];
+
+  categorySummary.innerHTML = cards.map(card => {
+    const key = card.label.toLowerCase();
+    let extraClass = "";
+    let filterTag = "all";
+
+    if (key.includes("pending")) {
+      extraClass = "pending";
+      filterTag = "pending";
+    } else if (key.includes("approved")) {
+      extraClass = "approved";
+      filterTag = "approved-today";
+    } else if (key.includes("total")) {
+      extraClass = "total";
+      filterTag = "all";
+    } else if (key.includes("needs info")) {
+      extraClass = "review";
+      filterTag = "needs info";
+    } else {
+      extraClass = "review";
+    }
+
+    return `
       <div class="summary-card ${extraClass} ${activeCardFilter === filterTag ? "is-active" : ""}" data-filter="${filterTag}">
         <div class="summary-label">${card.label}</div>
         <div class="summary-value">${card.value}</div>
       </div>
     `;
-    }).join("");
+  }).join("");
 
-    categorySummary.querySelectorAll(".summary-card").forEach(card => {
-      card.addEventListener("click", () => {
-        const filter = card.dataset.filter || "all";
-        activeCardFilter = filter;
-        applyFilters();
-      });
+  categorySummary.querySelectorAll(".summary-card").forEach(card => {
+    card.addEventListener("click", () => {
+      const filter = card.dataset.filter || "all";
+      activeCardFilter = filter;
+      applyFilters();
     });
-    maybeFlashPendingCard(pendingCount);
-  }
+  });
 
+  maybeFlashPendingCard(pendingCount);
+}
   function formatShortDate(value) {
     if (!value) return "";
     const parsed = new Date(value);
@@ -1006,25 +1121,32 @@ const updateRecognitionState = async (row, recognitionGiven, recognitionNote) =>
 async function fetchViewerNotifications(limit = 80) {
   const viewerUserId = String(viewerContext?.viewerUserId || "").trim();
   const activeStudioId = String(viewerContext?.studioId || "").trim();
-  const attempts = [
-    { label: "userId+studio_id", userKey: "userId", includeStudio: Boolean(activeStudioId) },
-    { label: "userId:no_studio_filter", userKey: "userId", includeStudio: false },
-    { label: "user_id+studio_id", userKey: "user_id", includeStudio: Boolean(activeStudioId) },
-    { label: "user_id:no_studio_filter", userKey: "user_id", includeStudio: false }
-  ];
+  const isStaffViewer = Boolean(viewerContext?.isAdmin || viewerContext?.isTeacher);
+  const attempts = isStaffViewer && activeStudioId
+    ? [
+        { label: "staff:studio_id", userKey: "", includeStudio: true }
+      ]
+    : [
+        { label: "userId+studio_id", userKey: "userId", includeStudio: Boolean(activeStudioId) },
+        { label: "userId:no_studio_filter", userKey: "userId", includeStudio: false },
+        { label: "user_id+studio_id", userKey: "user_id", includeStudio: Boolean(activeStudioId) },
+        { label: "user_id:no_studio_filter", userKey: "user_id", includeStudio: false }
+      ];
   console.log("[NotifDiag][review-logs.js][fetchViewerNotifications] query plan", {
     source: "review-logs.js::fetchViewerNotifications",
     viewerUserId,
     activeStudioId: activeStudioId || null,
     limit,
     attempts: attempts.map((attempt) => attempt.label),
-    reason: "Fetch exact studio rows, legacy no-studio rows, and both userId/user_id schemas."
+    reason: isStaffViewer
+      ? "Fetch staff/admin notification rows by studio_id because notification ownership is the student."
+      : "Fetch exact user rows, legacy no-studio rows, and both userId/user_id schemas."
   });
   const rowSets = [];
   const errors = [];
   for (const attempt of attempts) {
     const filters = {
-      [attempt.userKey]: viewerUserId,
+      ...(attempt.userKey ? { [attempt.userKey]: viewerUserId } : {}),
       studio_id: attempt.includeStudio ? activeStudioId : "(omitted)",
       limit,
       orderBy: "created_at desc"
@@ -1037,9 +1159,11 @@ async function fetchViewerNotifications(limit = 80) {
     let query = supabase
       .from("notifications")
       .select("*")
-      .eq(attempt.userKey, viewerUserId)
       .order("created_at", { ascending: false })
       .limit(limit);
+    if (attempt.userKey) {
+      query = query.eq(attempt.userKey, viewerUserId);
+    }
     if (attempt.includeStudio) {
       query = query.eq("studio_id", activeStudioId);
     }
