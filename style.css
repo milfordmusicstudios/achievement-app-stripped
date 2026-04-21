@@ -884,6 +884,23 @@ body.is-admin #staffQuickLogSubmit.staff-submit:hover {
   background: #ffe56b;
 }
 
+body.is-staff #staffQuickLogClear.staff-clear-form,
+body.is-admin #staffQuickLogClear.staff-clear-form,
+body.student-home-page .clear-form-button {
+  background: #ffffff;
+  border: 2px solid rgba(11,79,138,0.28);
+  color: #0B4F8A;
+  font-weight: 800;
+  padding: 10px 16px;
+  border-radius: 14px;
+}
+
+body.is-staff #staffQuickLogClear.staff-clear-form:hover,
+body.is-admin #staffQuickLogClear.staff-clear-form:hover,
+body.student-home-page .clear-form-button:hover {
+  background: rgba(11,79,138,0.08);
+}
+
 body.is-staff #addDateBtn.blue-button,
 body.is-admin #addDateBtn.blue-button {
   padding: 10px 16px;
@@ -3927,11 +3944,29 @@ body.review-logs-page .filter-right {
   flex-wrap: wrap;
 }
 
-body.review-logs-page .filter-toolbar input[type="text"] {
+body.review-logs-page .filter-toolbar input[type="text"],
+body.review-logs-page .filter-toolbar input[type="date"] {
   min-width: 220px;
   padding: 10px 12px;
   border-radius: 12px;
   border: 1px solid rgba(11,79,138,0.2);
+}
+
+body.review-logs-page .date-range-filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+body.review-logs-page .date-range-filter label {
+  color: #0B4F8A;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+body.review-logs-page .date-range-filter input[type="date"] {
+  min-width: 150px;
 }
 
 body.review-logs-page .review-student-filter {
@@ -4620,6 +4655,27 @@ body.review-logs-page .pagination-row select.blue-button {
   line-height: 1.1;
 }
 
+body.review-logs-page .page-jump-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #0B4F8A;
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+body.review-logs-page .page-jump-control input {
+  width: 72px;
+  min-height: 36px;
+  border: 2px solid rgba(11,79,138,0.25);
+  border-radius: 6px;
+  padding: 6px 8px;
+  font: inherit;
+  color: #0B4F8A;
+  background: #fff;
+}
+
 body.review-logs-page .review-header .blue-button.btn-rect {
   padding: 10px 16px;
   min-height: 42px;
@@ -4709,8 +4765,18 @@ body.review-logs-page .btn-rect {
     width: 100%;
     justify-content: center;
   }
-  body.review-logs-page .filter-toolbar input[type="text"] {
+  body.review-logs-page .filter-toolbar input[type="text"],
+  body.review-logs-page .filter-toolbar input[type="date"] {
     min-width: 100%;
+  }
+  body.review-logs-page .date-range-filter {
+    width: 100%;
+  }
+  body.review-logs-page .date-range-filter label {
+    width: 42px;
+  }
+  body.review-logs-page .date-range-filter input[type="date"] {
+    flex: 1 1 calc(100% - 50px);
   }
   body.review-logs-page .pagination-row {
     justify-content: center;
@@ -5540,6 +5606,28 @@ body.leaderboard-page .leaderboard-count {
   margin: 0;
 }
 
+body.leaderboard-page .leaderboard-zoom-control {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: min(420px, 100%);
+  color: #0B4F8A;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+body.leaderboard-page .leaderboard-zoom-control input[type="range"] {
+  flex: 1;
+  min-width: 160px;
+  accent-color: #0B4F8A;
+}
+
+body.leaderboard-page .leaderboard-zoom-control output {
+  min-width: 42px;
+  text-align: right;
+  color: #4c6a86;
+}
+
 body.leaderboard-page {
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -5551,13 +5639,24 @@ body.leaderboard-page::-webkit-scrollbar {
 }
 
 body.leaderboard-page .leaderboard-scroll-wrapper {
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  overflow-x: auto;
+  overflow-y: visible;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(11,79,138,0.35) transparent;
+  padding: 8px 4px 16px;
 }
 
 body.leaderboard-page .leaderboard-scroll-wrapper::-webkit-scrollbar {
-  width: 0;
-  height: 0;
+  height: 8px;
+}
+
+body.leaderboard-page .leaderboard-scroll-wrapper::-webkit-scrollbar-thumb {
+  background: rgba(11,79,138,0.35);
+  border-radius: 999px;
+}
+
+body.leaderboard-page #leaderboardBars {
+  min-width: var(--leaderboard-width, 100%);
 }
 
 body.leaderboard-page .level-row {
@@ -5587,8 +5686,8 @@ body.leaderboard-page .lb-avatar {
   position: absolute;
   top: 50%;
   transform: translate(-50%, -50%);
-  width: 44px;
-  height: 44px;
+  width: var(--leaderboard-avatar-size, 44px);
+  height: var(--leaderboard-avatar-size, 44px);
   border-radius: 12px;
   background: white;
   border: 2px solid rgba(0,0,0,0.12);

@@ -1,13 +1,13 @@
 const CACHE_PREFIX = "achievement-app-shell";
-const CACHE_VERSION = "v4";
+const CACHE_VERSION = "v5";
 const CACHE_NAME = `${CACHE_PREFIX}-${CACHE_VERSION}`;
 const APP_SHELL = [
   "./",
   "./index.html",
   "./manifest.json",
-  "./images/pwa/icon-192.png?v=20260418b",
-  "./images/pwa/icon-512.png?v=20260418b",
-  "./images/pwa/apple-touch-icon.png?v=20260418b"
+  "./images/pwa/icon-192.png?v=20260421a",
+  "./images/pwa/icon-512.png?v=20260421a",
+  "./images/pwa/apple-touch-icon.png?v=20260421a"
 ];
 
 self.addEventListener("install", (event) => {

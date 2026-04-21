@@ -56,6 +56,55 @@ let teacherDirectoryUsers = [];
 
 const STATUS_LOADING = "Loading users...";
 
+function normalizeRoles(raw) {
+  if (Array.isArray(raw)) {
+    return raw.map(role => String(role || "").trim().toLowerCase()).filter(Boolean);
+  }
+  if (typeof raw === "string") {
+    const trimmed = raw.trim();
+    if (!trimmed) return [];
+    try {
+      return normalizeRoles(JSON.parse(trimmed));
+    } catch {
+      return [trimmed.toLowerCase()];
+    }
+  }
+  return [];
+}
+
+function uniqueRoles(...roleGroups) {
+  return Array.from(new Set(roleGroups.flatMap(normalizeRoles)));
+}
+
+function serializeQueryError(error) {
+  if (!error) return null;
+  return {
+    message: error.message || String(error),
+    code: error.code || null,
+    details: error.details || null,
+    hint: error.hint || null
+  };
+}
+
+async function loadStudioMembershipRoles(authUserId, studioId) {
+  if (!authUserId || !studioId) {
+    return { roles: [], error: null, row: null };
+  }
+
+  const { data, error } = await supabase
+    .from("studio_members")
+    .select("roles")
+    .eq("user_id", authUserId)
+    .eq("studio_id", studioId)
+    .maybeSingle();
+
+  return {
+    roles: normalizeRoles(data?.roles),
+    error,
+    row: data || null
+  };
+}
+
 function normalizeTab(value) {
   const tab = String(value || "").trim().toLowerCase();
   return VALID_TABS.has(tab) ? tab : "students";
@@ -1194,10 +1243,48 @@ async function initManageUsersPanel() {
 
   const access = await getAccessFlags();
   const viewerContext = await getViewerContext();
-  const allowed = Boolean((access?.is_owner || access?.can_manage_users) && !viewerContext?.isStudent);
-  if (!allowed) {
+  const { data: authData, error: authUserError } = await supabase.auth.getUser();
+  const authUserId = authData?.user?.id || viewerContext?.viewerUserId || null;
+  const studioId = viewerContext?.studioId || access?.studio_id || localStorage.getItem("activeStudioId");
+  const membershipResult = await loadStudioMembershipRoles(authUserId, studioId);
+  const userRoles = uniqueRoles(viewerContext?.accountRoles, viewerContext?.viewerRoles);
+  const membershipRoles = membershipResult.roles;
+  const staffRoles = new Set(["admin", "teacher"]);
+  const hasMembershipStaffRole = membershipRoles.some(role => staffRoles.has(role));
+  const hasViewerContextStaffRole =
+    String(viewerContext?.studioId || "") === String(studioId || "") &&
+    (Boolean(viewerContext?.accountIsAdmin) || Boolean(viewerContext?.accountIsTeacher));
+  const hasTeacherAdminAccess = hasMembershipStaffRole || hasViewerContextStaffRole;
+  const canOpenManageUsers = Boolean(
+    access?.is_owner ||
+    access?.can_manage_users ||
+    hasTeacherAdminAccess
+  );
+  const denied = Boolean(viewerContext?.isStudent || !studioId || !canOpenManageUsers);
+  if (denied) {
     renderStatus("Not authorized.", true);
-    console.warn("[ManageUsers] redirecting: insufficient permissions");
+    console.warn("[ManageUsers] redirecting: insufficient permissions", {
+      authUserId,
+      activeStudioId: studioId || null,
+      userRoles,
+      studioMembershipRoles: membershipRoles,
+      accessFlags: access || null,
+      queryErrors: {
+        authUser: serializeQueryError(authUserError),
+        studioMembership: serializeQueryError(membershipResult.error)
+      },
+      flags: {
+        isOwner: Boolean(access?.is_owner),
+        canManageUsers: Boolean(access?.can_manage_users),
+        hasMembershipStaffRole,
+        hasViewerContextStaffRole,
+        hasTeacherAdminAccess,
+        canOpenManageUsers,
+        viewerContextIsStudent: Boolean(viewerContext?.isStudent),
+        hasActiveStudioId: Boolean(studioId)
+      },
+      denied
+    });
     if (window.location.pathname.split("/").pop() === "manage-users.html") {
       window.location.replace("index.html");
     }

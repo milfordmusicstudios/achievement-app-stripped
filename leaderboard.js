@@ -3,6 +3,9 @@ import { ensureStudioContextAndRoute } from "./studio-routing.js";
 
 const OFFSETS = [0, 14, -14, 28, -28];
 const PAD_X = 28;
+const MIN_ZOOM = 1;
+const MAX_ZOOM = 4;
+const ZOOM_POSITION_SETTLE_MS = 60;
 
 document.addEventListener("DOMContentLoaded", async () => {
   const routeResult = await ensureStudioContextAndRoute({ redirectHome: false });
@@ -12,6 +15,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   const loadingText = document.getElementById("loadingMessage");
   const countEl = document.getElementById("leaderboardCount");
   const container = document.getElementById("leaderboardBars") || document.getElementById("leaderboardContainer");
+  const zoomInput = document.getElementById("leaderboardZoom");
+  const zoomValue = document.getElementById("leaderboardZoomValue");
 
   const messages = [
     "🎶 Loading the rhythm of success…",
@@ -64,6 +69,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const activeStudentId = localStorage.getItem("aa.activeStudentId") || null;
     const placements = buildPlacements(students, totals, levels, activeStudentId);
     renderAvatars(placements);
+    bindLeaderboardZoom({ zoomInput, zoomValue, placements });
 
     const reposition = debounce(() => positionAvatars(placements), 150);
     window.addEventListener("resize", reposition);
@@ -74,6 +80,33 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (popup) popup.style.display = "none";
   }
 });
+
+function bindLeaderboardZoom({ zoomInput, zoomValue, placements }) {
+  if (!zoomInput) return;
+
+  const applyZoom = () => {
+    const rawZoom = Number(zoomInput.value);
+    const zoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, Number.isFinite(rawZoom) ? rawZoom : MIN_ZOOM));
+    const avatarSize = Math.round(Math.max(34, 44 - ((zoom - 1) * 3)));
+
+    document.body.style.setProperty("--leaderboard-zoom", String(zoom));
+    document.body.style.setProperty("--leaderboard-width", `${zoom * 100}%`);
+    document.body.style.setProperty("--leaderboard-avatar-size", `${avatarSize}px`);
+    document.body.classList.toggle("is-leaderboard-zoomed", zoom > MIN_ZOOM);
+    if (zoomValue) {
+      zoomValue.value = `${zoom.toFixed(zoom % 1 === 0 ? 0 : 2)}x`;
+      zoomValue.textContent = zoomValue.value;
+    }
+
+    requestAnimationFrame(() => {
+      positionAvatars(placements);
+      window.setTimeout(() => positionAvatars(placements), ZOOM_POSITION_SETTLE_MS);
+    });
+  };
+
+  zoomInput.addEventListener("input", applyZoom);
+  applyZoom();
+}
 
 function renderLevelBars(container, levelsDesc) {
   if (!container) return;
@@ -133,7 +166,7 @@ async function fetchStudentsByIds(ids, studioId) {
   if (!ids.length) return [];
   const { data, error } = await supabase
     .from("users")
-    .select("id, firstName, lastName, avatarUrl, roles, deactivated_at")
+    .select("id, firstName, lastName, avatarUrl, roles, active, deactivated_at")
     .in("id", ids)
     .eq("studio_id", studioId)
     .is("deactivated_at", null);
@@ -143,7 +176,7 @@ async function fetchStudentsByIds(ids, studioId) {
   }
   return (data || []).filter(u => {
     const roles = Array.isArray(u.roles) ? u.roles : [u.roles].filter(Boolean);
-    return roles.includes("student");
+    return roles.includes("student") && u.active !== false;
   });
 }
 

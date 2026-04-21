@@ -1351,11 +1351,12 @@ function resetModalScroll(modalEl) {
   scroller.scrollTop = 0;
 }
 
-function openStudentModal({ title, bodyHtml, submitLabel, onSubmit }) {
+function openStudentModal({ title, bodyHtml, submitLabel, onSubmit, clearLabel, onClear }) {
   const overlay = qs("studentLogModalOverlay");
   const titleEl = qs("studentLogModalTitle");
   const bodyEl = qs("studentLogModalBody");
   const submitBtn = qs("studentLogModalSubmit");
+  const clearBtn = qs("studentLogModalClear");
   const cancelBtn = qs("studentLogModalCancel");
   const closeBtn = qs("studentLogModalClose");
   if (!overlay || !titleEl || !bodyEl || !submitBtn || !cancelBtn || !closeBtn) return;
@@ -1367,6 +1368,19 @@ function openStudentModal({ title, bodyHtml, submitLabel, onSubmit }) {
     e.preventDefault();
     await onSubmit();
   };
+  if (clearBtn) {
+    if (typeof onClear === "function") {
+      clearBtn.textContent = clearLabel || "Clear Form";
+      clearBtn.style.display = "";
+      clearBtn.onclick = (e) => {
+        e.preventDefault();
+        onClear();
+      };
+    } else {
+      clearBtn.style.display = "none";
+      clearBtn.onclick = null;
+    }
+  }
   cancelBtn.onclick = (e) => {
     e.preventDefault();
     closeStudentModal();
@@ -2308,6 +2322,13 @@ async function openPastPracticeModal(userId) {
       </div>
       <div class="status-note">Approved</div>
     `,
+    clearLabel: "Clear Form",
+    onClear: () => {
+      selectedDates.clear();
+      const notesEl = qs("practiceNotes");
+      if (notesEl) notesEl.value = "";
+      renderCalendar();
+    },
     onSubmit: async () => {
       const notes = qs("practiceNotes")?.value?.trim() || "";
       const selected = Array.from(selectedDates);
@@ -2776,6 +2797,7 @@ function renderStaffQuickLogShell() {
 
         <div class="button-row" style="margin-top:10px;">
           <button id="staffQuickLogSubmit" type="submit" class="blue-button staff-submit" disabled>Submit Points</button>
+          <button id="staffQuickLogClear" type="button" class="blue-button staff-clear-form">Clear Form</button>
         </div>
       </form>
     </section>
@@ -2917,6 +2939,7 @@ async function initStaffQuickLog({ authUserId, studioId, roles }) {
   const msgEl = document.getElementById('staffQuickLogMsg');
   const errorEl = document.getElementById('staffQuickLogError');
   const submitBtn = document.getElementById('staffQuickLogSubmit');
+  const clearBtn = document.getElementById('staffQuickLogClear');
   const selectedDates = new Set();
   const selectedStudentIds = new Set();
   const categoryRowsByName = new Map();
@@ -3096,6 +3119,31 @@ async function initStaffQuickLog({ authUserId, studioId, roles }) {
     studentDropdown.removeAttribute('hidden');
   };
 
+  const clearStaffQuickLogForm = (students = []) => {
+    selectedDates.clear();
+    selectedStudentIds.clear();
+    practiceDatesByStudentId = new Map();
+    practiceDatesRequestToken++;
+    if (form) form.reset();
+    if (studentSearchInput) studentSearchInput.value = '';
+    if (studentDropdown) studentDropdown.setAttribute('hidden', '');
+    if (calendarPanel) calendarPanel.setAttribute('hidden', '');
+    if (msgEl) {
+      msgEl.textContent = '';
+      msgEl.style.display = 'none';
+    }
+    if (errorEl) {
+      errorEl.textContent = '';
+      errorEl.style.display = 'none';
+    }
+    syncStudentSelect();
+    renderSelectedStudents(students);
+    renderStudentDropdown(students);
+    syncPracticePoints();
+    renderStaffCalendar();
+    updateStaffCalendarToggle();
+  };
+
   const setError = (message) => {
     if (!errorEl) return;
     errorEl.textContent = message;
@@ -3271,6 +3319,8 @@ async function initStaffQuickLog({ authUserId, studioId, roles }) {
         studentSearchInput.addEventListener('input', () => renderStudentDropdown(sortedStudents));
         studentSearchInput.addEventListener('focus', () => renderStudentDropdown(sortedStudents));
       }
+
+      clearBtn?.addEventListener('click', () => clearStaffQuickLogForm(sortedStudents));
 
       document.addEventListener('click', (event) => {
         if (!studentPicker || !studentDropdown) return;

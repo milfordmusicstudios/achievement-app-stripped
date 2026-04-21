@@ -194,7 +194,14 @@ document.addEventListener("DOMContentLoaded", async () => {
   const studentFilterSearch = document.getElementById("studentFilterSearch");
   const studentFilterDropdown = document.getElementById("studentFilterDropdown");
   const studentFilterSelected = document.getElementById("studentFilterSelected");
+  const dateFromInput = document.getElementById("dateFromInput");
+  const dateToInput = document.getElementById("dateToInput");
   const bulkActionBar = document.getElementById("bulkActionBar");
+  const prevPageBtn = document.getElementById("prevPageBtn");
+  const nextPageBtn = document.getElementById("nextPageBtn");
+  const pageInfo = document.getElementById("pageInfo");
+  const jumpToPageInput = document.getElementById("jumpToPageInput");
+  const logsPerPageSelect = document.getElementById("logsPerPage");
 
   let allLogs = [];
   let totalLogsCount = null;
@@ -202,7 +209,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   let filteredLogs = [];
   let currentSort = { field: "date", order: "desc" };
   let currentPage = 1;
-  let logsPerPage = 25;
+  let logsPerPage = parseInt(logsPerPageSelect?.value || "25", 10) || 25;
   let activeCardFilter = "all";
   let pendingCardFlashPlayed = false;
   const selectedStudentFilterIds = new Set();
@@ -216,6 +223,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const isApprovedStatus = (value) => String(value || "").toLowerCase() === "approved";
   const isNeedsInfoStatus = (value) => String(value || "").toLowerCase() === "needs info";
   const isSameDay = (value, today) => String(value || "").startsWith(today);
+  const getLogDateValue = (log) => String(log?.date || "").split("T")[0];
   const getApprovedTimestamp = (log) => log._approvedAtLocal || log.approved_at || log.updated_at || "";
   const isApprovedToday = (log, today) => {
     if (!isApprovedStatus(log.status)) return false;
@@ -497,6 +505,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // Search + Card Filter
   searchInput.addEventListener("input", applyFilters);
+  dateFromInput?.addEventListener("change", applyFilters);
+  dateToInput?.addEventListener("change", applyFilters);
   if (studentFilterSearch) {
     studentFilterSearch.addEventListener("input", renderStudentFilterDropdown);
     studentFilterSearch.addEventListener("focus", renderStudentFilterDropdown);
@@ -511,9 +521,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   function applyFilters() {
     const searchVal = searchInput.value.toLowerCase();
+    const dateFrom = String(dateFromInput?.value || "").trim();
+    const dateTo = String(dateToInput?.value || "").trim();
     const todayStr = todayString();
 
     filteredLogs = allLogs.filter(l => {
+      const logDate = getLogDateValue(l);
       const matchesStudent =
         selectedStudentFilterIds.size === 0 ||
         selectedStudentFilterIds.has(String(l.userId || ""));
@@ -521,6 +534,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         l.fullName.toLowerCase().includes(searchVal) ||
         (l.notes || "").toLowerCase().includes(searchVal) ||
         (l.category || "").toLowerCase().includes(searchVal);
+      const matchesDate =
+        (!dateFrom || (logDate && logDate >= dateFrom)) &&
+        (!dateTo || (logDate && logDate <= dateTo));
       let matchesCard = true;
       if (activeCardFilter === "pending") {
         matchesCard = String(l.status || "").toLowerCase() === "pending";
@@ -529,7 +545,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       } else if (activeCardFilter === "needs info") {
         matchesCard = String(l.status || "").toLowerCase() === "needs info";
       }
-      return matchesStudent && matchesSearch && matchesCard;
+      return matchesStudent && matchesSearch && matchesDate && matchesCard;
     });
 
     currentPage = 1;
@@ -573,23 +589,57 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   // Pagination
-  document.getElementById("prevPageBtn").addEventListener("click", () => {
+  function getTotalPages(list = filteredLogs) {
+    return Math.max(1, Math.ceil((list?.length || 0) / logsPerPage));
+  }
+
+  function updatePaginationControls(list = filteredLogs) {
+    const totalItems = list?.length || 0;
+    const totalPages = getTotalPages(list);
+    currentPage = Math.min(Math.max(1, currentPage), totalPages);
+
+    if (pageInfo) {
+      pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
+    }
+    if (jumpToPageInput) {
+      jumpToPageInput.max = String(totalPages);
+      jumpToPageInput.value = String(currentPage);
+      jumpToPageInput.disabled = totalItems === 0;
+    }
+    if (prevPageBtn) prevPageBtn.disabled = currentPage <= 1 || totalItems === 0;
+    if (nextPageBtn) nextPageBtn.disabled = currentPage >= totalPages || totalItems === 0;
+  }
+
+  prevPageBtn?.addEventListener("click", () => {
     if (currentPage > 1) {
       currentPage--;
       renderLogsTable(filteredLogs);
     }
   });
 
-  document.getElementById("nextPageBtn").addEventListener("click", () => {
-    const totalPages = Math.ceil(filteredLogs.length / logsPerPage);
+  nextPageBtn?.addEventListener("click", () => {
+    const totalPages = getTotalPages(filteredLogs);
     if (currentPage < totalPages) {
       currentPage++;
       renderLogsTable(filteredLogs);
     }
   });
 
-  document.getElementById("logsPerPage").addEventListener("change", e => {
-    logsPerPage = parseInt(e.target.value);
+  jumpToPageInput?.addEventListener("change", e => {
+    const totalPages = getTotalPages(filteredLogs);
+    const requestedPage = parseInt(e.target.value, 10);
+    currentPage = Math.min(Math.max(1, requestedPage || 1), totalPages);
+    renderLogsTable(filteredLogs);
+  });
+
+  jumpToPageInput?.addEventListener("keydown", e => {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    e.currentTarget.blur();
+  });
+
+  logsPerPageSelect?.addEventListener("change", e => {
+    logsPerPage = parseInt(e.target.value, 10) || 25;
     currentPage = 1;
     renderLogsTable(filteredLogs);
   });
@@ -670,8 +720,17 @@ async function renderCategorySummary(list) {
       logsTableBody.innerHTML = `<tr><td colspan="7" class="logs-empty-state">No logs found yet.</td></tr>`;
       document.getElementById("selectAll").checked = false;
       updateBulkActionBarVisibility();
+      updatePaginationControls([]);
       return;
     }
+    if (!list.length) {
+      logsTableBody.innerHTML = `<tr><td colspan="7" class="logs-empty-state">No logs match the current filters.</td></tr>`;
+      document.getElementById("selectAll").checked = false;
+      updateBulkActionBarVisibility();
+      updatePaginationControls(list);
+      return;
+    }
+    updatePaginationControls(list);
     const start = (currentPage - 1) * logsPerPage;
     const end = start + logsPerPage;
     const pageLogs = list.slice(start, end);
