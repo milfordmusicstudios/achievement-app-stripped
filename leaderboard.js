@@ -175,8 +175,12 @@ async function fetchStudentsByIds(ids, studioId) {
   }
   return (data || []).filter(u => {
     const roles = Array.isArray(u.roles) ? u.roles : [u.roles].filter(Boolean);
-    return roles.includes("student") && u.active !== false;
+    return roles.includes("student") && u.active !== false && hasUploadedAvatar(u);
   });
+}
+
+function hasUploadedAvatar(student) {
+  return typeof student?.avatarUrl === "string" && student.avatarUrl.trim().length > 0;
 }
 
 function getStudentLeaderboardPoints(student) {
@@ -221,7 +225,7 @@ function renderAvatars(placements) {
 
     const avatar = document.createElement("img");
     avatar.className = `lb-avatar leaderboard-avatar${p.isSelf ? " is-self" : ""}`;
-    avatar.src = p.student.avatarUrl || "images/icons/default.png";
+    avatar.src = p.student.avatarUrl;
     const fullName = `${p.student.firstName ?? ""} ${p.student.lastName ?? ""}`.trim() || "Student";
     avatar.alt = fullName;
     avatar.title = `${fullName} — ${p.total} pts`;
