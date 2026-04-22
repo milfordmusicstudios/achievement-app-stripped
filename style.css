@@ -9084,3 +9084,58 @@ body.leaderboard-page .leaderboard-orientation-hint {
     padding: 8px 10px;
   }
 }
+
+/* Direct-edit roster table: no pencil mode, fields are editable in place. */
+.manage-users-table .edit-pencil,
+.manage-users-table .inline-edit-actions,
+.manage-users-table .cell-text {
+  display: none !important;
+}
+
+.manage-users-table .cell-input,
+.manage-users-table .tag-picker {
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+.manage-users-table .first-name-wrapper input.cell-input {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+@media (max-width: 700px) {
+  body.review-logs-page #logsTable .checkbox-cell::before {
+    display: none !important;
+  }
+
+  body.review-logs-page #logsTable .checkbox-cell {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    min-height: 32px;
+  }
+
+  .manage-users-table tbody tr.mobile-collapsible-row.is-expanded {
+    grid-template-columns: minmax(0, 1fr);
+    overflow: hidden;
+  }
+
+  .manage-users-table tbody tr.mobile-collapsible-row.is-expanded td {
+    grid-column: 1 / -1 !important;
+    width: 100%;
+    max-width: 100% !important;
+  }
+
+  .manage-users-table .cell-input,
+  .manage-users-table .tag-picker,
+  .manage-users-table .tag-picker-custom {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .manage-users-table .tag-picker-custom {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+}

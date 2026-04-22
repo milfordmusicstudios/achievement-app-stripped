@@ -529,13 +529,23 @@ function createEditableTextCell(user, field, type = "text") {
   span.className = "cell-text";
   span.dataset.field = field;
   span.textContent = getDisplayValue(user, field);
+  span.hidden = true;
 
   const input = document.createElement("input");
   input.className = "cell-input";
   input.dataset.field = field;
   input.type = type;
-  input.hidden = true;
+  input.hidden = false;
   setInputValueFromUser(input, user);
+  input.addEventListener("change", () => {
+    const row = td.closest("tr");
+    if (row) void saveRow(row);
+  });
+  input.addEventListener("keydown", event => {
+    if (event.key !== "Enter") return;
+    event.preventDefault();
+    input.blur();
+  });
 
   if (field !== "firstName") {
     td.appendChild(span);
@@ -545,50 +555,6 @@ function createEditableTextCell(user, field, type = "text") {
 
   const wrapper = document.createElement("div");
   wrapper.className = "first-name-wrapper";
-
-  const pencilBtn = document.createElement("button");
-  pencilBtn.type = "button";
-  pencilBtn.className = "edit-pencil";
-  pencilBtn.setAttribute("aria-label", "Edit user");
-  pencilBtn.innerHTML = `
-    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path d="M5 20h14" />
-      <path d="M17.4 4.6a2 2 0 0 1 2.8 2.8l-9.7 9.7H7v-4.5z" />
-    </svg>
-  `;
-  pencilBtn.addEventListener("click", event => {
-    event.preventDefault();
-    const row = td.closest("tr");
-    if (row) enterEditMode(row);
-  });
-
-  const actions = document.createElement("div");
-  actions.className = "inline-edit-actions";
-
-  const saveBtn = document.createElement("button");
-  saveBtn.type = "button";
-  saveBtn.className = "mini-edit-btn save-btn row-save-btn";
-  saveBtn.textContent = "Save";
-  saveBtn.hidden = true;
-  saveBtn.addEventListener("click", () => {
-    const row = td.closest("tr");
-    if (row) saveRow(row);
-  });
-
-  const cancelBtn = document.createElement("button");
-  cancelBtn.type = "button";
-  cancelBtn.className = "mini-edit-btn cancel-btn row-cancel-btn";
-  cancelBtn.textContent = "Cancel";
-  cancelBtn.hidden = true;
-  cancelBtn.addEventListener("click", () => {
-    const row = td.closest("tr");
-    if (row) cancelEditMode(row);
-  });
-
-  actions.appendChild(saveBtn);
-  actions.appendChild(cancelBtn);
-  wrapper.appendChild(pencilBtn);
-  wrapper.appendChild(actions);
   wrapper.appendChild(span);
   wrapper.appendChild(input);
   td.appendChild(wrapper);
@@ -610,7 +576,7 @@ function createMultiSelectCell(user, field, options, cssClass) {
   picker.dataset.selected = "[]";
   picker.dataset.open = "false";
   picker.dataset.allowCustom = field === "instrument" ? "true" : "false";
-  picker.hidden = true;
+  picker.hidden = false;
 
   picker._options = options.map(option => ({ value: String(option.value), label: String(option.label) }));
 
@@ -642,6 +608,7 @@ function createMultiSelectCell(user, field, options, cssClass) {
       picker.dataset.selected = JSON.stringify(selected);
       picker.dataset.open = "false";
       renderTagPicker(picker);
+      persistPickerChange(picker);
       return;
     }
 
@@ -651,6 +618,7 @@ function createMultiSelectCell(user, field, options, cssClass) {
       picker.dataset.selected = JSON.stringify(selected);
       picker.dataset.open = "false";
       renderTagPicker(picker);
+      persistPickerChange(picker);
       return;
     }
 
@@ -674,6 +642,7 @@ function createMultiSelectCell(user, field, options, cssClass) {
       if (input) input.value = "";
       picker.dataset.open = "false";
       renderTagPicker(picker);
+      persistPickerChange(picker);
       return;
     }
 
@@ -709,6 +678,11 @@ function closeAllTagPickers(exceptPicker = null) {
     picker.dataset.open = "false";
     renderTagPicker(picker);
   });
+}
+
+function persistPickerChange(picker) {
+  const row = picker?.closest?.("tr");
+  if (row) void saveRow(row);
 }
 
 function renderTagPicker(picker) {
@@ -862,6 +836,22 @@ function createActionsCell(user) {
   return td;
 }
 
+function createActiveCell(user) {
+  const td = document.createElement("td");
+  td.className = "actions-cell";
+
+  const toggle = document.createElement("button");
+  toggle.type = "button";
+  toggle.className = "mini-edit-btn";
+  updateActiveButton(toggle, !user.deactivated_at);
+  toggle.addEventListener("click", async () => {
+    await toggleUserActive(user, toggle);
+  });
+
+  td.appendChild(toggle);
+  return td;
+}
+
 function createCellForColumn(columnKey, user) {
   if (columnKey === "firstName" || columnKey === "lastName" || columnKey === "email") {
     return createEditableTextCell(user, columnKey, EDITABLE_TEXT_FIELD_TYPES[columnKey] || "text");
@@ -871,7 +861,7 @@ function createCellForColumn(columnKey, user) {
   if (columnKey === "teacherIds") return createMultiSelectCell(user, "teacherIds", teacherOptions, "teacher-select");
   if (columnKey === "instrument") return createMultiSelectCell(user, "instrument", instrumentOptions, "instrument-select");
   if (columnKey === "points" || columnKey === "level") return createCell(getDisplayValue(user, columnKey));
-  if (columnKey === "active") return createCell(getDisplayValue(user, "active"));
+  if (columnKey === "active") return createActiveCell(user);
   if (columnKey === "actions") return createActionsCell(user);
   return createCell("-");
 }
@@ -974,7 +964,6 @@ async function saveRow(row) {
 
   if (!Object.keys(userUpdates).length && !roleUpdates) {
     renderStatus("No changes to save.");
-    cancelEditMode(row);
     return;
   }
 
