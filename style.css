@@ -9139,3 +9139,126 @@ body.leaderboard-page .leaderboard-orientation-hint {
     grid-template-columns: minmax(0, 1fr) auto;
   }
 }
+
+/* Final mobile polish for category controls, manage-user add buttons, and home header. */
+body.review-logs-page .category-cell select.edit-input {
+  min-width: 150px;
+  width: 100%;
+  max-width: none;
+  text-overflow: clip;
+}
+
+body.manage-users .tag-picker-custom-btn,
+.manage-users-panel .tag-picker-custom-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  line-height: 1;
+  min-width: 62px;
+}
+
+@media (max-width: 700px) {
+  body.review-logs-page #logsTable td.category-cell {
+    min-width: 0;
+  }
+
+  body.review-logs-page #logsTable td.category-cell select.edit-input {
+    min-width: 168px;
+    font-size: 0.95rem;
+    padding-right: 26px;
+  }
+
+  body.student-home-page .home-wrap {
+    padding-top: 6px;
+  }
+
+  body.student-home-page .home-header {
+    width: min(100%, calc(100% - 16px));
+    grid-template-columns: 78px minmax(0, 1fr) 78px;
+    gap: 6px;
+    align-items: center;
+    padding-top: 8px;
+    padding-bottom: 6px;
+  }
+
+  body.student-home-page .home-header__center {
+    min-width: 0;
+    gap: 4px;
+  }
+
+  body.student-home-page #avatarImg,
+  body.student-home-page .avatar-button img {
+    width: 74px !important;
+    height: 74px !important;
+    border-radius: 14px;
+  }
+
+  body.student-home-page .studio-logo {
+    width: auto;
+    max-width: 130px !important;
+    max-height: 42px !important;
+  }
+
+  body.student-home-page .home-welcome {
+    max-width: 100%;
+    margin: 0;
+    font-size: 1.05rem;
+    line-height: 1.05;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  body.student-home-page #levelBadgeImg,
+  body.student-home-page .home-header__right .role-badge,
+  body.student-home-page #roleBadgeAdmin,
+  body.student-home-page #roleBadgeTeacher {
+    width: 76px !important;
+    height: 76px !important;
+    object-fit: contain;
+  }
+
+  body.student-home-page .home-header__left,
+  body.student-home-page .home-header__right {
+    min-width: 0;
+  }
+
+  body.student-home-page .view-mode-toggle {
+    display: none !important;
+  }
+}
+
+@media (max-width: 390px) {
+  body.review-logs-page #logsTable td.category-cell {
+    grid-column: 1 / -1;
+  }
+
+  body.review-logs-page #logsTable td.category-cell select.edit-input {
+    min-width: 0;
+    width: 100%;
+  }
+
+  body.student-home-page .home-header {
+    grid-template-columns: 66px minmax(0, 1fr) 66px;
+  }
+
+  body.student-home-page #avatarImg,
+  body.student-home-page .avatar-button img,
+  body.student-home-page #levelBadgeImg,
+  body.student-home-page .home-header__right .role-badge,
+  body.student-home-page #roleBadgeAdmin,
+  body.student-home-page #roleBadgeTeacher {
+    width: 64px !important;
+    height: 64px !important;
+  }
+
+  body.student-home-page .studio-logo {
+    max-width: 112px !important;
+    max-height: 36px !important;
+  }
+
+  body.student-home-page .home-welcome {
+    font-size: 0.98rem;
+  }
+}
