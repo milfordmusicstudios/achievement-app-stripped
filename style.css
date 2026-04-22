@@ -8775,10 +8775,35 @@ body.leaderboard-page .leaderboard-orientation-hint {
 }
 
 @media (max-width: 900px) and (orientation: landscape) {
+  html:has(body.leaderboard-page),
+  body.leaderboard-page {
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  body.leaderboard-page {
+    padding-bottom: 0;
+  }
+
+  body.leaderboard-page .app-main {
+    height: 100dvh;
+    overflow: hidden;
+    padding-bottom: 0;
+  }
+
+  body.leaderboard-page #app-bottom-nav,
+  body.leaderboard-page footer {
+    display: none !important;
+  }
+
   body.leaderboard-page main.app {
     width: 100%;
     max-width: none;
-    padding: 6px 10px calc(64px + env(safe-area-inset-bottom));
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding: 6px 10px max(6px, env(safe-area-inset-bottom));
   }
 
   body.leaderboard-page .leaderboard-header {
@@ -8801,7 +8826,9 @@ body.leaderboard-page .leaderboard-orientation-hint {
 
   body.leaderboard-page .leaderboard-scroll-wrapper {
     display: block;
-    max-height: calc(100dvh - 94px - env(safe-area-inset-bottom));
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
     overflow-x: hidden;
     overflow-y: auto;
     padding: 2px 0 10px;
