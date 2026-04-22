@@ -50,7 +50,65 @@ const COLUMN_DEFS = {
 };
 
 const ROLE_FALLBACKS = ["admin", "teacher"];
-const INSTRUMENT_FALLBACKS = ["piano", "voice", "violin", "guitar", "drums"];
+const CANONICAL_INSTRUMENTS = [
+  "Piano",
+  "Voice",
+  "Guitar",
+  "Drums",
+  "Violin",
+  "Viola",
+  "Cello",
+  "Bass",
+  "Ukulele",
+  "Banjo",
+  "Mandolin",
+  "Flute",
+  "Clarinet",
+  "Saxophone",
+  "Trumpet",
+  "Trombone",
+  "French Horn",
+  "Tuba",
+  "Percussion"
+];
+
+const INSTRUMENT_ALIASES = new Map([
+  ["piano", "Piano"],
+  ["voice", "Voice"],
+  ["vocals", "Voice"],
+  ["vocal", "Voice"],
+  ["singing", "Voice"],
+  ["guitar", "Guitar"],
+  ["drums", "Drums"],
+  ["drum", "Drums"],
+  ["violin", "Violin"],
+  ["viola", "Viola"],
+  ["cello", "Cello"],
+  ["bass", "Bass"],
+  ["bass guitar", "Bass"],
+  ["ukulele", "Ukulele"],
+  ["uke", "Ukulele"],
+  ["banjo", "Banjo"],
+  ["mandolin", "Mandolin"],
+  ["flute", "Flute"],
+  ["clarinet", "Clarinet"],
+  ["sax", "Saxophone"],
+  ["saxophone", "Saxophone"],
+  ["trumpet", "Trumpet"],
+  ["trombone", "Trombone"],
+  ["french horn", "French Horn"],
+  ["horn", "French Horn"],
+  ["tuba", "Tuba"],
+  ["percussion", "Percussion"]
+]);
+
+const BLOCKED_INSTRUMENT_VALUES = new Set([
+  "test",
+  "beginner piano",
+  "beginner drums",
+  "beginner band",
+  "flugelhorn"
+]);
 
 let roleOptions = [];
 let teacherOptions = [];
@@ -228,9 +286,51 @@ function normalizeArray(value) {
     .filter(Boolean);
 }
 
+function getInstrumentKey(value) {
+  return String(value || "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .replace(/[.,;:!?]+$/g, "")
+    .trim()
+    .toLowerCase();
+}
+
+// Instruments are intentionally restricted to a canonical studio list so the UI
+// cannot reintroduce case variants or placeholder values into users.instrument.
+function normalizeInstrumentName(input, existingOptions = CANONICAL_INSTRUMENTS) {
+  const key = getInstrumentKey(input);
+  if (!key || BLOCKED_INSTRUMENT_VALUES.has(key)) return "";
+
+  const options = normalizeArray(existingOptions);
+  const existingMatch = options.find(option => getInstrumentKey(option) === key);
+  if (existingMatch) {
+    return INSTRUMENT_ALIASES.get(getInstrumentKey(existingMatch)) || existingMatch;
+  }
+
+  return INSTRUMENT_ALIASES.get(key) || "";
+}
+
+function isAllowedInstrument(input) {
+  return Boolean(normalizeInstrumentName(input));
+}
+
+function normalizeInstrumentList(value) {
+  const seen = new Set();
+  const normalized = [];
+  normalizeArray(value).forEach(item => {
+    const canonical = normalizeInstrumentName(item);
+    if (!canonical) return;
+    const key = canonical.toLowerCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+    normalized.push(canonical);
+  });
+  return normalized;
+}
+
 function arraysEqual(a, b) {
-  const normA = normalizeArray(a).sort();
-  const normB = normalizeArray(b).sort();
+  const normA = normalizeArray(a).map(item => String(item).toLowerCase()).sort();
+  const normB = normalizeArray(b).map(item => String(item).toLowerCase()).sort();
   if (normA.length !== normB.length) return false;
   for (let i = 0; i < normA.length; i++) {
     if (normA[i] !== normB[i]) return false;
@@ -269,6 +369,10 @@ function formatList(value) {
   return normalized.length ? normalized.join(", ") : "-";
 }
 
+function formatInstrumentList(value) {
+  return formatList(normalizeInstrumentList(value));
+}
+
 function getUserFieldValue(user, field) {
   switch (field) {
     case "firstName":
@@ -282,7 +386,7 @@ function getUserFieldValue(user, field) {
     case "teacherIds":
       return ensureArray(user.teacherIds);
     case "instrument":
-      return ensureArray(user.instrument);
+      return normalizeInstrumentList(user.instrument);
     default:
       return user[field] || "";
   }
@@ -299,7 +403,7 @@ function getDisplayValue(user, field) {
     const teacherNames = ensureArray(getUserFieldValue(user, "teacherIds")).map(getTeacherLabelById);
     return formatList(teacherNames);
   }
-  if (field === "instrument") return formatList(getUserFieldValue(user, "instrument"));
+  if (field === "instrument") return formatInstrumentList(getUserFieldValue(user, "instrument"));
   if (field === "points" || field === "level") return user[field] ?? "-";
   if (field === "active") return user.deactivated_at ? "Inactive" : "Active";
   return getUserFieldValue(user, field) || "-";
@@ -309,7 +413,9 @@ function setInputValueFromUser(input, user) {
   const field = input.dataset.field;
   if (!field) return;
   if (input instanceof HTMLElement && input.classList.contains("tag-picker")) {
-    const selected = normalizeArray(getUserFieldValue(user, field));
+    const selected = field === "instrument"
+      ? normalizeInstrumentList(getUserFieldValue(user, field))
+      : normalizeArray(getUserFieldValue(user, field));
     input.dataset.selected = JSON.stringify(selected);
     input.dataset.open = "false";
     renderTagPicker(input);
@@ -342,13 +448,13 @@ function buildOptionLists(users) {
       if (normalizedId) assignedTeacherIds.add(normalizedId);
     });
     ensureArray(user.instrument).forEach(inst => {
-      const value = String(inst || "").trim();
+      const value = normalizeInstrumentName(inst);
       if (value) instrumentSet.add(value);
     });
   });
 
   ROLE_FALLBACKS.forEach(role => roleSet.add(role));
-  INSTRUMENT_FALLBACKS.forEach(inst => instrumentSet.add(inst));
+  CANONICAL_INSTRUMENTS.forEach(inst => instrumentSet.add(inst));
 
   const teacherSourceUsers = teacherDirectoryUsers.length ? teacherDirectoryUsers : users;
   teacherSourceUsers.forEach(user => {
@@ -379,6 +485,11 @@ function buildOptionLists(users) {
   teacherOptions = Array.from(teacherMap.values()).sort((a, b) => a.label.localeCompare(b.label));
 
   instrumentOptions = Array.from(instrumentSet)
+    .map(normalizeInstrumentName)
+    .filter(Boolean)
+    .filter((instrument, index, list) =>
+      list.findIndex(item => item.toLowerCase() === instrument.toLowerCase()) === index
+    )
     .map(instrument => ({ value: instrument, label: instrument }))
     .sort((a, b) => a.label.localeCompare(b.label));
 }
@@ -603,8 +714,13 @@ function createMultiSelectCell(user, field, options, cssClass) {
     const addBtn = event.target.closest("button[data-action='add-option']");
     if (addBtn) {
       const selected = getTagPickerSelected(picker);
-      const value = String(addBtn.dataset.value || "");
-      if (!selected.includes(value)) selected.push(value);
+      const rawValue = String(addBtn.dataset.value || "");
+      const value = field === "instrument" ? normalizeInstrumentName(rawValue) : rawValue;
+      if (!value) {
+        renderStatus("That instrument is not available.", true);
+        return;
+      }
+      if (!selectedIncludesValue(selected, value)) selected.push(value);
       picker.dataset.selected = JSON.stringify(selected);
       picker.dataset.open = "false";
       renderTagPicker(picker);
@@ -614,7 +730,8 @@ function createMultiSelectCell(user, field, options, cssClass) {
 
     const removeBtn = event.target.closest("button[data-action='remove-tag']");
     if (removeBtn) {
-      const selected = getTagPickerSelected(picker).filter(value => value !== String(removeBtn.dataset.value || ""));
+      const removeKey = String(removeBtn.dataset.value || "").toLowerCase();
+      const selected = getTagPickerSelected(picker).filter(value => String(value).toLowerCase() !== removeKey);
       picker.dataset.selected = JSON.stringify(selected);
       picker.dataset.open = "false";
       renderTagPicker(picker);
@@ -629,15 +746,26 @@ function createMultiSelectCell(user, field, options, cssClass) {
       if (!raw) return;
 
       const optionsList = Array.isArray(picker._options) ? picker._options : [];
-      const existing = optionsList.find(option => String(option.label).toLowerCase() === raw.toLowerCase());
-      const value = existing ? String(existing.value) : raw;
+      const value = field === "instrument"
+        ? normalizeInstrumentName(raw, optionsList.map(option => option.label))
+        : raw;
+      if (!value || (field === "instrument" && !isAllowedInstrument(value))) {
+        renderStatus(`"${raw}" is not in the allowed instrument list.`, true);
+        return;
+      }
+
+      const existing = optionsList.find(option => String(option.value).toLowerCase() === value.toLowerCase());
       if (!existing) {
-        optionsList.push({ value, label: raw });
+        optionsList.push({ value, label: value });
         picker._options = optionsList.sort((a, b) => String(a.label).localeCompare(String(b.label)));
       }
 
       const selected = getTagPickerSelected(picker);
-      if (!selected.includes(value)) selected.push(value);
+      if (selectedIncludesValue(selected, value)) {
+        renderStatus(`${value} is already selected.`, true);
+        return;
+      }
+      selected.push(value);
       picker.dataset.selected = JSON.stringify(selected);
       if (input) input.value = "";
       picker.dataset.open = "false";
@@ -668,8 +796,13 @@ function getTagPickerSelected(picker) {
 
 function getTagLabel(picker, value) {
   const options = Array.isArray(picker._options) ? picker._options : [];
-  const match = options.find(option => String(option.value) === String(value));
+  const match = options.find(option => String(option.value).toLowerCase() === String(value).toLowerCase());
   return match?.label || String(value);
+}
+
+function selectedIncludesValue(selected, value) {
+  const key = String(value || "").toLowerCase();
+  return selected.some(item => String(item || "").toLowerCase() === key);
 }
 
 function closeAllTagPickers(exceptPicker = null) {
@@ -726,7 +859,7 @@ function renderTagPicker(picker) {
     });
   }
 
-  const available = (picker._options || []).filter(option => !selected.includes(String(option.value)));
+  const available = (picker._options || []).filter(option => !selectedIncludesValue(selected, String(option.value)));
   listEl.innerHTML = "";
   if (picker.dataset.allowCustom === "true") {
     const customWrap = document.createElement("div");
@@ -937,8 +1070,10 @@ async function saveRow(row) {
 
   const userUpdates = {};
   let roleUpdates = null;
+  let validationFailed = false;
 
   row.querySelectorAll(".cell-input").forEach(input => {
+    if (validationFailed) return;
     const field = input.dataset.field;
     if (!field || field === "avatarUrl") return;
 
@@ -952,6 +1087,17 @@ async function saveRow(row) {
           .map(role => String(role || "").toLowerCase())
           .map(role => (role === "guardian" || role === "parent/guardian" ? "parent" : role))
           .filter((role, index, list) => role && list.indexOf(role) === index);
+      } else if (field === "instrument") {
+        const rawInstrumentValues = normalizeArray(newValue);
+        const normalizedInstruments = normalizeInstrumentList(newValue);
+        const hasInvalidInstrument = rawInstrumentValues.some(item => !normalizeInstrumentName(item));
+        if (hasInvalidInstrument) {
+          renderStatus("One or more instruments are not in the allowed instrument list.", true);
+          setInputValueFromUser(input, user);
+          validationFailed = true;
+          return;
+        }
+        userUpdates[field] = normalizedInstruments;
       } else {
         userUpdates[field] = normalizeArray(newValue);
       }
@@ -961,6 +1107,8 @@ async function saveRow(row) {
     if (String(newValue) === String(oldValue || "")) return;
     userUpdates[field] = newValue;
   });
+
+  if (validationFailed) return;
 
   if (!Object.keys(userUpdates).length && !roleUpdates) {
     renderStatus("No changes to save.");
@@ -1220,7 +1368,7 @@ function buildUserRow(row) {
     identity_roles: normalizedIdentityRoles,
     roles,
     teacherIds: ensureArray(row?.teacherIds),
-    instrument: ensureArray(row?.instrument),
+    instrument: normalizeInstrumentList(row?.instrument),
     points: row?.points ?? null,
     level: row?.level ?? null,
     active,

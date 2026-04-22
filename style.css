@@ -9262,3 +9262,124 @@ body.manage-users .tag-picker-custom-btn,
     font-size: 0.98rem;
   }
 }
+
+/* Home mobile balance: compact challenge strip, slightly larger identity center. */
+@media (max-width: 700px) {
+  body.student-home-page .staff-challenges-ribbon {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+  }
+
+  body.student-home-page .ribbon-left {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  body.student-home-page .ribbon-title {
+    font-size: 0.95rem;
+    white-space: nowrap;
+  }
+
+  body.student-home-page .ribbon-tabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 5px;
+    min-width: 0;
+  }
+
+  body.student-home-page .ribbon-tab,
+  body.student-home-page .ribbon-cta {
+    min-height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 8px;
+    font-size: 0.82rem;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  body.student-home-page .ribbon-cta {
+    margin-left: 0;
+    min-width: 66px;
+  }
+
+  body.student-home-page .home-header {
+    grid-template-columns: 72px minmax(0, 1fr) 72px;
+  }
+
+  body.student-home-page #avatarImg,
+  body.student-home-page .avatar-button img,
+  body.student-home-page #levelBadgeImg,
+  body.student-home-page .home-header__right .role-badge,
+  body.student-home-page #roleBadgeAdmin,
+  body.student-home-page #roleBadgeTeacher {
+    width: 70px !important;
+    height: 70px !important;
+  }
+
+  body.student-home-page .studio-logo {
+    max-width: 142px !important;
+    max-height: 46px !important;
+  }
+
+  body.student-home-page .home-welcome {
+    font-size: 1.16rem;
+  }
+}
+
+@media (max-width: 390px) {
+  body.student-home-page .staff-challenges-ribbon {
+    gap: 6px;
+    padding: 7px;
+  }
+
+  body.student-home-page .ribbon-left {
+    grid-template-columns: 1fr;
+    gap: 5px;
+  }
+
+  body.student-home-page .ribbon-title {
+    font-size: 0.9rem;
+  }
+
+  body.student-home-page .ribbon-tab,
+  body.student-home-page .ribbon-cta {
+    min-height: 32px;
+    padding: 5px 7px;
+    font-size: 0.76rem;
+  }
+
+  body.student-home-page .ribbon-cta {
+    min-width: 58px;
+  }
+
+  body.student-home-page .home-header {
+    grid-template-columns: 62px minmax(0, 1fr) 62px;
+  }
+
+  body.student-home-page #avatarImg,
+  body.student-home-page .avatar-button img,
+  body.student-home-page #levelBadgeImg,
+  body.student-home-page .home-header__right .role-badge,
+  body.student-home-page #roleBadgeAdmin,
+  body.student-home-page #roleBadgeTeacher {
+    width: 60px !important;
+    height: 60px !important;
+  }
+
+  body.student-home-page .studio-logo {
+    max-width: 126px !important;
+    max-height: 40px !important;
+  }
+
+  body.student-home-page .home-welcome {
+    font-size: 1.04rem;
+  }
+}
