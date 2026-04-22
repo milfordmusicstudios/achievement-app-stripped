@@ -174,7 +174,9 @@ $$;
 
 grant execute on function public.update_challenge_assignment_status(uuid, text) to authenticated;
 
-create or replace function public.complete_challenge_and_create_log(
+drop function if exists public.complete_challenge_and_create_log(uuid, uuid, date);
+
+create function public.complete_challenge_and_create_log(
   p_assignment_id uuid,
   p_student_id uuid,
   p_log_date date default current_date

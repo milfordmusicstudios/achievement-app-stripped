@@ -2,6 +2,7 @@ import { supabase } from "./supabaseClient.js";
 
 let teachersAvailable = false; // if no teachers exist, allow signup without selecting any
 let teacherOptionData = [];    // cached teacher options for dynamic student blocks
+let studioOptionData = [];
 
 function parseRoles(roles) {
   if (!roles) return [];
@@ -50,6 +51,36 @@ function applyTeacherOptionsToSelect(selectEl) {
   });
 }
 
+function getStudioName(studio) {
+  return String(studio?.name || studio?.studio_name || studio?.slug || studio?.id || "Studio").trim();
+}
+
+function applyStudioOptionsToSelect(selectEl, studios) {
+  if (!selectEl) return;
+  const selected = String(selectEl.value || localStorage.getItem("activeStudioId") || "").trim();
+  selectEl.innerHTML = "";
+
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = studios.length ? "Select a studio" : "No studios available";
+  selectEl.appendChild(placeholder);
+
+  studios.forEach((studio) => {
+    const id = String(studio?.id || studio?.studio_id || "").trim();
+    if (!id) return;
+    const opt = document.createElement("option");
+    opt.value = id;
+    opt.textContent = getStudioName(studio);
+    if (selected && selected === id) opt.selected = true;
+    selectEl.appendChild(opt);
+  });
+
+  if (studios.length === 1) {
+    selectEl.value = String(studios[0]?.id || studios[0]?.studio_id || "");
+  }
+  selectEl.disabled = studios.length === 0;
+}
+
 // Simple helper for parsing instruments
 function parseInstruments(raw) {
   return (raw || "")
@@ -62,6 +93,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("signupForm");
   const errorDisplay = document.getElementById("signupError");
   const emailInput = document.getElementById("signupEmail");
+  const studioSelect = document.getElementById("studioSelect");
   const cancelBtn = document.getElementById("cancelBtn");
   const submitBtn = document.getElementById("submitBtn");
   const hasPendingInvite = Boolean(localStorage.getItem("pendingInviteToken"));
@@ -86,10 +118,52 @@ document.addEventListener("DOMContentLoaded", () => {
     emailInput.readOnly = true;
   }
 
-  async function loadTeachers() {
+  async function loadStudios() {
+    let studios = [];
+    let error = null;
+
+    const rpcResult = await supabase.rpc("list_signup_studios");
+    if (!rpcResult.error) {
+      studios = Array.isArray(rpcResult.data) ? rpcResult.data : [];
+    } else {
+      const tableResult = await supabase
+        .from("studios")
+        .select("id, name, slug")
+        .order("name", { ascending: true });
+      studios = Array.isArray(tableResult.data) ? tableResult.data : [];
+      error = tableResult.error || rpcResult.error;
+    }
+
+    if (error && !studios.length) {
+      console.error("Error loading studios:", error);
+    }
+
+    studioOptionData = studios;
+    applyStudioOptionsToSelect(studioSelect, studioOptionData);
+
+    const selectedStudioId = String(studioSelect?.value || "").trim();
+    if (selectedStudioId) {
+      localStorage.setItem("activeStudioId", selectedStudioId);
+      const selectedStudio = studioOptionData.find((studio) => String(studio?.id || studio?.studio_id || "") === selectedStudioId);
+      if (selectedStudio) localStorage.setItem("activeStudioName", getStudioName(selectedStudio));
+    }
+
+    await loadTeachers(selectedStudioId);
+  }
+
+  async function loadTeachers(studioId = "") {
+    const selectedStudioId = String(studioId || studioSelect?.value || "").trim();
+    if (!selectedStudioId) {
+      teachersAvailable = false;
+      teacherOptionData = [];
+      document.querySelectorAll('select[id^="teacherIds"]').forEach(applyTeacherOptionsToSelect);
+      return;
+    }
+
     const { data: teachers, error } = await supabase
       .from("users")
-      .select('id, "firstName", "lastName", roles');
+      .select('id, "firstName", "lastName", roles, studio_id')
+      .eq("studio_id", selectedStudioId);
 
     if (error) {
       console.error("Error loading teachers:", error);
@@ -103,7 +177,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const teacherList = (teachers || [])
       .filter(t => {
         const roles = parseRoles(t.roles);
-        return roles.includes("teacher") || roles.includes("admin");
+        return roles.includes("teacher");
       })
       .sort(
         (a, b) =>
@@ -122,7 +196,22 @@ document.addEventListener("DOMContentLoaded", () => {
     document.querySelectorAll('select[id^="teacherIds"]').forEach(applyTeacherOptionsToSelect);
   }
 
-  loadTeachers();
+  loadStudios();
+
+  studioSelect?.addEventListener("change", async () => {
+    const studioId = String(studioSelect.value || "").trim();
+    if (studioId) {
+      localStorage.setItem("activeStudioId", studioId);
+      const selectedStudio = studioOptionData.find((studio) => String(studio?.id || studio?.studio_id || "") === studioId);
+      if (selectedStudio) localStorage.setItem("activeStudioName", getStudioName(selectedStudio));
+    }
+    document.querySelectorAll('select[id^="teacherIds"]').forEach((select) => {
+      Array.from(select.options || []).forEach((option) => {
+        option.selected = false;
+      });
+    });
+    await loadTeachers(studioId);
+  });
 
   // When a new student block is added, populate its teacher select
   document.getElementById("addStudentBtn")?.addEventListener("click", () => {
@@ -144,6 +233,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const email = (emailInput?.value || "").trim().toLowerCase();
     const password = document.getElementById("signupPassword")?.value || "";
+    const selectedStudioId = String(studioSelect?.value || "").trim();
+    const selectedStudio = studioOptionData.find((studio) => String(studio?.id || studio?.studio_id || "") === selectedStudioId);
+
+    if (!selectedStudioId) {
+      errorDisplay.textContent = "Please select a studio.";
+      errorDisplay.style.display = "block";
+      return;
+    }
 
     // Email/password required for auth signup
     if (!email || !password) {
@@ -198,6 +295,9 @@ document.addEventListener("DOMContentLoaded", () => {
       if (pending.length > 0) {
         localStorage.setItem("pendingChildren", JSON.stringify(pending));
         localStorage.setItem("pendingChildrenEmail", email);
+        localStorage.setItem("pendingSignupStudioId", selectedStudioId);
+        localStorage.setItem("pendingSignupStudioName", selectedStudio ? getStudioName(selectedStudio) : "");
+        localStorage.setItem("activeStudioId", selectedStudioId);
       }
 
       // Signup ONCE (parent auth)

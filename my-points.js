@@ -694,11 +694,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       const rowClass = `${index % 2 === 0 ? 'log-row-even' : 'log-row-odd'} ${status.toLowerCase() === "pending" ? "row-pending" : ""} ${isNeedsInfo ? "row-needs-info" : ""} ${shouldBlinkNeedsInfo ? "attention-blink-3" : ""}`;
       logsTableBody.innerHTML += `
         <tr class="${rowClass}" data-log-id="${String(log.id || "")}" ${isNeedsInfo ? 'data-needs-info-editable="true"' : ""}>
-          <td><img src="${icon}" style="width:30px;height:30px"></td>
-          <td>${log.date ? new Date(log.date).toLocaleDateString() : ""}</td>
-          <td>${log.points ?? ""}</td>
-          <td>${log.notes || ""}</td>
-          <td><span class="status-pill status-${status.toLowerCase().replace(" ", "-")}">${status}</span></td>
+          <td data-label="Category"><span class="mobile-log-category"><img src="${icon}" style="width:30px;height:30px" alt="${log.category || "Category"}"><span>${log.category || "Log"}</span></span></td>
+          <td data-label="Date">${log.date ? new Date(log.date).toLocaleDateString() : ""}</td>
+          <td data-label="Points">${log.points ?? ""}</td>
+          <td data-label="Notes">${log.notes || ""}</td>
+          <td data-label="Status"><span class="status-pill status-${status.toLowerCase().replace(" ", "-")}">${status}</span></td>
         </tr>`;
     });
     if (highlightedNeedsInfoRow) needsInfoBlinkPlayed = true;

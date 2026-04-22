@@ -826,24 +826,24 @@ async function renderCategorySummary(list) {
       row.className = index % 2 === 0 ? "log-row-even" : "log-row-odd";
       const categoryKey = String(log.category || "").toLowerCase();
       row.innerHTML = `
-        <td class="checkbox-cell"><input type="checkbox" class="select-log" data-id="${log.id}"></td>
-        <td>${log.fullName}</td>
-        <td class="category-cell" style="--cat-color:${categoryColors[categoryKey] || '#ccc'};">
+        <td class="checkbox-cell" data-label="Select"><input type="checkbox" class="select-log" data-id="${log.id}"></td>
+        <td data-label="Student">${log.fullName}</td>
+        <td class="category-cell" data-label="Category" style="--cat-color:${categoryColors[categoryKey] || '#ccc'};">
           <select class="edit-input" data-id="${log.id}" data-field="category">
             ${categoryOptions.map(c =>
               `<option value="${c}" ${log.category?.toLowerCase() === c ? "selected" : ""}>${c}</option>`
             ).join("")}
           </select>
         </td>
-        <td class="date-cell">
+        <td class="date-cell" data-label="Date">
           <div class="date-wrapper">
             <input type="date" class="edit-input date-picker" data-id="${log.id}" data-field="date" value="${(log.date || '').split('T')[0] || ''}">
             <span class="date-label">${formatShortDate(log.date)}</span>
           </div>
         </td>
-        <td><input type="number" class="edit-input" data-id="${log.id}" data-field="points" value="${log.points ?? 0}"></td>
-        <td><textarea class="edit-input" data-id="${log.id}" data-field="notes">${log.notes || ""}</textarea></td>
-        <td>
+        <td data-label="Points"><input type="number" class="edit-input" data-id="${log.id}" data-field="points" value="${log.points ?? 0}"></td>
+        <td data-label="Notes"><textarea class="edit-input" data-id="${log.id}" data-field="notes">${log.notes || ""}</textarea></td>
+        <td data-label="Status">
           <select class="edit-input status-select status-pill" data-id="${log.id}" data-field="status" data-status="${String(log.status || "pending").toLowerCase()}">
             <option value="pending" ${log.status === "pending" ? "selected" : ""}>Pending</option>
             <option value="approved" ${log.status === "approved" ? "selected" : ""}>Approved</option>

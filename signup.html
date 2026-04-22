@@ -9,25 +9,135 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <link rel="stylesheet" href="style.css" />
   <style>
-    body.white-page { background: #fff; }
-    main.app { max-width: 520px; margin: 0 auto; padding: 24px; }
-    .logo { display:block; margin: 0 auto 8px; max-width: 200px; height:auto; }
+    body.white-page.signup-page {
+      background:
+        radial-gradient(circle at 18% 82%, rgba(73,184,255,0.12), transparent 28%),
+        linear-gradient(135deg, #f8fbff 0%, #ffffff 46%, #eef7ff 100%);
+    }
+    main.app.signup-shell {
+      width: min(1120px, calc(100vw - 48px));
+      max-width: none;
+      min-height: 100vh;
+      margin: 0 auto;
+      padding: 40px 0;
+      display: grid;
+      grid-template-columns: minmax(360px, 1fr) minmax(440px, 500px);
+      align-items: center;
+      gap: 56px;
+    }
+    .signup-hero {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: center;
+      min-height: 520px;
+      padding-left: clamp(8px, 3vw, 56px);
+    }
+    .logo { display:block; max-width: 360px; width: min(100%, 360px); height:auto; }
+    .signup-title {
+      color:#3399e8;
+      margin: 22px 0 0;
+      font-size: clamp(2.4rem, 5vw, 4.6rem);
+      line-height: 0.98;
+      font-weight: 800;
+      letter-spacing: 0;
+      max-width: 420px;
+    }
     .form-card {
-      background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,.1);
-      padding: 18px;
+      background: rgba(255,255,255,0.96);
+      border: 1px solid rgba(11,79,138,0.1);
+      border-radius: 16px;
+      box-shadow: 0 18px 50px rgba(0, 33, 77, 0.12);
+      padding: 28px;
     }
-    .form-row { margin-bottom: 12px; }
+    .form-row { margin-bottom: 16px; }
+    .form-row label {
+      display: block;
+      margin: 0 0 7px;
+      line-height: 1.35;
+    }
     .form-row input, .form-row select, .form-row textarea {
-      width: 100%; padding: 10px; font-size: 16px; box-sizing: border-box;
+      width: 100%;
+      padding: 13px 14px;
+      font-size: 1rem;
+      line-height: 1.25;
+      box-sizing: border-box;
+      border: 1px solid rgba(11,79,138,0.22);
+      border-radius: 10px;
+      background: #f8fbff;
+      color: #082f52;
     }
-    .button-row { display:flex; gap:10px; margin-top: 10px; }
+    .form-row input:focus, .form-row select:focus {
+      outline: 3px solid rgba(73,184,255,0.24);
+      border-color: #49b8ff;
+      background: #fff;
+    }
+    .form-row input[type="file"] {
+      padding: 10px;
+      background: #fff;
+    }
+    .button-row { display:flex; gap:12px; margin-top: 18px; }
     .blue-button { flex: 1; }
-    #teacherIds { min-height: 120px; }
-    .helper { font-size: .9rem; color: #00477d; }
+    select[id^="teacherIds"] {
+      min-height: 112px;
+      max-height: 150px;
+      overflow-y: auto;
+      background: #fff;
+    }
+    .helper { font-size: .95rem; color: #00477d; }
     .req { color:#c00; margin-left:4px; }
-    .student-block { margin-top: 16px; }
-    .student-block h3 { margin: 10px 0; }
+    .student-block {
+      margin-top: 18px;
+      padding-top: 18px;
+      border-top: 1px solid rgba(11,79,138,0.12);
+    }
+    .student-block:first-child {
+      margin-top: 8px;
+      padding-top: 0;
+      border-top: 0;
+    }
+    .student-block h3 {
+      margin: 0 0 16px;
+      text-align: left;
+      color: #00477d;
+      font-size: 1.25rem;
+    }
     .remove-student-btn { width: 100%; margin-top: 10px; }
+    #addStudentBtn {
+      margin-top: 6px !important;
+    }
+    #signupError {
+      border-radius: 10px;
+      padding: 10px 12px;
+      background: #fff1f1;
+    }
+    @media (max-width: 860px) {
+      main.app.signup-shell {
+        width: min(560px, calc(100vw - 28px));
+        min-height: auto;
+        padding: 24px 0 32px;
+        display: block;
+      }
+      .signup-hero {
+        min-height: auto;
+        padding: 0;
+        align-items: center;
+        text-align: center;
+        margin-bottom: 18px;
+      }
+      .logo {
+        max-width: 230px;
+      }
+      .signup-title {
+        font-size: 2.1rem;
+        line-height: 1.05;
+        margin-top: 10px;
+      }
+      .form-card {
+        padding: 20px;
+        border-radius: 14px;
+      }
+    }
   </style>
   <meta name="theme-color" content="#0B4F8A" />
   <meta name="mobile-web-app-capable" content="yes" />
@@ -39,12 +149,14 @@
   
   <link rel="apple-touch-icon" href="images/pwa/apple-touch-icon.png?v=20260421a" />
 </head>
-<body class="white-page">
+<body class="white-page signup-page">
   <div id="envBadge" class="env-badge" style="display:none;"></div>
 
-  <main class="app">
-    <img src="images/logos/amplified.png" alt="App Logo" class="logo" />
-    <h2 style="text-align:center; color:#3399e8; margin: 8px 0 16px;">Create Your Account</h2>
+  <main class="app signup-shell">
+    <section class="signup-hero" aria-label="Music Amplified">
+      <img src="images/logos/amplified.png" alt="Music Amplified" class="logo" />
+      <h2 class="signup-title">Create Your Account</h2>
+    </section>
 
     <div class="form-card">
       <form id="signupForm" novalidate>
@@ -55,6 +167,13 @@
         </div>
 
         <!-- Parent Email/Password -->
+        <div class="form-row">
+          <label for="studioSelect" class="helper">Studio<span class="req">*</span></label>
+          <select id="studioSelect" name="studioSelect" required>
+            <option value="">Loading studios...</option>
+          </select>
+        </div>
+
         <div class="form-row">
           <input type="email" id="signupEmail" name="signupEmail" placeholder="Email" required />
         </div>
@@ -80,7 +199,7 @@
             <!-- Instrument(s) -->
             <div class="form-row">
               <label for="instrument" class="helper">
-                Instrument(s)<span class="req">*</span> â€” comma separated for multiple (e.g., Piano, Voice)
+                Instrument(s)<span class="req">*</span> - comma separated for multiple (e.g., Piano, Voice)
               </label>
               <input id="instrument" placeholder="Instrument(s)" required />
             </div>
@@ -132,7 +251,7 @@
 
       <div class="form-row">
         <label for="instrument__N__" class="helper">
-          Instrument(s)<span class="req">*</span> â€” comma separated for multiple
+          Instrument(s)<span class="req">*</span> - comma separated for multiple
         </label>
         <input id="instrument__N__" type="text" placeholder="Piano, Voice">
       </div>

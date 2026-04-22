@@ -44,17 +44,18 @@ async function loadPendingInvites(studioId) {
   data.forEach(invite => {
     const inviteLink = `${window.location.origin}/auth-callback.html?token=${invite.token}`;
     const row = document.createElement("div");
+    row.className = "pending-invite-card";
     row.style.padding = "10px";
     row.style.background = "#fff";
     row.style.borderRadius = "12px";
     row.style.border = "1px solid rgba(11,79,138,0.18)";
     row.innerHTML = `
-      <div><b>${invite.invited_email}</b> (${formatRoleLabel(invite.role_hint)})</div>
-      <div style="font-size:12px; color:#555;">Expires: ${invite.expires_at ? new Date(invite.expires_at).toLocaleString() : "n/a"}</div>
-      <div style="font-size:12px; margin-top:6px;">
+      <div class="pending-invite-main"><b>${invite.invited_email}</b> (${formatRoleLabel(invite.role_hint)})</div>
+      <div class="pending-invite-meta" style="font-size:12px; color:#555;">Expires: ${invite.expires_at ? new Date(invite.expires_at).toLocaleString() : "n/a"}</div>
+      <div class="pending-invite-link" style="font-size:12px; margin-top:6px;">
         <a href="${inviteLink}">${inviteLink}</a>
       </div>
-      <div class="button-row" style="margin-top:10px;">
+      <div class="button-row pending-invite-actions" style="margin-top:10px;">
         <button type="button" class="blue-button copy-link-btn">Copy link</button>
         <button type="button" class="blue-button revoke-btn" style="background:#999;">Revoke</button>
       </div>

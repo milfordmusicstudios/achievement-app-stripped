@@ -168,6 +168,7 @@ console.log("[Login] post-auth ok", { userId, email: authUser.email });
 const pendingEmail = (localStorage.getItem("pendingChildrenEmail") || "").toLowerCase();
 const pendingRaw = localStorage.getItem("pendingChildren");
 const pendingChildren = pendingRaw ? JSON.parse(pendingRaw) : [];
+const pendingSignupStudioId = String(localStorage.getItem("pendingSignupStudioId") || "").trim();
 console.log("FINALIZE: pendingChildren =", pendingChildren);
 
 
@@ -177,7 +178,8 @@ const shouldFinalize = pendingChildren.length > 0 && pendingEmail === authEmail;
 
 if (shouldFinalize) {
   try {
-    const studioId = localStorage.getItem("activeStudioId");
+    const studioId = pendingSignupStudioId || localStorage.getItem("activeStudioId");
+    if (studioId) localStorage.setItem("activeStudioId", studioId);
     await createStudioStudents(pendingChildren, userId, studioId);
   } catch (err) {
     console.error("[Finalize] student create failed", err);
@@ -188,6 +190,8 @@ if (shouldFinalize) {
 
   localStorage.removeItem("pendingChildren");
   localStorage.removeItem("pendingChildrenEmail");
+  localStorage.removeItem("pendingSignupStudioId");
+  localStorage.removeItem("pendingSignupStudioName");
 }
 
 const postAuth = await finalizePostAuth({ ensureUser: false, storeProfile: false, redirectHome: false });

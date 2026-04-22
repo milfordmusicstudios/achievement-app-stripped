@@ -1086,7 +1086,9 @@ function renderUsers(totalRows = null) {
     tr.classList.toggle("is-inactive", Boolean(user.deactivated_at));
 
     visibleColumns.forEach(columnKey => {
-      tr.appendChild(createCellForColumn(columnKey, user));
+      const cell = createCellForColumn(columnKey, user);
+      cell.dataset.label = COLUMN_DEFS[columnKey]?.label || "";
+      tr.appendChild(cell);
     });
 
     tbody.appendChild(tr);

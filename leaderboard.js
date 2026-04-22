@@ -15,6 +15,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const loadingText = document.getElementById("loadingMessage");
   const countEl = document.getElementById("leaderboardCount");
   const container = document.getElementById("leaderboardBars") || document.getElementById("leaderboardContainer");
+  const mobileList = document.getElementById("leaderboardMobileList");
   const zoomInput = document.getElementById("leaderboardZoom");
   const zoomValue = document.getElementById("leaderboardZoomValue");
 
@@ -60,6 +61,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const activeStudentId = localStorage.getItem("aa.activeStudentId") || null;
     const placements = buildPlacements(students, levels, activeStudentId);
     renderAvatars(placements);
+    renderMobileLeaderboard(mobileList, placements, levels);
     bindLeaderboardZoom({ zoomInput, zoomValue, placements });
 
     const reposition = debounce(() => positionAvatars(placements), 150);
@@ -97,6 +99,36 @@ function bindLeaderboardZoom({ zoomInput, zoomValue, placements }) {
 
   zoomInput.addEventListener("input", applyZoom);
   applyZoom();
+}
+
+function renderMobileLeaderboard(container, placements, levels) {
+  if (!container) return;
+  const rows = [...placements].sort((a, b) => b.total - a.total);
+  if (!rows.length) {
+    container.innerHTML = "<p class=\"empty-state\">No students found for this studio.</p>";
+    return;
+  }
+
+  container.innerHTML = rows.map((placement, index) => {
+    const student = placement.student || {};
+    const fullName = `${student.firstName ?? ""} ${student.lastName ?? ""}`.trim() || "Student";
+    const level = levels.find(row => String(row.id) === String(placement.levelId)) || {};
+    const pct = Math.max(0, Math.min(100, Math.round((placement.ratio || 0) * 100)));
+    const badge = level.badge || `images/levelBadges/level${placement.levelId}.png`;
+    return `
+      <article class="leaderboard-mobile-row${placement.isSelf ? " is-self" : ""}">
+        <div class="leaderboard-mobile-rank">#${index + 1}</div>
+        <img class="leaderboard-mobile-badge" src="${badge}" alt="Level ${placement.levelId}">
+        <div class="leaderboard-mobile-main">
+          <div class="leaderboard-mobile-name">${fullName}</div>
+          <div class="leaderboard-mobile-meta">Level ${placement.levelId} • ${placement.total} pts</div>
+          <div class="leaderboard-mobile-track" aria-hidden="true">
+            <span class="leaderboard-mobile-fill" style="width:${pct}%"></span>
+          </div>
+        </div>
+      </article>
+    `;
+  }).join("");
 }
 
 function renderLevelBars(container, levelsDesc) {
