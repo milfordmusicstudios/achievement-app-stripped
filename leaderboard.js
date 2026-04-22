@@ -2,6 +2,7 @@ import { supabase } from "./supabaseClient.js";
 import { ensureStudioContextAndRoute } from "./studio-routing.js";
 
 const OFFSETS = [0, 14, -14, 28, -28];
+const MOBILE_OFFSETS = [0, 9, -9, 18, -18];
 const PAD_X = 28;
 const MIN_ZOOM = 1;
 const MAX_ZOOM = 4;
@@ -15,7 +16,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   const loadingText = document.getElementById("loadingMessage");
   const countEl = document.getElementById("leaderboardCount");
   const container = document.getElementById("leaderboardBars") || document.getElementById("leaderboardContainer");
-  const mobileList = document.getElementById("leaderboardMobileList");
   const zoomInput = document.getElementById("leaderboardZoom");
   const zoomValue = document.getElementById("leaderboardZoomValue");
 
@@ -61,7 +61,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     const activeStudentId = localStorage.getItem("aa.activeStudentId") || null;
     const placements = buildPlacements(students, levels, activeStudentId);
     renderAvatars(placements);
-    renderMobileLeaderboard(mobileList, placements, levels);
     bindLeaderboardZoom({ zoomInput, zoomValue, placements });
 
     const reposition = debounce(() => positionAvatars(placements), 150);
@@ -99,36 +98,6 @@ function bindLeaderboardZoom({ zoomInput, zoomValue, placements }) {
 
   zoomInput.addEventListener("input", applyZoom);
   applyZoom();
-}
-
-function renderMobileLeaderboard(container, placements, levels) {
-  if (!container) return;
-  const rows = [...placements].sort((a, b) => b.total - a.total);
-  if (!rows.length) {
-    container.innerHTML = "<p class=\"empty-state\">No students found for this studio.</p>";
-    return;
-  }
-
-  container.innerHTML = rows.map((placement, index) => {
-    const student = placement.student || {};
-    const fullName = `${student.firstName ?? ""} ${student.lastName ?? ""}`.trim() || "Student";
-    const level = levels.find(row => String(row.id) === String(placement.levelId)) || {};
-    const pct = Math.max(0, Math.min(100, Math.round((placement.ratio || 0) * 100)));
-    const badge = level.badge || `images/levelBadges/level${placement.levelId}.png`;
-    return `
-      <article class="leaderboard-mobile-row${placement.isSelf ? " is-self" : ""}">
-        <div class="leaderboard-mobile-rank">#${index + 1}</div>
-        <img class="leaderboard-mobile-badge" src="${badge}" alt="Level ${placement.levelId}">
-        <div class="leaderboard-mobile-main">
-          <div class="leaderboard-mobile-name">${fullName}</div>
-          <div class="leaderboard-mobile-meta">Level ${placement.levelId} • ${placement.total} pts</div>
-          <div class="leaderboard-mobile-track" aria-hidden="true">
-            <span class="leaderboard-mobile-fill" style="width:${pct}%"></span>
-          </div>
-        </div>
-      </article>
-    `;
-  }).join("");
 }
 
 function renderLevelBars(container, levelsDesc) {
@@ -190,12 +159,13 @@ function buildPlacements(students, levels, activeStudentId) {
 
     const index = perLevelCount[level.id] || 0;
     perLevelCount[level.id] = index + 1;
-    const offset = OFFSETS[index % OFFSETS.length];
+    const offset = getLevelOffset(index);
 
     placements.push({
       student,
       total,
       levelId: level.id,
+      levelIndex: index,
       ratio,
       offset,
       isSelf: activeStudentId && String(student.id) === String(activeStudentId)
@@ -233,6 +203,12 @@ function renderAvatars(placements) {
   requestAnimationFrame(() => positionAvatars(placements));
 }
 
+function getLevelOffset(index) {
+  const isMobile = window.matchMedia?.("(max-width: 700px)")?.matches;
+  const offsets = isMobile ? MOBILE_OFFSETS : OFFSETS;
+  return offsets[index % offsets.length];
+}
+
 function positionAvatars(placements) {
   placements.forEach(p => {
     const bar = p.bar;
@@ -242,8 +218,10 @@ function positionAvatars(placements) {
     const barWidth = bar.clientWidth || 0;
     const pad = Math.min(PAD_X, Math.max(12, barWidth * 0.08));
     const x = pad + p.ratio * Math.max(1, barWidth - pad * 2);
+    const offset = getLevelOffset(p.levelIndex ?? 0);
 
     avatar.style.left = `${x}px`;
+    avatar.style.top = `calc(50% + ${offset}px)`;
   });
 }
 
