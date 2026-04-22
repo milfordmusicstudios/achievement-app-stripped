@@ -8883,3 +8883,102 @@ body.leaderboard-page .leaderboard-orientation-hint {
     height: 28px;
   }
 }
+
+/* Compact mobile cards: two-column field grids with long fields spanning full width. */
+@media (max-width: 700px) {
+  body.review-logs-page #logsTable tr,
+  .manage-users-table tbody tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 12px;
+    row-gap: 10px;
+    align-items: start;
+  }
+
+  body.review-logs-page #logsTable td,
+  .manage-users-table td {
+    min-width: 0;
+    padding: 0;
+  }
+
+  body.review-logs-page #logsTable td::before,
+  .manage-users-table td::before {
+    margin-bottom: 4px;
+    color: #596d80;
+    font-size: 0.7rem;
+    letter-spacing: 0.04em;
+  }
+
+  body.review-logs-page #logsTable td[data-label="Student"],
+  body.review-logs-page #logsTable td[data-label="Notes"],
+  body.review-logs-page #logsTable td[data-label="Status"] {
+    grid-column: 1 / -1;
+  }
+
+  body.review-logs-page #logsTable td[data-label="Select"] {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 36px;
+  }
+
+  body.review-logs-page #logsTable td[data-label="Select"]::before {
+    margin: 0;
+  }
+
+  body.review-logs-page #logsTable td[data-label="Student"] {
+    padding-bottom: 8px;
+  }
+
+  body.review-logs-page #logsTable .category-cell select,
+  body.review-logs-page #logsTable .date-wrapper,
+  body.review-logs-page #logsTable td[data-label="Points"] input {
+    width: 100%;
+  }
+
+  body.review-logs-page #logsTable td[data-label="Notes"] textarea {
+    min-height: 54px;
+  }
+
+  body.review-logs-page #logsTable td[data-label="Status"] select {
+    min-height: 44px;
+  }
+
+  .manage-users-table td[data-label="First Name"],
+  .manage-users-table td[data-label="Last Name"] {
+    grid-column: auto;
+  }
+
+  .manage-users-table td[data-label="Email"],
+  .manage-users-table td[data-label="Teachers"],
+  .manage-users-table td[data-label="Instrument"],
+  .manage-users-table td[data-label="Roles"],
+  .manage-users-table td[data-label=""] {
+    grid-column: 1 / -1;
+  }
+
+  .manage-users-table td[data-label="First Name"],
+  .manage-users-table td[data-label="Last Name"] {
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(11, 79, 138, 0.08);
+  }
+
+  .manage-users-table td[data-label="Avatar"],
+  .manage-users-table td[data-label="Points"],
+  .manage-users-table td[data-label="Level"] {
+    align-self: start;
+  }
+
+  .manage-users-table .cell-text,
+  .manage-users-table .cell-input,
+  .manage-users-table .tag-picker-empty,
+  .manage-users-table .tag-pill {
+    font-size: 0.95rem !important;
+    line-height: 1.25;
+  }
+
+  .manage-users-table td[data-label="Email"] .cell-text,
+  .manage-users-table td[data-label="Email"] .cell-input {
+    overflow-wrap: anywhere !important;
+  }
+}
