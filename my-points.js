@@ -151,31 +151,31 @@ function buildFamilyEvolutionRows(catalog) {
 }
 
 async function loadBadgeCatalog({ userId, studioId }) {
-  const [defsRes, earnedRes] = await Promise.all([
-    supabase
-      .from("badge_definitions")
-      .select("slug,name,family,tier,sort_order,criteria,is_active")
-      .eq("is_active", true)
-      .order("sort_order", { ascending: true }),
-    supabase
-      .from("user_badges")
-      .select("badge_slug,earned_at")
-      .eq("user_id", userId)
-      .eq("studio_id", studioId)
-      .order("earned_at", { ascending: false })
-  ]);
+  const { data, error } = await supabase.rpc("get_student_badge_catalog", {
+    p_studio_id: studioId,
+    p_user_id: userId
+  });
+  if (error) throw error;
 
-  if (defsRes.error) throw defsRes.error;
-  if (earnedRes.error) throw earnedRes.error;
-
-  const earnedRows = Array.isArray(earnedRes.data) ? earnedRes.data : [];
-  const unlockedSet = new Set(earnedRows.map((row) => String(row.badge_slug || "")));
+  const rows = Array.isArray(data) ? data : [];
+  const earnedRows = rows
+    .filter((row) => row.unlocked)
+    .sort((a, b) => new Date(b.earned_at || 0) - new Date(a.earned_at || 0));
+  const unlockedSet = new Set(earnedRows.map((row) => String(row.slug || "")));
   const latest = earnedRows[0] || null;
 
   return {
-    definitions: Array.isArray(defsRes.data) ? defsRes.data : [],
+    definitions: rows.map((row) => ({
+      slug: row.slug,
+      name: row.name,
+      family: row.family,
+      tier: row.tier,
+      sort_order: row.sort_order,
+      criteria: row.criteria,
+      is_active: row.is_active
+    })),
     unlockedSet,
-    latestSlug: latest ? String(latest.badge_slug || "") : "",
+    latestSlug: latest ? String(latest.slug || "") : "",
     unlockedCount: unlockedSet.size
   };
 }

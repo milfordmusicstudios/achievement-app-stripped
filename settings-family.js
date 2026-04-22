@@ -96,40 +96,17 @@ async function handleAddStudent() {
     return;
   }
 
-  if (!crypto?.randomUUID) {
-    setAddStudentError("Browser does not support student creation.");
-    return;
-  }
-
-  const studentId = crypto.randomUUID();
-  const payload = {
-    id: studentId,
-    firstName,
-    lastName,
-    roles: ["student"],
-    parent_uuid: authViewerId,
-    instrument: normalizeTextArray(instrumentRaw),
-    teacherIds,
-    points: 0,
-    level: 1,
-    active: true,
-    studio_id: activeStudioId,
-    showonleaderboard: true
-  };
-
-  const { error: insertErr } = await supabase.from("users").insert([payload]);
-  if (insertErr) {
-    console.error("[Family] add student failed", insertErr);
-    setAddStudentError(insertErr.message || "Failed to add student.");
-    return;
-  }
-
-  const { error: linkErr } = await supabase.rpc("link_parent_student", {
-    p_student_id: studentId,
-    p_studio_id: activeStudioId
+  const { error } = await supabase.rpc("create_family_student", {
+    p_studio_id: activeStudioId,
+    p_first_name: firstName,
+    p_last_name: lastName,
+    p_instrument: normalizeTextArray(instrumentRaw),
+    p_teacher_ids: teacherIds
   });
-  if (linkErr) {
-    console.error("[Family] link_parent_student failed", linkErr);
+  if (error) {
+    console.error("[Family] add student failed", error);
+    setAddStudentError(error.message || "Failed to add student.");
+    return;
   }
 
   showToast("Student added.");
@@ -254,11 +231,11 @@ function attachFamilyRowHandlers() {
       if (!target) return;
 
       const wasActive = !target.deactivated_at;
-      const nextValue = wasActive ? new Date().toISOString() : null;
-      const { error } = await supabase
-        .from("users")
-        .update({ deactivated_at: nextValue })
-        .eq("id", profileId);
+      const { error } = await supabase.rpc("set_family_student_active", {
+        p_student_id: profileId,
+        p_studio_id: activeStudioId,
+        p_active: !wasActive
+      });
       if (error) {
         console.error("[Family] failed to update student status", error);
         showToast("Failed to update student status.");
@@ -367,7 +344,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   ]);
   const accountIsParent = Boolean(viewerContextData?.accountIsParent || viewerContextData?.isParent);
   const canViewFamily = Boolean(holder || familyAccess || accountIsParent || viewerContextData?.isStudent);
-  canManageFamilyMembers = Boolean((holder || familyAccess || accountIsParent) && !viewerContextData?.isStudent);
+  canManageFamilyMembers = Boolean(holder || familyAccess || accountIsParent);
   if (!canViewFamily) {
     window.location.replace("settings-security.html");
     return;

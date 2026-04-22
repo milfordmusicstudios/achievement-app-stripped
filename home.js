@@ -1543,50 +1543,28 @@ function updatePendingProgressFill() {
 async function loadEarnedBadges(userId, studioId) {
   if (!userId || !studioId) return [];
 
-  const joined = await supabase
-    .from("user_badges")
-    .select("badge_slug,earned_at,stars,badge_definitions(name,family,tier,sort_order)")
-    .eq("user_id", userId)
-    .eq("studio_id", studioId);
-
-  if (!joined.error) {
-    const rows = joined.data || [];
-    rows.sort((a, b) => {
-      const af = a?.badge_definitions?.family || "";
-      const bf = b?.badge_definitions?.family || "";
-      if (af !== bf) return af.localeCompare(bf);
-      const at = Number(a?.badge_definitions?.tier || 0);
-      const bt = Number(b?.badge_definitions?.tier || 0);
-      if (at !== bt) return at - bt;
-      return String(a.badge_slug || "").localeCompare(String(b.badge_slug || ""));
-    });
-    return rows;
-  }
-
-  const base = await supabase
-    .from("user_badges")
-    .select("badge_slug,earned_at,stars")
-    .eq("user_id", userId)
-    .eq("studio_id", studioId);
-  if (base.error) {
-    console.error("[Home] Failed loading user badges", base.error);
+  const { data, error } = await supabase.rpc("get_student_badge_catalog", {
+    p_studio_id: studioId,
+    p_user_id: userId
+  });
+  if (error) {
+    console.error("[Home] Failed loading user badges", error);
     return [];
   }
 
-  const slugs = Array.from(new Set((base.data || []).map((r) => String(r.badge_slug || "")).filter(Boolean)));
-  if (!slugs.length) return [];
-  const defs = await supabase
-    .from("badge_definitions")
-    .select("slug,name,family,tier,sort_order")
-    .in("slug", slugs);
-  if (defs.error) {
-    console.error("[Home] Failed loading badge definitions", defs.error);
-    return (base.data || []).map((row) => ({ ...row, badge_definitions: null }));
-  }
-
-  const defMap = new Map((defs.data || []).map((d) => [String(d.slug), d]));
-  return (base.data || [])
-    .map((row) => ({ ...row, badge_definitions: defMap.get(String(row.badge_slug || "")) || null }))
+  return (Array.isArray(data) ? data : [])
+    .filter((row) => row.unlocked)
+    .map((row) => ({
+      badge_slug: row.slug,
+      earned_at: row.earned_at,
+      stars: row.stars,
+      badge_definitions: {
+        name: row.name,
+        family: row.family,
+        tier: row.tier,
+        sort_order: row.sort_order
+      }
+    }))
     .sort((a, b) => {
       const af = a?.badge_definitions?.family || "";
       const bf = b?.badge_definitions?.family || "";
@@ -1744,23 +1722,14 @@ function getClientBadgeProgress(definition, metrics) {
 async function loadNextUpBadgeFromClient({ userId, studioId, recentBadge = null, onOpenModal = null, onDebug = null, reason = "api-fallback" } = {}) {
   const recomputeResult = await recomputeBadgesForStudent(userId, studioId);
   const metrics = recomputeResult?.metrics || {};
-  const [defsResult, earnedResult] = await Promise.all([
-    supabase
-      .from("badge_definitions")
-      .select("slug,name,family,tier,criteria,is_active")
-      .eq("is_active", true),
-    supabase
-      .from("user_badges")
-      .select("badge_slug")
-      .eq("studio_id", studioId)
-      .eq("user_id", userId)
-  ]);
-  if (defsResult.error) throw defsResult.error;
-  if (earnedResult.error) throw earnedResult.error;
+  const { data: catalogRows, error: catalogError } = await supabase.rpc("get_student_badge_catalog", {
+    p_studio_id: studioId,
+    p_user_id: userId
+  });
+  if (catalogError) throw catalogError;
 
-  const earnedSlugs = new Set((earnedResult.data || []).map((row) => String(row.badge_slug || "")));
-  const candidates = (defsResult.data || [])
-    .filter((definition) => !earnedSlugs.has(String(definition.slug || "")))
+  const candidates = (Array.isArray(catalogRows) ? catalogRows : [])
+    .filter((definition) => !definition.unlocked)
     .map((definition) => {
       const progress = getClientBadgeProgress(definition, metrics);
       return {
