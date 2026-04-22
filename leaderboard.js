@@ -47,15 +47,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     renderLevelBars(container, levelsDesc);
 
-    const studentIds = await fetchStudentIds(activeStudioId);
-    if (!studentIds.length) {
-      if (container) container.innerHTML = "<p class=\"empty-state\">No students found for this studio.</p>";
-      if (countEl) countEl.textContent = "Showing 0 students";
-      if (popup) popup.style.display = "none";
-      return;
-    }
-
-    const students = await fetchStudentsByIds(studentIds, activeStudioId);
+    const students = await fetchLeaderboardStudents(activeStudioId);
     if (!students.length) {
       if (container) container.innerHTML = "<p class=\"empty-state\">No students found for this studio.</p>";
       if (countEl) countEl.textContent = "Showing 0 students";
@@ -135,52 +127,15 @@ function renderLevelBars(container, levelsDesc) {
   });
 }
 
-async function fetchStudentIds(studioId) {
-  try {
-    const { data, error } = await supabase
-      .from("studio_members")
-      .select("user_id, roles")
-      .eq("studio_id", studioId)
-      .contains("roles", ["student"]);
-    if (error) throw error;
-    const ids = (data || []).map(r => r.user_id).filter(Boolean);
-    if (ids.length) return ids;
-  } catch (err) {
-    console.warn("[Leaderboard] studio_members fallback", err);
-  }
-
-  const { data: logs, error } = await supabase
-    .from("logs")
-    .select("userId")
-    .eq("studio_id", studioId)
-    .eq("status", "approved");
-  if (error) {
-    console.error("[Leaderboard] logs fallback failed", error);
-    return [];
-  }
-  return Array.from(new Set((logs || []).map(l => l.userId).filter(Boolean)));
-}
-
-async function fetchStudentsByIds(ids, studioId) {
-  if (!ids.length) return [];
-  const { data, error } = await supabase
-    .from("users")
-    .select("id, firstName, lastName, avatarUrl, roles, points, level, active, deactivated_at")
-    .in("id", ids)
-    .eq("studio_id", studioId)
-    .is("deactivated_at", null);
-  if (error) {
-    console.error("[Leaderboard] users fetch failed", error);
-    return [];
-  }
-  return (data || []).filter(u => {
-    const roles = Array.isArray(u.roles) ? u.roles : [u.roles].filter(Boolean);
-    return roles.includes("student") && u.active !== false && hasUploadedAvatar(u);
+async function fetchLeaderboardStudents(studioId) {
+  const { data, error } = await supabase.rpc("get_leaderboard_students", {
+    p_studio_id: studioId
   });
-}
-
-function hasUploadedAvatar(student) {
-  return typeof student?.avatarUrl === "string" && student.avatarUrl.trim().length > 0;
+  if (error) {
+    console.error("[Leaderboard] safe leaderboard RPC failed", error);
+    return [];
+  }
+  return Array.isArray(data) ? data : [];
 }
 
 function getStudentLeaderboardPoints(student) {
