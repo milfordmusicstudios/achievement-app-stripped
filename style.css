@@ -3779,6 +3779,104 @@ body.settings-page .settings-form {
   font-size: 14px;
   background: #ffffff;
 }
+.teacher-select-native {
+  display: none !important;
+}
+.teacher-pill-picker {
+  width: 100%;
+  border: 1px solid rgba(11,79,138,0.2);
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 8px;
+}
+.teacher-pill-picker[data-open="true"] {
+  border-color: #6ea6de;
+  box-shadow: 0 0 0 3px rgba(110, 166, 222, 0.18);
+}
+.teacher-pill-picker.is-disabled {
+  background: #f3f7fb;
+  opacity: 0.78;
+}
+.teacher-pill-picker-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 38px;
+  align-items: center;
+  cursor: pointer;
+}
+.teacher-pill-picker.is-disabled .teacher-pill-picker-pills {
+  cursor: default;
+}
+.teacher-pill,
+.teacher-pill-empty,
+.teacher-pill-menu-empty {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 700;
+}
+.teacher-pill {
+  gap: 8px;
+  max-width: 100%;
+  padding: 5px 8px 5px 12px;
+  border: 1px solid #b9d4f2;
+  background: #eaf4ff;
+  color: #0b3c66;
+}
+.teacher-pill button {
+  border: 0;
+  border-radius: 999px;
+  width: 20px;
+  height: 20px;
+  line-height: 1;
+  padding: 0;
+  background: #cfe5fb;
+  color: #0b3c66;
+  font-weight: 800;
+  cursor: pointer;
+}
+.teacher-pill button:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+.teacher-pill-empty,
+.teacher-pill-menu-empty {
+  color: #5d7086;
+  padding: 4px 6px;
+}
+.teacher-pill-picker-menu {
+  display: grid;
+  gap: 5px;
+  max-height: 180px;
+  overflow-y: auto;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(11,79,138,0.12);
+}
+.teacher-pill-picker-menu[hidden] {
+  display: none !important;
+}
+.teacher-pill-option {
+  width: 100%;
+  min-height: 34px;
+  text-align: left;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: #f4f9ff;
+  color: #0b3c66;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 6px 8px;
+  cursor: pointer;
+}
+.teacher-pill-option:hover,
+.teacher-pill-option:focus-visible {
+  background: #e5f2ff;
+  border-color: #bfd9f7;
+}
 .teacher-error {
   margin-top: 6px;
   color: #c62828;
@@ -3980,6 +4078,15 @@ body.review-logs-page .review-student-filter .staff-student-selected {
 body.review-logs-page .filter-toolbar .blue-button {
   padding: 8px 12px;
   font-size: 14px;
+}
+
+body.review-logs-page .badge-backfill-btn {
+  background: #0b4f8a;
+}
+
+body.review-logs-page .badge-backfill-btn:disabled {
+  opacity: 0.68;
+  cursor: wait;
 }
 
 body.review-logs-page .quickadd-modal-overlay {

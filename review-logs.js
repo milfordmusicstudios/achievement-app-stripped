@@ -80,6 +80,14 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     reviewLogsErrorPanel.style.display = "flex";
   };
+  const showReviewLogsStatus = (message) => {
+    if (!reviewLogsErrorPanel) return;
+    reviewLogsErrorPanel.innerHTML = "";
+    const line = document.createElement("div");
+    line.textContent = message;
+    reviewLogsErrorPanel.appendChild(line);
+    reviewLogsErrorPanel.style.display = "flex";
+  };
 
   console.log("[AuthZ]", { page: "review-logs", roles: viewerContext.viewerRoles, studioId: viewerContext.studioId });
   if (!viewerContext.isAdmin && !viewerContext.isTeacher) {
@@ -106,15 +114,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.body.classList.remove("is-staff", "is-admin");
     document.body.classList.add(activeRole === "admin" ? "is-admin" : "is-staff");
   }
-  const awardBadgesForApprovedUsers = (userIds) => {
+  const awardBadgesForApprovedUsers = async (userIds) => {
     const uniqueIds = Array.from(new Set((userIds || []).map(id => String(id || "").trim()).filter(Boolean)));
-    if (!uniqueIds.length) return;
+    if (!uniqueIds.length) return [];
 
     if (typeof window.showToast === "function") {
       window.showToast("Awarding badges...");
     }
 
-    Promise.allSettled(uniqueIds.map(async (uid) => {
+    const results = await Promise.allSettled(uniqueIds.map(async (uid) => {
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData?.session?.access_token || "";
       const headers = { "Content-Type": "application/json" };
@@ -134,12 +142,13 @@ document.addEventListener("DOMContentLoaded", async () => {
         throw new Error(payload?.error || `HTTP ${response.status}`);
       }
       return null;
-    })).then((results) => {
-      const failures = results.filter(r => r.status === "rejected");
-      if (failures.length) {
-        console.warn("[Badges] evaluate-on-approve failed", failures.map(f => f.reason?.message || f.reason));
-      }
     });
+
+    const failures = results.filter(r => r.status === "rejected");
+    if (failures.length) {
+      console.warn("[Badges] evaluate-on-approve failed", failures.map(f => f.reason?.message || f.reason));
+    }
+    return results;
   };
 
   const backfillLevelUpNotificationsForStudio = async () => {
@@ -173,6 +182,71 @@ document.addEventListener("DOMContentLoaded", async () => {
       console.warn("[ReviewLogs] notification backfill failed", error);
       showReviewLogsError("Notification backfill failed.", error);
     });
+  }
+
+  const backfillBadgesForStudio = async () => {
+    const activeStudioId = String(viewerContext?.studioId || "").trim();
+    if (!activeStudioId) {
+      throw new Error("No active studio id available for badge backfill.");
+    }
+
+    console.log("[Badges][review-logs.js][backfillBadgesForStudio] rpc start", {
+      rpc: "recompute_badges_for_studio",
+      studio_id: activeStudioId,
+      user_id: viewerContext?.viewerUserId || null
+    });
+    const { data, error } = await supabase.rpc("recompute_badges_for_studio", {
+      p_studio_id: activeStudioId
+    });
+    console.log("[Badges][review-logs.js][backfillBadgesForStudio] rpc result", {
+      data: data ?? null,
+      error: error ?? null
+    });
+    if (error) throw error;
+    window.dispatchEvent(new Event("aa:notification-state-changed"));
+    return data;
+  };
+
+  window.AA_backfillBadgesForStudio = backfillBadgesForStudio;
+
+  const badgeBackfillBtn = document.getElementById("badgeBackfillBtn");
+  if (badgeBackfillBtn) {
+    badgeBackfillBtn.addEventListener("click", async () => {
+      const confirmed = confirm("Recompute earned badges for all current students in this studio? This is safe to run more than once.");
+      if (!confirmed) return;
+
+      badgeBackfillBtn.disabled = true;
+      const originalText = badgeBackfillBtn.textContent;
+      badgeBackfillBtn.textContent = "Backfilling...";
+      showReviewLogsStatus("Badge backfill is running...");
+      try {
+        const result = await backfillBadgesForStudio();
+        const evaluated = Number(result?.evaluatedUsers || 0);
+        const insertedTotal = Array.isArray(result?.results)
+          ? result.results.reduce((sum, row) => sum + Number(row?.insertedBadges || 0) + Number(row?.insertedSeasonalProgress || 0), 0)
+          : 0;
+        showReviewLogsStatus(`Badge backfill complete. Evaluated ${evaluated} student${evaluated === 1 ? "" : "s"}; inserted ${insertedTotal} badge/progress row${insertedTotal === 1 ? "" : "s"}.`);
+      } catch (error) {
+        console.warn("[ReviewLogs] badge backfill failed", error);
+        showReviewLogsError("Badge backfill failed.", error);
+      } finally {
+        badgeBackfillBtn.disabled = false;
+        badgeBackfillBtn.textContent = originalText;
+      }
+    });
+  }
+
+  if (new URLSearchParams(window.location.search).get("backfillBadges") === "studio") {
+    showReviewLogsStatus("Badge backfill is running...");
+    backfillBadgesForStudio()
+      .then((result) => {
+        const evaluated = Number(result?.evaluatedUsers || 0);
+        showReviewLogsStatus(`Badge backfill complete. Evaluated ${evaluated} student${evaluated === 1 ? "" : "s"}.`);
+      })
+      .catch((error) => {
+        console.warn("[ReviewLogs] badge backfill failed", error);
+        showReviewLogsError("Badge backfill failed.", error);
+      });
   }
 
   const roleBadge = document.getElementById("reviewRoleBadge");
@@ -849,7 +923,7 @@ async function renderCategorySummary(list) {
           }
         }
         if (nowApproved) {
-          awardBadgesForApprovedUsers([updated.userId]);
+          await awardBadgesForApprovedUsers([updated.userId]);
         }
         const nowNeedsInfo = field === "status" && isNeedsInfoStatus(value) && previousStatus !== "needs info";
         if (nowNeedsInfo) {
@@ -964,7 +1038,7 @@ async function renderCategorySummary(list) {
       }
 
       if (normalizedStatus === "approved") {
-        awardBadgesForApprovedUsers(affectedUserIds);
+        await awardBadgesForApprovedUsers(affectedUserIds);
       }
 
       applyFilters();
@@ -1932,6 +2006,7 @@ if (quickAddSubmit) {
         console.error("Recalc error:", err);
       }
     }
+    await awardBadgesForApprovedUsers(selectedIds);
 
     setQuickAddStatus(`Logged ${inserts.length} entr${inserts.length === 1 ? "y" : "ies"} across ${selectedIds.length} student(s).`, "success");
   });

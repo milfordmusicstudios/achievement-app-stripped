@@ -2,8 +2,18 @@ import { supabase } from "./supabaseClient.js";
 import { getActiveStudioIdForUser, getAuthUserId } from "./utils.js";
 
 function normalizeRoles(raw) {
-  if (!Array.isArray(raw)) return [];
-  return raw.map(role => String(role || "").toLowerCase());
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw.map(role => String(role || "").toLowerCase());
+  if (typeof raw === "string") {
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed.map(role => String(role || "").toLowerCase());
+      return [String(parsed || "").toLowerCase()].filter(Boolean);
+    } catch {
+      return raw.split(",").map(role => role.trim().toLowerCase()).filter(Boolean);
+    }
+  }
+  return [String(raw).toLowerCase()];
 }
 
 async function resolveStudioAndUser(studioId) {
@@ -97,6 +107,32 @@ export async function hasFamilyAccess(studioId) {
     return Number(childCount || 0) > 0;
   } catch (err) {
     console.warn("[Permissions] family child lookup failed", err);
+    return false;
+  }
+}
+
+export async function isSelfManagedStudent(studioId) {
+  const ctx = await resolveStudioAndUser(studioId);
+  if (!ctx.authUserId) return false;
+
+  try {
+    let query = supabase
+      .from("users")
+      .select("id, roles, parent_uuid")
+      .eq("id", ctx.authUserId)
+      .maybeSingle();
+    if (ctx.studioId) query = query.eq("studio_id", ctx.studioId);
+
+    const { data, error } = await query;
+    if (error) {
+      console.warn("[Permissions] self-managed student lookup failed", error);
+      return false;
+    }
+
+    const roles = normalizeRoles(data?.roles);
+    return roles.includes("student") && !data?.parent_uuid;
+  } catch (err) {
+    console.warn("[Permissions] self-managed student lookup failed", err);
     return false;
   }
 }

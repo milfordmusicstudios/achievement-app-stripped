@@ -1543,6 +1543,12 @@ function updatePendingProgressFill() {
 async function loadEarnedBadges(userId, studioId) {
   if (!userId || !studioId) return [];
 
+  try {
+    await recomputeBadgesForStudent(userId, studioId);
+  } catch (error) {
+    console.warn("[Badges][Recompute] before earned badge load failed", error);
+  }
+
   const { data, error } = await supabase.rpc("get_student_badge_catalog", {
     p_studio_id: studioId,
     p_user_id: userId

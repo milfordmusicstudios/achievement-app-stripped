@@ -1,9 +1,9 @@
 import { supabase } from "./supabaseClient.js";
 import { getAuthUserId, getViewerContext } from "./utils.js";
 import { clearActiveProfileId, getActiveProfileId, setActiveProfileId } from "./active-profile.js";
-import { applyTeacherOptionsToSelect, loadTeachersForStudio, normalizeTextArray, showToast } from "./settings-shared.js";
+import { applyTeacherOptionsToSelect, loadTeachersForStudio, normalizeTextArray, refreshTeacherMultiSelect, showToast } from "./settings-shared.js";
 import { getAccountProfiles, renderAccountProfileList, hasRole } from "./account-profiles.js";
-import { hasFamilyAccess, isAccountHolder } from "./permissions.js";
+import { hasFamilyAccess, isAccountHolder, isSelfManagedStudent } from "./permissions.js";
 
 let authViewerId = null;
 let activeStudioId = null;
@@ -67,6 +67,13 @@ function openAddStudentModal() {
   if (instrument) instrument.value = "";
 
   applyTeacherOptionsToSelect(teacherSelect, teacherOptions);
+  Array.from(teacherSelect.options || []).forEach(option => {
+    option.selected = false;
+  });
+  if (teacherSelect._teacherPillPicker) {
+    teacherSelect._teacherPillPicker.dataset.open = "false";
+  }
+  refreshTeacherMultiSelect(teacherSelect);
 
   overlay.classList.add("is-open");
   addStudentOpen = true;
@@ -338,13 +345,14 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   viewerContextData = await getViewerContext();
   activeStudioId = viewerContextData?.studioId || localStorage.getItem("activeStudioId");
-  const [holder, familyAccess] = await Promise.all([
+  const [holder, familyAccess, selfManagedStudent] = await Promise.all([
     isAccountHolder(activeStudioId),
-    hasFamilyAccess(activeStudioId)
+    hasFamilyAccess(activeStudioId),
+    isSelfManagedStudent(activeStudioId)
   ]);
   const accountIsParent = Boolean(viewerContextData?.accountIsParent || viewerContextData?.isParent);
   const canViewFamily = Boolean(holder || familyAccess || accountIsParent || viewerContextData?.isStudent);
-  canManageFamilyMembers = Boolean(holder || familyAccess || accountIsParent);
+  canManageFamilyMembers = Boolean(holder || familyAccess || accountIsParent || selfManagedStudent);
   if (!canViewFamily) {
     window.location.replace("settings-security.html");
     return;

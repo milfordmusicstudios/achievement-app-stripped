@@ -151,6 +151,15 @@ function buildFamilyEvolutionRows(catalog) {
 }
 
 async function loadBadgeCatalog({ userId, studioId }) {
+  try {
+    await supabase.rpc("recompute_badges_for_student", {
+      p_studio_id: studioId,
+      p_user_id: userId
+    });
+  } catch (err) {
+    console.warn("[My Points] badge recompute before catalog failed", err);
+  }
+
   const { data, error } = await supabase.rpc("get_student_badge_catalog", {
     p_studio_id: studioId,
     p_user_id: userId

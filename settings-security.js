@@ -1,7 +1,8 @@
 import { supabase } from "./supabaseClient.js";
 import { clearAppSessionCache, ensureUserRow, getAuthUserId, getViewerContext } from "./utils.js";
-import { applyTeacherOptionsToSelect, loadTeachersForStudio, parseRoles, showToast } from "./settings-shared.js";
+import { applyTeacherOptionsToSelect, loadTeachersForStudio, parseRoles, refreshTeacherMultiSelect, showToast } from "./settings-shared.js";
 import { requestStudentTutorialReplay, requestTeacherAdminTutorialReplay } from "./student-tutorial.js";
+import { hasFamilyAccess, isAccountHolder, isSelfManagedStudent } from "./permissions.js";
 
 let authUserId = null;
 let activeStudioId = null;
@@ -307,7 +308,20 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const viewerContext = await getViewerContext();
   activeStudioId = viewerContext?.studioId || localStorage.getItem("activeStudioId");
-  applyStudentLockState(Boolean(viewerContext?.isStudent));
+  const [holder, familyAccess, selfManagedStudent] = await Promise.all([
+    isAccountHolder(activeStudioId),
+    hasFamilyAccess(activeStudioId),
+    isSelfManagedStudent(activeStudioId)
+  ]);
+  const accountIsParent = Boolean(viewerContext?.accountIsParent || viewerContext?.isParent);
+  const studentRequiresHolder = Boolean(
+    viewerContext?.isStudent
+    && !holder
+    && !familyAccess
+    && !accountIsParent
+    && !selfManagedStudent
+  );
+  applyStudentLockState(studentRequiresHolder);
 
   const replayTutorialRow = document.getElementById("replayTutorialRow");
   const replayTutorialBtn = document.getElementById("replayTutorialBtn");
@@ -373,9 +387,15 @@ document.addEventListener("DOMContentLoaded", async () => {
       const opt = Array.from(teacherSelect.options).find(o => o.value === id);
       if (opt) opt.selected = true;
     });
+    refreshTeacherMultiSelect(teacherSelect);
     if (teacherSelect) teacherSelect.addEventListener("change", () => setTeacherError(""));
   } else if (teacherWrap) {
     teacherWrap.style.display = "none";
+  }
+  if (studentRequiresHolder) {
+    applyStudentLockState(true);
+  } else {
+    setAccountEditing(false);
   }
 
   const editBtn = document.getElementById("accountEditBtn");
@@ -392,6 +412,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         Array.from(teacherSelect.options).forEach(opt => {
           opt.selected = selectedIds.includes(opt.value);
         });
+        refreshTeacherMultiSelect(teacherSelect);
       }
       setAccountEditing(false);
       setTeacherError("");
