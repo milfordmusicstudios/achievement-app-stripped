@@ -1,5 +1,5 @@
 import { getActiveStudioIdForUser, getAuthUserId, getViewerContext } from "./utils.js";
-import { canManageUsers, isAccountHolder } from "./permissions.js";
+import { canManageUsers, hasFamilyAccess, isAccountHolder } from "./permissions.js";
 
 const TAB_CONFIG = [
   {
@@ -12,7 +12,7 @@ const TAB_CONFIG = [
     id: "family",
     label: "Family",
     href: "settings-family.html",
-    show: permissions => permissions.isAccountHolder || permissions.isStudent
+    show: permissions => permissions.isAccountHolder || permissions.isStudent || permissions.isParent || permissions.hasFamilyAccess
   },
   {
     id: "studio",
@@ -43,7 +43,9 @@ async function resolvePermissions() {
       canManageUsers: false,
       isAdmin: false,
       isOwner: false,
-      isStudent: false
+      isStudent: false,
+      isParent: false,
+      hasFamilyAccess: false
     };
   }
 
@@ -57,6 +59,8 @@ async function resolvePermissions() {
     isAdmin: Boolean(viewerContext?.isAdmin),
     isOwner: Boolean(viewerContext?.isOwner),
     isStudent: Boolean(viewerContext?.isStudent),
+    isParent: Boolean(viewerContext?.accountIsParent || viewerContext?.isParent),
+    hasFamilyAccess: Boolean(viewerContext?.accountIsParent || await hasFamilyAccess(studioId)),
     accountIsAdmin: Boolean(viewerContext?.accountIsAdmin),
     accountIsOwner: Boolean(viewerContext?.accountIsOwner)
   };

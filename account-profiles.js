@@ -86,19 +86,41 @@ async function loadLinkedStudentsForParent(parentId, studioId, options = {}) {
   if (!parentId) return [];
   const includeInactive = options.includeInactive !== false;
   try {
+    const ids = new Set();
     let linkQuery = supabase
       .from("parent_student_links")
       .select("student_id")
       .eq("parent_id", parentId);
     if (studioId) linkQuery = linkQuery.eq("studio_id", studioId);
     const { data: links, error: linkErr } = await linkQuery;
-    if (linkErr) throw linkErr;
-    const ids = (links || []).map(link => link.student_id).filter(Boolean);
-    if (!ids.length) return [];
+    if (linkErr) {
+      console.warn("[Accounts] parent_student_links fetch failed", linkErr);
+    } else {
+      (links || []).forEach(link => {
+        if (link?.student_id) ids.add(String(link.student_id));
+      });
+    }
+
+    let childQuery = supabase
+      .from("users")
+      .select("id")
+      .eq("parent_uuid", parentId);
+    if (studioId) childQuery = childQuery.eq("studio_id", studioId);
+    const { data: directChildren, error: childErr } = await childQuery;
+    if (childErr) {
+      console.warn("[Accounts] parent_uuid student fetch failed", childErr);
+    } else {
+      (directChildren || []).forEach(child => {
+        if (child?.id) ids.add(String(child.id));
+      });
+    }
+
+    const studentIds = Array.from(ids);
+    if (!studentIds.length) return [];
     const { data: students, error: studentsErr } = await supabase
       .from("users")
       .select(`${PROFILE_SELECT}`)
-      .in("id", ids)
+      .in("id", studentIds)
       .order("lastName", { ascending: true })
       .order("firstName", { ascending: true });
     if (studentsErr) throw studentsErr;

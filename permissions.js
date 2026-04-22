@@ -65,3 +65,38 @@ export async function canManageUsers(studioId) {
 
   return Boolean(perms?.admins_can_manage_users);
 }
+
+export async function hasFamilyAccess(studioId) {
+  const ctx = await resolveStudioAndUser(studioId);
+  if (!ctx.authUserId) return false;
+
+  try {
+    let linkQuery = supabase
+      .from("parent_student_links")
+      .select("student_id", { count: "exact", head: true })
+      .eq("parent_id", ctx.authUserId);
+    if (ctx.studioId) linkQuery = linkQuery.eq("studio_id", ctx.studioId);
+    const { count: linkCount, error: linkError } = await linkQuery;
+    if (!linkError && Number(linkCount || 0) > 0) return true;
+    if (linkError) console.warn("[Permissions] parent_student_links lookup failed", linkError);
+  } catch (err) {
+    console.warn("[Permissions] parent_student_links lookup failed", err);
+  }
+
+  try {
+    let childQuery = supabase
+      .from("users")
+      .select("id", { count: "exact", head: true })
+      .eq("parent_uuid", ctx.authUserId);
+    if (ctx.studioId) childQuery = childQuery.eq("studio_id", ctx.studioId);
+    const { count: childCount, error: childError } = await childQuery;
+    if (childError) {
+      console.warn("[Permissions] family child lookup failed", childError);
+      return false;
+    }
+    return Number(childCount || 0) > 0;
+  } catch (err) {
+    console.warn("[Permissions] family child lookup failed", err);
+    return false;
+  }
+}

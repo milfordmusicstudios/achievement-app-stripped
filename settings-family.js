@@ -3,7 +3,7 @@ import { getAuthUserId, getViewerContext } from "./utils.js";
 import { clearActiveProfileId, getActiveProfileId, setActiveProfileId } from "./active-profile.js";
 import { applyTeacherOptionsToSelect, loadTeachersForStudio, normalizeTextArray, showToast } from "./settings-shared.js";
 import { getAccountProfiles, renderAccountProfileList, hasRole } from "./account-profiles.js";
-import { isAccountHolder } from "./permissions.js";
+import { hasFamilyAccess, isAccountHolder } from "./permissions.js";
 
 let authViewerId = null;
 let activeStudioId = null;
@@ -361,9 +361,14 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   viewerContextData = await getViewerContext();
   activeStudioId = viewerContextData?.studioId || localStorage.getItem("activeStudioId");
-  const holder = await isAccountHolder(activeStudioId);
-  canManageFamilyMembers = Boolean(holder && !viewerContextData?.isStudent);
-  if (!holder && !viewerContextData?.isStudent) {
+  const [holder, familyAccess] = await Promise.all([
+    isAccountHolder(activeStudioId),
+    hasFamilyAccess(activeStudioId)
+  ]);
+  const accountIsParent = Boolean(viewerContextData?.accountIsParent || viewerContextData?.isParent);
+  const canViewFamily = Boolean(holder || familyAccess || accountIsParent || viewerContextData?.isStudent);
+  canManageFamilyMembers = Boolean((holder || familyAccess || accountIsParent) && !viewerContextData?.isStudent);
+  if (!canViewFamily) {
     window.location.replace("settings-security.html");
     return;
   }
