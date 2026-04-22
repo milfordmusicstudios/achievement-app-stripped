@@ -142,7 +142,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         throw new Error(payload?.error || `HTTP ${response.status}`);
       }
       return null;
-    });
+    }));
 
     const failures = results.filter(r => r.status === "rejected");
     if (failures.length) {
