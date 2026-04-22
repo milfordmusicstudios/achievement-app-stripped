@@ -306,8 +306,28 @@ module.exports = async (req, res) => {
         return cleaned;
       });
 
+    step = "notifications.dedupe_lookup";
+    const { data: existingRows, error: existingErr } = await admin
+      .from("notifications")
+      .select('user_id, "userId", message')
+      .eq("studio_id", studioId)
+      .eq("type", "level_up")
+      .eq("message", message);
+    if (existingErr) {
+      throwStep("notifications.dedupe_lookup", existingErr, { studioId, studentUserId, level });
+    }
+
+    const existingKeys = new Set((existingRows || []).map((row) => {
+      const uid = String(row?.user_id || row?.userId || "").trim();
+      return `${uid}:${String(row?.message || "")}`;
+    }));
+    const dedupedPayload = payload.filter((row) => {
+      const uid = String(row?.userId || row?.user_id || "").trim();
+      return !existingKeys.has(`${uid}:${message}`);
+    });
+
     const payloadKeys = Array.from(
-      payload.reduce((set, row) => {
+      dedupedPayload.reduce((set, row) => {
         Object.keys(row || {}).forEach((key) => set.add(key));
         return set;
       }, new Set())
@@ -318,14 +338,24 @@ module.exports = async (req, res) => {
 
     console.log("[LevelUpDiag][api/notifications/level-up.js] insert-payload", {
       source: "api/notifications/level-up.js::insertLevelUpNotifications",
-      payload,
-      resolved_userId: payload.map((row) => row.userId),
+      payload: dedupedPayload,
+      skippedDuplicates: payload.length - dedupedPayload.length,
+      resolved_userId: dedupedPayload.map((row) => row.userId),
       resolved_studio_id: studioId,
       resolved_created_by: actorUserId,
-      resolved_related_log_id: payload.map((row) => row.related_log_id ?? null)
+      resolved_related_log_id: dedupedPayload.map((row) => row.related_log_id ?? null)
     });
+    if (!dedupedPayload.length) {
+      console.log("[LevelUpDiag][api/notifications/level-up.js] success-noop-duplicate", {
+        resolvedStudioId: studioId,
+        resolvedTargetUserIds: resolvedRecipientIds,
+        level
+      });
+      return res.status(200).json({ ok: true, recipientCount: 0, skippedDuplicates: payload.length });
+    }
+
     step = "notifications.insert";
-    const { data: insertData, error: insertErr } = await admin.from("notifications").insert(payload);
+    const { data: insertData, error: insertErr } = await admin.from("notifications").insert(dedupedPayload);
     console.log("[LevelUpDiag][api/notifications/level-up.js] insert-result", {
       source: "api/notifications/level-up.js::insertLevelUpNotifications",
       data: insertData ?? null,
@@ -333,15 +363,26 @@ module.exports = async (req, res) => {
       summary: insertErr ? "insert_error" : "insert_ok"
     });
     if (insertErr) {
+      if (insertErr?.code === "23505") {
+        console.warn("[LevelUpDiag][api/notifications/level-up.js] duplicate-protected-by-db", {
+          source: "api/notifications/level-up.js::insertLevelUpNotifications",
+          error: insertErr?.message || null,
+          resolvedStudioId: studioId,
+          resolvedTargetUserIds: resolvedRecipientIds,
+          level
+        });
+        return res.status(200).json({ ok: true, recipientCount: 0, skippedDuplicates: dedupedPayload.length });
+      }
       return fail(500, "notifications.insert", insertErr?.message || "unknown_insert_error");
     }
 
     console.log("[LevelUpDiag][api/notifications/level-up.js] success", {
       resolvedStudioId: studioId,
       resolvedTargetUserIds: resolvedRecipientIds,
-      payloadCount: payload.length
+      payloadCount: dedupedPayload.length,
+      skippedDuplicates: payload.length - dedupedPayload.length
     });
-    return res.status(200).json({ ok: true, recipientCount: payload.length });
+    return res.status(200).json({ ok: true, recipientCount: dedupedPayload.length, skippedDuplicates: payload.length - dedupedPayload.length });
   } catch (error) {
     const details = error?.message || String(error || "unknown_error");
     const failedStep = error?.step || step || "unknown";

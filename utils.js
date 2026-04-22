@@ -936,7 +936,11 @@ export async function recalculateUserPoints(userId) {
           studioId = fallbackStudioId || null;
         }
       }
-      const levelLabel = currentLevel.name || currentLevel.id;
+      const previousLevelNumber = Number(previousLevel || 0);
+      const levelsToNotify = [];
+      for (let level = previousLevelNumber + 1; level <= newLevel; level += 1) {
+        levelsToNotify.push(level);
+      }
       try {
         const { data: sessionData } = await supabase.auth.getSession();
         const accessToken = String(sessionData?.session?.access_token || "").trim();
@@ -944,35 +948,37 @@ export async function recalculateUserPoints(userId) {
         if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
         const requestUrl = "/api/notifications/level-up";
         const requestMethod = "POST";
-        const requestBody = {
-          studioId,
-          studentUserId: String(userId || "").trim(),
-          studentName: fullName || "Student",
-          level: Number(currentLevel.id || 0)
-        };
-        console.log("[LevelUpDiag][utils.js][recalculateUserPoints] notification-api request", {
-          requestUrl,
-          method: requestMethod,
-          body: requestBody
-        });
-        const response = await fetch(requestUrl, {
-          method: "POST",
-          credentials: "include",
-          headers,
-          body: JSON.stringify(requestBody)
-        });
-        const responseBody = await response.json().catch(() => ({}));
-        console.log("[LevelUpDiag][utils.js][recalculateUserPoints] notification-api response", {
-          requestUrl,
-          method: requestMethod,
-          status: response.status,
-          body: responseBody
-        });
-        if (!response.ok) {
-          console.warn("[Notifications] level-up API failed", {
-            status: response.status,
-            error: responseBody?.error || null
+        for (const level of levelsToNotify) {
+          const requestBody = {
+            studioId,
+            studentUserId: String(userId || "").trim(),
+            studentName: fullName || "Student",
+            level
+          };
+          console.log("[LevelUpDiag][utils.js][recalculateUserPoints] notification-api request", {
+            requestUrl,
+            method: requestMethod,
+            body: requestBody
           });
+          const response = await fetch(requestUrl, {
+            method: "POST",
+            credentials: "include",
+            headers,
+            body: JSON.stringify(requestBody)
+          });
+          const responseBody = await response.json().catch(() => ({}));
+          console.log("[LevelUpDiag][utils.js][recalculateUserPoints] notification-api response", {
+            requestUrl,
+            method: requestMethod,
+            status: response.status,
+            body: responseBody
+          });
+          if (!response.ok) {
+            console.warn("[Notifications] level-up API failed", {
+              status: response.status,
+              error: responseBody?.error || null
+            });
+          }
         }
       } catch (apiErr) {
         console.warn("[Notifications] level-up API request error", apiErr);
