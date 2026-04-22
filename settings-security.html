@@ -83,19 +83,25 @@
           <div class="row-value"></div>
           <button id="passwordToggleBtn" type="button" class="row-btn">Change</button>
         </div>
-        <div class="settings-row link-row">
-          <div class="row-label">Logout</div>
-          <div class="row-value"></div>
-          <button id="logoutBtn" type="button" class="row-btn danger logout-btn">Log out</button>
-        </div>
         <div id="replayTutorialRow" class="settings-row" style="display:none;">
           <div id="replayTutorialLabel" class="row-label">Tutorial</div>
           <div id="replayTutorialCopy" class="row-value"></div>
           <button id="replayTutorialBtn" type="button" class="row-btn">Replay</button>
         </div>
         <div id="pwaInstallRow" class="settings-row" style="display:none;">
-          <div class="row-label">Add App to Desktop</div>
-          <button id="pwaInstallSettingsBtn" type="button" class="row-btn">Open</button>
+          <div class="row-label">Install Web App</div>
+          <div class="row-value"></div>
+          <button id="pwaInstallSettingsBtn" type="button" class="row-btn">Install</button>
+        </div>
+        <div class="settings-row">
+          <div class="row-label">Help Request</div>
+          <div class="row-value"></div>
+          <button id="helpRequestBtn" type="button" class="row-btn">Submit</button>
+        </div>
+        <div class="settings-row link-row logout-row">
+          <div class="row-label">Log Out</div>
+          <div class="row-value"></div>
+          <button id="logoutBtn" type="button" class="row-btn danger logout-btn">Log out</button>
         </div>
       </div>
       <div id="passwordBody" class="password-body" style="display:none; margin-top:12px;">
@@ -155,6 +161,37 @@
 </main>
 
 <div id="toast" class="toast"></div>
+
+<div id="helpRequestModal" class="modal-overlay settings-help-modal" aria-hidden="true">
+  <div class="modal-card">
+    <h3>Submit Help Request</h3>
+    <p class="modal-helper">Send a help request or feature request by email.</p>
+    <div class="modal-field">
+      <label for="helpRequestType">Request Type</label>
+      <select id="helpRequestType">
+        <option value="Help Request">Help Request</option>
+        <option value="Feature Request">Feature Request</option>
+      </select>
+    </div>
+    <div class="modal-field">
+      <label for="helpRequestEmail">Your Email</label>
+      <input id="helpRequestEmail" type="email" placeholder="name@example.com" />
+    </div>
+    <div class="modal-field">
+      <label for="helpRequestSubject">Subject</label>
+      <input id="helpRequestSubject" type="text" placeholder="Brief summary" />
+    </div>
+    <div class="modal-field">
+      <label for="helpRequestMessage">Details</label>
+      <textarea id="helpRequestMessage" rows="5" placeholder="What do you need help with?"></textarea>
+    </div>
+    <div id="helpRequestError" class="modal-error" style="display:none;"></div>
+    <div class="modal-actions">
+      <button id="helpRequestCancel" type="button" class="blue-button btn-ghost">Cancel</button>
+      <button id="helpRequestSubmit" type="button" class="blue-button">Send Email</button>
+    </div>
+  </div>
+</div>
 
   </div>
 

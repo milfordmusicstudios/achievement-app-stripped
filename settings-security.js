@@ -11,6 +11,8 @@ let teacherOptions = [];
 let isAccountEditing = false;
 let isRecoveryMode = false;
 let isStudentLocked = false;
+let helpRecipientEmail = "support@milfordmusic.com";
+let activeStudioName = "";
 
 function getHighestRole(roles) {
   const priority = { admin: 3, teacher: 2, student: 1, parent: 0 };
@@ -37,6 +39,79 @@ function setRecoveryError(message) {
   if (!errorEl) return;
   errorEl.textContent = message || "";
   errorEl.style.display = message ? "block" : "none";
+}
+
+function setHelpRequestError(message) {
+  const errorEl = document.getElementById("helpRequestError");
+  if (!errorEl) return;
+  errorEl.textContent = message || "";
+  errorEl.style.display = message ? "block" : "none";
+}
+
+function getProfileDisplayName(profile) {
+  return `${profile?.firstName || ""} ${profile?.lastName || ""}`.trim() || profile?.email || "User";
+}
+
+async function loadHelpRecipient(studioId) {
+  if (!studioId) return;
+  try {
+    const { data, error } = await supabase
+      .from("studios")
+      .select("name, email")
+      .eq("id", studioId)
+      .maybeSingle();
+    if (error) throw error;
+    activeStudioName = String(data?.name || "").trim();
+    const studioEmail = String(data?.email || "").trim();
+    if (studioEmail) helpRecipientEmail = studioEmail;
+  } catch (err) {
+    console.warn("[Settings] help recipient lookup failed", err);
+  }
+}
+
+function setHelpRequestModalOpen(open) {
+  const modal = document.getElementById("helpRequestModal");
+  if (!modal) return;
+  modal.classList.toggle("is-open", Boolean(open));
+  modal.setAttribute("aria-hidden", open ? "false" : "true");
+  if (!open) return;
+
+  setHelpRequestError("");
+  const emailInput = document.getElementById("helpRequestEmail");
+  const subjectInput = document.getElementById("helpRequestSubject");
+  const messageInput = document.getElementById("helpRequestMessage");
+  const typeInput = document.getElementById("helpRequestType");
+  if (emailInput && !emailInput.value) emailInput.value = authProfile?.email || "";
+  if (subjectInput) subjectInput.value = "";
+  if (messageInput) messageInput.value = "";
+  if (typeInput) typeInput.value = "Help Request";
+  setTimeout(() => subjectInput?.focus(), 0);
+}
+
+function submitHelpRequestEmail() {
+  const type = String(document.getElementById("helpRequestType")?.value || "Help Request").trim();
+  const contactEmail = String(document.getElementById("helpRequestEmail")?.value || "").trim();
+  const subject = String(document.getElementById("helpRequestSubject")?.value || "").trim();
+  const message = String(document.getElementById("helpRequestMessage")?.value || "").trim();
+
+  if (!contactEmail || !subject || !message) {
+    setHelpRequestError("Please enter your email, subject, and details.");
+    return;
+  }
+
+  const fullSubject = `[Music Amplified] ${type}: ${subject}`;
+  const body = [
+    `Request Type: ${type}`,
+    `From: ${getProfileDisplayName(authProfile)}`,
+    `Contact Email: ${contactEmail}`,
+    `Studio: ${activeStudioName || activeStudioId || "Unknown"}`,
+    `User ID: ${authUserId || "Unknown"}`,
+    "",
+    message
+  ].join("\n");
+
+  window.location.href = `mailto:${helpRecipientEmail}?subject=${encodeURIComponent(fullSubject)}&body=${encodeURIComponent(body)}`;
+  setHelpRequestModalOpen(false);
 }
 
 function detectRecoveryFromUrl() {
@@ -308,6 +383,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const viewerContext = await getViewerContext();
   activeStudioId = viewerContext?.studioId || localStorage.getItem("activeStudioId");
+  await loadHelpRecipient(activeStudioId);
   const [holder, familyAccess, selfManagedStudent] = await Promise.all([
     isAccountHolder(activeStudioId),
     hasFamilyAccess(activeStudioId),
@@ -447,6 +523,22 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (recoverySaveBtn) {
     recoverySaveBtn.addEventListener("click", handleRecoverySubmit);
   }
+
+  const helpRequestBtn = document.getElementById("helpRequestBtn");
+  const helpRequestCancel = document.getElementById("helpRequestCancel");
+  const helpRequestSubmit = document.getElementById("helpRequestSubmit");
+  const helpRequestModal = document.getElementById("helpRequestModal");
+  if (helpRequestBtn) helpRequestBtn.addEventListener("click", () => setHelpRequestModalOpen(true));
+  if (helpRequestCancel) helpRequestCancel.addEventListener("click", () => setHelpRequestModalOpen(false));
+  if (helpRequestSubmit) helpRequestSubmit.addEventListener("click", submitHelpRequestEmail);
+  if (helpRequestModal) {
+    helpRequestModal.addEventListener("click", (event) => {
+      if (event.target === helpRequestModal) setHelpRequestModalOpen(false);
+    });
+  }
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") setHelpRequestModalOpen(false);
+  });
 
   wirePasswordToggles();
 
