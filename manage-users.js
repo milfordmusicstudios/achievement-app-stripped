@@ -17,6 +17,9 @@ let statusFilter = "active";
 let liveSyncChannel = null;
 let liveSyncStudioId = "";
 let refreshQueuedTimer = null;
+let mobileUsersPage = 1;
+const MOBILE_USERS_PAGE_SIZE = 10;
+const isMobileManageLayout = () => window.matchMedia?.("(max-width: 700px)")?.matches || window.innerWidth <= 700;
 
 const EDITABLE_TEXT_FIELD_TYPES = {
   firstName: "text",
@@ -183,6 +186,7 @@ function bindManageUsersTabs() {
       if (nextTab === activeTab) return;
       activeTab = nextTab;
       statusFilter = "active";
+      mobileUsersPage = 1;
       await refreshManageUsers();
     });
   });
@@ -196,6 +200,7 @@ function bindStatusToggle() {
       const nextStatus = normalizeStatusFilter(button.dataset.status);
       if (nextStatus === statusFilter) return;
       statusFilter = nextStatus;
+      mobileUsersPage = 1;
       await refreshManageUsers();
     });
   });
@@ -1068,6 +1073,13 @@ function renderUsers(totalRows = null) {
   const filteredUsers = applyFilters(allUsers);
   const filtered = getSortedUsers(filteredUsers);
   const total = Number.isFinite(totalRows) ? totalRows : allUsers.length;
+  const mobileLayout = isMobileManageLayout();
+  const totalPages = Math.max(1, Math.ceil(filtered.length / MOBILE_USERS_PAGE_SIZE));
+  if (!mobileLayout) mobileUsersPage = 1;
+  mobileUsersPage = Math.min(Math.max(1, mobileUsersPage), totalPages);
+  const visibleRows = mobileLayout
+    ? filtered.slice((mobileUsersPage - 1) * MOBILE_USERS_PAGE_SIZE, mobileUsersPage * MOBILE_USERS_PAGE_SIZE)
+    : filtered;
   if (!filtered.length) {
     const tr = document.createElement("tr");
     const td = document.createElement("td");
@@ -1076,14 +1088,31 @@ function renderUsers(totalRows = null) {
     td.style.textAlign = "center";
     tr.appendChild(td);
     tbody.appendChild(tr);
-    setLoadedCount(`0 shown • ${total} total`);
+    setLoadedCount(`0 shown - ${total} total`);
+    renderManageUsersPager(0, 1);
     return;
   }
 
-  filtered.forEach(user => {
+  visibleRows.forEach(user => {
     const tr = document.createElement("tr");
     tr.dataset.userId = String(user.id || "");
+    tr.dataset.expanded = "false";
+    tr.classList.add("mobile-collapsible-row", "is-collapsed");
     tr.classList.toggle("is-inactive", Boolean(user.deactivated_at));
+
+    const summaryCell = document.createElement("td");
+    summaryCell.className = "mobile-user-summary";
+    summaryCell.dataset.label = "";
+    const summaryButton = document.createElement("button");
+    summaryButton.type = "button";
+    summaryButton.className = "mobile-user-card-toggle";
+    summaryButton.setAttribute("aria-expanded", "false");
+    const name = `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.email || "User";
+    summaryButton.innerHTML = `
+      <span class="mobile-user-card-name">${name}</span>
+    `;
+    summaryCell.appendChild(summaryButton);
+    tr.appendChild(summaryCell);
 
     visibleColumns.forEach(columnKey => {
       const cell = createCellForColumn(columnKey, user);
@@ -1094,7 +1123,52 @@ function renderUsers(totalRows = null) {
     tbody.appendChild(tr);
   });
 
-  setLoadedCount(`${filtered.length} shown • ${total} total`);
+  bindMobileUserCollapseToggles();
+  renderManageUsersPager(filtered.length, totalPages);
+  const shownText = mobileLayout
+    ? `${visibleRows.length} shown on page ${mobileUsersPage} of ${totalPages}`
+    : `${filtered.length} shown`;
+  setLoadedCount(`${shownText} - ${total} total`);
+}
+
+function bindMobileUserCollapseToggles() {
+  document.querySelectorAll(".mobile-user-card-toggle").forEach(button => {
+    button.addEventListener("click", () => {
+      const row = button.closest("tr");
+      if (!row) return;
+      const expanded = row.dataset.expanded === "true";
+      row.dataset.expanded = expanded ? "false" : "true";
+      row.classList.toggle("is-collapsed", expanded);
+      row.classList.toggle("is-expanded", !expanded);
+      button.setAttribute("aria-expanded", String(!expanded));
+    });
+  });
+}
+
+function renderManageUsersPager(totalFiltered, totalPages) {
+  const pager = document.getElementById("paginationControls");
+  if (!pager) return;
+  if (!isMobileManageLayout() || totalFiltered <= MOBILE_USERS_PAGE_SIZE) {
+    pager.innerHTML = "";
+    return;
+  }
+  pager.innerHTML = `
+    <div class="mobile-list-pager">
+      <button type="button" class="blue-button mobile-users-prev" ${mobileUsersPage <= 1 ? "disabled" : ""}>Previous</button>
+      <span>Page ${mobileUsersPage} of ${totalPages}</span>
+      <button type="button" class="blue-button mobile-users-next" ${mobileUsersPage >= totalPages ? "disabled" : ""}>Next</button>
+    </div>
+  `;
+  pager.querySelector(".mobile-users-prev")?.addEventListener("click", () => {
+    if (mobileUsersPage <= 1) return;
+    mobileUsersPage--;
+    renderUsers();
+  });
+  pager.querySelector(".mobile-users-next")?.addEventListener("click", () => {
+    if (mobileUsersPage >= totalPages) return;
+    mobileUsersPage++;
+    renderUsers();
+  });
 }
 
 async function resolveStudioId() {
@@ -1308,6 +1382,7 @@ async function initManageUsersPanel() {
     searchHandlerBound = true;
     searchInput.addEventListener("input", event => {
       searchTerm = event.target.value || "";
+      mobileUsersPage = 1;
       renderUsers();
     });
   }
@@ -1320,6 +1395,10 @@ async function initManageUsersPanel() {
         : event.target?.parentElement;
       if (target?.closest(".tag-picker")) return;
       closeAllTagPickers();
+    });
+    window.addEventListener("resize", () => {
+      mobileUsersPage = 1;
+      renderUsers();
     });
   }
 

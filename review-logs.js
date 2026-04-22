@@ -285,7 +285,14 @@ document.addEventListener("DOMContentLoaded", async () => {
   let filteredLogs = [];
   let currentSort = { field: "date", order: "desc" };
   let currentPage = 1;
-  let logsPerPage = parseInt(logsPerPageSelect?.value || "25", 10) || 25;
+  const isMobileReviewLayout = () => window.matchMedia?.("(max-width: 700px)")?.matches || window.innerWidth <= 700;
+  let logsPerPage = isMobileReviewLayout() ? 10 : (parseInt(logsPerPageSelect?.value || "25", 10) || 25);
+  if (isMobileReviewLayout() && logsPerPageSelect) {
+    if (!logsPerPageSelect.querySelector('option[value="10"]')) {
+      logsPerPageSelect.insertAdjacentHTML("afterbegin", '<option value="10">10</option>');
+    }
+    logsPerPageSelect.value = "10";
+  }
   let activeCardFilter = "all";
   let pendingCardFlashPlayed = false;
   const selectedStudentFilterIds = new Set();
@@ -730,6 +737,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     renderLogsTable(filteredLogs);
   });
 
+  window.addEventListener("resize", () => {
+    if (!isMobileReviewLayout() || logsPerPage === 10) return;
+    logsPerPage = 10;
+    if (logsPerPageSelect) logsPerPageSelect.value = "10";
+    currentPage = 1;
+    renderLogsTable(filteredLogs);
+  });
+
 async function renderCategorySummary(list) {
   if (!categorySummary) return;
 
@@ -823,11 +838,18 @@ async function renderCategorySummary(list) {
 
     pageLogs.forEach((log, index) => {
       const row = document.createElement("tr");
-      row.className = index % 2 === 0 ? "log-row-even" : "log-row-odd";
+      row.className = `${index % 2 === 0 ? "log-row-even" : "log-row-odd"} mobile-collapsible-row is-collapsed`;
+      row.dataset.expanded = "false";
       const categoryKey = String(log.category || "").toLowerCase();
       row.innerHTML = `
         <td class="checkbox-cell" data-label="Select"><input type="checkbox" class="select-log" data-id="${log.id}"></td>
-        <td data-label="Student">${log.fullName}</td>
+        <td data-label="Student">
+          <button type="button" class="mobile-log-card-toggle" aria-expanded="false">
+            <span class="mobile-log-card-name">${log.fullName}</span>
+            <span class="mobile-log-card-date">${formatShortDate(log.date)}</span>
+          </button>
+          <span class="desktop-log-student-name">${log.fullName}</span>
+        </td>
         <td class="category-cell" data-label="Category" style="--cat-color:${categoryColors[categoryKey] || '#ccc'};">
           <select class="edit-input" data-id="${log.id}" data-field="category">
             ${categoryOptions.map(c =>
@@ -855,8 +877,23 @@ async function renderCategorySummary(list) {
     });
 
     document.getElementById("selectAll").checked = false;
+    applyMobileCollapseListeners();
     applyEditListeners();
     updateBulkActionBarVisibility();
+  }
+
+  function applyMobileCollapseListeners() {
+    document.querySelectorAll("#logsTableBody .mobile-log-card-toggle").forEach(button => {
+      button.addEventListener("click", () => {
+        const row = button.closest("tr");
+        if (!row) return;
+        const expanded = row.dataset.expanded === "true";
+        row.dataset.expanded = expanded ? "false" : "true";
+        row.classList.toggle("is-collapsed", expanded);
+        row.classList.toggle("is-expanded", !expanded);
+        button.setAttribute("aria-expanded", String(!expanded));
+      });
+    });
   }
 
   function updateBulkActionBarVisibility() {

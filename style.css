@@ -8982,3 +8982,105 @@ body.leaderboard-page .leaderboard-orientation-hint {
     overflow-wrap: anywhere !important;
   }
 }
+
+.mobile-log-card-toggle,
+.mobile-user-summary {
+  display: none;
+}
+
+@media (max-width: 700px) {
+  body.review-logs-page #logsTable tr.mobile-collapsible-row,
+  .manage-users-table tbody tr.mobile-collapsible-row {
+    cursor: default;
+  }
+
+  body.review-logs-page #logsTable tr.mobile-collapsible-row.is-collapsed,
+  .manage-users-table tbody tr.mobile-collapsible-row.is-collapsed {
+    display: block;
+  }
+
+  body.review-logs-page #logsTable tr.mobile-collapsible-row.is-collapsed td:not([data-label="Student"]),
+  .manage-users-table tbody tr.mobile-collapsible-row.is-collapsed td:not(.mobile-user-summary) {
+    display: none !important;
+  }
+
+  body.review-logs-page #logsTable tr.mobile-collapsible-row td[data-label="Student"] {
+    grid-column: 1 / -1;
+    padding: 0;
+    border: 0;
+  }
+
+  body.review-logs-page .desktop-log-student-name {
+    display: none;
+  }
+
+  body.review-logs-page .mobile-log-card-toggle,
+  .manage-users-table .mobile-user-card-toggle {
+    width: 100%;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: #0b3c66;
+    text-align: left;
+    font: inherit;
+  }
+
+  body.review-logs-page .mobile-log-card-name,
+  .manage-users-table .mobile-user-card-name {
+    min-width: 0;
+    color: #0b4f8a;
+    font-weight: 900;
+    overflow-wrap: anywhere;
+  }
+
+  body.review-logs-page .mobile-log-card-date,
+  .manage-users-table .mobile-user-card-meta {
+    flex: 0 1 auto;
+    min-width: 0;
+    color: #65788b;
+    font-size: 0.86rem;
+    font-weight: 800;
+    text-align: right;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .manage-users-table td.mobile-user-summary {
+    display: block;
+    grid-column: 1 / -1;
+    width: 100%;
+    min-width: 0;
+    padding: 0 0 2px;
+    border: 0;
+  }
+
+  .manage-users-table td.mobile-user-summary::before {
+    display: none;
+  }
+
+  .mobile-list-pager {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+    gap: 8px;
+    margin: 10px 0 0;
+  }
+
+  .mobile-list-pager span {
+    color: #0b4f8a;
+    font-size: 0.82rem;
+    font-weight: 900;
+    white-space: nowrap;
+  }
+
+  .mobile-list-pager .blue-button {
+    min-height: 38px;
+    padding: 8px 10px;
+  }
+}
