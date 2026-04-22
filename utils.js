@@ -210,40 +210,7 @@ export async function getViewerContext() {
     console.warn("[ViewerContext] auth account lookup failed", err, { table: "users", userId: viewerUserId });
   }
 
-  let viewerProfile = accountProfile;
-  if (requestedProfileId && String(requestedProfileId) !== String(viewerUserId)) {
-    try {
-      const { data: candidateProfile, error: candidateError } = await client
-        .from("users")
-        .select("id, roles, studio_id, parent_uuid")
-        .eq("id", requestedProfileId)
-        .maybeSingle();
-      if (candidateError) throw candidateError;
-
-      const candidateRoles = parseRoles(candidateProfile?.roles);
-      const candidateIsLinkedStudent = candidateRoles.includes("student")
-        && String(candidateProfile?.parent_uuid || "") === String(viewerUserId);
-
-      if (candidateIsLinkedStudent) {
-        viewerProfile = candidateProfile;
-      } else {
-        setActiveProfileId(viewerUserId);
-        localStorage.removeItem("aa.activeStudentId");
-      }
-    } catch (err) {
-      console.warn("[ViewerContext] active profile lookup failed", err, { table: "users", userId: requestedProfileId });
-      setActiveProfileId(viewerUserId);
-      localStorage.removeItem("aa.activeStudentId");
-    }
-  }
-
-  if (!studioId && viewerProfile?.studio_id) {
-    studioId = viewerProfile.studio_id;
-    localStorage.setItem("activeStudioId", studioId);
-  }
-
   const accountIdentityRoles = parseRoles(accountProfile?.roles);
-  const profileIdentityRoles = parseRoles(viewerProfile?.roles);
   let membershipRoles = [];
   if (studioId) {
     try {
@@ -261,6 +228,61 @@ export async function getViewerContext() {
     }
   }
 
+  let viewerProfile = accountProfile;
+  if (requestedProfileId && String(requestedProfileId) !== String(viewerUserId)) {
+    try {
+      const { data: candidateProfile, error: candidateError } = await client
+        .from("users")
+        .select("id, roles, studio_id, parent_uuid")
+        .eq("id", requestedProfileId)
+        .maybeSingle();
+      if (candidateError) throw candidateError;
+
+      const candidateRoles = parseRoles(candidateProfile?.roles);
+      const candidateStudioId = String(candidateProfile?.studio_id || studioId || "").trim();
+      const candidateIsStudent = candidateRoles.includes("student");
+      const candidateIsDirectChild = candidateIsStudent
+        && String(candidateProfile?.parent_uuid || "") === String(viewerUserId);
+      let candidateIsLinkedChild = false;
+      if (candidateIsStudent && !candidateIsDirectChild && candidateStudioId) {
+        try {
+          const { data: linkRow, error: linkError } = await client
+            .from("parent_student_links")
+            .select("student_id")
+            .eq("parent_id", viewerUserId)
+            .eq("student_id", requestedProfileId)
+            .eq("studio_id", candidateStudioId)
+            .maybeSingle();
+          if (!linkError && linkRow?.student_id) candidateIsLinkedChild = true;
+        } catch (linkErr) {
+          console.warn("[ViewerContext] parent_student_links active profile lookup failed", linkErr, { userId: requestedProfileId });
+        }
+      }
+      const accountCanViewStudioStudent = candidateIsStudent
+        && candidateStudioId
+        && String(candidateStudioId) === String(studioId || candidateStudioId)
+        && Array.from(new Set([...accountIdentityRoles, ...membershipRoles]))
+          .some((role) => ["owner", "admin", "teacher"].includes(role));
+
+      if (candidateIsDirectChild || candidateIsLinkedChild || accountCanViewStudioStudent) {
+        viewerProfile = candidateProfile;
+      } else {
+        setActiveProfileId(viewerUserId);
+        localStorage.removeItem("aa.activeStudentId");
+      }
+    } catch (err) {
+      console.warn("[ViewerContext] active profile lookup failed", err, { table: "users", userId: requestedProfileId });
+      setActiveProfileId(viewerUserId);
+      localStorage.removeItem("aa.activeStudentId");
+    }
+  }
+
+  if (!studioId && viewerProfile?.studio_id) {
+    studioId = viewerProfile.studio_id;
+    localStorage.setItem("activeStudioId", studioId);
+  }
+
+  const profileIdentityRoles = parseRoles(viewerProfile?.roles);
   const accountRoles = Array.from(new Set([...accountIdentityRoles, ...membershipRoles]));
   const isViewerAccountProfile = String(viewerProfile?.id || viewerUserId) === String(viewerUserId);
   const viewerRoles = isViewerAccountProfile

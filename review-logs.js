@@ -311,10 +311,20 @@ document.addEventListener("DOMContentLoaded", async () => {
     const last = student?.lastName || "";
     return `${first} ${last}`.trim() || student?.email || "Student";
   };
+  const hasStudentRole = (student) => {
+    const roles = Array.isArray(student?.roles) ? student.roles : [student?.roles];
+    return roles.map((role) => String(role || "").toLowerCase()).includes("student");
+  };
+  const canViewerAccessStudent = (student) => {
+    if (!hasStudentRole(student)) return false;
+    if (viewerContext.isAdmin) return true;
+    if (!viewerContext.isTeacher) return false;
+    const teacherIds = Array.isArray(student?.teacherIds) ? student.teacherIds.map(String) : [];
+    return teacherIds.includes(String(viewerContext.viewerUserId));
+  };
   const getFilterableStudents = () => {
-    const visibleStudentIds = new Set(allLogs.map((log) => String(log.userId || "")).filter(Boolean));
     return users
-      .filter((student) => visibleStudentIds.has(String(student.id)))
+      .filter(canViewerAccessStudent)
       .sort((a, b) => getReviewStudentName(a).localeCompare(getReviewStudentName(b)));
   };
   const renderSelectedStudentFilters = () => {
@@ -551,11 +561,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const { data: usersData, error: usersError } = await supabase
       .from("users")
-      .select("id, firstName, lastName, teacherIds")
-      .eq("studio_id", viewerContext.studioId);
+      .select("id, firstName, lastName, email, roles, teacherIds, active, deactivated_at")
+      .eq("studio_id", viewerContext.studioId)
+      .contains("roles", ["student"]);
     if (usersError) throw usersError;
 
-    users = usersData || [];
+    users = (usersData || []).filter(canViewerAccessStudent);
     allLogs = (logsData || []).map(l => ({
       ...l,
       fullName:
@@ -566,7 +577,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     if (viewerContext.isTeacher && !viewerContext.isAdmin) {
       const myStudents = users
-        .filter(u => Array.isArray(u.teacherIds) && u.teacherIds.map(String).includes(String(viewerContext.viewerUserId)))
         .map(s => String(s.id));
       allLogs = allLogs.filter(l => myStudents.includes(String(l.userId)));
     }
